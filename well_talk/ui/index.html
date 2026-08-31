@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta name="description" content="Well3D 三维井筒可视化" />
+  <title>Well3D · 三维井筒可视化</title>
+</head>
+<style>
+  #w3app,
+  #w3app * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  #w3app {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 100%;
+    min-height: 620px;
+    overflow: hidden;
+    position: relative;
+    background: #000;
+    color: #dfe6ee;
+    font: 13px/1.45 "Segoe UI", system-ui, sans-serif;
+  }
+
+  .w3-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 5px 14px;
+    background: #181c22;
+    border-bottom: 1px solid #2a313c;
+    flex: 0 0 auto;
+  }
+
+  .w3-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    align-items: center;
+  }
+
+  .w3-toolbar label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    color: #93a1b3;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .w3-toolbar label:hover {
+    color: #d5dde8;
+  }
+
+  .w3-toolbar input {
+    accent-color: #e8c25a;
+    cursor: pointer;
+  }
+
+  .w3-left {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .w3-main {
+    flex: 1 1 auto;
+    display: flex;
+    min-height: 0;
+  }
+
+  .w3-side {
+    flex: 0 0 250px;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #222a35;
+    background: #0a0d12;
+  }
+
+  .w3-side h2 {
+    font-size: 11px;
+    padding: 8px 12px 2px;
+    color: #6d7d90;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+  }
+
+  .w3-wellmap {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .w3-viewer {
+    flex: 1 1 auto;
+    position: relative;
+    min-width: 0;
+    background: #000;
+  }
+
+  .w3-panel {
+    position: absolute;
+    right: 12px;
+    z-index: 6;
+    pointer-events: none;
+    width: 300px;
+    background: rgba(8, 10, 14, .78);
+    border-radius: 3px;
+    padding: 6px 10px 8px;
+    font-size: 11px;
+  }
+
+  .w3-panel h3 {
+    color: #e8912d;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  .w3-panel table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .w3-panel td {
+    padding: 1px 0;
+    color: #b9c4d2;
+    font-family: Consolas, monospace;
+    font-size: 11px;
+  }
+
+  .w3-panel td:last-child {
+    text-align: right;
+    color: #e3e9f0;
+  }
+
+  .w3-panel .name {
+    color: #fff;
+    font-weight: 600;
+    font-family: Consolas, monospace;
+  }
+
+  .w3-readout {
+    bottom: 210px;
+  }
+
+  .w3-selected {
+    bottom: 12px;
+  }
+
+  .w3-hint {
+    position: absolute;
+    left: 12px;
+    top: 12px;
+    z-index: 6;
+    pointer-events: none;
+    color: #55657a;
+    font-size: 11px;
+  }
+
+  .w3-tooltip {
+    position: fixed;
+    z-index: 50;
+    pointer-events: none;
+    background: rgba(8, 12, 18, .92);
+    border: 1px solid #3a4d63;
+    border-radius: 3px;
+    padding: 4px 8px;
+    font-size: 11px;
+    color: #cfe0f0;
+    max-width: 280px;
+  }
+
+  .w3-loading {
+    position: absolute;
+    inset: 0;
+    z-index: 8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6d7d90;
+    font-size: 13px;
+    background: #000;
+  }
+</style>
+
+<body>
+  <div id="w3app">
+    <div class="w3-left">
+      <header class="w3-header">
+        <div class="w3-toolbar">
+          <label v-for="l in layers">
+            <input type="checkbox" :checked="l.on" @change="toggleLayer(l, $event.target.checked)" />
+            <span>{{ l.label }}</span>
+          </label>
+        </div>
+      </header>
+      <div class="w3-main">
+        <div class="w3-side">
+          <h2>Well Map</h2>
+          <div class="w3-wellmap" ref="wellmapEl"></div>
+        </div>
+        <div class="w3-viewer" ref="viewerEl">
+          <div class="w3-panel w3-readout" v-show="readout.show">
+            <h3>Readout</h3>
+            <div class="name">{{ readout.name }}</div>
+            <table>
+              <tr v-for="(r, i) in readout.rows">
+                <td>{{ r[0] }}</td>
+                <td>{{ r[1] }}</td>
+              </tr>
+            </table>
+          </div>
+          <div class="w3-panel w3-selected" v-show="selected.show">
+            <h3>Selected</h3>
+            <div class="name">{{ selected.name }}</div>
+            <table>
+              <tr v-for="(r, i) in selected.rows">
+                <td>{{ r[0] }}</td>
+                <td>{{ r[1] }}</td>
+              </tr>
+            </table>
+          </div>
+          <div class="w3-hint">左键旋转 · 右键平移 · 滚轮缩放 · 悬停查看数据 · 点击选中井</div>
+          <div class="w3-loading" v-if="!ready">
+            <span v-if="loadError">三维引擎加载失败：{{ loadError }}</span>
+            <span v-else>正在加载三维引擎…</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="w3-tooltip" v-show="tooltip.show" :style="{ left: tooltip.x + 'px', top: tooltip.y + 'px' }"
+      v-html="tooltip.html"></div>
+  </div>
+
+  <script setup>
+    /* ---------- 响应式状态 ---------- */
+    ready = false
+    loadError = ''
+
+    /* pageDesc 指令统一执行入口：场景未就绪时返回明确错误（well_status 除外，用于就绪探测） */
+    run = async (action, argv) => {
+      const w3 = $mod._w3
+      try {
+        if (!w3 || !w3.cmd) {
+          if (action === 'well_status') return {content: JSON.stringify({ok: true, data: {ready: false}})}
+          throw new Error('3D 场景尚未加载完成，请稍后重试')
+        }
+        const data = await w3.cmd[action](w3.argvToArgs(argv || []))
+        return {content: JSON.stringify({ok: true, data})}
+      } catch (e) {
+        return {content: JSON.stringify({ok: false, error: String((e && e.message) || e)})}
+      }
+    }
+
+    /* 操控面声明：平台 OS/page 通道按 win_id 命名空间自动采集注册（{win_id}.{cmd}） */
+    pageDesc = {
+      desc: 'Well3D 三维井场分析：12+2 口合成演示井与 hugin-base 构造面的三维可视化，提供井数据查询统计与 3D 视图联动（选中井/深度探针定位）。',
+      commands: [
+        {name: 'well_status', desc: '查询场景状态（就绪/选中井/井列表/图层开关）', help: '无参数；返回 {ready, selectedId, wellCount, wellIds, surfaceIds, layers}', handler: (argv) => run('well_status', argv)},
+        {name: 'well_list', desc: '全部井清单', help: '无参数；返回 [{id, status, tdMsl, parent}]', handler: (argv) => run('well_list', argv)},
+        {name: 'well_info', desc: '井头完整信息（状态/总深/造斜点/井口坐标/补心海拔/父井）', help: '--id <井ID>；侧钻井 ID 含空格，如 "F-03 T2"', handler: (argv) => run('well_info', argv)},
+        {name: 'well_trajectory_stats', desc: '轨迹形态统计（井型/最大井斜/狗腿度/位移）', help: '--id <井ID>', handler: (argv) => run('well_trajectory_stats', argv)},
+        {name: 'well_casings', desc: '套管程序清单', help: '--id <井ID>', handler: (argv) => run('well_casings', argv)},
+        {name: 'well_completion', desc: '完井工具清单', help: '--id <井ID>', handler: (argv) => run('well_completion', argv)},
+        {name: 'well_perforations', desc: '射孔段清单', help: '--id <井ID>', handler: (argv) => run('well_perforations', argv)},
+        {name: 'well_formations', desc: '地层分层清单', help: '--id <井ID>', handler: (argv) => run('well_formations', argv)},
+        {name: 'well_at_depth', desc: '指定深度联合定位（坐标/套管/工具/地层/射孔）', help: '--id <井ID> --md <深度m>', handler: (argv) => run('well_at_depth', argv)},
+        {name: 'well_formation_at', desc: '指定深度所在地层', help: '--id <井ID> --md <深度m>', handler: (argv) => run('well_formation_at', argv)},
+        {name: 'well_distance', desc: '两井指定深度点空间距离与坐标', help: '--id-a <井A> --md-a <深A> --id-b <井B> --md-b <深B>', handler: (argv) => run('well_distance', argv)},
+        {name: 'well_closest_approach', desc: '两井最近距离（采样近似）', help: '--id-a <井A> --id-b <井B> [--step <步长m，默认50>]', handler: (argv) => run('well_closest_approach', argv)},
+        {name: 'surface_list', desc: '构造面清单', help: '无参数', handler: (argv) => run('surface_list', argv)},
+        {name: 'well_qc', desc: '数据体检问题清单', help: '--id <井ID>', handler: (argv) => run('well_qc', argv)},
+        {name: 'well_select', desc: '3D 与井位图中选中该井并相机聚焦', help: '--id <井ID>', handler: (argv) => run('well_select', argv)},
+        {name: 'well_locate', desc: '红色探针定位到深度点并聚焦（同时选中该井）', help: '--id <井ID> --md <深度m>', handler: (argv) => run('well_locate', argv)},
+        {name: 'well_selected', desc: '查询用户当前在图中选中的井', help: '无参数；返回 {id}', handler: (argv) => run('well_selected', argv)},
+      ],
+    }
+
+    layers = [
+      {key: 'colorRamp', label: '色带', on: true},
+      {key: 'contours', label: '等值线', on: true},
+      {key: 'wireframe', label: '线框', on: false},
+      {key: 'casingCompletion', label: '套管/完井', on: false},
+      {key: 'shoes', label: '套管鞋', on: false},
+      {key: 'picks', label: '地层标记', on: false},
+      {key: 'formationColumn', label: '地层柱', on: false},
+      {key: 'perforations', label: '射孔', on: false},
+      {key: 'depthMarkers', label: '深度标注', on: false},
+      {key: 'labels', label: '井名标签', on: true},
+    ]
+
+    readout = {show: false, name: '', rows: []}
+    selected = {show: false, name: '', rows: []}
+    tooltip = {show: false, html: '', x: 0, y: 0}
+
+    /* 图层开关：更新状态并调用场景侧注册的处理器（场景就绪前仅记录状态） */
+    toggleLayer = (l, on) => {
+      l.on = on
+      const h = $mod._w3 && $mod._w3.handlers[l.key]
+      if (h) h(on)
+    }
+
+    /* 命令式句柄存放在模块上下文中（非响应式），供初始化与销毁脚本共享 */
+    $mod._w3 = {handlers: {}}
+  </script>
+
+  <script>
+    /* ================= 初始化：动态加载库 + 合成示例数据 + 场景搭建 ================= */
+    const boot = async () => {
+      const base = $mod.scoped || ''
+      const THREE = await import(base + '/lib/vendor/three.module.js')
+      const {Well3DViewer, DataStore, WellMap, colorRamps, clamp} = await import(base + '/lib/well3d.js')
+
+      const viewerEl = $refs.viewerEl || $node.querySelector('.w3-viewer')
+      const wellmapEl = $refs.wellmapEl || $node.querySelector('.w3-wellmap')
+
+      /* ================= 合成示例数据：井丛 + 大构造面 ================= */
+
+      const DEG = Math.PI / 180;
+
+      /** 生成轨迹测斜数据：垂直段 -> 造斜段 -> 稳斜段 */
+      function makePoslog({easting, northing, kop, incl, azimuth, td, step = 25, prefix = null}) {
+        const pts = prefix ? prefix.slice() : [];
+        let md = pts.length ? pts[pts.length - 1][3] : 0;
+        let e = pts.length ? pts[pts.length - 1][0] : easting;
+        let n = pts.length ? pts[pts.length - 1][2] : northing;
+        let tvd = pts.length ? pts[pts.length - 1][1] : 0;
+        let curIncl = 0;
+        if (!pts.length) pts.push([easting, 0, northing, 0]);
+
+        const buildRate = 3 / 30; // 3° / 30m
+        while (md < td) {
+          md = Math.min(td, md + step);
+          if (tvd < kop) {
+            tvd += step;
+          } else {
+            curIncl = Math.min(incl, curIncl + buildRate * step);
+            const di = curIncl * DEG;
+            tvd += step * Math.cos(di);
+            e += step * Math.sin(di) * Math.sin(azimuth * DEG);
+            n += step * Math.sin(di) * Math.cos(azimuth * DEG);
+          }
+          pts.push([e, tvd, n, md]);
+        }
+        const arr = new Float32Array(pts.length * 4);
+        pts.forEach((p, i) => arr.set(p, i * 4));
+        return {arr, pts, td};
+      }
+
+      // 确定性伪随机
+      let seed = 42;
+      const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
+      const store = new DataStore();
+      const wellIds = [];
+      const wellColors = {};
+      const palette = ['#e8c25a', '#4fc3f7', '#81c784', '#f48fb1', '#ce93d8', '#ffab91', '#a5d6a7', '#90caf9', '#fff59d', '#b39ddb', '#80cbc4', '#ef9a9a'];
+
+      // 井丛：12 口井从同一平台扇形展开
+      const wellSpecs = [];
+      for (let i = 0; i < 12; i++) {
+        const az = i * 30 + rand() * 14 - 7;
+        wellSpecs.push({
+          id: `F-${String(i + 1).padStart(2, '0')}`,
+          easting: (rand() - 0.5) * 120,
+          northing: (rand() - 0.5) * 120,
+          kop: 850 + rand() * 550,
+          incl: 30 + rand() * 45,
+          azimuth: az,
+          td: 3000 + rand() * 1300,
+          parent: null,
+          kickoff: null,
+        });
+      }
+      // 两口侧钻井
+      const sidetracks = [
+        {from: 2, kickoff: 1950, azimuth: wellSpecs[2].azimuth + 55, incl: 62, td: 4400, id: 'F-03 T2'},
+        {from: 6, kickoff: 2250, azimuth: wellSpecs[6].azimuth - 60, incl: 55, td: 4150, id: 'F-07 T2'},
+      ];
+
+      const logs = {};
+      wellSpecs.forEach((w) => {
+        logs[w.id] = makePoslog(w);
+      });
+      sidetracks.forEach((st) => {
+        const parent = wellSpecs[st.from];
+        const prefix = [];
+        for (const p of logs[parent.id].pts) {
+          if (p[3] <= st.kickoff) prefix.push(p.slice());
+          else break;
+        }
+        logs[st.id] = makePoslog({kop: st.kickoff, incl: st.incl, azimuth: st.azimuth, td: st.td, prefix});
+        wellSpecs.push({
+          id: st.id, parent: parent.id, kickoff: st.kickoff,
+          easting: parent.easting, northing: parent.northing, td: st.td,
+        });
+      });
+
+      wellSpecs.forEach((w, i) => {
+        wellIds.push(w.id);
+        wellColors[w.id] = palette[i % palette.length];
+        store.set('position-logs', w.id, logs[w.id].arr);
+        store.set('wellbore-headers', w.id, {
+          id: w.id, name: w.id, well: w.id.split(' ')[0], depthReferenceElevation: 26 + rand() * 6,
+          kickoffDepthMsl: w.kickoff, parent: w.parent, drilled: null,
+          easting: w.easting, northing: w.northing, depthMdMsl: Math.round(w.td),
+          waterDepth: 100 + rand() * 30, status: w.parent ? 'P&A' : 'Oil producer',
+        });
+      });
+
+      // 套管程序（径向夸张 15 倍，默认隐藏，按需开启）
+      const RADIAL = 15;
+      wellSpecs.forEach((w) => {
+        store.set('casings', w.id, [
+          {mdTopMsl: -26, mdBottomMsl: 95, outerDiameter: 0.914 * RADIAL, innerDiameter: 0.84 * RADIAL, type: 'conductor', isShoe: false, properties: {Diameter: '36"', Type: 'Conductor'}},
+          {mdTopMsl: -26, mdBottomMsl: Math.round(w.kop * 0.7) || 700, outerDiameter: 0.508 * RADIAL, innerDiameter: 0.47 * RADIAL, type: 'surface', isShoe: true, properties: {Diameter: '20"', Type: 'Surface casing'}},
+          {mdTopMsl: -26, mdBottomMsl: Math.round((w.kop || 1000) + 750), outerDiameter: 0.34 * RADIAL, innerDiameter: 0.315 * RADIAL, type: 'intermediate', isShoe: true, properties: {Diameter: '13 3/8"', Type: 'Intermediate casing'}},
+          {mdTopMsl: -26, mdBottomMsl: Math.round(w.td * 0.92), outerDiameter: 0.244 * RADIAL, innerDiameter: 0.22 * RADIAL, type: 'production', isShoe: true, properties: {Diameter: '9 5/8"', Type: 'Production casing'}},
+        ]);
+      });
+
+      // 完井工具（两口井）
+      const completionWell = (id, kop, td) => store.set('completion-tools', id, [
+        {name: 'Tubing', mdTopMsl: 100, mdBottomMsl: td - 250, length: td - 350, diameterTop: 0.28, diameterBottom: 0.28, diameterMax: 0.28, diameterDrift: 0.24, category: 'tube'},
+        {name: 'TRSV', mdTopMsl: 480, mdBottomMsl: 487, length: 7, diameterTop: 0.3, diameterBottom: 0.3, diameterMax: 0.42, diameterDrift: 0.2, category: 'safety valve'},
+        {name: 'Packer A', mdTopMsl: td - 600, mdBottomMsl: td - 596, length: 4, diameterTop: 0.3, diameterBottom: 0.3, diameterMax: 0.5, diameterDrift: 0.2, category: 'packer'},
+        {name: 'Gauge carrier', mdTopMsl: td - 670, mdBottomMsl: td - 664, length: 6, diameterTop: 0.3, diameterBottom: 0.3, diameterMax: 0.4, diameterDrift: 0.2, category: 'gauge'},
+        {name: 'Screen', mdTopMsl: td - 590, mdBottomMsl: td - 270, length: 320, diameterTop: 0.34, diameterBottom: 0.34, diameterMax: 0.34, diameterDrift: 0.3, category: 'screen'},
+        {name: 'Bridge plug', mdTopMsl: td - 260, mdBottomMsl: td - 257, length: 3, diameterTop: 0.35, diameterBottom: 0.35, diameterMax: 0.48, diameterDrift: 0.3, category: 'plug'},
+      ]);
+      completionWell('F-03 T2', 1950, 4400);
+      completionWell('F-05', wellSpecs[4].kop, wellSpecs[4].td);
+
+      // 地层
+      const stratColumn = [
+        {name: 'Nordland Gr.', color: '#e8d44f', level: 1},
+        {name: 'Hordaland Gr.', color: '#74c476', level: 1},
+        {name: 'Rogaland Gr.', color: '#9e7bb5', level: 1},
+        {name: 'Hugin Fm.', color: '#5dade2', level: 1},
+        {name: 'Cromer Knoll Gr.', color: '#dc7633', level: 1},
+        {name: 'Viking Gr.', color: '#c0392b', level: 1},
+      ];
+      wellSpecs.forEach((w) => {
+        const shift = Math.round((rand() - 0.5) * 120);
+        const tops = [0, 980, 1600, 2200, 2650, 3100].map((v) => v + shift);
+        store.set('formations', w.id, stratColumn.map((f, i) => ({
+          ...f,
+          mdTopMsl: Math.min(tops[i], w.td - 50),
+          mdBottomMsl: i < stratColumn.length - 1 ? Math.min(tops[i + 1], w.td) : w.td,
+          type: 'surface',
+        })).filter((f) => f.mdBottomMsl > f.mdTopMsl));
+      });
+
+      // 射孔（两口长斜井）
+      store.set('perforations', 'F-03 T2', [
+        {mdTopMsl: 3400, mdBottomMsl: 3680, status: 'Open', density: 0.5, phase: 60, innerDiameter: 0.3, outerDiameter: 0.62},
+        {mdTopMsl: 3900, mdBottomMsl: 4250, status: 'Open', density: 0.5, phase: 90, innerDiameter: 0.3, outerDiameter: 0.62},
+      ]);
+      store.set('perforations', 'F-09', [
+        {mdTopMsl: wellSpecs[8].td - 900, mdBottomMsl: wellSpecs[8].td - 300, status: 'Open', density: 0.5, phase: 45, innerDiameter: 0.3, outerDiameter: 0.62},
+      ]);
+
+      // 大构造面：多穹窿 + 断层 + 河道状起伏
+      (function makeSurface() {
+        const nx = 130, ny = 130, xinc = 50, yinc = 50;
+        const xori = -3200, yori = -3200;
+        const values = new Float32Array(nx * ny);
+        const dome = (x, y, cx, cy, amp, s) => amp * Math.exp(-((x - cx) ** 2 + (y - cy) ** 2) / (2 * s * s));
+        for (let iy = 0; iy < ny; iy++) {
+          for (let ix = 0; ix < nx; ix++) {
+            const x = xori + ix * xinc;
+            const y = yori + iy * yinc;
+            let v = 2850
+              - dome(x, y, 900, 600, 520, 800)
+              - dome(x, y, -1400, -300, 430, 700)
+              - dome(x, y, 300, -1500, 380, 620)
+              - dome(x, y, -900, 1700, 330, 550)
+              + 0.00009 * (x * x + y * y * 0.7)
+              + 90 * Math.sin(x / 420) * Math.cos(y / 360)
+              + 40 * Math.sin((x + y) / 260);
+            // 断层（约 200m 带宽的渐变过渡，避免硬台阶锯齿）
+            const fd = x - (600 + 0.3 * (y + 400));
+            const fs = clamp((fd + 100) / 200, 0, 1);
+            v += 170 * fs * fs * (3 - 2 * fs);
+            values[iy * nx + ix] = v;
+          }
+        }
+        let min = Infinity, max = -Infinity;
+        values.forEach((v) => {min = Math.min(min, v); max = Math.max(max, v);});
+        store.set('surface-meta', 'hugin-base', {
+          id: 'hugin-base', name: 'Hugin Fm. Base', projection: 'ED50 / UTM 31N',
+          min, max, displayMin: min, displayMax: max, color: '#5dade2', visualization: 'surface',
+          header: {nx, ny, xinc, yinc, xori, yori, rot: 0},
+        });
+        store.set('surface-values', 'hugin-base', values);
+      })();
+
+      /* ================= 查看器 ================= */
+
+      const viewer = new Well3DViewer(viewerEl, {
+        store,
+        background: 0x000000,
+        cameraPosition: [2700, 1700, 7100],
+        target: [0, -2300, -200],
+        ambientIntensity: 0.35,
+        hemisphereIntensity: 0.7,
+        directionalIntensity: 1.3,
+      });
+      window.viewer = viewer;
+      $mod._w3.viewer = viewer;
+
+      const fmt = (v, d = 1) => (Math.round(v * 10 ** d) / 10 ** d).toFixed(d);
+      function showTooltip(html, x, y) {
+        tooltip = {show: true, html, x: x + 14, y: y + 12};
+      }
+      function hideTooltip() {tooltip = {show: false, html: '', x: 0, y: 0};}
+
+      /* ---- 轨迹（细线，官方默认样式） ---- */
+      const trajectoryLines = new Map(); // id -> { object, defaultColor }
+      let selectedId = null;
+      let wellMap = null;
+
+      function setSelected(id) {
+        if (selectedId && trajectoryLines.has(selectedId)) {
+          trajectoryLines.get(selectedId).object.children[0].material.color.set(trajectoryLines.get(selectedId).defaultColor);
+        }
+        selectedId = id;
+        if (id && trajectoryLines.has(id)) {
+          trajectoryLines.get(id).object.children[0].material.color.set('#ffd75e');
+        }
+        if (id) {
+          const h = store.get('wellbore-headers', id);
+          selected = {
+            show: true, name: h.name, rows: [
+              ['Status', h.status],
+              ['Total Depth (MD Msl)', fmt(h.depthMdMsl)],
+              ['Kickoff (MD Msl)', h.kickoffDepthMsl ?? '—'],
+              ['Easting (wellhead)', fmt(h.easting)],
+              ['Northing (wellhead)', fmt(h.northing)],
+              ['Depth ref. (Msl)', fmt(h.depthReferenceElevation)],
+            ]
+          };
+        } else {
+          selected = {show: false, name: '', rows: []};
+        }
+        if (wellMap) wellMap.select(id);
+      }
+
+      function updateReadout(id, point, md) {
+        const h = store.get('wellbore-headers', id);
+        readout = {
+          show: true, name: h.name, rows: [
+            ['Easting', fmt(point[0])],
+            ['Northing', fmt(-point[2])],
+            ['TVD (Msl)', fmt(-point[1])],
+            ['MD (Msl)', fmt(md)],
+          ]
+        };
+      }
+
+      wellIds.forEach((id) => {
+        const obj = viewer.addTrajectory(id, {
+          color: '#b9c4d0',
+          radius: 0, // 细线
+          segmentsPerMeter: 0.15,
+          events: {
+            cursor: 'pointer',
+            onPointerEnter: () => {wellHover = true;},
+            onPointerMove: (e) => {
+              wellHover = true;
+              const t = viewer.getTrajectory(id);
+              const near = t.curve.nearest([e.point.x, e.point.y, e.point.z]);
+              const md = t.measuredTop + near.position * t.measuredLength;
+              updateReadout(id, [e.point.x, e.point.y, e.point.z], md);
+              showTooltip(`<b>${id}</b> · MD ${fmt(md)}m`, e.originalEvent.clientX, e.originalEvent.clientY);
+            },
+            onPointerExit: () => {
+              wellHover = false;
+              readout = {show: false, name: '', rows: []};
+              hideTooltip();
+            },
+            onClick: () => setSelected(id),
+          },
+        });
+        trajectoryLines.set(id, {object: obj, defaultColor: '#b9c4d0'});
+      });
+
+      /* ---- 构造面（彩虹色带 + 等值线，官方默认样式） ---- */
+      let wellHover = false; // 悬停在井上时曲面让位
+      const surfaceMesh = viewer.addSurface('hugin-base', {
+        ramp: colorRamps.rainbow, // 浅部红、深部蓝
+        opacity: 0.98,
+        contours: {interval: 30, color: '#000000', opacity: 0.22, offset: 0.8},
+        events: {
+          passthrough: true,
+          onPointerMove: (e) => {
+            if (wellHover) return;
+            showTooltip(`Hugin Fm. Base<br>深度 ${fmt(-e.point.y)}m MSL`, e.originalEvent.clientX, e.originalEvent.clientY);
+          },
+          onPointerExit: hideTooltip,
+        },
+      });
+
+      /* ---- 井名标签 ---- */
+      wellIds.forEach((id) => {
+        const head = viewer.getPointAtDepth(id, -26, true);
+        if (!head) return;
+        viewer.labels.add({
+          id: `wellhead_${id}`,
+          position: [head[0], head[1] + 40, head[2]],
+          name: id, priority: 10, distance: 0, dot: false, leaderLine: false,
+          className: 'w3-label--plain',
+          onClick: () => setSelected(id),
+        });
+      });
+
+      /* ---- 按需图层（默认关闭，对应官方 Controls） ---- */
+      const optionalLayers = {casingCompletion: [], shoes: [], picks: [], formationColumn: [], perforations: [], depthMarkers: []};
+
+      wellIds.forEach((id) => {
+        const casings = viewer.addCasings(id, {
+          events: {
+            cursor: 'pointer',
+            onPointerMove: (e) => {
+              const c = e.object.userData.casing;
+              if (c) showTooltip(`<b>${id}</b> ${c.type}<br>顶 ${fmt(c.mdTopMsl, 0)}m · 底 ${fmt(c.mdBottomMsl, 0)}m`, e.originalEvent.clientX, e.originalEvent.clientY);
+            },
+            onPointerExit: hideTooltip,
+            onClick: (e) => {
+              const c = e.object.userData.casing;
+              if (c) {
+                readout = {
+                  show: true, name: `套管 · ${id}`, rows: [
+                    ['Type', c.type],
+                    ['MD top', fmt(c.mdTopMsl, 0) + ' m'],
+                    ['MD bottom', fmt(c.mdBottomMsl, 0) + ' m'],
+                    ['Outer Ø', fmt(c.outerDiameter / RADIAL * 39.37, 2) + '"'],
+                    ['Shoe', c.isShoe ? 'yes' : 'no'],
+                  ]
+                };
+              }
+            },
+          },
+        });
+        const completion = viewer.addCompletionTools(id, {
+          sizeMultiplier: 25,
+          events: {
+            cursor: 'pointer',
+            onPointerMove: (e) => {
+              const u = e.object.userData;
+              if (u.category) showTooltip(`<b>${id}</b> ${u.category}<br>${u.tools.length} 件工具`, e.originalEvent.clientX, e.originalEvent.clientY);
+            },
+            onPointerExit: hideTooltip,
+          },
+        });
+        if (casings) {casings.visible = false; optionalLayers.casingCompletion.push(casings);}
+        if (completion) {completion.visible = false; optionalLayers.casingCompletion.push(completion);}
+
+        const shoes = viewer.addShoes(id, {sizeMultiplier: 2.5, color: '#ba68c8', addLabels: false});
+        if (shoes) {shoes.visible = false; optionalLayers.shoes.push(shoes);}
+
+        const picks = viewer.addFormationMarkers(id, {
+          baseRadius: 45, opacity: 0.45, addLabels: false,
+          events: {
+            cursor: 'pointer',
+            onPointerMove: (e) => {
+              const u = e.object.userData;
+              if (u.name) showTooltip(`<b>${u.name}</b><br>顶深 ${fmt(u.depth, 0)}m MSL`, e.originalEvent.clientX, e.originalEvent.clientY);
+            },
+            onPointerExit: hideTooltip,
+          },
+        });
+        if (picks) {picks.visible = false; optionalLayers.picks.push(picks);}
+
+        const column = viewer.addFormationColumn(id, {radius: 12, opacity: 0.92});
+        if (column) {column.visible = false; optionalLayers.formationColumn.push(column);}
+
+        const perfs = viewer.addPerforations(id, {sizeMultiplier: 25, spikeLength: 1.2, spikeRadius: 0.4});
+        if (perfs) {perfs.visible = false; optionalLayers.perforations.push(perfs);}
+
+        const dm = viewer.addDepthMarkers(id, {interval: 250, addLabels: false});
+        if (dm) optionalLayers.depthMarkers.push({id, markers: dm, shown: false});
+      });
+
+      /* ---- 井位图 ---- */
+      const probeMesh = new THREE.Mesh(
+        new THREE.SphereGeometry(18, 20, 16),
+        new THREE.MeshBasicMaterial({color: 0xff5252})
+      );
+      probeMesh.visible = false;
+      viewer.scene.add(probeMesh);
+
+      wellMap = new WellMap(wellmapEl, {
+        interactive: true,
+        depthCursor: true,
+        colorMap: wellColors,
+        styles: {cursorColor: '#ff5252', trackWidth: 40, depthAxisWidth: 40},
+        onSelect: (id) => setSelected(id),
+        onDepthChange: (depth) => updateProbe(depth),
+        onWellboreOver: (header, depth) => {
+          if (!header) {probeMesh.visible = false; return;}
+          updateProbe(depth, header.id);
+          const p = viewer.getPointAtDepth(header.id, depth, true);
+          if (p) updateReadout(header.id, p, depth);
+        },
+      });
+      $mod._w3.wellMap = wellMap;
+      wellMap.setWellbores(wellIds.map((id) => store.get('wellbore-headers', id)));
+
+      let lastProbeId = wellIds[0];
+      function updateProbe(depth, id) {
+        lastProbeId = id || lastProbeId;
+        const p = viewer.getPointAtDepth(lastProbeId, depth, true);
+        if (p) {
+          probeMesh.position.set(p[0], p[1], p[2]);
+          probeMesh.visible = true;
+        }
+      }
+
+      /* ---- 图层开关处理器（注册到 $mod._w3.handlers，供模板复选框调用） ---- */
+      const handlers = $mod._w3.handlers;
+
+      handlers.labels = (on) => {viewer.labels.enabled = on;};
+      handlers.colorRamp = (on) => {
+        surfaceMesh.material.vertexColors = on;
+        if (!on) surfaceMesh.material.color.set('#9db4c8');
+        surfaceMesh.material.needsUpdate = true;
+      };
+      handlers.contours = (on) => {
+        if (surfaceMesh.contourLines) surfaceMesh.contourLines.visible = on;
+      };
+      handlers.wireframe = (on) => {surfaceMesh.material.wireframe = on;};
+      handlers.depthMarkers = (on) => {
+        optionalLayers.depthMarkers.forEach((entry) => {
+          entry.markers.forEach((m) => {
+            if (on && !entry.shown) {
+              viewer.labels.add({
+                id: `depth_${m.id}`, position: m.position, direction: m.direction,
+                name: m.name, priority: 1, className: 'w3-label--depth', color: '#9fb4c8',
+                dot: false, leaderLine: false, distance: 10,
+              });
+            } else if (!on) {
+              viewer.labels.remove(`depth_${m.id}`);
+            }
+          });
+          entry.shown = on;
+        });
+      };
+      ['casingCompletion', 'shoes', 'picks', 'formationColumn', 'perforations'].forEach((key) => {
+        handlers[key] = (on) => (optionalLayers[key] || []).forEach((obj) => {obj.visible = on;});
+      });
+
+      // 场景就绪后按当前开关状态同步一次（覆盖初始化期间的点击）
+      layers.forEach((l) => {const h = handlers[l.key]; if (h) h(l.on);});
+
+      /* ---- 供 AI 面板使用的数据与视图接口（非响应式，挂载在模块上下文） ---- */
+      $mod._w3.store = store;
+      $mod._w3.wellIds = wellIds;
+      $mod._w3.surfaceIds = ['hugin-base'];
+      $mod._w3.setSelected = setSelected;
+      $mod._w3.getSelectedId = () => selectedId;
+      $mod._w3.locateDepth = (id, md) => {
+        const p = viewer.getPointAtDepth(id, md, true);
+        if (!p) return null;
+        lastProbeId = id;
+        probeMesh.position.set(p[0], p[1], p[2]);
+        probeMesh.visible = true;
+        if (viewer.focus) viewer.focus(p, 900);
+        setSelected(id);
+        return p;
+      };
+
+      /* ================= 供 AI 操控的指令执行层（pageDesc 经 $mod._w3.cmd 复用本层） =================
+       * 设计纪律：AI 只拿聚合摘要，永远不碰原始大数组
+       * （position-logs / surface-values 在本层消化成统计值后再返回） */
+      const r1 = (v) => Math.round(v * 10) / 10;
+      const r2 = (v) => Math.round(v * 100) / 100;
+      const RAD2DEG = 180 / Math.PI;
+
+      const headerOf = (id) => {
+        const h = store.get('wellbore-headers', id);
+        if (!h) throw new Error(`未找到井「${id}」，请先调用 well_list 获取有效井 ID（注意侧钻井 ID 含空格，如 "F-03 T2"）`);
+        return h;
+      };
+      const num = (v, name) => {
+        const x = parseFloat(v);
+        if (!Number.isFinite(x)) throw new Error(`参数 ${name} 必须是数字，收到：${v}`);
+        return x;
+      };
+      const reqId = (args) => {
+        if (!args.id) throw new Error('缺少参数 --id');
+        return String(args.id);
+      };
+
+      function poslogPoints(id) {
+        const arr = store.get('position-logs', id);
+        if (!arr || !arr.length) throw new Error(`井 ${id} 缺少轨迹数据`);
+        const pts = [];
+        for (let i = 0; i + 3 < arr.length; i += 4) {
+          pts.push({e: arr[i], tvd: arr[i + 1], n: arr[i + 2], md: arr[i + 3]});
+        }
+        return pts;
+      }
+
+      /* 库内轨迹曲线以各自井口为原点（渲染精度考虑），跨井几何计算需加回井口偏移还原绝对坐标 */
+      function absPoint(id, md) {
+        const h = store.get('wellbore-headers', id);
+        const p = viewer.getPointAtDepth(id, md, true);
+        if (!p) return null;
+        return {e: p[0] + h.easting, tvd: -p[1], n: h.northing - p[2]};
+      }
+
+      /* 轨迹分段：方向向量 + 井斜角 + 狗腿度 */
+      function trajectorySegments(pts) {
+        const segs = [];
+        for (let i = 1; i < pts.length; i++) {
+          const dE = pts[i].e - pts[i - 1].e;
+          const dT = pts[i].tvd - pts[i - 1].tvd;
+          const dN = pts[i].n - pts[i - 1].n;
+          const len = Math.hypot(dE, dT, dN);
+          if (!len) continue;
+          segs.push({
+            md: pts[i].md, len,
+            dir: [dE / len, dT / len, dN / len],
+            incl: Math.atan2(Math.hypot(dE, dN), dT) * RAD2DEG,
+          });
+        }
+        const doglegs = [];
+        for (let i = 1; i < segs.length; i++) {
+          const dot = segs[i - 1].dir[0] * segs[i].dir[0] + segs[i - 1].dir[1] * segs[i].dir[1] + segs[i - 1].dir[2] * segs[i].dir[2];
+          const ang = Math.acos(Math.min(1, Math.max(-1, dot))) * RAD2DEG;
+          const course = (segs[i - 1].len + segs[i].len) / 2;
+          if (course > 0) doglegs.push({md: segs[i].md, dls: ang / course * 30});
+        }
+        return {segs, doglegs};
+      }
+
+      /* 轨迹形态统计：井型 / 造斜点 / 最大井斜 / 狗腿度 / 位移 */
+      function trajectoryStats(id) {
+        const pts = poslogPoints(id);
+        const h = headerOf(id);
+        const {segs, doglegs} = trajectorySegments(pts);
+
+        let maxIncl = 0, maxInclMd = 0;
+        segs.forEach((s) => {if (s.incl > maxIncl) {maxIncl = s.incl; maxInclMd = s.md;}});
+        let kop = null;
+        for (const s of segs) {if (s.incl >= 3) {kop = s.md; break;}}
+        const maxDog = doglegs.reduce((m, d) => (d.dls > (m ? m.dls : -1) ? d : m), null);
+        const avgDog = doglegs.length ? doglegs.reduce((a, d) => a + d.dls, 0) / doglegs.length : 0;
+        const horizLen = segs.filter((s) => s.incl >= 80).reduce((a, s) => a + s.len, 0);
+        const first = pts[0], last = pts[pts.length - 1];
+        const disp = Math.hypot(last.e - first.e, last.n - first.n);
+        const dispAz = (Math.atan2(last.e - first.e, last.n - first.n) * RAD2DEG + 360) % 360;
+        const wellType = maxIncl < 10 ? '直井' : maxIncl < 60 ? '定向井' : maxIncl < 80 ? '大位移定向井' : '水平井';
+
+        return {
+          id, wellType, status: h.status, parent: h.parent || null,
+          tdMsl: r1(last.md), tvdAtTd: r1(last.tvd),
+          kopMd: kop == null ? null : r1(kop),
+          maxInclDeg: r1(maxIncl), maxInclMd: r1(maxInclMd),
+          avgDoglegPer30m: r2(avgDog),
+          maxDoglegPer30m: maxDog ? r2(maxDog.dls) : 0,
+          maxDoglegMd: maxDog ? r1(maxDog.md) : null,
+          horizontalSectionLen: r1(horizLen),
+          totalDisplacement: r1(disp), displacementAzimuth: r1(dispAz),
+          stationCount: pts.length,
+        };
+      }
+
+      /* 深度联合定位：该 MD 处的套管 / 工具 / 地层 / 射孔 + 空间坐标 */
+      function whatIsAt(id, md) {
+        headerOf(id);
+        const out = {id, md: r1(md)};
+        const ap = absPoint(id, md);
+        if (ap) out.position = {easting: r1(ap.e), northing: r1(ap.n), tvdMsl: r1(ap.tvd)};
+
+        out.casingsHere = (store.get('casings', id) || [])
+          .filter((c) => md >= c.mdTopMsl && md <= c.mdBottomMsl)
+          .map((c) => ({type: c.type, diameter: (c.properties && c.properties.Diameter) || null, mdTopMsl: c.mdTopMsl, mdBottomMsl: c.mdBottomMsl}));
+
+        const tools = store.get('completion-tools', id) || [];
+        out.toolsHere = tools
+          .filter((t) => md >= t.mdTopMsl && md <= t.mdBottomMsl)
+          .map((t) => ({name: t.name, category: t.category, mdTopMsl: t.mdTopMsl, mdBottomMsl: t.mdBottomMsl}));
+        out.toolsBelowWithin100m = tools
+          .filter((t) => t.mdTopMsl > md && t.mdTopMsl - md <= 100)
+          .map((t) => ({name: t.name, category: t.category, distanceBelow: r1(t.mdTopMsl - md)}));
+
+        const fm = (store.get('formations', id) || []).find((f) => md >= f.mdTopMsl && md < f.mdBottomMsl);
+        out.formation = fm ? {name: fm.name, mdTopMsl: fm.mdTopMsl, mdBottomMsl: fm.mdBottomMsl} : null;
+
+        out.perforationsHere = (store.get('perforations', id) || [])
+          .filter((x) => md >= x.mdTopMsl && md <= x.mdBottomMsl)
+          .map((x) => ({mdTopMsl: x.mdTopMsl, mdBottomMsl: x.mdBottomMsl, status: x.status, phase: x.phase}));
+        return out;
+      }
+
+      /* 数据体检：判定逻辑在代码，AI 只负责解读 */
+      function qcCheck(id) {
+        const issues = [];
+        const pts = poslogPoints(id);
+        for (let i = 1; i < pts.length; i++) {
+          if (pts[i].md <= pts[i - 1].md) {
+            issues.push({type: 'MD 非递增', md: r1(pts[i].md), severity: 'high', detail: `MD ${r1(pts[i - 1].md)} → ${r1(pts[i].md)}`});
+          }
+          if ([pts[i].e, pts[i].tvd, pts[i].n].some((v) => !Number.isFinite(v))) {
+            issues.push({type: '轨迹坐标非法值', md: r1(pts[i].md), severity: 'high', detail: 'NaN/Inf'});
+          }
+        }
+        const segs = trajectorySegments(pts).segs;
+        for (let i = 1; i < segs.length; i++) {
+          const dot = segs[i - 1].dir[0] * segs[i].dir[0] + segs[i - 1].dir[1] * segs[i].dir[1] + segs[i - 1].dir[2] * segs[i].dir[2];
+          const ang = Math.acos(Math.min(1, Math.max(-1, dot))) * RAD2DEG;
+          const dls = ang / ((segs[i - 1].len + segs[i].len) / 2) * 30;
+          if (dls > 5) issues.push({type: '狗腿度偏高', md: r1(segs[i].md), severity: dls > 8 ? 'high' : 'medium', detail: `${r2(dls)}°/30m`});
+        }
+        const cas = (store.get('casings', id) || []).slice().sort((a, b) => a.mdBottomMsl - b.mdBottomMsl);
+        for (let i = 1; i < cas.length; i++) {
+          if (cas[i].mdBottomMsl <= cas[i - 1].mdBottomMsl) {
+            issues.push({type: '套管底深未递增', severity: 'medium', detail: `${cas[i - 1].type} 底 ${cas[i - 1].mdBottomMsl}m，${cas[i].type} 底 ${cas[i].mdBottomMsl}m`});
+          }
+          if (cas[i].outerDiameter > cas[i - 1].outerDiameter + 1e-6) {
+            issues.push({type: '套管外径倒挂', severity: 'medium', detail: `${cas[i].type} 外径大于 ${cas[i - 1].type}`});
+          }
+        }
+        const fms = store.get('formations', id) || [];
+        fms.forEach((f) => {
+          if (f.mdBottomMsl <= f.mdTopMsl) issues.push({type: '地层顶底倒挂', md: r1(f.mdTopMsl), severity: 'high', detail: f.name});
+        });
+        for (let i = 1; i < fms.length; i++) {
+          if (fms[i].mdTopMsl < fms[i - 1].mdTopMsl) issues.push({type: '地层顶深乱序', md: r1(fms[i].mdTopMsl), severity: 'low', detail: fms[i].name});
+        }
+        return {id, issueCount: issues.length, issues: issues.slice(0, 50)};
+      }
+
+      /* 两井最近距离采样扫描（演示级算法） */
+      function closestApproach(idA, idB, step) {
+        const hA = headerOf(idA), hB = headerOf(idB);
+        const sample = (id, td) => {
+          const arr = [];
+          for (let md = 0; md <= td; md += step) {
+            const p = absPoint(id, md);
+            if (p) arr.push({md, p});
+          }
+          return arr;
+        };
+        const ptsA = sample(idA, hA.depthMdMsl);
+        const ptsB = sample(idB, hB.depthMdMsl);
+        let best = null;
+        for (const x of ptsA) {
+          for (const y of ptsB) {
+            const d = Math.hypot(x.p.e - y.p.e, x.p.tvd - y.p.tvd, x.p.n - y.p.n);
+            if (!best || d < best.distance) best = {distance: d, mdA: x.md, mdB: y.md};
+          }
+        }
+        if (!best) throw new Error('轨迹数据不足，无法计算');
+        return {
+          idA, idB, distance: r1(best.distance), mdA: r1(best.mdA), mdB: r1(best.mdB), step,
+          note: '采样扫描近似值；正式防碰分析需使用椭圆误差模型，结论请声明精度边界',
+        };
+      }
+
+      /* exec argv 原样透传（数组）→ args 对象（--key val / 位置参数） */
+      const argvToArgs = (argv) => {
+        const args = {};
+        const pos = [];
+        for (let i = 0; i < argv.length; i++) {
+          const a = String(argv[i]);
+          if (a.startsWith('--') && i + 1 < argv.length) {
+            args[a.slice(2)] = argv[i + 1];
+            i++;
+          } else {
+            pos.push(a);
+          }
+        }
+        pos.forEach((v, i) => { if (!(String(i) in args)) args[String(i)] = v; });
+        return args;
+      };
+
+      /* 指令表：pageDesc handler 与人工调试共用本执行层 */
+      const cmd = {
+        /* ---- 状态 ---- */
+        well_status: () => ({
+          ready: true,
+          selectedId: $mod._w3.getSelectedId ? $mod._w3.getSelectedId() : null,
+          wellCount: wellIds.length,
+          wellIds: wellIds.slice(),
+          surfaceIds: $mod._w3.surfaceIds.slice(),
+          layers: layers.map((l) => ({key: l.key, on: l.on})),
+        }),
+
+        /* ---- 数据查询 ---- */
+        well_list: () => wellIds.map((id) => {
+          const h = store.get('wellbore-headers', id);
+          return {id, status: h.status, tdMsl: h.depthMdMsl, parent: h.parent || null};
+        }),
+        well_info: (a) => headerOf(reqId(a)),
+        well_trajectory_stats: (a) => trajectoryStats(reqId(a)),
+        well_casings: (a) => {const id = reqId(a); headerOf(id); return store.get('casings', id) || [];},
+        well_completion: (a) => {const id = reqId(a); headerOf(id); return store.get('completion-tools', id) || [];},
+        well_perforations: (a) => {const id = reqId(a); headerOf(id); return store.get('perforations', id) || [];},
+        well_formations: (a) => {const id = reqId(a); headerOf(id); return store.get('formations', id) || [];},
+        well_at_depth: (a) => whatIsAt(reqId(a), num(a.md, '--md')),
+        well_formation_at: (a) => {
+          const md = num(a.md, '--md');
+          const fm = (store.get('formations', reqId(a)) || []).find((f) => md >= f.mdTopMsl && md < f.mdBottomMsl);
+          return fm || {message: '该深度不在任何地层区间内'};
+        },
+        well_distance: (a) => {
+          const idA = String(a['id-a'] || ''), idB = String(a['id-b'] || '');
+          headerOf(idA); headerOf(idB);
+          const mdA = num(a['md-a'], '--md-a'), mdB = num(a['md-b'], '--md-b');
+          const pA = absPoint(idA, mdA);
+          const pB = absPoint(idB, mdB);
+          if (!pA || !pB) throw new Error('深度超出轨迹范围');
+          return {
+            distance: r1(Math.hypot(pA.e - pB.e, pA.tvd - pB.tvd, pA.n - pB.n)),
+            pointA: {id: idA, md: mdA, easting: r1(pA.e), northing: r1(pA.n), tvdMsl: r1(pA.tvd)},
+            pointB: {id: idB, md: mdB, easting: r1(pB.e), northing: r1(pB.n), tvdMsl: r1(pB.tvd)},
+          };
+        },
+        well_closest_approach: (a) => {
+          const step = a.step ? Math.max(5, num(a.step, '--step')) : 50;
+          return closestApproach(String(a['id-a'] || ''), String(a['id-b'] || ''), step);
+        },
+        surface_list: () => $mod._w3.surfaceIds.map((id) => {
+          const m = store.get('surface-meta', id);
+          return {id, name: m.name, minDepth: r1(m.min), maxDepth: r1(m.max), nx: m.header.nx, ny: m.header.ny, projection: m.projection};
+        }),
+        well_qc: (a) => qcCheck(reqId(a)),
+
+        /* ---- 视图联动（驱动 3D 场景） ---- */
+        well_select: (a) => {
+          const id = reqId(a);
+          headerOf(id);
+          if ($mod._w3.setSelected) $mod._w3.setSelected(id);
+          if (viewer.focusWellbore) viewer.focusWellbore(id);
+          return {selected: id};
+        },
+        well_locate: (a) => {
+          const id = reqId(a);
+          const md = num(a.md, '--md');
+          headerOf(id);
+          const p = $mod._w3.locateDepth ? $mod._w3.locateDepth(id, md) : null;
+          if (!p) throw new Error('深度超出轨迹范围');
+          const ap = absPoint(id, md);
+          return {id, md, position: ap ? {easting: r1(ap.e), northing: r1(ap.n), tvdMsl: r1(ap.tvd)} : null};
+        },
+        well_selected: () => ({id: $mod._w3.getSelectedId ? $mod._w3.getSelectedId() : null}),
+      };
+
+      $mod._w3.cmd = cmd;
+      $mod._w3.argvToArgs = argvToArgs;
+      /* 暴露到 window 便于人工调试（控制台可直接调用 window._w3Ai.well_list({}) 等） */
+      window._w3Ai = cmd;
+
+      ready = true;
+    };
+
+    boot().catch((err) => {
+      console.error('[well3d] boot failed:', err);
+      loadError = String((err && err.message) || err);
+    });
+  </script>
+
+  <script dispose>
+    const vx = $mod._w3;
+    if (vx) {
+      try {if (vx.wellMap && vx.wellMap.dispose) vx.wellMap.dispose();} catch (e) { }
+      try {if (vx.viewer && vx.viewer.dispose) vx.viewer.dispose();} catch (e) { }
+      if (window.viewer === vx.viewer) window.viewer = undefined;
+      $mod._w3 = null;
+    }
+    window._w3Ai = null;
+  </script>
+</body>
+
+</html>
