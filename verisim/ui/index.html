@@ -1,0 +1,1933 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VeriSim Pro</title>
+</head>
+<style>
+  .verisim {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    color: var(--text-color);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .spacer {
+    flex: 1;
+  }
+
+  .btn {
+    background: var(--bg-color-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    padding: 6px 12px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    transition: var(--transition-fast);
+  }
+
+  .btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .btn.primary {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-primary-text);
+    font-weight: var(--font-weight-medium);
+  }
+
+  .btn.primary:hover {
+    background: var(--color-primary-hover);
+    color: var(--color-primary-text);
+  }
+
+  .btn.synth {
+    background: transparent;
+    border-color: var(--color-secondary);
+    color: var(--color-secondary);
+  }
+
+  .btn.synth:hover {
+    background: var(--color-secondary);
+    color: var(--color-secondary-text);
+  }
+
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .btn.sm {
+    padding: 3px 9px;
+    font-size: var(--font-size-xs);
+    border-radius: var(--radius-sm);
+  }
+
+  .app-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-color-secondary);
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+  }
+
+  .header-tabs {
+    display: flex;
+    align-items: stretch;
+    min-width: 0;
+    overflow-x: auto;
+    flex: 1 1 auto;
+  }
+
+  .header-tools {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .top-input {
+    width: 92px;
+  }
+
+  input.btn,
+  select.btn {
+    width: 150px;
+    background: transparent;
+  }
+
+  select.btn {
+    width: auto;
+    max-width: 220px;
+  }
+
+  main {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+  }
+
+  .workbench {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .code-wrap {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    overflow: hidden;
+  }
+
+  .code-lines {
+    width: 46px;
+    min-width: 46px;
+    margin: 0;
+    padding: 10px 6px 10px 0;
+    overflow: hidden;
+    text-align: right;
+    color: var(--text-color-disabled);
+    background: var(--bg-color-secondary);
+    border-right: 1px solid var(--border-color);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    line-height: 1.45;
+    user-select: none;
+    white-space: pre;
+  }
+
+  .code-area {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: none;
+    resize: none;
+    padding: 10px 12px;
+    color: var(--text-color);
+    background: transparent;
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    line-height: 1.45;
+    white-space: pre;
+    overflow: auto;
+  }
+
+  .code-pane {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .console-section {
+    height: 190px;
+    min-height: 190px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .console {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 34px 12px 8px;
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
+    line-height: 1.55;
+    white-space: pre-wrap;
+  }
+
+  .console .err {
+    color: var(--color-danger);
+  }
+
+  .console .ok {
+    color: var(--color-success);
+  }
+
+  .console .info {
+    color: var(--text-color-tertiary);
+  }
+
+  .console .wrn {
+    color: var(--color-warning);
+  }
+
+  .console .sys {
+    color: var(--color-secondary);
+  }
+
+  .tab {
+    padding: 8px 12px;
+    font-size: var(--font-size-sm);
+    color: var(--text-color-tertiary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  .tab.active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+  }
+
+  .result-bar {
+    padding: 6px var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-color-secondary);
+    font-size: var(--font-size-xs);
+    font-family: var(--font-mono);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .pane {
+    flex: 1;
+    min-height: 0;
+    display: none;
+    overflow: auto;
+  }
+
+  .pane.active {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .pane.wave.active {
+    flex-direction: row;
+  }
+
+  .sig-panel {
+    width: 230px;
+    min-width: 230px;
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-color-secondary);
+  }
+
+  .sig-btns {
+    display: flex;
+    gap: 6px;
+    padding: 8px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .sig-btns .btn {
+    padding: 3px 10px;
+    font-size: var(--font-size-xs);
+  }
+
+  .sig-list {
+    flex: 1;
+    overflow: auto;
+    padding: 6px 0;
+  }
+
+  .sig-list label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px;
+    font-size: var(--font-size-xs);
+    font-family: var(--font-mono);
+    cursor: pointer;
+    color: var(--text-color);
+  }
+
+  .sig-list label:hover {
+    background: var(--bg-color-tertiary);
+  }
+
+  .sig-list .w {
+    color: var(--text-color-tertiary);
+    font-size: 11px;
+    margin-left: auto;
+  }
+
+  .wave-right {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .wave-toolbar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 7px 12px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: var(--font-size-xs);
+    color: var(--text-color-tertiary);
+    flex-wrap: wrap;
+  }
+
+  .wave-wrap {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+    cursor: crosshair;
+  }
+
+  .wave-canvas {
+    display: block;
+  }
+
+  .empty {
+    padding: 28px;
+    color: var(--text-color-tertiary);
+    font-size: var(--font-size-sm);
+    line-height: 1.8;
+  }
+
+  .sch-wrap {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .sch-inner {
+    position: absolute;
+    transform-origin: 0 0;
+  }
+
+  .sch-inner svg {
+    display: block;
+  }
+
+  .sch-hint {
+    position: absolute;
+    right: 12px;
+    bottom: 10px;
+    font-size: 11px;
+    color: var(--text-color-tertiary);
+    background: var(--bg-color-secondary);
+    border: 1px solid var(--border-color);
+    padding: 2px 8px;
+    border-radius: var(--radius-md);
+  }
+
+  .sch-tools {
+    position: absolute;
+    left: 10px;
+    top: 10px;
+    z-index: 2;
+    display: flex;
+    gap: 6px;
+  }
+
+  .report {
+    padding: 18px;
+  }
+
+  .card {
+    background: var(--bg-color-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
+    margin-bottom: 14px;
+  }
+
+  .card h3 {
+    font-size: var(--font-size-md);
+    color: var(--color-primary);
+    margin: 0 0 10px 0;
+  }
+
+  .kpi {
+    display: flex;
+    gap: 26px;
+    flex-wrap: wrap;
+  }
+
+  .kpi .item b {
+    display: block;
+    font-size: 24px;
+    color: var(--color-success);
+  }
+
+  .kpi .item span {
+    font-size: var(--font-size-xs);
+    color: var(--text-color-tertiary);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-xs);
+  }
+
+  th,
+  td {
+    text-align: left;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  th {
+    color: var(--text-color-tertiary);
+    font-weight: var(--font-weight-medium);
+  }
+
+  td.num,
+  th.num {
+    text-align: right;
+    font-family: var(--font-mono);
+  }
+
+  .mono {
+    font-family: var(--font-mono);
+  }
+
+  .dim {
+    color: var(--text-color-tertiary);
+  }
+
+  .netlist {
+    flex: 1;
+    margin: 0;
+    padding: 14px;
+    overflow: auto;
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
+    line-height: 1.5;
+    color: var(--text-color-secondary);
+    white-space: pre;
+  }
+
+  .run-status {
+    margin-left: 8px;
+    min-width: 0;
+    max-width: 260px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    align-self: center;
+  }
+
+  .console-tools {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    z-index: 2;
+    display: flex;
+    gap: 6px;
+  }
+
+  @media (max-width: 860px) {
+    .run-status {
+      display: none;
+    }
+
+    .workbench {
+      border-right: 0;
+    }
+
+    .top-input {
+      width: 72px;
+    }
+
+    .header-tools {
+      gap: 4px;
+    }
+
+    .pane.wave.active {
+      flex-direction: column;
+    }
+
+    .sig-panel {
+      width: 100%;
+      min-width: 0;
+      max-height: 150px;
+      border-right: 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .sig-list {
+      max-height: 110px;
+    }
+
+    .console-section {
+      height: 160px;
+      min-height: 160px;
+    }
+
+  }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+    background: color-mix(in srgb, var(--bg-color) 72%, transparent);
+  }
+
+  .overlay .box {
+    background: var(--bg-color-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    padding: 26px 34px;
+    text-align: center;
+    min-width: 340px;
+  }
+
+  .overlay .bar {
+    height: 8px;
+    background: var(--bg-color-tertiary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin-top: 12px;
+  }
+
+  .overlay .bar i {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: var(--color-primary);
+    transition: width var(--transition-base);
+  }
+
+  a.dl {
+    color: var(--color-success);
+    font-size: var(--font-size-xs);
+    text-decoration: none;
+    border: 1px solid var(--color-success);
+    border-radius: var(--radius-md);
+    padding: 4px 10px;
+  }
+
+  code {
+    font-family: var(--font-mono);
+    color: var(--text-color-secondary);
+  }
+</style>
+
+<body>
+  <div class="verisim" ref="root">
+    <header class="app-header">
+      <div class="header-actions">
+        <button class="btn sm primary" :disabled="busy || !ready" @click="manualSim">{{ $t('act.sim') }}</button>
+        <button class="btn sm synth" :disabled="busy || !ready" @click="manualSynth">{{ $t('act.synth') }}</button>
+      </div>
+      <nav class="header-tabs">
+        <div class="tab" :class="{ active: activePane === 'code' }" @click="showPane('code')">{{ $t('tab.code') }}</div>
+        <div class="tab" :class="{ active: activePane === 'wave' }" @click="showPane('wave')">{{ $t('tab.wave') }}</div>
+        <div class="tab" :class="{ active: activePane === 'sch' }" @click="showPane('sch')">{{ $t('tab.sch') }}</div>
+        <div class="tab" :class="{ active: activePane === 'synth' }" @click="showPane('synth')">{{ $t('tab.synth') }}
+        </div>
+        <div class="tab" :class="{ active: activePane === 'netlist' }" @click="showPane('netlist')">{{ $t('tab.netlist')
+          }}</div>
+      </nav>
+      <div class="header-tools">
+        <select class="btn sm" @change="onSessionFilePick" @mousedown="loadSessionFiles"
+          :title="$t('tip.sessionFiles')">
+          <option value="">{{ $t('opt.sessionFiles') }}</option>
+          <option v-for="f in sessionFiles" :value="f.name">{{ f.name }}</option>
+        </select>
+        <select class="btn sm" @change="onExamplePick" :title="$t('tip.examples')">
+          <option value="">{{ $t('opt.examples') }}</option>
+          <option value="counter">{{ $t('ex.counter') }}</option>
+          <option value="alu">{{ $t('ex.alu') }}</option>
+          <option value="fsm">{{ $t('ex.fsm') }}</option>
+          <option value="adder">{{ $t('ex.adder') }}</option>
+        </select>
+        <select class="btn sm" ref="techSel" v:value="tech" @change="onTechChanged" :title="$t('tip.tech')">
+          <option value="">{{ $t('opt.techGeneric') }}</option>
+          <optgroup :label="$t('grp.fpga')">
+            <option value="ice40">Lattice iCE40</option>
+            <option value="ecp5">Lattice ECP5</option>
+            <option value="nexus">Lattice Nexus</option>
+            <option value="gowin">Gowin 高云</option>
+            <option value="xilinx">Xilinx 7 系</option>
+            <option value="gatemate">Cologne Chip GateMate</option>
+            <option value="intel_alm">Intel ALM (Cyclone V)</option>
+            <option value="anlogic">Anlogic 安路</option>
+            <option value="efinix">Efinix 钛金</option>
+            <option value="sf2">Microchip SF2/IGLOO2</option>
+            <option value="greenpak4">Renesas GreenPAK4</option>
+            <option value="coolrunner2">Xilinx CoolRunner-II</option>
+          </optgroup>
+          <optgroup :label="$t('grp.asic')">
+            <option value="lib:builtin:nangate45">{{ $t('opt.techNangate') }}</option>
+            <option v-for="u in userLibs" :value="'lib:user:' + u.name">{{ u.name + $t('opt.cached') }}
+            </option>
+          </optgroup>
+        </select>
+        <button class="btn sm" @click="importLib" :title="$t('tip.importLib')">{{ $t('act.importLib') }}</button>
+        <button class="btn sm" v-if="tech.indexOf('lib:user:') === 0" @click="removeUserLib"
+          :title="$t('tip.delLib')">{{ $t('act.delLib') }}</button>
+        <input type="file" accept=".lib,.txt" ref="libFile" style="display:none" @change="onLibFilePick" />
+        <input class="btn sm top-input" v:value="topModule" :placeholder="$t('ph.top')" :title="$t('tip.top')" />
+        <span class="dim run-status" :title="statusText">{{ statusText }}</span>
+      </div>
+    </header>
+
+    <main>
+      <div class="workbench">
+        <div class="result-bar" v-if="activePane !== 'code' && resultKey">
+          <span>{{ $t('res.group') }}：{{ resultKey }}<span v-if="resultState"> · {{ resultState }}</span></span>
+        </div>
+
+        <div class="pane" :class="{ active: activePane === 'code' }">
+          <div class="code-pane">
+            <div class="code-wrap">
+              <pre class="code-lines" ref="codeLines">{{ lineNumbers }}</pre>
+              <textarea ref="codeArea" class="code-area" v:value="code" spellcheck="false" @input="onCodeInput"
+                @scroll="syncCodeScroll"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="pane wave" :class="{ active: activePane === 'wave' }">
+          <div class="sig-panel">
+            <div class="sig-btns">
+              <button class="btn" :disabled="!waveData" @click="selectAllSignals">{{ $t('act.selAll') }}</button>
+              <button class="btn" :disabled="!waveData" @click="clearSignals">{{ $t('act.clearSel') }}</button>
+            </div>
+            <div class="sig-list">
+              <label v-for="sig in signals">
+                <input type="checkbox" :checked="selIds.includes(sig.id)"
+                  @change="toggleSignal(sig.id, $event.target.checked)" />
+                <span>{{ sig.name }}</span>
+                <span class="w">{{ sig.width > 1 ? '[' + (sig.width - 1) + ':0]' : '1b' }}</span>
+              </label>
+            </div>
+          </div>
+          <div class="wave-right">
+            <div class="wave-toolbar">
+              <button class="btn" :disabled="!waveData" @click="zoomOut">−</button>
+              <button class="btn" :disabled="!waveData" @click="zoomIn">＋</button>
+              <button class="btn" :disabled="!waveData" @click="zoomFit">{{ $t('act.fit') }}</button>
+              <span>{{ curInfo }}</span>
+              <span class="spacer"></span>
+              <a class="dl" v-show="canDownloadVcd" :href="vcdUrl" download="dump.vcd">{{ $t('act.dlVcd') }}</a>
+              <span>{{ waveInfo }}</span>
+            </div>
+            <div class="wave-wrap" ref="waveWrap" @mousedown="waveStart" @wheel="waveWheel">
+              <div class="empty" v-if="!waveHasSelection">
+                {{ waveEmptyText }}
+              </div>
+              <canvas class="wave-canvas" ref="waveCanvas" v-show="waveHasSelection"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="pane" :class="{ active: activePane === 'sch' }">
+          <div class="sch-wrap" ref="schWrap" @mousedown="schStart" @wheel="schWheel">
+            <div class="sch-tools">
+              <button class="btn sm" :disabled="!schNetlist" @click="schZoomOut">−</button>
+              <button class="btn sm" :disabled="!schNetlist" @click="schZoomIn">＋</button>
+              <button class="btn sm" :disabled="!schNetlist" @click="schReset">{{ $t('act.fit') }}</button>
+            </div>
+            <div class="empty" v-if="!schReady">{{ $t('sch.empty') }}</div>
+            <div class="sch-inner" ref="schInner" v-html="schSvg"></div>
+            <div class="sch-hint">{{ $t('hint.schNav') }}</div>
+          </div>
+        </div>
+
+        <div class="pane" :class="{ active: activePane === 'synth' }">
+          <div class="report" v-if="!synthOverview">
+            <div class="card">
+              <h3>{{ $t('rpt.title') }}</h3>
+              <div class="dim">{{ $t('rpt.placeholder') }}</div>
+            </div>
+          </div>
+          <div class="report" v-else>
+            <div class="card">
+              <h3>{{ $t('rpt.overview', { top: synthOverview.top }) }}</h3>
+              <div class="kpi">
+                <div class="item"><b>{{ synthOverview.cells }}</b><span>{{ $t('kpi.cells') }}</span></div>
+                <div class="item"><b>{{ synthOverview.cellBits }}</b><span>{{ $t('kpi.cellBits') }}</span></div>
+                <div class="item"><b>{{ synthOverview.dff }}</b><span>{{ $t('kpi.dff') }}</span></div>
+                <div class="item"><b>{{ synthOverview.wires }}</b><span>{{ $t('kpi.wires') }}</span></div>
+                <div class="item"><b>{{ synthOverview.wireBits }}</b><span>{{ $t('kpi.wireBits') }}</span></div>
+              </div>
+            </div>
+            <div class="card">
+              <h3>{{ $t('rpt.cellMap') }}</h3>
+              <table>
+                <tr>
+                  <th>{{ $t('th.cell') }}</th>
+                  <th class="num">{{ $t('th.count') }}</th>
+                </tr>
+                <tr v-for="row in synthCells">
+                  <td class="mono">{{ row.name }}</td>
+                  <td class="num">{{ row.count }}</td>
+                </tr>
+              </table>
+            </div>
+            <div class="card">
+              <h3>{{ $t('rpt.flow') }}</h3>
+              <div class="dim" style="line-height: 1.8;">
+                <code>{{ synthFlow }}</code><br />
+                {{ $t('rpt.flowNote') }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pane" :class="{ active: activePane === 'netlist' }">
+          <pre class="netlist">{{ netlistText }}</pre>
+        </div>
+
+      </div>
+
+    </main>
+
+    <section class="console-section">
+      <div class="console-tools">
+        <button class="btn sm" :disabled="!consoleLines.length" @click="copyConsole">{{ $t('act.copy') }}</button>
+        <button class="btn sm" :disabled="busy" @click="clearConsole">{{ $t('act.clear') }}</button>
+      </div>
+      <div class="console" ref="consoleEl">
+        <div v-for="line in consoleLines" :class="line.cls">{{ typeof line.text === 'function' ?
+          line.text() : line.text }}</div>
+      </div>
+    </section>
+
+    <div class="overlay" v-if="overlayShow">
+      <div class="box">
+        <div style="font-size: var(--font-size-md);">{{ overlayTitle }}</div>
+        <div class="dim" style="font-size: var(--font-size-xs); margin-top: 6px;">{{ overlaySub }}</div>
+        <div class="bar"><i :style="{ width: overlayPercent + '%' }"></i></div>
+      </div>
+    </div>
+  </div>
+</body>
+
+<script setup>
+  const scopedKey = (($mod.scoped || 'root') + '').replace(/[^a-z0-9]+/gi, '_')
+  const lsKey = (name) => 'verisim:' + scopedKey + ':' + name
+  const lsGet = (name) => {
+    try {return localStorage.getItem(lsKey(name))} catch (_) {return null}
+  }
+  const lsSet = (name, value) => {
+    try {localStorage.setItem(lsKey(name), value)} catch (_) { }
+  }
+  const lsDel = (name) => {
+    try {localStorage.removeItem(lsKey(name))} catch (_) { }
+  }
+  const hashCode = (s) => {
+    let h = 0
+    s = String(s || '')
+    for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0
+    return (h >>> 0).toString(16).padStart(8, '0')
+  }
+  const DEFAULT_CODE = `// VeriSim Pro 单文件示例：4-bit 计数器 + 测试台
+module counter(clk, rst_n, en, q);
+  input  clk, rst_n, en;
+  output reg [3:0] q;
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) q <= 4'd0;
+    else if (en) q <= q + 1'b1;
+  end
+endmodule
+
+\`timescale 1ns/1ps
+module tb;
+  reg clk, rst_n, en;
+  wire [3:0] q;
+  counter dut(.clk(clk), .rst_n(rst_n), .en(en), .q(q));
+
+  always #5 clk = ~clk;
+
+  initial begin
+    clk = 0; rst_n = 0; en = 0;
+    #12 rst_n = 1;
+    #10 en = 1;
+    repeat (16) @(posedge clk);
+    $display("t=%0t  q=%0d", $time, q);
+    #10 en = 0;
+    #20 $display("done, final q = %0d", q);
+    $finish;
+  end
+endmodule
+`
+
+  ready = false
+  busy = false
+  statusText = $t('status.init')
+  sourceLabel = $t('src.manual')
+  // 刷新后统一回到「代码预览」：结果页（波形/原理图/报告/网表）不做缓存，恢复会落在空白页
+  activePane = 'code'
+  lsDel('active_pane')
+  code = lsGet('code') || DEFAULT_CODE
+  codeHash = hashCode(code)
+  resultKey = ''
+  resultState = ''
+  lineNumbers = '1'
+  topModule = ''
+  consoleLines = []
+  tech = lsGet('tech') || ''
+  userLibs = []
+  synthFlow = $t('flow.generic')
+
+  waveData = null
+  signals = []
+  selIds = []
+  lastVCD = ''
+  vcdUrl = ''
+  canDownloadVcd = false
+  waveHasSelection = false
+  waveEmptyText = $t('wave.empty1')
+  waveInfo = ''
+  curInfo = $t('wave.cursorHint')
+  pxPerT = 6
+  view0 = 0
+  curT = null
+  NAME_W = 150
+  VAL_W = 76
+  ROW_H = 30
+  TOP = 24
+  waveDrag = null
+
+  synthOverview = null
+  synthCells = []
+  netlistText = $t('netlist.empty')
+  schNetlist = null
+  schSvg = ''
+  schReady = false
+  schScale = 1
+  schX = 20
+  schY = 20
+  schDrag = null
+
+  overlayShow = false
+  overlayTitle = ''
+  overlaySub = ''
+  overlayPercent = 0
+
+  sessionFiles = []
+  lsDel('last_run_meta')
+  lsDel('last_vcd')
+
+  let codeSaveTimer = null
+  let logSeq = 0
+
+  const $el = (name) => ($data.$refs && $data.$refs[name]) ? $data.$refs[name] : null
+  const tail = (s, n) => {
+    s = String(s || '')
+    return s.length > (n || 2000) ? s.slice(-(n || 2000)) : s
+  }
+  const sanitize = (s) => String(s || '').replace(/ /g, ' ').replace(/[‘’]/g, "'").replace(/[“”]/g, '"')
+  const theme = (name, fallback) => {
+    const el = $el('waveCanvas') || $el('root') || document.documentElement
+    const v = getComputedStyle(el).getPropertyValue(name).trim()
+    return v || fallback
+  }
+  const toast = (type, msg) => {
+    const m = $sys && $sys.$message
+    if (m && m[type]) m[type](msg)
+  }
+
+  refreshLineNumbers = () => {
+    const n = String(code || '').split('\n').length
+    let out = ''
+    for (let i = 1; i <= n; i++) out += (i === 1 ? '' : '\n') + i
+    lineNumbers = out
+  }
+  saveCode = () => lsSet('code', code || '')
+  onCodeInput = () => {
+    refreshLineNumbers()
+    sourceLabel = $t('src.manual')
+    if (codeSaveTimer) clearTimeout(codeSaveTimer)
+    codeSaveTimer = setTimeout(() => saveCode(), 300)
+  }
+  syncCodeScroll = () => {
+    const lines = $el('codeLines')
+    const area = $el('codeArea')
+    if (lines && area) lines.scrollTop = area.scrollTop
+  }
+
+  // 日志文案统一用 thunk（() => $t(...)）保存：渲染时才翻译，切换语言自动更新。
+  // 注意必须用 = 声明（注册到 $data），初始化脚本才能访问；const 是 setup 私有的。
+  tt = (key, params) => () => $t(key, params)
+  log = (msg, cls) => {
+    if (msg === undefined || msg === null) return
+    consoleLines.push({id: ++logSeq, text: typeof msg === 'function' ? msg : String(msg), cls: cls || 'info'})
+    if (consoleLines.length > 900) consoleLines.splice(0, consoleLines.length - 900)
+    requestAnimationFrame(() => {
+      const el = $el('consoleEl')
+      if (el) el.scrollTop = el.scrollHeight
+    })
+  }
+  clearConsole = () => {
+    consoleLines = []
+    return {ok: true, text: 'console cleared'}
+  }
+  copyConsole = async () => {
+    const text = consoleLines.map(l => typeof l.text === 'function' ? l.text() : l.text).join('\n')
+    try {
+      await navigator.clipboard.writeText(text)
+      toast('success', $t('toast.copied'))
+    } catch (e) {
+      const ta = document.createElement('textarea')
+      ta.value = text
+      document.body.appendChild(ta)
+      ta.select()
+      try {
+        document.execCommand('copy')
+        toast('success', $t('toast.copied'))
+      } catch (_) {
+        toast('error', $t('toast.copyFail'))
+      }
+      ta.remove()
+    }
+    return {ok: true, text: 'console copied', length: text.length}
+  }
+  setBusy = (b, label) => {
+    busy = b
+    statusText = label || (b ? $t('status.running') : $t('status.ready'))
+  }
+
+  showPane = (name) => {
+    if (name === 'ai') name = 'code'
+    if (name === 'console') {
+      requestAnimationFrame(() => {
+        const el = $el('consoleEl')
+        if (el) el.scrollTop = el.scrollHeight
+      })
+      return {ok: true, text: 'pane=console'}
+    }
+    activePane = name
+    if (name === 'code') requestAnimationFrame(() => {refreshLineNumbers(); syncCodeScroll()})
+    if (name === 'wave') renderWaveSoon()
+    if (name === 'sch') requestAnimationFrame(() => applySch())
+    return {ok: true, text: 'pane=' + name}
+  }
+  clearResults = () => {
+    waveData = null
+    signals = []
+    selIds = []
+    lastVCD = ''
+    if (vcdUrl) {
+      URL.revokeObjectURL(vcdUrl)
+      vcdUrl = ''
+    }
+    canDownloadVcd = false
+    waveHasSelection = false
+    waveEmptyText = $t('wave.empty1')
+    waveInfo = ''
+    curInfo = $t('wave.cursorHint')
+    curT = null
+    view0 = 0
+    synthOverview = null
+    synthCells = []
+    netlistText = $t('netlist.empty')
+    schNetlist = null
+    schSvg = ''
+    schReady = false
+    schScale = 1
+    schX = 20
+    schY = 20
+    resultKey = ''
+    resultState = ''
+    renderWaveSoon()
+    requestAnimationFrame(() => applySch())
+  }
+  setCodeFromAction = (nextCode, label) => {
+    const h = hashCode(nextCode)
+    const changed = h !== codeHash
+    code = nextCode
+    codeHash = h
+    sourceLabel = label
+    refreshLineNumbers()
+    saveCode()
+    if (changed) {
+      clearResults()
+      resultKey = label + ' · ' + h
+      resultState = $t('res.codeUpdated')
+    } else if (!resultKey) {
+      resultKey = label + ' · ' + h
+    }
+  }
+  loadExample = (name) => {
+    const ex = VeriSimExamples && VeriSimExamples[name]
+    if (!ex) return
+    setCodeFromAction(ex.code, $t('src.example') + ': ' + ($t('ex.' + name) || name))
+    topModule = ex.top || ''
+    showPane('code')
+    log(() => $t('log.exampleLoaded', {name: $t('ex.' + name) || name}), 'ok')
+  }
+  onExamplePick = (e) => {
+    const v = e && e.target ? e.target.value : ''
+    if (v) loadExample(v)
+    if (e && e.target) e.target.value = ''
+  }
+
+  // 本地文件解析（$fs / OPFS，本地根 /verisim/，与 AI fs 工具 1host=page 同一存储）：
+  // AI 路径 `/verisim/xxx.v` 原样；$SESSION/$AGENT 前缀兼容映射到本地根
+  resolvePath = (p) => {
+    if (!p) return p
+    let s = String(p).trim()
+    if (s.startsWith('$SESSION') || s.startsWith('$AGENT')) {
+      s = s.slice(s.indexOf('/'))   // 去掉 $XXX 前缀
+    }
+    if (s.startsWith('/verisim/')) return s
+    return '/verisim/' + s.replace(/^\/+/, '')
+  }
+  readLocalText = async (path) => {
+    if (!$mod.$fs) throw new Error('本地文件服务不可用（$fs 未就绪）')
+    const r = await $mod.$fs.get('/page' + resolvePath(path));
+    return typeof r.content === 'string' ? r.content : await r.content.text();
+  }
+  loadSessionFiles = async () => {
+    try {
+      const r = await $mod.$fs.get('/page/verisim')
+      const items = r && r.items ? r.items : []
+      sessionFiles = items.filter(x => x && !x.dir && /\.(v|sv|txt)$/i.test(x.name || ''))
+      return {ok: true, total: sessionFiles.length}
+    } catch (e) {
+      // 本地根不存在视为空，不报错
+      sessionFiles = []
+      const msg = e && e.message ? e.message : String(e)
+      if (/not found|404/i.test(msg)) return {ok: true, total: 0}
+      log(() => $t('log.sessionFilesFail', {msg: msg}), 'wrn')
+      return {ok: false, error: msg}
+    }
+  }
+  loadSessionFile = async (name) => {
+    if (!name) return
+    const path = '/verisim/' + name
+    const fileCode = await readLocalText(path)
+    setCodeFromAction(fileCode, $t('src.sessionFile') + ': ' + name)
+    if (VeriSimSynth) topModule = VeriSimSynth.stripForSynth(fileCode).top || topModule
+    showPane('code')
+    log(() => $t('log.sessionFileLoaded', {name}), 'ok')
+  }
+  onSessionFilePick = (e) => {
+    const v = e && e.target ? e.target.value : ''
+    if (v) {
+      loadSessionFile(v).catch(err => {
+        const msg = err && err.message ? err.message : String(err)
+        log(() => $t('log.loadSessionFileFail', {msg}), 'err')
+        toast('error', $t('log.loadSessionFileFail', {msg}))
+      })
+    }
+    if (e && e.target) e.target.value = ''
+  }
+
+  const TECHS = {
+    ice40: {cmd: 'synth_ice40', label: 'Lattice iCE40'},
+    ecp5: {cmd: 'synth_ecp5', label: 'Lattice ECP5'},
+    nexus: {cmd: 'synth_nexus', label: 'Lattice Nexus'},
+    gowin: {cmd: 'synth_gowin', label: 'Gowin 高云'},
+    xilinx: {cmd: 'synth_xilinx', label: 'Xilinx 7 系'},
+    gatemate: {cmd: 'synth_gatemate', label: 'GateMate'},
+    intel_alm: {cmd: 'synth_intel_alm', label: 'Intel ALM'},
+    anlogic: {cmd: 'synth_anlogic', label: 'Anlogic 安路'},
+    efinix: {cmd: 'synth_efinix', label: 'Efinix 钛金'},
+    sf2: {cmd: 'synth_sf2', label: 'Microchip SF2/IGLOO2'},
+    greenpak4: {cmd: 'synth_greenpak4', label: 'GreenPAK4'},
+    coolrunner2: {cmd: 'synth_coolrunner2', label: 'CoolRunner-II'}
+  }
+  // 内置 ASIC 工艺库：优先本地部署（ui/<path>，离线可用），缺失时自动回源 CDN，
+  // 任一来源成功后缓存到浏览器 IndexedDB（builtin: 前缀），之后零网络。
+  // key 对应 js/sources.js 中 RESOURCES 的资源名（镜像源在那里统一配置）
+  const BUILTIN_LIBS = {
+    nangate45: {label: 'NanGate 45nm（内置）', key: 'lib_nangate45'}
+  }
+  const libContentCache = {}
+
+  const openLibDb = () => new Promise((res, rej) => {
+    const rq = indexedDB.open('verisim-libs', 1)
+    rq.onupgradeneeded = () => {try {rq.result.createObjectStore('libs', {keyPath: 'name'})} catch (_) { } }
+    rq.onsuccess = () => res(rq.result)
+    rq.onerror = () => rej(rq.error || new Error('IndexedDB open failed'))
+  })
+  const libDbReq = (mode, fn) => openLibDb().then(db => new Promise((res, rej) => {
+    const st = db.transaction('libs', mode).objectStore('libs')
+    const rq = fn(st)
+    rq.onsuccess = () => res(rq.result)
+    rq.onerror = () => rej(rq.error)
+  }))
+  const libDbAll = () => libDbReq('readonly', st => st.getAll())
+  const libDbGet = (name) => libDbReq('readonly', st => st.get(name))
+  const libDbPut = (rec) => libDbReq('readwrite', st => st.put(rec))
+  const libDbDel = (name) => libDbReq('readwrite', st => st.delete(name))
+
+  loadUserLibs = async () => {
+    try {
+      const rows = await libDbAll()
+      userLibs = (rows || []).map(r => ({name: r.name, size: r.size || 0})).sort((a, b) => a.name.localeCompare(b.name))
+      if (tech.indexOf('lib:user:') === 0 && !userLibs.some(u => 'lib:user:' + u.name === tech)) {
+        tech = ''
+        lsSet('tech', '')
+        log(tt('log.libMissing'), 'wrn')
+      }
+    } catch (e) {
+      userLibs = []
+      log(() => $t('log.idbFail', {msg: e && e.message ? e.message : e}), 'wrn')
+    }
+    // 选项是异步补齐的（IndexedDB），需手动把 select 的 DOM 值同步回 tech
+    requestAnimationFrame(() => {
+      const s = $el('techSel')
+      if (s && s.value !== tech) s.value = tech || ''
+    })
+    return userLibs
+  }
+  resolveTech = async (sel) => {
+    sel = sel || ''
+    if (!sel) return {kind: 'generic', label: $t('tech.generic')}
+    if (TECHS[sel]) return {kind: 'fpga', label: TECHS[sel].label, cmd: TECHS[sel].cmd}
+    if (sel.indexOf('lib:builtin:') === 0) {
+      const key = sel.slice(12)
+      const b = BUILTIN_LIBS[key]
+      if (!b) throw new Error($t('err.unknownBuiltin', {key}))
+      if (libContentCache[sel] === undefined) {
+        let content = null
+        // 1) 本机缓存（之前任一来源加载过）
+        try {
+          const rec = await libDbGet('builtin:' + key)
+          if (rec && rec.content) {content = rec.content; log(tt('log.libCachedLocal'), 'sys')}
+        } catch (_) { }
+        // 2) 按镜像源列表加载（国内 → 海外 → 本地，配置见 js/sources.js）
+        if (content === null) {
+          const base = (($mod.scoped || '').replace(/\/$/, '')) || '.'
+          if (VeriSimSources) {
+            try {
+              content = await VeriSimSources.loadText(b.key, base, ev => {if (ev && ev.phase === 'fail') log(tt('log.srcFallback'), 'wrn')})
+            } catch (e) {
+              throw new Error($t('err.builtinMissing'))
+            }
+          } else {
+            try {
+              const r = await $mod.fetch(base + '/libs/NangateOpenCellLibrary_typical.lib')
+              if (r.ok) content = await r.text()
+            } catch (_) { }
+          }
+        }
+        if (content === null || content.length < 1024 || !/library\s*\(/.test(content.slice(0, 4096))) {
+          throw new Error($t('err.builtinMissing'))
+        }
+        libContentCache[sel] = content
+        try {await libDbPut({name: 'builtin:' + key, content, size: content.length, addedAt: Date.now()})} catch (_) { }
+        log(() => $t('log.libReady', {size: (content.length / 1048576).toFixed(1)}), 'sys')
+      }
+      return {kind: 'asic', label: $t('opt.techNangate'), libName: key + '.lib', libContent: libContentCache[sel]}
+    }
+    if (sel.indexOf('lib:user:') === 0) {
+      const name = sel.slice(9)
+      if (libContentCache[sel] === undefined) {
+        const rec = await libDbGet(name)
+        if (!rec || !rec.content) throw new Error($t('err.libNotCached', {name}))
+        libContentCache[sel] = rec.content
+      }
+      return {kind: 'asic', label: name + $t('opt.cached'), libName: 'user.lib', libContent: libContentCache[sel]}
+    }
+    return {kind: 'generic', label: $t('tech.generic')}
+  }
+  onTechChanged = () => {
+    lsSet('tech', tech || '')
+    log(() => $t('log.techSwitched', {label: techDisplayLabel(tech)}), 'sys')
+  }
+  techDisplayLabel = (sel) => {
+    sel = sel || ''
+    if (!sel) return $t('tech.generic')
+    if (TECHS[sel]) return TECHS[sel].label
+    if (sel.indexOf('lib:builtin:') === 0) return $t('opt.techNangate')
+    if (sel.indexOf('lib:user:') === 0) return sel.slice(9) + $t('opt.cached')
+    return sel
+  }
+  importLib = () => {
+    const el = $el('libFile')
+    if (el) el.click()
+  }
+  onLibFilePick = async (e) => {
+    const input = e && e.target
+    const f = input && input.files && input.files[0]
+    if (!f) return
+    try {
+      if (f.size > 40 * 1048576) throw new Error($t('err.tooBig'))
+      const content = await f.text()
+      if (!/library\s*\(/.test(content)) throw new Error($t('err.notLiberty'))
+      await libDbPut({name: f.name, content, size: f.size, addedAt: Date.now()})
+      delete libContentCache['lib:user:' + f.name]
+      await loadUserLibs()
+      tech = 'lib:user:' + f.name
+      lsSet('tech', tech)
+      log(() => $t('log.libImported', {name: f.name, size: (f.size / 1048576).toFixed(2)}), 'ok')
+      toast('success', $t('toast.libCached', {name: f.name}))
+    } catch (err) {
+      log(err && err.message ? err.message : String(err), 'err')
+      toast('error', err && err.message ? err.message : String(err))
+    }
+    if (input) input.value = ''
+  }
+  removeUserLib = async () => {
+    if (tech.indexOf('lib:user:') !== 0) return
+    const name = tech.slice(9)
+    const msg = $sys && $sys.$message
+    let ok = false
+    try {
+      if (msg && msg.confirm) await msg.confirm($t('confirm.delLib', {name})).then(() => {ok = true}).catch(() => {ok = false})
+      else ok = window.confirm($t('confirm.delLib', {name}))
+    } catch (_) {ok = false}
+    if (!ok) return
+    try {
+      await libDbDel(name)
+      delete libContentCache['lib:user:' + name]
+      tech = ''
+      lsSet('tech', '')
+      await loadUserLibs()
+      log(() => $t('log.libDeleted', {name}), 'ok')
+    } catch (err) {
+      log(() => $t('log.libDeleteFail', {msg: err && err.message ? err.message : err}), 'err')
+    }
+  }
+
+  runSimCode = async (opts) => {
+    const o = opts || {}
+    if (!VeriSimEngines) return {ok: false, text: '仿真引擎未加载', error: 'engine not loaded'}
+    const simLabel = o.source === 'sim_file'
+      ? ($t('src.aiFile') + ': ' + (o.file || ''))
+      : (o.source === 'sim_code' ? $t('src.aiCode') : $t('src.manual'))
+    if (typeof o.code === 'string') setCodeFromAction(o.code, simLabel)
+    else sourceLabel = simLabel
+    clearConsole()
+    const t0 = performance.now()
+    setBusy(true, $t('status.simBusy'))
+    try {
+      let src = sanitize(code)
+      if (!/\$dumpfile/.test(src)) {
+        src += `\n// —— 自动注入：波形记录 ——\nmodule __vcd_dump__;\n  initial begin\n    $dumpfile("dump.vcd");\n    $dumpvars(0);\n  end\nendmodule\n`
+        log(tt('log.dumpInjected'), 'sys')
+      }
+      log(tt('log.simStart'), 'sys')
+      const r = await VeriSimEngines.simRun(src, '', s => log(() => '  · ' + $t('sim.stage.' + s), 'info'))
+      if (r.warn && r.warn.trim()) log(() => $t('log.compileWarn') + '\n' + r.warn.trim(), 'wrn')
+      const ms = performance.now() - t0
+      log(() => $t('log.simDone', {ms: ms.toFixed(0)}), 'ok')
+      if (r.out && r.out.trim()) log(() => $t('log.displayOut') + '\n' + r.out.trim(), 'info')
+
+      let signalCount = 0
+      let duration = 0
+      let timescale = ''
+      if (r.vcd) {
+        loadWave(r.vcd)
+        signalCount = waveData.order.length
+        duration = waveData.tmax
+        timescale = waveData.timescale || ''
+        canDownloadVcd = true
+        log(() => $t('log.vcdLoaded', {n: signalCount, dur: duration, ts: timescale ? ' ' + timescale : ''}), 'ok')
+      } else {
+        waveData = null
+        signals = []
+        selIds = []
+        waveHasSelection = false
+        canDownloadVcd = false
+        log(tt('log.noVcd'), 'wrn')
+      }
+      if (o.pane) showPane(o.pane)
+      else if (r.vcd) showPane('wave')
+      const text = (r.vcd
+        ? '仿真成功：信号 ' + signalCount + ' 个，时长 ' + duration + (timescale ? ' ' + timescale : '')
+        : '仿真完成，但未生成 VCD') + (r.out && r.out.trim() ? '；$display 输出尾部：' + tail(r.out.trim(), 500) : '')
+      const result = {
+        ok: true,
+        text,
+        code_length: (code || '').length,
+        signals: signalCount,
+        duration,
+        timescale,
+        warnings: r.warn || '',
+        output_tail: tail(r.out || '', 2000),
+        file: o.file || '',
+        tb: o.tb || ''
+      }
+      resultState = $t('res.simOk') + ' · ' + new Date().toLocaleTimeString()
+      setBusy(false, $t('status.simDone', {ms: ms.toFixed(0)}))
+      return result
+    } catch (e) {
+      const msg = e && e.message ? e.message : String(e)
+      log(() => $t('log.simFail', {msg}), 'err')
+      const result = {ok: false, text: '仿真失败：' + msg, error: msg, output_tail: tail(e && e.out ? e.out : '', 2000)}
+      resultState = $t('res.simFail') + ' · ' + new Date().toLocaleTimeString()
+      setBusy(false, $t('status.simFail'))
+      return result
+    }
+  }
+
+  simCode = (args) => runSimCode({
+    code: args && args.code !== undefined ? String(args.code) : code,
+    top: args && args.top,
+    pane: args && args.pane,
+    source: 'sim_code'
+  })
+
+  simFile = async (args) => {
+    if (!args || !args.file) return {ok: false, text: 'sim_file 缺少 --file', error: 'missing --file'}
+    const fileCode = await readLocalText(args.file)
+    const tbCode = args.tb ? await readLocalText(args.tb) : ''
+    const finalCode = tbCode
+      ? fileCode + '\n\n// ---- appended testbench: ' + args.tb + ' ----\n' + tbCode
+      : fileCode
+    return await runSimCode({
+      code: finalCode,
+      top: args.top,
+      pane: args.pane || 'wave',
+      source: 'sim_file',
+      file: args.file,
+      tb: args.tb || ''
+    })
+  }
+
+  runSynthCode = async (opts) => {
+    const o = opts || {}
+    if (!VeriSimEngines || !VeriSimSynth) return {ok: false, text: '综合引擎未加载', error: 'engine not loaded'}
+    const synthLabel = o.source === 'synth_file'
+      ? ($t('src.aiFile') + ': ' + (o.file || ''))
+      : $t('src.manualSynth')
+    if (typeof o.code === 'string') setCodeFromAction(o.code, synthLabel)
+    else sourceLabel = synthLabel
+    clearConsole()
+    const t0 = performance.now()
+    setBusy(true, $t('status.synthBusy'))
+    overlayShow = true
+    overlayTitle = $t('synth.overlayTitle')
+    overlaySub = $t('synth.overlaySub')
+    overlayPercent = 0
+    // 让浏览器先渲染遮罩层,避免直接卡死在 WASM 计算中
+    await new Promise(r => requestAnimationFrame(r))
+    try {
+      const design = sanitize(code)
+      const synthInput = VeriSimSynth.stripForSynth(design)
+      if (synthInput.dropped && synthInput.dropped.length) {
+        log(() => $t('log.tbDropped', {list: synthInput.dropped.join(', ')}), 'sys')
+      }
+      const top = (o.top || topModule || '').trim() || synthInput.top || VeriSimSynth.guessTop(design)
+      if (!top) throw new Error($t('err.noTop'))
+      const ti = await resolveTech(o.tech !== undefined ? o.tech : tech)
+      log(() => $t('log.synthStart', {top, tech: ti.label}), 'sys')
+      const files = {'design.v': synthInput.code}
+      let script
+      if (ti.kind === 'fpga') {
+        script = [
+          'read_verilog design.v',
+          ti.cmd + ' -top ' + top,
+          'stat',
+          'write_json net.json',
+          'write_verilog netlist.v'
+        ].join('; ')
+        synthFlow = $t('flow.fpga', {tech: ti.label})
+      } else if (ti.kind === 'asic') {
+        files[ti.libName] = ti.libContent
+        script = [
+          'read_verilog design.v',
+          'read_liberty -lib ' + ti.libName,
+          'synth -top ' + top,
+          'dfflibmap -liberty ' + ti.libName,
+          'abc -liberty ' + ti.libName,
+          'stat',
+          'write_json net.json',
+          'write_verilog netlist.v'
+        ].join('; ')
+        synthFlow = $t('flow.asic', {lib: ti.label})
+      } else {
+        script = [
+          'read_verilog design.v',
+          'hierarchy -check -top ' + top,
+          'proc; opt; fsm; opt; memory; opt; techmap; opt',
+          'stat',
+          'write_json net.json',
+          'write_verilog netlist.v'
+        ].join('; ')
+        synthFlow = $t('flow.generic')
+      }
+      // 引擎已缓存时不会触发进度回调,此处提前显示"计算中"
+      overlayTitle = $t('synth.overlayComputing')
+      overlaySub = $t('synth.overlayComputingHint')
+      await new Promise(r => requestAnimationFrame(r))
+      const r = await VeriSimEngines.synthRun(script, files, p => {
+        if (p && p.total) {
+          // 引擎正在下载（首次或缓存失效）,切回下载提示
+          overlayTitle = $t('synth.overlayTitle')
+          overlayPercent = Math.round(100 * p.done / p.total)
+          overlaySub = $t('synth.overlayDl', {done: (p.done / 1048576).toFixed(1), total: (p.total / 1048576).toFixed(1)})
+        }
+      })
+      const ms = performance.now() - t0
+      log(() => $t('log.synthDone', {ms: ms.toFixed(0)}), 'ok')
+      // 综合计算完成，进入结果解析与渲染阶段
+      overlayTitle = $t('synth.overlayRendering')
+      overlaySub = $t('synth.overlayRenderingHint')
+      const stat = VeriSimSynth.parseStat(r.out, top)
+      synthOverview = stat.overview
+      synthCells = stat.cellRows
+      netlistText = r.files && r.files['netlist.v'] ? r.files['netlist.v'] : $t('netlist.missing')
+      const statText = (r.out.match(/Printing statistics\.[\s\S]*$/) || [null])[0] || r.out.slice(-2000)
+      log(() => $t('log.statTitle') + '\n' + statText.trim(), 'info')
+      if (r.files && r.files['net.json']) {
+        try {
+          schNetlist = JSON.parse(r.files['net.json'])
+          await renderSchematic()
+          log(tt('log.schReady'), 'ok')
+        } catch (se) {
+          schReady = false
+          log(() => $t('log.schFail', {msg: se.message}), 'wrn')
+        }
+        // 原理图已渲染为 SVG，释放 JSON 网表（通常数百 KB）
+        schNetlist = null
+      }
+      if (o.pane) showPane(o.pane)
+      else showPane('synth')
+      const text = '综合成功：工艺 ' + ti.label + '，顶层 ' + top + '，cells=' + synthOverview.cells + '，wires=' + synthOverview.wires + '，dff=' + synthOverview.dff
+      const result = {
+        ok: true,
+        text,
+        top,
+        cells: synthOverview.cells,
+        wires: synthOverview.wires,
+        dff: synthOverview.dff,
+        output_tail: tail(r.out || '', 2000),
+        file: o.file || ''
+      }
+      resultState = $t('res.synthOk') + ' · ' + new Date().toLocaleTimeString()
+      overlayShow = false
+      setBusy(false, $t('status.synthDone', {ms: ms.toFixed(0)}))
+      return result
+    } catch (e) {
+      overlayShow = false
+      const msg = e && e.message ? e.message : String(e)
+      const detailThunk = e && e.out ? (() => '\n—— ' + $t('log.engineOut') + ' ——\n' + tail(e.out, 2500)) : (() => '')
+      log(() => $t('log.synthFail', {msg}) + detailThunk(), 'err')
+      const result = {ok: false, text: '综合失败：' + msg, error: msg, output_tail: tail(e && e.out ? e.out : '', 2000)}
+      resultState = $t('res.synthFail') + ' · ' + new Date().toLocaleTimeString()
+      setBusy(false, $t('status.synthFail'))
+      return result
+    }
+  }
+
+  synthFile = async (args) => {
+    if (!args || !args.file) return {ok: false, text: 'synth_file 缺少 --file', error: 'missing --file'}
+    const fileCode = await readLocalText(args.file)
+    return await runSynthCode({
+      code: fileCode,
+      top: args.top,
+      tech: args.tech,
+      pane: args.pane || 'synth',
+      source: 'synth_file',
+      file: args.file
+    })
+  }
+
+  manualSim = () => runSimCode({code, top: topModule, pane: 'wave', source: 'manual'})
+  manualSynth = () => runSynthCode({code, top: topModule, pane: 'synth', source: 'manual'})
+
+  loadWave = (vcd) => {
+    lastVCD = vcd
+    waveData = VeriSimVCD.parseVCD(vcd)
+    signals = waveData.order.map(id => ({id, name: waveData.vars[id].name, short: waveData.vars[id].short, width: waveData.vars[id].width}))
+    selIds = waveData.order.slice(0, 30)
+    if (vcdUrl) URL.revokeObjectURL(vcdUrl)
+    vcdUrl = URL.createObjectURL(new Blob([lastVCD], {type: 'text/plain'}))
+    canDownloadVcd = true
+    view0 = 0
+    curT = null
+    requestAnimationFrame(() => {
+      zoomFit()
+      renderWave()
+    })
+  }
+  toggleSignal = (id, checked) => {
+    if (checked) {
+      if (!selIds.includes(id)) selIds = [...selIds, id]
+    } else {
+      selIds = selIds.filter(x => x !== id)
+    }
+    renderWaveSoon()
+  }
+  selectAllSignals = () => {
+    selIds = waveData ? waveData.order.slice() : []
+    renderWaveSoon()
+  }
+  clearSignals = () => {
+    selIds = []
+    renderWaveSoon()
+  }
+  valAt = (id, t) => {
+    const ch = waveData && waveData.changes[id]
+    if (!ch || !ch.length) return 'x'
+    if (t < ch[0][0]) return ch[0][1]
+    let lo = 0, hi = ch.length - 1, ans = 0
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1
+      if (ch[mid][0] <= t) {ans = mid; lo = mid + 1} else hi = mid - 1
+    }
+    return ch[ans][1]
+  }
+  renderWaveSoon = () => requestAnimationFrame(() => renderWave())
+  zoomIn = () => {pxPerT = Math.min(80, pxPerT * 1.4); renderWave()}
+  zoomOut = () => {pxPerT = Math.max(0.0005, pxPerT / 1.4); renderWave()}
+  zoomFit = () => {
+    const wrap = $el('waveWrap')
+    if (!waveData || !wrap) return
+    view0 = 0
+    pxPerT = Math.max(0.0005, (wrap.clientWidth - NAME_W - VAL_W - 60) / (waveData.tmax || 1))
+    renderWave()
+  }
+  renderWave = () => {
+    const cv = $el('waveCanvas')
+    const wrap = $el('waveWrap')
+    if (!cv || !wrap) return
+    waveHasSelection = !!(waveData && selIds.length)
+    if (!waveHasSelection) {
+      if (waveData) waveEmptyText = $t('wave.empty2')
+      waveInfo = ''
+      return
+    }
+    const W = Math.max(wrap.clientWidth, NAME_W + VAL_W + waveData.tmax * pxPerT + 60)
+    const H = Math.max(wrap.clientHeight, TOP + selIds.length * ROW_H + 20)
+    cv.width = W
+    cv.height = H
+    cv.style.width = W + 'px'
+    cv.style.height = H + 'px'
+    const c = cv.getContext('2d')
+    const bg = theme('--bg-color-secondary', '#f7fcff')
+    const fg = theme('--text-color', '#111827')
+    const dim = theme('--text-color-tertiary', '#6b7280')
+    const grid = theme('--border-color', '#d1d5db')
+    const accent = theme('--color-primary', '#4361ee')
+    const ok = theme('--color-success', '#22c55e')
+    const warn = theme('--color-warning', '#fbbf24')
+    const bad = theme('--color-danger', '#ef4444')
+    c.fillStyle = bg
+    c.fillRect(0, 0, W, H)
+    const X = t => NAME_W + VAL_W + (t - view0) * pxPerT
+    c.font = '10px ui-monospace, monospace'
+    c.textBaseline = 'alphabetic'
+    const stepBase = Math.max(1, Math.pow(10, Math.floor(Math.log10(60 / pxPerT))))
+    const step = stepBase * (pxPerT * stepBase < 25 ? 2 : 1)
+    c.strokeStyle = grid
+    c.fillStyle = dim
+    const t0 = Math.floor(view0 / step) * step
+    for (let t = t0; t <= view0 + (W - NAME_W - VAL_W) / pxPerT; t += step) {
+      if (t < 0) continue
+      c.beginPath()
+      c.moveTo(X(t), TOP - 12)
+      c.lineTo(X(t), H)
+      c.stroke()
+      c.fillText(String(t), X(t) + 3, 12)
+    }
+    selIds.forEach((id, i) => {
+      const v = waveData.vars[id]
+      const y = TOP + i * ROW_H
+      const mid = y + ROW_H / 2
+      const hi = y + 5
+      const lo = y + ROW_H - 5
+      c.fillStyle = fg
+      c.font = '12px ui-monospace, monospace'
+      const nm = v.name.length > 22 ? '…' + v.name.slice(-21) : v.name
+      c.fillText(nm, 8, mid + 4)
+      c.fillStyle = dim
+      c.font = '10px ui-monospace, monospace'
+      c.fillText(v.width > 1 ? '[' + (v.width - 1) + ':0]' : 'bit', 8, mid + 14)
+      if (curT !== null) {
+        c.fillStyle = accent
+        c.font = '11px ui-monospace, monospace'
+        c.fillText(VeriSimVCD.fmtBits(valAt(id, curT), v.width), NAME_W + 6, mid + 4)
+      }
+      const ch = waveData.changes[id]
+      const bus = v.width > 1
+      c.lineWidth = 1.3
+      for (let k = 0; k < ch.length; k++) {
+        const t = ch[k][0]
+        const bits = ch[k][1]
+        const tn = k + 1 < ch.length ? ch[k + 1][0] : view0 + (W - NAME_W - VAL_W) / pxPerT
+        if (tn < view0 || t > view0 + (W - NAME_W - VAL_W) / pxPerT) continue
+        const x0 = X(t)
+        const x1 = X(tn)
+        const badBits = /[xXzZ]/.test(bits)
+        if (!bus) {
+          c.strokeStyle = badBits ? bad : ok
+          const yv = badBits ? mid : (bits === '1' ? hi : lo)
+          c.beginPath()
+          c.moveTo(x0, yv)
+          c.lineTo(x1, yv)
+          c.stroke()
+          if (k + 1 < ch.length) {
+            const nb = ch[k + 1][1]
+            const nbad = /[xXzZ]/.test(nb)
+            const yv1 = nbad ? mid : (nb === '1' ? hi : lo)
+            c.beginPath()
+            c.moveTo(x1, yv)
+            c.lineTo(x1, yv1)
+            c.stroke()
+          }
+        } else {
+          c.strokeStyle = badBits ? bad : warn
+          c.beginPath()
+          c.moveTo(x0 + 3, mid)
+          c.lineTo(x0 + 7, hi)
+          c.lineTo(x1 - 7, hi)
+          c.lineTo(x1 - 3, mid)
+          c.lineTo(x1 - 7, lo)
+          c.lineTo(x0 + 7, lo)
+          c.closePath()
+          c.stroke()
+          if (x1 - x0 > 24) {
+            c.fillStyle = bg
+            c.fillRect(x0 + 7, hi + 1, Math.max(0, x1 - x0 - 14), lo - hi - 2)
+            c.fillStyle = badBits ? bad : warn
+            c.font = '10px ui-monospace, monospace'
+            const txt = badBits
+              ? (/[zZ]/.test(bits) && !/[xX]/.test(bits) ? 'z' : 'x')
+              : '0x' + VeriSimVCD.bitsToVal(bits).toString(16).toUpperCase()
+            c.fillText(txt, x0 + 10, mid + 3)
+          }
+        }
+      }
+      c.strokeStyle = grid
+      c.lineWidth = 1
+      c.beginPath()
+      c.moveTo(0, y + ROW_H - 0.5)
+      c.lineTo(W, y + ROW_H - 0.5)
+      c.stroke()
+    })
+    c.strokeStyle = grid
+    c.beginPath()
+    c.moveTo(NAME_W, 0)
+    c.lineTo(NAME_W, H)
+    c.moveTo(NAME_W + VAL_W, 0)
+    c.lineTo(NAME_W + VAL_W, H)
+    c.stroke()
+    if (curT !== null) {
+      c.strokeStyle = accent
+      c.setLineDash([4, 3])
+      c.beginPath()
+      c.moveTo(X(curT), 0)
+      c.lineTo(X(curT), H)
+      c.stroke()
+      c.setLineDash([])
+      c.fillStyle = accent
+      c.font = '10px ui-monospace, monospace'
+      c.fillText('t=' + curT, X(curT) + 3, 12)
+    }
+    waveInfo = $t('wave.info', {dur: waveData.tmax + (waveData.timescale ? ' ' + waveData.timescale : ''), sel: selIds.length, total: waveData.order.length})
+    curInfo = curT !== null ? $t('wave.cursor', {t: curT}) : $t('wave.cursorHint')
+  }
+  waveStart = (e) => {
+    if (!waveData) return
+    waveDrag = {x: e.clientX, v0: view0, moved: false}
+  }
+  waveMove = (e) => {
+    if (!waveDrag || !waveData) return
+    const dx = e.clientX - waveDrag.x
+    if (Math.abs(dx) > 3) waveDrag.moved = true
+    view0 = Math.max(0, waveDrag.v0 - dx / pxPerT)
+    if (waveDrag.moved) renderWave()
+  }
+  waveEnd = (e) => {
+    if (!waveDrag || !waveData) return
+    if (!waveDrag.moved) {
+      const cv = $el('waveCanvas')
+      if (cv) {
+        const r = cv.getBoundingClientRect()
+        const x = e.clientX - r.left
+        if (x > NAME_W + VAL_W) curT = Math.max(0, Math.min(waveData.tmax, Math.round(view0 + (x - NAME_W - VAL_W) / pxPerT)))
+      }
+    }
+    waveDrag = null
+    renderWave()
+  }
+  waveWheel = (e) => {
+    if (!waveData) return
+    if (e && e.preventDefault) e.preventDefault()
+    const cv = $el('waveCanvas')
+    if (!cv) return
+    const r = cv.getBoundingClientRect()
+    const tx = view0 + Math.max(0, e.clientX - r.left - NAME_W - VAL_W) / pxPerT
+    pxPerT = Math.min(80, Math.max(0.0005, pxPerT * (e.deltaY < 0 ? 1.25 : 0.8)))
+    view0 = Math.max(0, tx - Math.max(0, e.clientX - r.left - NAME_W - VAL_W) / pxPerT)
+    renderWave()
+  }
+
+  renderSchematic = async () => {
+    if (typeof netlistsvg === 'undefined') throw new Error('schematic component not ready')
+    schSvg = await netlistsvg.render(netlistsvg.digitalSkin, schNetlist)
+    schReady = true
+    schScale = 1
+    schX = 20
+    schY = 20
+    requestAnimationFrame(() => applySch())
+  }
+  applySch = () => {
+    const el = $el('schInner')
+    if (el) el.style.transform = 'translate(' + schX + 'px,' + schY + 'px) scale(' + schScale + ')'
+  }
+  schStart = (e) => {
+    if (!schNetlist) return
+    if (e && e.target && e.target.closest && e.target.closest('.sch-tools')) return
+    schDrag = {x: e.clientX, y: e.clientY, sx: schX, sy: schY}
+  }
+  schMove = (e) => {
+    if (!schDrag) return
+    schX = schDrag.sx + e.clientX - schDrag.x
+    schY = schDrag.sy + e.clientY - schDrag.y
+    applySch()
+  }
+  schEnd = () => {
+    schDrag = null
+  }
+  schWheel = (e) => {
+    if (!schNetlist) return
+    if (e && e.preventDefault) e.preventDefault()
+    const wrap = $el('schWrap')
+    if (!wrap) return
+    const r = wrap.getBoundingClientRect()
+    const mx = e.clientX - r.left
+    const my = e.clientY - r.top
+    const f = e.deltaY < 0 ? 1.2 : 1 / 1.2
+    schScale = Math.min(8, Math.max(0.0005, schScale * f))
+    schX = mx - (mx - schX) * f
+    schY = my - (my - schY) * f
+    applySch()
+  }
+  schZoom = (f) => {
+    if (!schNetlist) return
+    const wrap = $el('schWrap')
+    if (!wrap) return
+    const r = wrap.getBoundingClientRect()
+    const mx = r.width / 2
+    const my = r.height / 2
+    schScale = Math.min(8, Math.max(0.0005, schScale * f))
+    schX = mx - (mx - schX) * f
+    schY = my - (my - schY) * f
+    applySch()
+  }
+  schZoomIn = () => schZoom(1.25)
+  schZoomOut = () => schZoom(1 / 1.25)
+  schReset = () => {
+    if (!schNetlist) return
+    schScale = 1
+    schX = 20
+    schY = 20
+    applySch()
+  }
+
+  // AI 操控面：pageDesc 由平台 OS/page 通道自动采集注册（{win_id}.{cmd} 命名空间），
+  // 本页不内置 ai-box。exec argv 原样透传（数组）→ args 对象（--key val / 位置参数）
+  const argvToArgs = (argv) => {
+    const args = {}
+    const pos = []
+    for (let i = 0; i < argv.length; i++) {
+      const a = String(argv[i])
+      if (a.startsWith('--') && i + 1 < argv.length) {
+        args[a.slice(2)] = argv[i + 1]
+        i++
+      } else {
+        pos.push(a)
+      }
+    }
+    pos.forEach((v, i) => { if (!(String(i) in args)) args[String(i)] = v })
+    return args
+  }
+  const wrap = (action, fn) => async (argv) => {
+    try {
+      if (!ready && action !== 'veri_status') {
+        return {content: JSON.stringify({ok: false, error: '页面初始化中，请先调 veri_status 确认 ready:true 再重试'})}
+      }
+      const args = argvToArgs(argv)
+      const result = await fn(args || {})
+      return {content: JSON.stringify(result)}
+    } catch (e) {
+      const text = action + ' 失败: ' + (e && e.message ? e.message : String(e))
+      log(text, 'err')
+      return {content: JSON.stringify({ok: false, text, error: e && e.message ? e.message : String(e)})}
+    }
+  }
+
+  // 列出本地 /verisim/ 下可仿真的源文件（与 AI fs 工具 1host=page 同一存储）
+  veriFiles = async () => {
+    if (!$mod.$fs) return {ok: false, error: '本地文件服务不可用（$fs 未就绪）'}
+    let items = []
+    try {
+      const r = await $mod.$fs.get('/page/verisim')
+      items = (r && r.items) || []
+    } catch (_) { /* 本地根不存在视为空目录 */ }
+    const files = items.filter(x => x && !x.dir && /\.(v|sv|txt)$/i.test(x.name || ''))
+    return {ok: true, root: '/verisim/', files: files.map(x => ({name: x.name, size: x.size || 0, mod_time: x.mod_time || 0}))}
+  }
+
+  // 把本地文件载入编辑器（AI 写完文件后展示用）
+  veriOpen = async (args) => {
+    if (!args || !args.file) return {ok: false, error: 'veri_open 缺少 --file'}
+    const fileCode = await readLocalText(args.file)
+    const name = String(args.file).split('/').filter(Boolean).pop()
+    setCodeFromAction(fileCode, $t('src.sessionFile') + ': ' + name)
+    if (VeriSimSynth) topModule = VeriSimSynth.stripForSynth(fileCode).top || topModule
+    showPane('code')
+    return {ok: true, file: resolvePath(args.file), code_length: fileCode.length, top: topModule}
+  }
+
+  /* pageDesc 声明：平台自动采集注册 {win_id}.{cmd}；返回统一 {content: JSON} 信封 */
+  pageDesc = {
+    desc: 'VeriSim 数字电路仿真综合工作台：浏览器内真实运行 Icarus Verilog 仿真与 Yosys 综合（12+ FPGA 工艺 + ASIC Liberty），波形 / 原理图 / 网表 / 面积报告。本地文件根 /verisim/（与 AI fs 工具 1host=page 同一存储）。',
+    commands: [
+      {name: 'veri_status', desc: '查询页面状态（就绪/忙/页签/工艺/代码长度/本地文件数）',
+        help: '无参数；返回 {ok, ready, busy, activePane, tech, topModule, codeLength, sourceLabel, fileCount}；唯一未就绪时也可调用',
+        handler: wrap('veri_status', async () => ({
+          ok: true, ready, busy, activePane, tech, topModule,
+          codeLength: (code || '').length, sourceLabel,
+          fileCount: (sessionFiles || []).length
+        }))},
+      {name: 'veri_files', desc: '列出本地 /verisim/ 下的 Verilog 源文件',
+        help: '无参数；返回 {ok, root, files:[{name, size, mod_time}]}（v/sv/txt）',
+        handler: wrap('veri_files', veriFiles)},
+      {name: 'veri_open', desc: '把本地文件载入代码编辑器（AI 写完文件后展示）',
+        help: '--file <路径>（如 /verisim/main.v）；返回 {ok, file, code_length, top}',
+        handler: wrap('veri_open', veriOpen)},
+      {name: 'sim_code', desc: '直接仿真一段 Verilog 源码（设计+测试台可同文件）',
+        help: '--code <源码> [--top 顶层] [--pane wave]；返回 {ok, text, signals, duration, timescale, warnings, output_tail}',
+        handler: wrap('sim_code', simCode)},
+      {name: 'sim_file', desc: '仿真本地 /verisim/ 文件（可附独立测试台文件）',
+        help: '--file <路径> [--tb 测试台路径] [--top 顶层] [--pane wave]',
+        handler: wrap('sim_file', simFile)},
+      {name: 'synth_file', desc: '综合本地文件（Yosys：FPGA 工艺映射 / ASIC Liberty / 通用 techmap）',
+        help: '--file <路径> [--top 顶层] [--tech ice40|ecp5|gowin|xilinx|lib:builtin:nangate45|lib:user:x.lib] [--pane synth]；返回 {ok, text, top, cells, wires, dff, output_tail}',
+        handler: wrap('synth_file', synthFile)},
+      {name: 'show_pane', desc: '切换结果页签',
+        help: '--pane code|wave|sch|synth|netlist|console（console 为滚动到底部控制台）',
+        handler: wrap('show_pane', (args) => showPane(args.pane || args['0'] || 'wave'))},
+      {name: 'clear_console', desc: '清空控制台', help: '无参数',
+        handler: wrap('clear_console', () => clearConsole())},
+    ]
+  }
+</script>
+<script>
+  const loadScript = (src) => new Promise((resolve, reject) => {
+    const s = document.createElement('script')
+    s.src = src
+    s.onload = resolve
+    s.onerror = () => reject(new Error('加载失败 ' + src))
+    document.head.appendChild(s)
+  })
+  const scopedUrl = (p) => {
+    const base = (($mod.scoped || '').replace(/\/$/, '')) || '.'
+    return base + '/' + String(p).replace(/^\.\//, '')
+  }
+
+    ; (async () => {
+      try {
+        refreshLineNumbers()
+        VeriSimBase = (($mod.scoped || '').replace(/\/$/, '')) || ''
+        statusText = $t('status.init')
+        // 一方 js 全部是 ES module，经动态 import 加载（不再挂 window）
+        const importLocal = (p) => import(new URL(scopedUrl(p), location.origin).href)
+        VeriSimSources = null
+        try {VeriSimSources = (await importLocal('js/sources.js')).default} catch (e) {log(tt('log.srcFallback'), 'wrn')}
+        VeriSimVCD = (await importLocal('js/vcd.js')).default
+        VeriSimSynth = (await importLocal('js/synth.js')).default
+        VeriSimExamples = (await importLocal('js/examples.js')).default
+        VeriSimEngines = (await importLocal('js/engines.js')).default
+        // 原理图库按镜像源列表加载（国内 → 海外 → 本地 vendor/），配置见 js/sources.js
+        try {
+          if (VeriSimSources) {
+            await VeriSimSources.loadScript('elk', VeriSimBase, ev => {if (ev && ev.phase === 'fail') log(tt('log.srcFallback'), 'wrn')})
+            await VeriSimSources.loadScript('netlistsvg', VeriSimBase, ev => {if (ev && ev.phase === 'fail') log(tt('log.srcFallback'), 'wrn')})
+          } else {
+            await loadScript(scopedUrl('vendor/elk.bundled.js'))
+            await loadScript(scopedUrl('vendor/netlistsvg.bundle.js'))
+          }
+        } catch (e) {
+          log(tt('log.vendorFail'), 'wrn')
+        }
+        ready = true
+        statusText = $t('status.ready')
+        refreshLineNumbers()
+        loadSessionFiles()
+        loadUserLibs()
+        log(() => $t('init.hint'), 'sys')
+        log(tt('log.engineReady'), 'ok')
+      } catch (e) {
+        ready = false
+        const msg = e && e.message ? e.message : String(e)
+        statusText = $t('status.initFail') + '：' + msg
+        log(() => $t('status.initFail') + '：' + msg, 'err')
+      }
+    })()
+
+  window.addEventListener('mousemove', (e) => {
+    waveMove(e)
+    schMove(e)
+  })
+  window.addEventListener('mouseup', (e) => {
+    waveEnd(e)
+    schEnd(e)
+  })
+  window.addEventListener('resize', () => {
+    if (activePane === 'wave') renderWaveSoon()
+    if (activePane === 'sch') applySch()
+  })
+</script>
+
+</html>
