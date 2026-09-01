@@ -1,0 +1,363 @@
+{
+  "id": "s1",
+  "transition": "none",
+  "notes": "开场：阿里 Qwen 团队 2026.07.19 在上海 WAIC 发布 Qwen3.8，2.4T 参数旗舰，Preview 已上线，承诺即将开源。右侧为官方发布视觉（16:9 原比例，标题完整保留）。",
+  "elements": [
+    {
+      "id": "cb-bg",
+      "type": "shape",
+      "shape": "rect",
+      "x": 0,
+      "y": 0,
+      "w": 1280,
+      "h": 720,
+      "fillGradient": {
+        "from": "#141008",
+        "to": "#0a0806",
+        "angle": 135
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "mg-a",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 1000,
+      "y": -170,
+      "w": 420,
+      "h": 420,
+      "fillGradient": {
+        "from": "#e8b04b",
+        "to": "#8a5a1c",
+        "angle": 120
+      },
+      "opacity": 0.3,
+      "rotation": 0
+    },
+    {
+      "id": "mg-b",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": -190,
+      "y": 470,
+      "w": 440,
+      "h": 440,
+      "fill": "#8fa3b8",
+      "opacity": 0.16,
+      "rotation": 0
+    },
+    {
+      "id": "mg-c",
+      "type": "shape",
+      "shape": "triangle",
+      "x": 560,
+      "y": 598,
+      "w": 140,
+      "h": 140,
+      "fill": "#f6a723",
+      "opacity": 0.45,
+      "rotation": 0
+    },
+    {
+      "id": "cv-kicker",
+      "type": "text",
+      "x": 90,
+      "y": 142,
+      "w": 560,
+      "h": 30,
+      "html": "ALIBABA QWEN TEAM · FLAGSHIP LAUNCH",
+      "fontSize": 15,
+      "fontWeight": 700,
+      "color": "#a89a80",
+      "align": "left",
+      "fx": {
+        "enter": "fade-up",
+        "order": 0
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-title",
+      "type": "text",
+      "x": 86,
+      "y": 196,
+      "w": 560,
+      "h": 120,
+      "html": "Qwen3.8",
+      "fontSize": 92,
+      "fontWeight": 800,
+      "color": "#f3ead8",
+      "align": "left",
+      "lineHeight": 1,
+      "fx": {
+        "enter": "fade-up",
+        "order": 1
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "cv-sub",
+      "type": "text",
+      "x": 90,
+      "y": 330,
+      "w": 540,
+      "h": 50,
+      "html": "2.4 万亿参数旗舰大模型 · 全球发布预览",
+      "fontSize": 23,
+      "fontWeight": 600,
+      "color": "#e8b04b",
+      "align": "left",
+      "fx": {
+        "enter": "fade-up",
+        "order": 2
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "cv-meta",
+      "type": "text",
+      "x": 90,
+      "y": 392,
+      "w": 540,
+      "h": 28,
+      "html": "2026.07.19 · 上海 WAIC 世界人工智能大会 · Qwen 团队",
+      "fontSize": 15,
+      "color": "#a89a80",
+      "align": "left",
+      "fx": {
+        "enter": "fade-up",
+        "order": 3
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "cv-chip1",
+      "type": "shape",
+      "shape": "rect",
+      "x": 90,
+      "y": 450,
+      "w": 170,
+      "h": 42,
+      "fill": "#e8b04b",
+      "opacity": 0.14,
+      "stroke": "#e8b04b",
+      "strokeWidth": 1,
+      "radius": 21,
+      "rotation": 0
+    },
+    {
+      "id": "cv-chip1t",
+      "type": "text",
+      "x": 90,
+      "y": 450,
+      "w": 170,
+      "h": 42,
+      "html": "Preview 已上线",
+      "fontSize": 15,
+      "fontWeight": 600,
+      "color": "#e8b04b",
+      "align": "center",
+      "valign": "middle",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "cv-chip2",
+      "type": "shape",
+      "shape": "rect",
+      "x": 274,
+      "y": 450,
+      "w": 150,
+      "h": 42,
+      "fill": "#8fa3b8",
+      "opacity": 0.12,
+      "stroke": "#8fa3b8",
+      "strokeWidth": 1,
+      "radius": 21,
+      "rotation": 0
+    },
+    {
+      "id": "cv-chip2t",
+      "type": "text",
+      "x": 274,
+      "y": 450,
+      "w": 150,
+      "h": 42,
+      "html": "即将开源",
+      "fontSize": 15,
+      "fontWeight": 600,
+      "color": "#c8d2dc",
+      "align": "center",
+      "valign": "middle",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "cv-imgframe",
+      "type": "shape",
+      "shape": "rect",
+      "x": 614,
+      "y": 82,
+      "w": 592,
+      "h": 338,
+      "fill": "#0d0a07",
+      "stroke": "#e8b04b",
+      "strokeWidth": 1.5,
+      "radius": 18,
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "cv-img",
+      "type": "image",
+      "x": 620,
+      "y": 88,
+      "w": 580,
+      "h": 326,
+      "src": "image/cover.jpg",
+      "fit": "cover",
+      "radius": 12,
+      "fx": {
+        "enter": "fade-up",
+        "order": 4
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "cv-cap",
+      "type": "text",
+      "x": 614,
+      "y": 428,
+      "w": 592,
+      "h": 24,
+      "html": "官方发布视觉 · Qwen3.8-Max / 2.4 Trillion Parameters / Open Weights",
+      "fontSize": 13,
+      "color": "#a89a80",
+      "align": "center",
+      "fx": {
+        "enter": "fade",
+        "order": 5
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "cs-bg",
+      "type": "shape",
+      "shape": "rect",
+      "x": 614,
+      "y": 460,
+      "w": 592,
+      "h": 112,
+      "fill": "#1a160f",
+      "stroke": "#2c2618",
+      "strokeWidth": 1,
+      "radius": 14,
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "cs1-n",
+      "type": "text",
+      "x": 636,
+      "y": 478,
+      "w": 170,
+      "h": 40,
+      "html": "2.4T",
+      "fontSize": 26,
+      "fontWeight": 800,
+      "color": "#e8b04b",
+      "align": "left",
+      "fx": {
+        "countUp": true
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "cs1-l",
+      "type": "text",
+      "x": 636,
+      "y": 518,
+      "w": 170,
+      "h": 24,
+      "html": "总参数",
+      "fontSize": 12,
+      "color": "#a89a80",
+      "align": "left",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "cs2-n",
+      "type": "text",
+      "x": 834,
+      "y": 478,
+      "w": 170,
+      "h": 40,
+      "html": "983K",
+      "fontSize": 26,
+      "fontWeight": 800,
+      "color": "#f3ead8",
+      "align": "left",
+      "fx": {
+        "countUp": true
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "cs2-l",
+      "type": "text",
+      "x": 834,
+      "y": 518,
+      "w": 170,
+      "h": 24,
+      "html": "上下文窗口",
+      "fontSize": 12,
+      "color": "#a89a80",
+      "align": "left",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "cs3-n",
+      "type": "text",
+      "x": 1032,
+      "y": 478,
+      "w": 170,
+      "h": 40,
+      "html": "131K",
+      "fontSize": 26,
+      "fontWeight": 800,
+      "color": "#f3ead8",
+      "align": "left",
+      "fx": {
+        "countUp": true
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "cs3-l",
+      "type": "text",
+      "x": 1032,
+      "y": 518,
+      "w": 170,
+      "h": 24,
+      "html": "最大输出",
+      "fontSize": 12,
+      "color": "#a89a80",
+      "align": "left",
+      "rotation": 0,
+      "opacity": 1
+    }
+  ],
+  "background": "#0e0c09"
+}

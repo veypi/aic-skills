@@ -1,0 +1,289 @@
+{
+  "id": "s5-pie",
+  "name": "份额分布",
+  "stateOf": "s5",
+  "transition": "morph",
+  "notes": "隐藏状态页：同一张图表原地变形为参数份额饼图（2.8 / 1.6 / 1.0，总量 5.4 万亿，K3 占 52%）。按 ← 或点按钮返回主线。",
+  "elements": [
+    {
+      "id": "fx-a",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 780,
+      "y": -180,
+      "w": 560,
+      "h": 560,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 45,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(79,127,255,0.3)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(79,127,255,0)"
+          }
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-b",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": -240,
+      "y": 380,
+      "w": 480,
+      "h": 480,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 225,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(139,92,246,0.26)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(139,92,246,0)"
+          }
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "tile-a-06",
+      "type": "shape",
+      "shape": "rect",
+      "x": -160,
+      "y": 420,
+      "w": 380,
+      "h": 380,
+      "rotation": 12,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 315,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(139,92,246,0.16)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(139,92,246,0)"
+          }
+        ]
+      },
+      "radius": 60,
+      "opacity": 1
+    },
+    {
+      "id": "tile-b-06",
+      "type": "shape",
+      "shape": "rect",
+      "x": 1030,
+      "y": -180,
+      "w": 420,
+      "h": 420,
+      "rotation": -6,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 135,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(79,127,255,0.16)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(79,127,255,0)"
+          }
+        ]
+      },
+      "radius": 90,
+      "opacity": 1
+    },
+    {
+      "id": "ghost-06",
+      "type": "text",
+      "x": 830,
+      "y": 430,
+      "w": 380,
+      "h": 210,
+      "html": "52%",
+      "fontSize": 150,
+      "fontWeight": 800,
+      "color": "rgba(139,92,246,0.09)",
+      "align": "center",
+      "valign": "middle",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-title",
+      "type": "text",
+      "x": 80,
+      "y": 56,
+      "w": 1000,
+      "h": 60,
+      "html": "开源模型的<b>规模份额</b>",
+      "fontSize": 40,
+      "fontWeight": 700,
+      "color": "#ffffff",
+      "valign": "middle",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-line",
+      "type": "shape",
+      "shape": "rect",
+      "x": 80,
+      "y": 126,
+      "w": 64,
+      "h": 4,
+      "fill": "#4f7fff",
+      "radius": 2,
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "pg-num",
+      "type": "text",
+      "x": 1150,
+      "y": 676,
+      "w": 80,
+      "h": 24,
+      "html": "{{page:2}}",
+      "fontSize": 13,
+      "color": "rgba(154,165,196,0.5)",
+      "align": "right",
+      "valign": "middle",
+      "letterSpacing": 2,
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s5-chart",
+      "type": "chart",
+      "x": 80,
+      "y": 170,
+      "w": 700,
+      "h": 430,
+      "option": {
+        "series": [
+          {
+            "type": "pie",
+            "name": "总参数（万亿）",
+            "data": [
+              {
+                "name": "Kimi K3 · 2.8T",
+                "value": 2.8
+              },
+              {
+                "name": "DeepSeek V4 Pro · 1.6T",
+                "value": 1.6
+              },
+              {
+                "name": "Kimi K2 · 1.0T",
+                "value": 1
+              }
+            ]
+          }
+        ],
+        "color": [
+          "#4f7fff",
+          "#8b5cf6",
+          "#39466b"
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s5-pie-note",
+      "type": "text",
+      "x": 830,
+      "y": 260,
+      "w": 380,
+      "h": 200,
+      "html": "<b style='color:#4f7fff;font-size:46px'>52%</b><br><br><span style='font-size:17px;color:#9aa5c4'>三款模型参数总量 5.4 万亿，Kimi K3 一款占比过半——同一张图表，从柱状图原地变形而来</span>",
+      "fontSize": 20,
+      "color": "#ffffff",
+      "lineHeight": 1.5,
+      "fx": {
+        "enter": "fade-up",
+        "order": 2,
+        "countUp": true
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s5-backb",
+      "type": "shape",
+      "shape": "rect",
+      "x": 100,
+      "y": 616,
+      "w": 190,
+      "h": 44,
+      "fill": "#16224a",
+      "stroke": "#3b5bd6",
+      "strokeWidth": 1,
+      "radius": 22,
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s5-backt",
+      "type": "text",
+      "x": 100,
+      "y": 616,
+      "w": 190,
+      "h": 44,
+      "html": "← 返回柱状图",
+      "fontSize": 16,
+      "color": "#cdd9ff",
+      "align": "center",
+      "valign": "middle",
+      "fontWeight": 600,
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s5-back",
+      "type": "shape",
+      "shape": "rect",
+      "x": 100,
+      "y": 616,
+      "w": 190,
+      "h": 44,
+      "fill": "rgba(0,0,0,0)",
+      "link": "s5",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "mg-dot",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 479,
+      "y": 385,
+      "w": 16,
+      "h": 16,
+      "fill": "#ffffff",
+      "opacity": 0.85,
+      "shadow": {
+        "y": 0,
+        "blur": 16,
+        "color": "rgba(255,255,255,0.5)"
+      },
+      "rotation": 0
+    }
+  ],
+  "background": "#0b1020"
+}

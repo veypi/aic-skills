@@ -1,0 +1,331 @@
+{
+  "id": "s8",
+  "transition": "morph",
+  "notes": "前端编码 Arena 全球第一：1679 分滚动计数；右侧 1530 / 1485 两组 Elo 同步滚动。",
+  "elements": [
+    {
+      "id": "fx-a",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 780,
+      "y": -180,
+      "w": 560,
+      "h": 560,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 135,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(139,92,246,0.28)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(139,92,246,0)"
+          }
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-b",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": -240,
+      "y": 380,
+      "w": 480,
+      "h": 480,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 315,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(79,127,255,0.26)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(79,127,255,0)"
+          }
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "tile-a-10",
+      "type": "shape",
+      "shape": "rect",
+      "x": 960,
+      "y": -210,
+      "w": 450,
+      "h": 450,
+      "rotation": 12,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 135,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(139,92,246,0.16)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(139,92,246,0)"
+          }
+        ]
+      },
+      "radius": 95,
+      "opacity": 1
+    },
+    {
+      "id": "tile-b-10",
+      "type": "shape",
+      "shape": "rect",
+      "x": -230,
+      "y": 410,
+      "w": 400,
+      "h": 400,
+      "rotation": -10,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 315,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(79,127,255,0.15)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(79,127,255,0)"
+          }
+        ]
+      },
+      "radius": 70,
+      "opacity": 1
+    },
+    {
+      "id": "ghost-10",
+      "type": "text",
+      "x": 60,
+      "y": 460,
+      "w": 320,
+      "h": 200,
+      "html": "07",
+      "fontSize": 170,
+      "fontWeight": 800,
+      "color": "rgba(79,127,255,0.08)",
+      "align": "center",
+      "valign": "middle",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-title",
+      "type": "text",
+      "x": 80,
+      "y": 56,
+      "w": 1000,
+      "h": 60,
+      "html": "前端编码 Arena <b>全球第一</b>",
+      "fontSize": 40,
+      "fontWeight": 700,
+      "color": "#ffffff",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 0
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-line",
+      "type": "shape",
+      "shape": "rect",
+      "x": 80,
+      "y": 126,
+      "w": 64,
+      "h": 4,
+      "fill": "#4f7fff",
+      "radius": 2,
+      "fx": {
+        "enter": "fade",
+        "order": 0
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "pg-num",
+      "type": "text",
+      "x": 1150,
+      "y": 676,
+      "w": 80,
+      "h": 24,
+      "html": "{{page:2}}",
+      "fontSize": 13,
+      "color": "rgba(154,165,196,0.5)",
+      "align": "right",
+      "valign": "middle",
+      "letterSpacing": 2,
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s8-img",
+      "type": "image",
+      "src": "image/arena.jpg",
+      "x": 80,
+      "y": 170,
+      "w": 560,
+      "h": 420,
+      "fit": "contain",
+      "radius": 12,
+      "fx": {
+        "enter": "slide-left",
+        "order": 1,
+        "ambient": "kenburns",
+        "ken": {
+          "dir": "drift",
+          "scale": 1.05,
+          "duration": 18
+        }
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s8-imgcap",
+      "type": "text",
+      "x": 80,
+      "y": 596,
+      "w": 560,
+      "h": 28,
+      "html": "Arena.AI 前端编码排行榜（来源：arena.ai）",
+      "fontSize": 14,
+      "color": "#8b96b8",
+      "align": "center",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade",
+        "order": 2
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s8-n1num",
+      "type": "text",
+      "x": 700,
+      "y": 180,
+      "w": 500,
+      "h": 90,
+      "html": "1679",
+      "fontSize": 64,
+      "fontWeight": 800,
+      "color": "#4f7fff",
+      "valign": "middle",
+      "fx": {
+        "enter": "slide-right",
+        "order": 1,
+        "countUp": true
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s8-n1cap",
+      "type": "text",
+      "x": 700,
+      "y": 276,
+      "w": 500,
+      "h": 34,
+      "html": "Frontend Code Arena 得分，人类盲测偏好第一",
+      "fontSize": 18,
+      "color": "#9aa5c4",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 2
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s8-n2",
+      "type": "text",
+      "x": 700,
+      "y": 340,
+      "w": 500,
+      "h": 100,
+      "html": "<b style='font-size:40px;color:#8b5cf6'>1530</b>　<b style='font-size:40px;color:#22d3ee'>1485</b><br><span style='font-size:18px;color:#9aa5c4'>Chatbot Arena 编码 Elo　·　综合 Elo</span>",
+      "fontSize": 22,
+      "color": "#ffffff",
+      "lineHeight": 1.4,
+      "fx": {
+        "enter": "slide-right",
+        "order": 3,
+        "countUp": true
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s8-n3",
+      "type": "shape",
+      "shape": "rect",
+      "x": 700,
+      "y": 470,
+      "w": 500,
+      "h": 120,
+      "fill": "#16224a",
+      "radius": 14,
+      "fx": {
+        "enter": "fade-up",
+        "order": 4
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s8-n3t",
+      "type": "text",
+      "x": 730,
+      "y": 470,
+      "w": 440,
+      "h": 120,
+      "html": "大幅领先 Claude Fable 5 与 GPT-5.6 Sol，擅长「截图 → 代码」的视觉反馈闭环：前端、游戏开发、CAD 场景全面受益",
+      "fontSize": 18,
+      "color": "#cdd9ff",
+      "lineHeight": 1.7,
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 4
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "mg-dot",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 858,
+      "y": 216,
+      "w": 18,
+      "h": 18,
+      "fill": "#4f7fff",
+      "opacity": 0.85,
+      "shadow": {
+        "y": 0,
+        "blur": 16,
+        "color": "rgba(79,127,255,0.5)"
+      },
+      "rotation": 0
+    }
+  ],
+  "background": "#0b1020"
+}
+

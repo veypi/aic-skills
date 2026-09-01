@@ -1,0 +1,93 @@
+{
+  "id": "s10",
+  "background": "#0a0f1c",
+  "transition": "morph",
+  "notes": "定价模式对比：左侧原生柱状图（悬停可看数值），右侧三大计费变迁与选型逻辑。引导形状重新展开为双面板侧标。",
+  "elements": [
+    { "id": "grain", "type": "svg", "x": 0, "y": 0, "w": 1280, "h": 720, "asset": "grain", "opacity": 1 },
+    { "id": "dots", "type": "svg", "x": 0, "y": 0, "w": 1280, "h": 720, "asset": "dots", "opacity": 0.9 },
+    {
+      "id": "gl-a-10", "type": "shape", "shape": "ellipse",
+      "x": -200, "y": -160, "w": 560, "h": 560, "blur": 60, "fill": "transparent",
+      "fillGradient": { "angle": 135, "stops": [ { "at": 0, "color": "rgba(79,141,255,0.16)" }, { "at": 1, "color": "rgba(79,141,255,0)" } ] },
+      "fx": { "ambient": "kenburns", "ken": { "dir": "drift", "scale": 1.12, "duration": 26 } }
+    },
+    {
+      "id": "gl-b-10", "type": "shape", "shape": "ellipse",
+      "x": 900, "y": 320, "w": 560, "h": 560, "blur": 60, "fill": "transparent",
+      "fillGradient": { "angle": 315, "stops": [ { "at": 0, "color": "rgba(251,191,36,0.14)" }, { "at": 1, "color": "rgba(251,191,36,0)" } ] },
+      "fx": { "ambient": "kenburns", "ken": { "dir": "drift", "scale": 1.14, "duration": 30 } }
+    },
+    {
+      "id": "ghost-10", "type": "text", "x": 980, "y": -16, "w": 300, "h": 210,
+      "html": "05", "fontSize": 160, "fontWeight": 800, "color": "rgba(52,211,153,0.06)",
+      "fontFamily": "'JetBrains Mono', monospace", "align": "center", "valign": "middle"
+    },
+    {
+      "id": "fx-title", "type": "text",
+      "x": 80, "y": 34, "w": 1040, "h": 66,
+      "html": "<span style=\"font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:4px;color:#34d399\">CH.05 — PRICING MODELS</span><br><b>定价模式深度对比</b>",
+      "fontSize": 30, "fontWeight": 800, "color": "#f8fafc",
+      "align": "left", "valign": "middle", "lineHeight": 1.2
+    },
+    {
+      "id": "fx-rule", "type": "shape", "shape": "rect",
+      "x": 82, "y": 108, "w": 220, "h": 5,
+      "fill": "#34d399", "radius": 3,
+      "shadow": { "y": 0, "blur": 12, "color": "rgba(52,211,153,0.4)" }
+    },
+    {
+      "id": "sub", "type": "text", "x": 80, "y": 124, "w": 1120, "h": 26,
+      "html": "<b>关键洞察：2026 年行业正从「固定配额」转向「用量计费」</b> — Copilot 切 AI Credits · Cursor 切 Token 计费 · Devin 退 ACU",
+      "fontSize": 13.5, "color": "#fbbf24", "align": "left", "valign": "middle",
+      "fx": { "enter": "fade", "order": 1 }
+    },
+    { "id": "l-bg", "type": "shape", "shape": "rect", "x": 50, "y": 156, "w": 580, "h": 494, "fill": "#10182c", "radius": 12, "stroke": "rgba(148,163,184,0.14)", "strokeWidth": 1, "group": "L", "shadow": { "y": 10, "blur": 26, "color": "rgba(2,6,18,0.5)" }, "fx": { "enter": "slide-left", "order": 1 } },
+    { "id": "l-cap", "type": "text", "x": 74, "y": 172, "w": 330, "h": 26, "html": "<b>入门月费对比</b>", "fontSize": 16, "fontWeight": 700, "color": "#f1f5f9", "align": "left", "valign": "middle", "group": "L", "fx": { "enter": "fade", "order": 1 } },
+    { "id": "l-cap2", "type": "text", "x": 404, "y": 172, "w": 202, "h": 26, "html": "$/月 · 最低商业化档", "fontSize": 11, "color": "#64748b", "fontFamily": "'JetBrains Mono', monospace", "align": "right", "valign": "middle", "group": "L" },
+    {
+      "id": "l-chart", "type": "chart",
+      "x": 62, "y": 202, "w": 556, "h": 396,
+      "option": {
+        "xAxis": { "data": ["免费阵营", "Codex", "Copilot", "Claude", "Cursor", "Pro+", "Max", "Ultra"] },
+        "series": [ { "type": "bar", "name": "入门月费（$/月）", "data": [0, 8, 10, 20, 20, 60, 100, 200] } ],
+        "color": ["#34d399"]
+      },
+      "group": "L",
+      "fx": { "enter": "fade-up", "order": 2 }
+    },
+    {
+      "id": "l-note", "type": "text", "x": 74, "y": 606, "w": 532, "h": 34,
+      "html": "* 免费阵营：Antigravity / Trae / 通义灵码 / Comate / Aider / Cline<br>* 中国厂商：WorkBuddy ￥58/月 起 · 企业 ￥198/月",
+      "fontSize": 11, "color": "#64748b", "align": "left", "valign": "top", "lineHeight": 1.55,
+      "fontFamily": "'JetBrains Mono', monospace",
+      "group": "L", "fx": { "enter": "fade", "order": 3 }
+    },
+    { "id": "r-bg", "type": "shape", "shape": "rect", "x": 660, "y": 156, "w": 570, "h": 494, "fill": "#10182c", "radius": 12, "stroke": "rgba(148,163,184,0.14)", "strokeWidth": 1, "group": "R", "shadow": { "y": 10, "blur": 26, "color": "rgba(2,6,18,0.5)" }, "fx": { "enter": "slide-right", "order": 1 } },
+    { "id": "r-cap", "type": "text", "x": 684, "y": 172, "w": 400, "h": 26, "html": "<b>计费模式变迁 & 选型建议</b>", "fontSize": 16, "fontWeight": 700, "color": "#f1f5f9", "align": "left", "valign": "middle", "group": "R", "fx": { "enter": "fade", "order": 1 } },
+    {
+      "id": "r-info", "type": "text", "x": 684, "y": 206, "w": 522, "h": 430,
+      "html": "<b style=\"color:#fbbf24;font-size:14px\">2026 计费模式三大变化</b><br><br><span style=\"font-size:12.5px\">1. <b>GitHub Copilot</b> 2026.6 从「高级请求」切换为 <b>AI Credits</b>（1cr = $0.01），代码补全保持无限免费<br>2. <b>Cursor</b> 2025.7 从请求计数转向 <b>Token 成本</b>计费，引发争议后 CEO 公开致歉<br>3. <b>Devin</b> 2026.4 退役 PAYG「ACU」模式，改为配额制</span><br><br><b style=\"color:#4f8dff;font-size:14px\">订阅 vs BYO Key 选择逻辑</b><br><br><span style=\"color:#34d399\">✦ 订阅制</span><span style=\"font-size:12.5px\">：适合持续重度 Agent 使用，成本可预测但有限额<br></span><span style=\"color:#a78bfa\">✦ BYO Key</span><span style=\"font-size:12.5px\">：适合轻度/间歇使用，利用缓存（-90%）和批处理（-50%）可大幅降本<br></span><span style=\"color:#22d3ee\">✦ 混合</span><span style=\"font-size:12.5px\">：Cursor 模式 — 订阅 + BYOK，Composer 2.5 每任务仅 $0.07</span><br><br><b style=\"color:#f87171;font-size:14px\">⚠ 注意陷阱</b><br><br><span style=\"font-size:12.5px\">· Agent 会话可消耗 ~100万 Token/天（vs 聊天 ~1万）<br>· 5 小时滚动限额比月费数字更限制实际使用<br>· 重度用户月账单可达 $1,850（Claude Code API 等效）</span>",
+      "fontSize": 12.5, "color": "#94a3b8", "align": "left", "valign": "top", "lineHeight": 1.62,
+      "group": "R", "fx": { "enter": "fade-up", "order": 2 }
+    },
+    { "id": "pg-num", "type": "text", "x": 1150, "y": 678, "w": 90, "h": 24, "html": "{{page:2}} · {{pages}}", "fontSize": 12, "color": "#475569", "letterSpacing": 2, "fontFamily": "'JetBrains Mono', monospace", "align": "right", "valign": "middle" },
+    {
+      "id": "mg-a", "type": "shape", "shape": "rect",
+      "x": 50, "y": 156, "w": 8, "h": 494,
+      "fill": "#34d399", "radius": 4, "opacity": 0.95,
+      "shadow": { "y": 0, "blur": 16, "color": "rgba(52,211,153,0.5)" }
+    },
+    {
+      "id": "mg-b", "type": "shape", "shape": "rect",
+      "x": 1222, "y": 156, "w": 8, "h": 494,
+      "fill": "#fbbf24", "radius": 4, "opacity": 0.95,
+      "shadow": { "y": 0, "blur": 16, "color": "rgba(251,191,36,0.5)" }
+    },
+    {
+      "id": "mg-c", "type": "shape", "shape": "rect",
+      "x": 676, "y": 240, "w": 6, "h": 26,
+      "fill": "#22d3ee", "radius": 3, "opacity": 0.9
+    }
+  ]
+}

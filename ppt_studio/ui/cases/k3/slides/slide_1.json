@@ -1,0 +1,458 @@
+{
+  "id": "s1",
+  "background": "#080c18",
+  "transition": "morph",
+  "notes": "开场：Kimi K3 全球发布。三个关键词——2.8T 参数、1M 上下文、全面开源。等标题缩放落定后再翻页。",
+  "elements": [
+    {
+      "id": "grain",
+      "type": "svg",
+      "x": 0,
+      "y": 0,
+      "w": 1280,
+      "h": 720,
+      "asset": "grain",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-a",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 780,
+      "y": -180,
+      "w": 560,
+      "h": 560,
+      "blur": 60,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 135,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(79,127,255,0.35)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(79,127,255,0)"
+          }
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-b",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": -240,
+      "y": 380,
+      "w": 480,
+      "h": 480,
+      "blur": 60,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 315,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(139,92,246,0.3)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(139,92,246,0)"
+          }
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "tile-a-01",
+      "type": "shape",
+      "shape": "rect",
+      "x": 960,
+      "y": -200,
+      "w": 500,
+      "h": 500,
+      "rotation": 0,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 135,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(79,127,255,0.16)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(79,127,255,0)"
+          }
+        ]
+      },
+      "radius": 120,
+      "opacity": 1
+    },
+    {
+      "id": "tile-b-01",
+      "type": "shape",
+      "shape": "rect",
+      "x": -220,
+      "y": 460,
+      "w": 400,
+      "h": 400,
+      "rotation": 0,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 315,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(139,92,246,0.16)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(139,92,246,0)"
+          }
+        ]
+      },
+      "radius": 80,
+      "opacity": 1
+    },
+    {
+      "id": "ghost-01",
+      "type": "text",
+      "x": 800,
+      "y": 420,
+      "w": 420,
+      "h": 260,
+      "html": "K3",
+      "fontSize": 220,
+      "fontWeight": 800,
+      "color": "rgba(126,162,255,0.08)",
+      "align": "center",
+      "valign": "middle",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "bk1",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 1020,
+      "y": 120,
+      "w": 26,
+      "h": 26,
+      "fill": "#7ea2ff",
+      "opacity": 0.4,
+      "shadow": {
+        "y": 0,
+        "blur": 12,
+        "color": "rgba(126,162,255,0.45)"
+      },
+      "rotation": 0
+    },
+    {
+      "id": "bk2",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 720,
+      "y": 520,
+      "w": 18,
+      "h": 18,
+      "fill": "#a98bff",
+      "opacity": 0.35,
+      "shadow": {
+        "y": 0,
+        "blur": 10,
+        "color": "rgba(169,139,255,0.4)"
+      },
+      "rotation": 0
+    },
+    {
+      "id": "bk3",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 1180,
+      "y": 440,
+      "w": 14,
+      "h": 14,
+      "fill": "#6ee7f9",
+      "opacity": 0.3,
+      "shadow": {
+        "y": 0,
+        "blur": 10,
+        "color": "rgba(110,231,249,0.4)"
+      },
+      "rotation": 0
+    },
+    {
+      "id": "c1-img",
+      "type": "image",
+      "src": "image/cover.webp",
+      "x": 560,
+      "y": 0,
+      "w": 720,
+      "h": 720,
+      "fit": "cover",
+      "opacity": 0.6,
+      "rotation": 0
+    },
+    {
+      "id": "c1-mask",
+      "type": "shape",
+      "shape": "rect",
+      "x": 0,
+      "y": 0,
+      "w": 900,
+      "h": 720,
+      "fill": "#080c18",
+      "opacity": 0.45,
+      "rotation": 0
+    },
+    {
+      "id": "fx-line",
+      "type": "shape",
+      "shape": "rect",
+      "x": 80,
+      "y": 150,
+      "w": 6,
+      "h": 120,
+      "fill": "#4f7fff",
+      "radius": 3,
+      "fx": {
+        "enter": "fade",
+        "order": 0
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "c1-kicker",
+      "type": "text",
+      "x": 104,
+      "y": 148,
+      "w": 600,
+      "h": 30,
+      "html": "MOONSHOT AI · 2026 夏季旗舰发布",
+      "fontSize": 18,
+      "color": "#7ea2ff",
+      "fontWeight": 600,
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 0
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-title",
+      "type": "text",
+      "x": 100,
+      "y": 180,
+      "w": 700,
+      "h": 130,
+      "html": "Kimi K3",
+      "fontSize": 100,
+      "fontWeight": 800,
+      "colorGradient": {
+        "angle": 120,
+        "stops": [
+          {
+            "at": 0,
+            "color": "#ffffff"
+          },
+          {
+            "at": 1,
+            "color": "#8fb2ff"
+          }
+        ]
+      },
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 1,
+        "ambient": "kenburns",
+        "ken": {
+          "dir": "out",
+          "scale": 1.04,
+          "duration": 2.6
+        }
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "c1-sub",
+      "type": "text",
+      "x": 104,
+      "y": 316,
+      "w": 700,
+      "h": 40,
+      "html": "全球最大规模开源模型 · 2.8 万亿参数",
+      "fontSize": 26,
+      "color": "#c6d2f5",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 2
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "c1-p1",
+      "type": "shape",
+      "shape": "rect",
+      "x": 104,
+      "y": 392,
+      "w": 150,
+      "h": 44,
+      "fill": "#16224a",
+      "stroke": "#3b5bd6",
+      "strokeWidth": 1,
+      "radius": 22,
+      "fx": {
+        "enter": "fade-up",
+        "order": 3
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "c1-p1t",
+      "type": "text",
+      "x": 104,
+      "y": 392,
+      "w": 150,
+      "h": 44,
+      "html": "2.8T 参数",
+      "fontSize": 16,
+      "color": "#9db8ff",
+      "align": "center",
+      "valign": "middle",
+      "fontWeight": 600,
+      "fx": {
+        "enter": "fade-up",
+        "order": 3
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "c1-p2",
+      "type": "shape",
+      "shape": "rect",
+      "x": 268,
+      "y": 392,
+      "w": 190,
+      "h": 44,
+      "fill": "#16224a",
+      "stroke": "#3b5bd6",
+      "strokeWidth": 1,
+      "radius": 22,
+      "fx": {
+        "enter": "fade-up",
+        "order": 4
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "c1-p2t",
+      "type": "text",
+      "x": 268,
+      "y": 392,
+      "w": 190,
+      "h": 44,
+      "html": "1M Token 上下文",
+      "fontSize": 16,
+      "color": "#9db8ff",
+      "align": "center",
+      "valign": "middle",
+      "fontWeight": 600,
+      "fx": {
+        "enter": "fade-up",
+        "order": 4
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "c1-p3",
+      "type": "shape",
+      "shape": "rect",
+      "x": 472,
+      "y": 392,
+      "w": 170,
+      "h": 44,
+      "fill": "#16224a",
+      "stroke": "#3b5bd6",
+      "strokeWidth": 1,
+      "radius": 22,
+      "fx": {
+        "enter": "fade-up",
+        "order": 5
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "c1-p3t",
+      "type": "text",
+      "x": 472,
+      "y": 392,
+      "w": 170,
+      "h": 44,
+      "html": "权重全面开源",
+      "fontSize": 16,
+      "color": "#9db8ff",
+      "align": "center",
+      "valign": "middle",
+      "fontWeight": 600,
+      "fx": {
+        "enter": "fade-up",
+        "order": 5
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "c1-date",
+      "type": "text",
+      "x": 104,
+      "y": 620,
+      "w": 700,
+      "h": 28,
+      "html": "2026.07.16 正式发布 · 07.27 权重与技术报告全量开源",
+      "fontSize": 15,
+      "color": "#6b7799",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade",
+        "order": 6
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "mg-dot",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 446,
+      "y": 236,
+      "w": 20,
+      "h": 20,
+      "fill": "#7ea2ff",
+      "opacity": 0.85,
+      "shadow": {
+        "y": 0,
+        "blur": 16,
+        "color": "rgba(126,162,255,0.5)"
+      },
+      "rotation": 0
+    }
+  ]
+}
+

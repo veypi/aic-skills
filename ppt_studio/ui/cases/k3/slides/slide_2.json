@@ -1,0 +1,480 @@
+{
+  "id": "s2",
+  "transition": "morph",
+  "notes": "四个数字看懂 K3：2.8 万亿参数、100 万 Token 上下文、896 专家激活 16、2.5 倍效率提升。所有数字滚动计数。",
+  "elements": [
+    {
+      "id": "fx-a",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 780,
+      "y": -180,
+      "w": 560,
+      "h": 560,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 45,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(79,127,255,0.28)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(79,127,255,0)"
+          }
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-b",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": -240,
+      "y": 380,
+      "w": 480,
+      "h": 480,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 225,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(34,211,238,0.22)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(34,211,238,0)"
+          }
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "tile-a-02",
+      "type": "shape",
+      "shape": "rect",
+      "x": -200,
+      "y": -220,
+      "w": 440,
+      "h": 440,
+      "rotation": 14,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 45,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(139,92,246,0.16)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(139,92,246,0)"
+          }
+        ]
+      },
+      "radius": 80,
+      "opacity": 1
+    },
+    {
+      "id": "tile-b-02",
+      "type": "shape",
+      "shape": "rect",
+      "x": 1080,
+      "y": 430,
+      "w": 360,
+      "h": 360,
+      "rotation": -10,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 225,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(34,211,238,0.15)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(34,211,238,0)"
+          }
+        ]
+      },
+      "radius": 50,
+      "opacity": 1
+    },
+    {
+      "id": "ghost-02",
+      "type": "text",
+      "x": 900,
+      "y": 40,
+      "w": 320,
+      "h": 220,
+      "html": "01",
+      "fontSize": 180,
+      "fontWeight": 800,
+      "color": "rgba(139,92,246,0.08)",
+      "align": "center",
+      "valign": "middle",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-title",
+      "type": "text",
+      "x": 80,
+      "y": 56,
+      "w": 1000,
+      "h": 60,
+      "html": "一分钟看懂 <b>Kimi K3</b>",
+      "fontSize": 40,
+      "fontWeight": 700,
+      "color": "#ffffff",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 0
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-line",
+      "type": "shape",
+      "shape": "rect",
+      "x": 80,
+      "y": 126,
+      "w": 64,
+      "h": 4,
+      "fill": "#4f7fff",
+      "radius": 2,
+      "fx": {
+        "enter": "fade",
+        "order": 0
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "pg-num",
+      "type": "text",
+      "x": 1150,
+      "y": 676,
+      "w": 80,
+      "h": 24,
+      "html": "{{page:2}}",
+      "fontSize": 13,
+      "color": "rgba(154,165,196,0.5)",
+      "align": "right",
+      "valign": "middle",
+      "letterSpacing": 2,
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s2-cd1",
+      "type": "shape",
+      "shape": "rect",
+      "x": 80,
+      "y": 180,
+      "w": 530,
+      "h": 210,
+      "fill": "#131a30",
+      "stroke": "#2a3557",
+      "strokeWidth": 1,
+      "radius": 18,
+      "shadow": {
+        "y": 14,
+        "blur": 34,
+        "color": "rgba(0,0,0,0.35)"
+      },
+      "fx": {
+        "enter": "fade-up",
+        "order": 1
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s2-cd1u",
+      "type": "text",
+      "x": 250,
+      "y": 238,
+      "w": 120,
+      "h": 40,
+      "html": "万亿",
+      "fontSize": 28,
+      "fontWeight": 700,
+      "color": "#4f7fff",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 1
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s2-cd1t",
+      "type": "text",
+      "x": 116,
+      "y": 300,
+      "w": 460,
+      "h": 64,
+      "html": "参数规模<br><span style='font-size:15px;color:#8b96b8'>全球首个 2.8 万亿参数开源模型，连续 12 个月中的 9 个月保持开源规模上限</span>",
+      "fontSize": 20,
+      "color": "#e6ecff",
+      "lineHeight": 1.4,
+      "fx": {
+        "enter": "fade-up",
+        "order": 2
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s2-cd2",
+      "type": "shape",
+      "shape": "rect",
+      "x": 670,
+      "y": 180,
+      "w": 530,
+      "h": 210,
+      "fill": "#131a30",
+      "stroke": "#2a3557",
+      "strokeWidth": 1,
+      "radius": 18,
+      "shadow": {
+        "y": 14,
+        "blur": 34,
+        "color": "rgba(0,0,0,0.35)"
+      },
+      "fx": {
+        "enter": "fade-up",
+        "order": 2
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s2-cd2n",
+      "type": "text",
+      "x": 706,
+      "y": 214,
+      "w": 180,
+      "h": 76,
+      "html": "100",
+      "fontSize": 60,
+      "fontWeight": 800,
+      "color": "#8b5cf6",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 2,
+        "countUp": true
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s2-cd2u",
+      "type": "text",
+      "x": 856,
+      "y": 238,
+      "w": 80,
+      "h": 40,
+      "html": "万",
+      "fontSize": 28,
+      "fontWeight": 700,
+      "color": "#8b5cf6",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 2
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s2-cd2t",
+      "type": "text",
+      "x": 706,
+      "y": 300,
+      "w": 460,
+      "h": 64,
+      "html": "Token 上下文窗口<br><span style='font-size:15px;color:#8b96b8'>原生视觉理解，单 Agent 即可吃透超长任务，无需上下文压缩</span>",
+      "fontSize": 20,
+      "color": "#e6ecff",
+      "lineHeight": 1.4,
+      "fx": {
+        "enter": "fade-up",
+        "order": 3
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s2-cd3",
+      "type": "shape",
+      "shape": "rect",
+      "x": 80,
+      "y": 430,
+      "w": 530,
+      "h": 210,
+      "fill": "#131a30",
+      "stroke": "#2a3557",
+      "strokeWidth": 1,
+      "radius": 18,
+      "shadow": {
+        "y": 14,
+        "blur": 34,
+        "color": "rgba(0,0,0,0.35)"
+      },
+      "fx": {
+        "enter": "fade-up",
+        "order": 3
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s2-cd3n",
+      "type": "text",
+      "x": 116,
+      "y": 464,
+      "w": 460,
+      "h": 76,
+      "html": "896 → 16",
+      "fontSize": 60,
+      "fontWeight": 800,
+      "color": "#22d3ee",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 3,
+        "countUp": true
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s2-cd3t",
+      "type": "text",
+      "x": 116,
+      "y": 550,
+      "w": 460,
+      "h": 64,
+      "html": "稀疏专家激活<br><span style='font-size:15px;color:#8b96b8'>Stable LatentMoE 框架，896 个专家中高效激活 16 个</span>",
+      "fontSize": 20,
+      "color": "#e6ecff",
+      "lineHeight": 1.4,
+      "fx": {
+        "enter": "fade-up",
+        "order": 4
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s2-cd4",
+      "type": "shape",
+      "shape": "rect",
+      "x": 670,
+      "y": 430,
+      "w": 530,
+      "h": 210,
+      "fill": "#131a30",
+      "stroke": "#2a3557",
+      "strokeWidth": 1,
+      "radius": 18,
+      "shadow": {
+        "y": 14,
+        "blur": 34,
+        "color": "rgba(0,0,0,0.35)"
+      },
+      "fx": {
+        "enter": "fade-up",
+        "order": 4
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s2-cd4n",
+      "type": "text",
+      "x": 706,
+      "y": 464,
+      "w": 460,
+      "h": 76,
+      "html": "2.5×",
+      "fontSize": 60,
+      "fontWeight": 800,
+      "color": "#34d399",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 4,
+        "countUp": true
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s2-cd4t",
+      "type": "text",
+      "x": 706,
+      "y": 550,
+      "w": 460,
+      "h": 64,
+      "html": "扩展效率提升<br><span style='font-size:15px;color:#8b96b8'>相比 K2，算力转化为能力的整体效率提升约 2.5 倍</span>",
+      "fontSize": 20,
+      "color": "#e6ecff",
+      "lineHeight": 1.4,
+      "fx": {
+        "enter": "fade-up",
+        "order": 5
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "mg-dot",
+      "type": "shape",
+      "shape": "rect",
+      "x": 127,
+      "y": 198,
+      "w": 107,
+      "h": 82,
+      "fill": "#ffffff",
+      "opacity": 0.85,
+      "shadow": {
+        "y": 0,
+        "blur": 16,
+        "color": "rgba(79,127,255,0.5)"
+      },
+      "rotation": 0,
+      "radius": 30
+    },
+    {
+      "id": "ems6gjx7h2clxs",
+      "type": "text",
+      "x": 133,
+      "y": 198,
+      "w": 96,
+      "h": 80,
+      "rotation": 0,
+      "opacity": 1,
+      "html": "2.8",
+      "fontSize": 60,
+      "fontFamily": "system-ui",
+      "fontWeight": 700,
+      "color": "#0a43ff",
+      "align": "center",
+      "valign": "middle",
+      "lineHeight": 1.25
+    }
+  ],
+  "background": "#0b1020"
+}

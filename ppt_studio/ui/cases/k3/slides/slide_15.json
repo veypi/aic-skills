@@ -1,0 +1,385 @@
+{
+  "id": "s10b",
+  "transition": "morph",
+  "notes": "同场比价表：引擎原生 table 元素（列宽权重、斑马纹、表头定制、单元格加粗/着色/对齐）。K3 缓存输入价约为闭源旗舰的 1/15。",
+  "elements": [
+    {
+      "id": "fx-a",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 780,
+      "y": -180,
+      "w": 560,
+      "h": 560,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 45,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(52,211,153,0.22)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(52,211,153,0)"
+          }
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-b",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": -240,
+      "y": 380,
+      "w": 480,
+      "h": 480,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 225,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(79,127,255,0.26)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(79,127,255,0)"
+          }
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "tile-a-17",
+      "type": "shape",
+      "shape": "rect",
+      "x": -230,
+      "y": -240,
+      "w": 440,
+      "h": 440,
+      "rotation": 10,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 45,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(52,211,153,0.14)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(52,211,153,0)"
+          }
+        ]
+      },
+      "radius": 90,
+      "opacity": 1
+    },
+    {
+      "id": "tile-b-17",
+      "type": "shape",
+      "shape": "rect",
+      "x": 1070,
+      "y": 400,
+      "w": 400,
+      "h": 400,
+      "rotation": -12,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 225,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(79,127,255,0.15)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(79,127,255,0)"
+          }
+        ]
+      },
+      "radius": 70,
+      "opacity": 1
+    },
+    {
+      "id": "ghost-17",
+      "type": "text",
+      "x": 880,
+      "y": 40,
+      "w": 320,
+      "h": 210,
+      "html": "$3",
+      "fontSize": 175,
+      "fontWeight": 800,
+      "color": "rgba(52,211,153,0.08)",
+      "align": "center",
+      "valign": "middle",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-title",
+      "type": "text",
+      "x": 80,
+      "y": 56,
+      "w": 1000,
+      "h": 60,
+      "html": "同场比价，<b>一目了然</b>",
+      "fontSize": 40,
+      "fontWeight": 700,
+      "color": "#ffffff",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 0
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-line",
+      "type": "shape",
+      "shape": "rect",
+      "x": 80,
+      "y": 126,
+      "w": 64,
+      "h": 4,
+      "fill": "#4f7fff",
+      "radius": 2,
+      "fx": {
+        "enter": "fade",
+        "order": 0
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "pg-num",
+      "type": "text",
+      "x": 1150,
+      "y": 676,
+      "w": 80,
+      "h": 24,
+      "html": "{{page:2}}",
+      "fontSize": 13,
+      "color": "rgba(154,165,196,0.5)",
+      "align": "right",
+      "valign": "middle",
+      "letterSpacing": 2,
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s10b-table",
+      "type": "table",
+      "x": 80,
+      "y": 168,
+      "w": 1120,
+      "h": 380,
+      "header": true,
+      "columns": [
+        {
+          "w": 0.26
+        },
+        {
+          "w": 0.185
+        },
+        {
+          "w": 0.185
+        },
+        {
+          "w": 0.185
+        },
+        {
+          "w": 0.185
+        }
+      ],
+      "rows": [
+        {
+          "cells": [
+            {
+              "html": "模型"
+            },
+            {
+              "html": "输入 /M",
+              "align": "right"
+            },
+            {
+              "html": "输出 /M",
+              "align": "right"
+            },
+            {
+              "html": "缓存输入 /M",
+              "align": "right"
+            },
+            {
+              "html": "上下文",
+              "align": "right"
+            }
+          ]
+        },
+        {
+          "cells": [
+            {
+              "html": "Kimi K3",
+              "bold": true,
+              "color": "#8fb2ff"
+            },
+            {
+              "html": "$3",
+              "align": "right",
+              "bold": true,
+              "color": "#8fb2ff"
+            },
+            {
+              "html": "$15",
+              "align": "right",
+              "bold": true,
+              "color": "#8fb2ff"
+            },
+            {
+              "html": "$0.30",
+              "align": "right",
+              "bold": true,
+              "color": "#34d399"
+            },
+            {
+              "html": "1M",
+              "align": "right",
+              "bold": true,
+              "color": "#8fb2ff"
+            }
+          ]
+        },
+        {
+          "cells": [
+            {
+              "html": "GPT-5.6 Max"
+            },
+            {
+              "html": "$10",
+              "align": "right"
+            },
+            {
+              "html": "$60",
+              "align": "right"
+            },
+            {
+              "html": "$5.00",
+              "align": "right"
+            },
+            {
+              "html": "400K",
+              "align": "right"
+            }
+          ]
+        },
+        {
+          "cells": [
+            {
+              "html": "Opus 4.8"
+            },
+            {
+              "html": "$9",
+              "align": "right"
+            },
+            {
+              "html": "$54",
+              "align": "right"
+            },
+            {
+              "html": "$4.50",
+              "align": "right"
+            },
+            {
+              "html": "500K",
+              "align": "right"
+            }
+          ]
+        },
+        {
+          "cells": [
+            {
+              "html": "Kimi K2"
+            },
+            {
+              "html": "$2",
+              "align": "right"
+            },
+            {
+              "html": "$8",
+              "align": "right"
+            },
+            {
+              "html": "$0.50",
+              "align": "right"
+            },
+            {
+              "html": "256K",
+              "align": "right"
+            }
+          ]
+        }
+      ],
+      "style": {
+        "headerBg": "#1a2547",
+        "headerColor": "#cdd9ff",
+        "zebra": "rgba(79,127,255,0.06)",
+        "borderColor": "rgba(59,91,214,0.3)",
+        "borderWidth": 1,
+        "cellPadX": 22,
+        "cellPadY": 15,
+        "fontSize": 18,
+        "color": "#dbe4ff",
+        "radius": 14
+      },
+      "fx": {
+        "enter": "fade-up",
+        "order": 1
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s10b-note",
+      "type": "text",
+      "x": 80,
+      "y": 584,
+      "w": 1120,
+      "h": 56,
+      "html": "2026 年 7 月公开刊例价。K3 缓存输入价格约为闭源旗舰的 <b style='color:#34d399'>1/15</b>——长上下文 Agent 场景的成本结构被改写",
+      "fontSize": 18,
+      "color": "#c6d2f5",
+      "align": "center",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade",
+        "order": 2
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "mg-dot",
+      "type": "shape",
+      "shape": "rect",
+      "x": 1106,
+      "y": 270,
+      "w": 30,
+      "h": 30,
+      "fill": "#34d399",
+      "opacity": 0.85,
+      "shadow": {
+        "y": 0,
+        "blur": 16,
+        "color": "rgba(52,211,153,0.5)"
+      },
+      "rotation": 0
+    }
+  ],
+  "background": "#0b1020"
+}

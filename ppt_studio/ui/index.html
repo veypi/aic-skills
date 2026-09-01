@@ -1,0 +1,1590 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta name="description" content="PPT Studio — vhtml 版幻灯片工作台：内置样例 + 本地 /ppt/ 文件存储 + pageDesc 指令操控面" />
+  <title>PPT Studio</title>
+</head>
+<style>
+  body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* ---- 顶部工具栏 ---- */
+  .topbar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-color-secondary);
+    position: relative;
+    z-index: 20;
+  }
+
+  .brand {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-primary);
+    white-space: nowrap;
+  }
+
+  .doc-meta {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    margin-left: var(--spacing-sm);
+  }
+
+  .doc-title {
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-color);
+    max-width: 300px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .kind-chip {
+    display: inline-block;
+    vertical-align: 2px;
+    margin-right: 6px;
+    padding: 1px 7px;
+    border-radius: var(--radius-full);
+    font-size: 10px;
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.5px;
+    background: color-mix(in srgb, var(--color-warning) 24%, transparent);
+    color: color-mix(in srgb, var(--color-warning) 60%, var(--text-color));
+  }
+
+  .doc-sub {
+    font-size: var(--font-size-xs);
+    color: var(--text-color-tertiary);
+    max-width: 320px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: var(--font-mono);
+  }
+
+  .spacer {
+    flex: 1;
+  }
+
+  .seg {
+    display: flex;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .seg button {
+    border: none;
+    background: transparent;
+    padding: 5px 14px;
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    color: var(--text-color-secondary);
+    transition: background var(--transition-fast), color var(--transition-fast);
+  }
+
+  .seg button.on {
+    background: var(--color-primary);
+    color: var(--color-primary-text);
+  }
+
+  .btn {
+    border: 1px solid var(--border-color);
+    background: var(--bg-color-secondary);
+    border-radius: var(--radius-md);
+    padding: 5px 12px;
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    color: var(--text-color-secondary);
+    transition: border-color var(--transition-fast), background var(--transition-fast);
+    white-space: nowrap;
+  }
+
+  .btn:hover:not(:disabled) {
+    border-color: var(--border-color-hover);
+  }
+
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .btn.primary {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-primary-text);
+  }
+
+  .btn.primary:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+  }
+
+  .save-state {
+    font-size: var(--font-size-xs);
+    color: var(--text-color-tertiary);
+    min-width: 70px;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* ---- 弹出层（样例 / 会话文件） ---- */
+  .fpop-wrap {
+    position: relative;
+  }
+
+  .fpop {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 30;
+    width: 340px;
+    padding: 10px 12px;
+    background: var(--bg-color-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+  }
+
+  .fhead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .fhead h4 {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-color-secondary);
+  }
+
+  .fhead button {
+    font: inherit;
+    color: var(--text-color-tertiary);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    padding: 2px 8px;
+    cursor: pointer;
+  }
+
+  .fhead button:hover {
+    color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  }
+
+  .flist {
+    max-height: 280px;
+    overflow-y: auto;
+    margin-top: 8px;
+  }
+
+  .fitem {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 8px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+  }
+
+  .fitem:hover {
+    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  }
+
+  .fitem.cur {
+    background: color-mix(in srgb, var(--color-primary) 16%, transparent);
+  }
+
+  .fitem .fname {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
+    color: var(--text-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .fitem .fmeta {
+    flex: 0 0 auto;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-color-tertiary);
+  }
+
+  .fitem .fdel {
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--text-color-tertiary);
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+  }
+
+  .fitem:hover .fdel {
+    opacity: 1;
+  }
+
+  .fitem .fdel:hover {
+    color: var(--color-danger);
+    background: color-mix(in srgb, var(--color-danger) 14%, transparent);
+  }
+
+  .fempty {
+    padding: 8px;
+    font-size: var(--font-size-xs);
+    color: var(--text-color-tertiary);
+  }
+
+  /* ---- 样例条目 ---- */
+  .citem {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background var(--transition-fast), transform var(--transition-fast);
+  }
+
+  .citem:hover {
+    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    transform: translateX(2px);
+  }
+
+  .citem.cur {
+    background: color-mix(in srgb, var(--color-primary) 16%, transparent);
+  }
+
+  .cdot {
+    flex: 0 0 auto;
+    width: 10px;
+    height: 10px;
+    margin-top: 4px;
+    border-radius: var(--radius-full);
+    box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 12%, transparent);
+  }
+
+  .cmeta {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .cname {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .cdef {
+    padding: 0 5px;
+    border-radius: var(--radius-sm);
+    font-size: 10px;
+    font-weight: var(--font-weight-semibold);
+    background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+    color: var(--color-primary);
+  }
+
+  .cdesc {
+    font-size: var(--font-size-xs);
+    color: var(--text-color-tertiary);
+    line-height: 1.4;
+  }
+
+  .cslides {
+    flex: 0 0 auto;
+    margin-top: 2px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-color-tertiary);
+    white-space: nowrap;
+  }
+
+  .ctip {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border-color);
+    font-size: 11px;
+    color: var(--text-color-tertiary);
+    line-height: 1.5;
+  }
+
+  /* ---- 主区域：stage-box + 右侧切换式侧栏 ---- */
+  .main {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+  }
+
+  .stage-box {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .stage-box ppt-stage {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ---- 右侧切换式侧栏（AI 助手 / 属性 双 tab） ---- */
+  .side-pane {
+    flex: none;
+    width: 380px;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--border-color);
+    background: var(--bg-color-secondary);
+  }
+
+  .side-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* 切 tab：面板从 display:none 恢复显示时动画重放，形成轻量淡入 */
+  .side-body>* {
+    animation: side-in var(--transition-base);
+  }
+
+  @keyframes side-in {
+    from {
+      opacity: .35;
+      transform: translateY(5px);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .side-props {
+    flex: 1;
+    min-height: 0;
+    display: block;
+    /* panel.html 自带 border-left（旧版紧邻舞台时作分隔线），现由 .side-pane 统一提供，避免双线 */
+    border-left: none !important;
+  }
+
+  /* ---- 底部悬浮控制条（放映丸 + 缩放丸） ---- */
+  .stage-cluster {
+    position: absolute;
+    left: 50%;
+    bottom: 14px;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 10;
+  }
+
+  .pill {
+    display: flex;
+    align-items: center;
+    background: var(--bg-color-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-md);
+    padding: 4px;
+  }
+
+  button.pill {
+    padding: 7px 18px;
+    cursor: pointer;
+    color: var(--text-color-secondary);
+    font-size: var(--font-size-sm);
+    transition: color var(--transition-fast), border-color var(--transition-fast);
+  }
+
+  button.pill:hover:not(:disabled) {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+
+  button.pill:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+  }
+
+  .pill.zoom button {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--text-color-secondary);
+    font-size: 13px;
+    min-width: 28px;
+    height: 26px;
+    border-radius: var(--radius-full);
+    transition: color var(--transition-fast);
+  }
+
+  .pill.zoom button:hover {
+    color: var(--color-primary);
+  }
+
+  .pill.zoom .zv {
+    min-width: 54px;
+    font-size: var(--font-size-xs);
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (max-width: 960px) {
+    .side-pane {
+      width: 300px;
+    }
+
+    .doc-title {
+      max-width: 140px;
+    }
+
+    .doc-sub {
+      max-width: 160px;
+    }
+  }
+</style>
+
+<body>
+  <div class="topbar">
+    <div class="brand">PPT Studio</div>
+    <div class="doc-meta">
+      <span class="doc-title"><span class="kind-chip" v-if="cur_kind === 'case'">{{ $t('badge.case') }}</span>{{ title
+        || $t('loading') }}</span>
+      <span class="doc-sub">{{ cur_kind === 'case' ? 'cases/' + cur_case : (cur_path || $t('noFile')) }}</span>
+    </div>
+    <div class="spacer"></div>
+    <div class="fpop-wrap">
+      <button class="btn" @click.stop="toggleCases">✦ {{ $t('btn.cases') }}</button>
+      <div class="fpop" v-if="show_cases">
+        <div class="fhead">
+          <h4>{{ $t('cases.title') }}</h4>
+          <button @click="loadCases">{{ $t('refresh') }}</button>
+        </div>
+        <div class="flist">
+          <div class="fempty" v-if="cases_loading">{{ $t('scanning') }}</div>
+          <div class="fempty" v-else-if="!cases.length">{{ $t('cases.empty') }}</div>
+          <div v-else v-for="c in cases" class="citem"
+            :class="{ cur: cur_kind === 'case' && cur_case === c.id }" @click="pickCase(c.id)">
+            <span class="cdot"
+              :style="{ background: c.accent || 'var(--color-primary)', color: c.accent || 'var(--color-primary)' }"></span>
+            <div class="cmeta">
+              <span class="cname">{{ c.title }}<span class="cdef" v-if="c.id === default_case">{{ $t('cases.default')
+                  }}</span></span>
+              <span class="cdesc">{{ c.desc }}</span>
+            </div>
+            <span class="cslides">{{ $t('cases.pages', {n: c.slides}) }}</span>
+          </div>
+        </div>
+        <div class="ctip">{{ $t('cases.tip') }}</div>
+      </div>
+    </div>
+    <div class="fpop-wrap">
+      <button class="btn" @click.stop="toggleFiles">📁 {{ $t('btn.files') }}</button>
+      <div class="fpop" v-if="show_files">
+        <div class="fhead">
+          <h4>{{ $t('files.title') }}</h4>
+          <button @click="refreshFiles">{{ $t('refresh') }}</button>
+        </div>
+        <div class="flist">
+          <div class="fempty" v-if="files_loading">{{ $t('scanning') }}</div>
+          <div class="fempty" v-else-if="!sess_files.length">{{ $t('files.empty') }}</div>
+          <div v-else v-for="f in sess_files" class="fitem"
+            :class="{ cur: cur_kind === 'session' && f.path === cur_path }" @click="pickFile(f.path)">
+            <span class="fname">{{ f.path }}</span>
+            <span class="fmeta">{{ fmtSize(f.size) }} · {{ fmtAgo(f.mod_time) }}</span>
+            <button class="fdel" :title="$t('files.delTitle')" @click.stop="delFile(f.path)">✕</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="btn" v-if="cur_kind === 'case'" @click="saveCaseUI" :disabled="!stage_ready">{{
+      $t('btn.saveCase') }}</button>
+    <button class="btn" @click="newDeckUI" :disabled="!stage_ready">＋ {{ $t('btn.new') }}</button>
+    <div class="seg">
+      <button :class="{ on: mode === 'edit' }" @click="switchMode('edit')">{{ $t('mode.edit') }}</button>
+      <button :class="{ on: mode === 'view' }" @click="switchMode('view')">{{ $t('mode.view') }}</button>
+    </div>
+    <button class="btn primary" @click="runPresent" :disabled="presenting || !stage_ready">▶ {{ $t('btn.present')
+      }}</button>
+    <span class="save-state">{{ save_state }}</span>
+  </div>
+  <ppt-toolbar v-if="mode === 'edit' && stage_ready" :st="st" @cmd="onToolbarCmd"></ppt-toolbar>
+  <div class="main" @click="show_files = false; show_cases = false">
+    <div class="stage-box">
+      <ppt-stage ref="stage" @update="onDocChange" @slidechange="onSlideChange" @presentclose="onPresentClose"
+        @statechange="onStateChange" @error="onStageError"></ppt-stage>
+      <div class="stage-cluster" v-if="mode === 'edit' && stage_ready">
+        <button class="pill" @click="runPresent" :disabled="presenting">▶ {{ $t('btn.present') }}</button>
+        <span class="pill zoom">
+          <button @click="zoomOut" :title="'Ctrl-'">−</button>
+          <button class="zv" @click="zoomReset" :title="'Ctrl+0'">{{ st.zoom || 100 }}%</button>
+          <button @click="zoomIn" :title="'Ctrl+'">＋</button>
+        </span>
+      </div>
+    </div>
+    <aside class="side-pane" v-if="mode === 'edit'">
+      <div class="side-body">
+        <ppt-panel class="side-props" :st="st" @cmd="onToolbarCmd"></ppt-panel>
+      </div>
+    </aside>
+  </div>
+</body>
+<script setup>
+  // ---- 界面状态 ----
+  title = ''
+  cur_path = ''          // 会话文件：相对会话根（如 会议纪要/会议纪要.json）；样例：相对 cases/
+  cur_kind = ''          // 'session' | 'case'
+  cur_case = ''          // 当前样例 id
+  cur_refs = {}          // 拆分文档：slideId → 分页相对引用（如 slides/slide_1.json）
+  cur_split = false      // 当前文档是否为拆分结构（决定保存时按拆分写回还是整体单写）
+  saved_snap = {}        // 增量保存：deck目录+分页引用 → 上次成功写入的序列化内容
+  saved_index_snap = {}  // 增量保存：deck路径 → index.json 上次成功写入的序列化内容
+  slide_count = 0
+  current = 0
+  mode = 'edit'
+  presenting = false
+  stage_ready = false
+  save_state = $t('state.loading')
+  show_files = false
+  files_loading = false
+  sess_files = []
+  cases = []             // 样例清单（ui/cases/cases.json）
+  default_case = ''
+  show_cases = false
+  cases_loading = false
+  st = {}                // 引擎状态快照（statechange），驱动编辑工具栏
+
+  // ---- 私有 ----
+  let saveTimer = null
+  let pendingDoc = null
+  let saveChain = Promise.resolve()
+  let suppressSave = false
+  let forking = false
+
+  // 本地文件根 /ppt/（页面本地存储，AI 侧经 fs 工具 1host=page 读写同一路径）
+  const sessRoot = () => '/ppt/'
+  const globalPath = (rel) => '/ppt/' + rel
+  const lastKey = () => 'ppt_last_open'
+  const caseJsonUrl = (id) => 'cases/' + id + '/index.json'        // 新约定：index.json + slides/ 拆分
+  const caseJsonUrlLegacy = (id) => 'cases/' + id + '/' + id + '.json'  // 兼容旧的单文件样例
+  // 样例资源（图片等）的绝对 URL 基座：组件内 fetch 会被运行时自动加 $mod.scoped 前缀，
+  // 但引擎运行时动态创建的 <img> 不走该前缀，必须给绝对路径（{scoped}/cases/...）
+  const caseBaseUrl = (id) => String($mod.scoped || '').replace(/\/+$/, '') + '/cases/' + id + '/'
+  // 写文件：统一走 $mod.$fs.put（树路径 = '/page' + 本地绝对路径；string/Blob 通吃，
+  // 父目录自动创建。原 $mod.$page_fs 已并入 $fs，v0.14.5 起不再单独存在）
+  const fsPut = async (path, blob) => {
+    if (!$mod.$fs) throw new Error($t('err.noFsPut'))
+    return await $mod.$fs.put('/page' + path, blob)
+  }
+  // 删除文件/目录：统一走 $mod.$fs.rm（树路径 '/page' 前缀；rm 递归语义对齐旧 $page_fs.rm）
+  const fsRm = async (path) => {
+    if (!$mod.$fs) throw new Error($t('err.noFsRm'))
+    return await $mod.$fs.rm('/page' + path)
+  }
+
+  // ---- 显示辅助 ----
+  fmtSize = (n) => (n >= 1024 ? (n / 1024).toFixed(1) + ' KB' : n + ' B')
+  fmtAgo = (ts) => {
+    const d = Date.now() / 1000 - ts
+    if (d < 60) return $t('time.justNow')
+    if (d < 3600) return $t('time.minutesAgo', {n: Math.floor(d / 60)})
+    if (d < 86400) return $t('time.hoursAgo', {n: Math.floor(d / 3600)})
+    return $t('time.daysAgo', {n: Math.floor(d / 86400)})
+  }
+  const truthy = (v) => v === true || v === 1 || String(v).toLowerCase() === 'true' || v === '1'
+  const asInt = (v, dft) => {const n = parseInt(v, 10); return isNaN(n) ? dft : n}
+  const stripHtml = (h) => String(h == null ? '' : h)
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/\s+/g, ' ')
+    .trim()
+  const slideSummary = (s, i) => {
+    const texts = []
+      ; (s.elements || []).forEach((el) => {
+        if (el.type === 'text' && el.html && texts.length < 3) {
+          const t = stripHtml(el.html)
+          if (t) texts.push(t.length > 40 ? t.slice(0, 40) + '…' : t)
+        }
+      })
+    return {
+      index: i + 1,
+      id: s.id || '',
+      name: s.name || '',
+      hidden: !!s.stateOf,
+      transition: s.transition || 'none',
+      elements: (s.elements || []).length,
+      text: texts.join(' | ')
+    }
+  }
+  const slimDoc = (doc) => {
+    const d = JSON.parse(JSON.stringify(doc))
+    if (d.assets) d.assets = Object.keys(d.assets)
+    delete d.collab
+    return d
+  }
+
+  // ---- 相对资源引用：加载时解析为 HTTP URL，保存时还原为相对路径（相对 xxx.json） ----
+  // 本地图片 → objectURL 双向映射（内存：相对路径 ↔ blob URL；页面刷新后重建）
+  const imgUrls = new Map()   // rel -> objectURL
+  const urlToRel = new Map()  // objectURL -> rel
+  const fsUrl = async (rel) => {
+    if (imgUrls.has(rel)) return imgUrls.get(rel)
+    try {
+      const r = await $mod.$fs.get('/page' + sessRoot() + rel)
+      const blob = r.content instanceof Blob ? r.content : new Blob([r.content], {type: r.mime || 'image/png'})
+      const url = URL.createObjectURL(blob)
+      imgUrls.set(rel, url)
+      urlToRel.set(url, rel)
+      return url
+    } catch (e) { return '' }
+  }
+
+  const isRelRef = (u) => typeof u === 'string' && !!u && !/^(https?:|data:|blob:|asset:|\/|#)/i.test(u)
+  // 加载：相对资源引用 → objectURL（会话文档，本地 IndexedDB 无 HTTP URL）；
+  // 样例（base 为绝对 URL 前缀）保持原行为：前缀拼接（scoped 静态资源可直连）
+  const resolveDocAssets = async (doc, base) => {
+    const prefixMode = typeof base === 'string' && /^(https?:|\/)/i.test(base)
+    if (prefixMode) {
+      ; (doc.slides || []).forEach((s) => (s.elements || []).forEach((el) => {
+        if (isRelRef(el.src)) el.src = base + el.src
+        if (isRelRef(el.poster)) el.poster = base + el.poster
+      }))
+      return doc
+    }
+    const dir = base.slice(0, base.lastIndexOf('/') + 1)
+    await Promise.all((doc.slides || []).map(async (s) => {
+      for (const el of (s.elements || [])) {
+        if (isRelRef(el.src)) el.src = await fsUrl(dir + el.src)
+        if (isRelRef(el.poster)) el.poster = await fsUrl(dir + el.poster)
+      }
+    }))
+    return doc
+  }
+  // 保存：objectURL → 相对路径（相对文档所在目录）
+  const unresolveDocAssets = (doc, rel) => {
+    const d = JSON.parse(JSON.stringify(doc))
+    const dir = rel.slice(0, rel.lastIndexOf('/') + 1)
+      ; (d.slides || []).forEach((s) => (s.elements || []).forEach((el) => {
+        for (const key of ['src', 'poster']) {
+          const u = el[key]
+          const r = urlToRel.get(u)
+          if (typeof u === 'string' && r && r.startsWith(dir)) el[key] = r.slice(dir.length)
+        }
+      }))
+    return d
+  }
+
+  // ---- 带定位的 JSON 解析：语法错误时给出行/列、出错行内容与 caret 标记，方便直接跳修 ----
+  const parseJson = (text, label) => {
+    try {
+      return JSON.parse(text)
+    } catch (e) {
+      const msg = (e && e.message) || String(e)
+      const m = /position\s+(\d+)/i.exec(msg)
+      if (m) {
+        const pos = parseInt(m[1], 10)
+        const head = String(text || '').slice(0, pos)
+        const line = head.split('\n').length
+        const col = pos - (head.lastIndexOf('\n') + 1) + 1
+        const lineText = String(text || '').split('\n')[line - 1] || ''
+        throw new Error((label || $t('err.jsonSyntax')) + $t('err.jsonAt', {line: line, col: col, msg: msg}) + '\n' + lineText + '\n' + ' '.repeat(Math.max(0, col - 1)) + '^')
+      }
+      throw new Error((label || $t('err.jsonSyntax')) + $t('err.jsonMsg', {msg: msg}))
+    }
+  }
+
+  // ---- 分页拆分加载：slides 元素为字符串时，按相对 index.json 的路径逐个拉取分页 json；对象则原样使用 ----
+  // 返回 { refs, split }：refs 为 slideId → 引用路径；split 表示文档是否含引用页。doc.slides 原地解析为对象数组
+  const resolveSlideRefs = async (doc, base, kind = 'case') => {
+    const refs = {}
+    let split = false
+    if (doc && Array.isArray(doc.slides)) {
+      doc.slides = await Promise.all(doc.slides.map(async (s, i) => {
+        if (typeof s !== 'string') return s
+        split = true
+        try {
+          // 会话文档：本地 page_fs 读分页；样例：scoped fetch（agent 静态资源）
+          const text = kind === 'session'
+            ? await readSessionText(base + s)
+            : await (async () => { const r = await fetch(base + s); if (!r.ok) throw new Error($t('err.slideLoad', {file: s, status: r.status})); return await r.text() })()
+          const sl = parseJson(text, $t('err.slideJson', {file: s}))
+          if (!sl || !Array.isArray(sl.elements)) throw new Error($t('err.slideBad', {file: s}))
+          if (sl.id) refs[sl.id] = s
+          return sl
+        } catch (e) {
+          // 单页失败不拖垮整稿：占位错误页（演示/打印自动跳过、编辑模式可删除），引用保留供保存回写
+          return {
+            id: 'broken-' + i,
+            broken: true,
+            brokenRef: s,
+            brokenError: (e && e.message) || String(e),
+            elements: [],
+          }
+        }
+      }))
+    }
+    return {refs, split}
+  }
+
+  // ---- 图片存储：插入上传到 {deck目录}/image/，删除同步删文件 ----
+  // 内存中 el.src 用完整 URL（与 resolveDocAssets 一致），保存时由 unresolveDocAssets 还原为相对路径 image/xxx
+  const deckDir = () => {
+    const i = cur_path.lastIndexOf('/')
+    return i >= 0 ? cur_path.slice(0, i + 1) : ''
+  }
+  const extOf = (file) => {
+    const n = (file && file.name) || ''
+    const i = n.lastIndexOf('.')
+    let ext = i >= 0 ? n.slice(i + 1).toLowerCase() : ''
+    if (!ext && file && file.type) {
+      const m = /image\/([a-z0-9.+-]+)/i.exec(file.type)
+      if (m) ext = m[1]
+    }
+    ext = String(ext || 'png').replace('jpeg', 'jpg').replace(/[^a-z0-9]/g, '')
+    return ext || 'png'
+  }
+  const imgName = (ext) => 'img-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext
+  const urlToFsPath = (url) => urlToRel.get(url) || '' 
+  // 传给 ppt.js 的图片存储钩子（引擎与文件系统解耦，仅通过此对象读写）
+  const imageStore = {
+    put: async (file) => {
+      if (cur_kind !== 'session' || !cur_path) throw new Error($t('img.caseReadonly'))
+      const rel = deckDir() + 'image/' + imgName(extOf(file))
+      await fsPut(sessRoot() + rel, file)
+      const url = URL.createObjectURL(file)
+      imgUrls.set(rel, url)
+      urlToRel.set(url, rel)
+      return url   // 返回内存中使用的 objectURL
+    },
+    remove: async (url) => {
+      const rel = urlToFsPath(url)
+      if (!rel) return                       // base64 / 外链 / 样例：无对应文件，忽略
+      if (rel.indexOf('/image/') < 0) return // 安全：仅删除 image 目录内的文件
+      imgUrls.delete(rel)
+      urlToRel.delete(url)
+      try {await fsRm(sessRoot() + rel)} catch (e) {console.warn('[PPT] 删除图片文件失败:', rel, (e && e.message) || e)}
+    }
+  }
+
+  // ---- 会话文件读写（$mod.$fs 树路径 '/page' 前缀；OPFS 本地存储） ----
+  const readDir = async (dir) => {
+    try {
+      return await $mod.$fs.get('/page' + dir)    // 目录 → {ok, dir:true, items}；不存在 → throw → null
+    } catch (_) { return null }
+  }
+  // 递归列出会话中的 .json 文件（跳过无权限目录，按修改时间倒序）
+  const walkJson = async () => {
+    const out = []
+    if (!$mod.$fs) return out
+    const walk = async (dir, prefix, depth) => {
+      if (depth > 3) return
+      let node
+      try {node = await readDir(dir)} catch (e) {return }
+      if (!node || !node.dir || !Array.isArray(node.items)) return
+      for (const it of node.items) {
+        const rel = prefix ? prefix + '/' + it.name : it.name
+        if (it.dir) {
+          if (it.name !== 'msgs' && it.name !== 'image' && it.name !== 'slides') await walk(dir + it.name + '/', rel, depth + 1)
+        } else if (/\.json$/i.test(it.name)) {
+          // OPFS 项 mtime 为毫秒（File.lastModified）——对内/对外契约 mod_time 为秒
+          out.push({path: rel, size: it.size || 0, mod_time: it.mtime ? Math.floor(it.mtime / 1000) : 0})
+        }
+      }
+    }
+    await walk(sessRoot(), '', 1)
+    out.sort((a, b) => b.mod_time - a.mod_time)
+    return out
+  }
+  // $fs.get 读取会话文件文本（不存在直接 throw；content string|Blob）
+  const readSessionText = async (rel) => {
+    const r = await $mod.$fs.get('/page' + sessRoot() + rel)
+    return typeof r.content === 'string' ? r.content : await r.content.text()
+  }
+  // 保存：还原相对引用后写 JSON。拆分结构（slides 含字符串引用）按引用逐页写回，
+  // index.json 保持引用数组；编辑器新增/复制的页自动分配 slides/slide_N.json；不再被引用的旧分页文件同步清理
+  const writeDeckFile = async (rel, doc) => {
+    const out = unresolveDocAssets(doc, rel)
+    delete out.collab
+    if (!cur_split) {
+      const text = JSON.stringify(out, null, 2)
+      if (text !== saved_index_snap[rel]) {
+        await fsPut(sessRoot() + rel, new Blob([text], {type: 'application/json'}))
+        saved_index_snap[rel] = text
+      }
+      return
+    }
+    const dir = rel.slice(0, rel.lastIndexOf('/') + 1)
+    const idCount = {}
+    out.slides.forEach((s) => {if (s && s.id) idCount[s.id] = (idCount[s.id] || 0) + 1})
+    const used = new Set()
+    const nextRefs = {}
+    const refs = []
+    for (let i = 0; i < out.slides.length; i++) {
+      const s = out.slides[i]
+      // 加载失败的占位页：不写文件，原引用字符串回写（补写文件后重新打开即可恢复）
+      if (s && s.broken && s.brokenRef) {
+        used.add(s.brokenRef)
+        refs.push(s.brokenRef)
+        continue
+      }
+      // 同 id 被复制出多份时不写引用（避免互相覆盖），该页内联
+      let ref = s && s.id && idCount[s.id] === 1 ? cur_refs[s.id] : null
+      if (ref && used.has(ref)) ref = null
+      if (!ref) ref = 'slides/slide_' + (i + 1) + '.json'
+      if (used.has(ref)) {refs.push(s); continue}
+      used.add(ref)
+      // 增量保存：序列化内容没变的分页跳过写文件（键含 deck 目录，防跨 deck 污染）
+      const text = JSON.stringify(s, null, 2)
+      if (saved_snap[dir + ref] !== text) {
+        await fsPut(sessRoot() + dir + ref, new Blob([text], {type: 'application/json'}))
+        saved_snap[dir + ref] = text
+      }
+      if (s && s.id) nextRefs[s.id] = ref
+      refs.push(ref)
+    }
+    out.slides = refs
+    cur_refs = nextRefs
+    const indexText = JSON.stringify(out, null, 2)
+    const indexChanged = indexText !== saved_index_snap[rel]
+    if (indexChanged) {
+      await fsPut(sessRoot() + rel, new Blob([indexText], {type: 'application/json'}))
+      saved_index_snap[rel] = indexText
+    }
+    // 结构有变化才清理：删除不再被引用的旧分页文件（如编辑器里删页后遗留）+ 过期快照
+    if (indexChanged) {
+      Object.keys(saved_snap).forEach((k) => {
+        if (k.indexOf(dir) === 0 && !used.has(k.slice(dir.length))) delete saved_snap[k]
+      })
+      try {
+        const node = await readDir(sessRoot() + dir + 'slides/')
+        if (node && node.dir && Array.isArray(node.items)) {
+          for (const it of node.items) {
+            if (!it.dir && /\.json$/i.test(it.name) && !used.has('slides/' + it.name)) {
+              try {await fsRm(sessRoot() + dir + 'slides/' + it.name)} catch (e) { }
+            }
+          }
+        }
+      } catch (e) { }
+    }
+  }
+
+  // 打开文档后初始化保存快照：之后自动保存只写内容真正变化的分页文件（样例/非拆分文档仅重置）
+  const snapDeckOpen = () => {
+    saved_snap = {}
+    saved_index_snap = {}
+    if (cur_kind !== 'session' || !cur_path || !cur_split) return
+    try {
+      const dir = cur_path.slice(0, cur_path.lastIndexOf('/') + 1)
+      const doc = stageApi().getDoc()
+        ; ((doc && doc.slides) || []).forEach((s) => {
+          const ref = s && s.id ? cur_refs[s.id] : null
+          if (ref) saved_snap[dir + ref] = JSON.stringify(unresolveDocAssets({slides: [s]}, cur_path).slides[0], null, 2)
+        })
+    } catch (e) { }
+  }
+
+  // ---- 保存链：串行化所有写入，防止慢请求乱序覆盖 ----
+  const enqueueSave = (doc) => {
+    saveChain = saveChain.then(() => persist(doc)).catch((e) => {
+      save_state = $t('state.saveFailed')
+      console.warn('[PPT] 保存失败:', (e && e.message) || e)
+    })
+  }
+  const persist = async (doc) => {
+    if (!cur_path || cur_kind !== 'session') return
+    await writeDeckFile(cur_path, doc)
+    save_state = $t('state.autoSaved')
+  }
+  const scheduleSave = (doc) => {
+    if (suppressSave || cur_kind !== 'session' || !cur_path) return
+    pendingDoc = doc
+    save_state = $t('state.saving')
+    if (saveTimer) clearTimeout(saveTimer)
+    saveTimer = setTimeout(() => {
+      saveTimer = null
+      const d = pendingDoc
+      pendingDoc = null
+      if (d) enqueueSave(d)
+    }, 1200)
+  }
+  // 切换文档前，把挂起的编辑立即落盘
+  flushSave = () => {
+    if (saveTimer) {
+      clearTimeout(saveTimer)
+      saveTimer = null
+      const d = pendingDoc
+      pendingDoc = null
+      if (d && cur_kind === 'session' && cur_path) enqueueSave(d)
+    }
+  }
+
+  // ---- 舞台访问 ----
+  const stageApi = () => {
+    const st = $refs.stage
+    if (!st || !st.$data || !st.$data.ready) throw new Error($t('err.notReady'))
+    return st.$data
+  }
+
+  // ---- 打开一个会话 deck 文件（成为当前文档） ----
+  openDeck = async (rel) => {
+    flushSave()
+    const text = await readSessionText(rel)
+    const doc = parseJson(text, $t('err.deckJson', {file: rel}))
+    if (!doc || !Array.isArray(doc.slides) || !doc.slides.length) throw new Error($t('err.deckBad', {file: rel}))
+    const deckDirOf = (p) => p.slice(0, p.lastIndexOf('/') + 1)
+    const sr = await resolveSlideRefs(doc, deckDirOf(rel), 'session')
+    cur_kind = 'session'
+    cur_case = ''
+    cur_path = rel
+    cur_refs = sr.refs
+    cur_split = sr.split
+    suppressSave = true
+    try {
+      stageApi().setDoc(await resolveDocAssets(doc, rel))
+    } finally {
+      suppressSave = false
+    }
+    snapDeckOpen()
+    title = doc.title || rel
+    slide_count = doc.slides.length
+    current = 0
+    save_state = $t('state.opened')
+    try {localStorage.setItem(lastKey(), rel)} catch (e) { }
+    return doc
+  }
+
+  pickFile = (rel) => {
+    show_files = false
+    openDeck(rel).catch((e) => $message.error($t('msg.openFailed', {err: (e && e.message) || e})))
+  }
+
+  // ---- 样例（cases） ----
+  loadCases = async () => {
+    cases_loading = true
+    try {
+      const r = await fetch('cases/cases.json')
+      if (!r.ok) throw new Error('HTTP ' + r.status)
+      const m = await r.json()
+      cases = Array.isArray(m.cases) ? m.cases : []
+      default_case = String(m.default || (cases[0] && cases[0].id) || '')
+    } catch (e) {
+      cases = []
+      default_case = ''
+      console.warn('[PPT] 样例清单加载失败:', (e && e.message) || e)
+    }
+    cases_loading = false
+  }
+
+  // 打开一个样例（只读模板：不自动保存，持久化用顶栏「存入会话」）
+  openCase = async (id) => {
+    flushSave()
+    if (!cases.length) await loadCases()
+    const c = cases.find((x) => x.id === id) || cases[0]
+    if (!c) throw new Error($t('err.noCases'))
+    let r = await fetch(caseJsonUrl(c.id))
+    if (!r.ok) r = await fetch(caseJsonUrlLegacy(c.id))
+    if (!r.ok) throw new Error($t('err.caseLoad', {id: c.id}))
+    const doc = parseJson(await r.text(), $t('err.caseJson', {id: c.id}))
+    delete doc.collab
+    if (!Array.isArray(doc.slides) || !doc.slides.length) throw new Error($t('err.caseBad', {id: c.id}))
+    const base = caseBaseUrl(c.id)
+    // 分页引用用相对基座（组件内 fetch 会被自动加 scoped 前缀）；图片另用绝对基座（引擎 img 不加前缀）
+    const sr = await resolveSlideRefs(doc, 'cases/' + c.id + '/', 'case')
+    cur_kind = 'case'
+    cur_case = c.id
+    cur_path = c.id + '/index.json'
+    cur_refs = sr.refs
+    cur_split = sr.split
+    suppressSave = true
+    try {
+      stageApi().setDoc(await resolveDocAssets(doc, base))
+    } finally {
+      suppressSave = false
+    }
+    snapDeckOpen()
+    title = doc.title || c.title || c.id
+    slide_count = doc.slides.length
+    current = 0
+    save_state = $t('state.caseReadonly')
+    return {id: c.id, title: title, slide_count: slide_count}
+  }
+
+  pickCase = (id) => {
+    show_cases = false
+    openCase(id).catch((e) => $message.error($t('msg.caseFailed', {err: (e && e.message) || e})))
+  }
+
+  toggleCases = () => {
+    show_cases = !show_cases
+    show_files = false
+    if (show_cases && !cases.length) loadCases()
+  }
+
+  // ---- 样例「存入会话」：显式操作（顶栏按钮 / save_ppt 事件）。样例本身绝不自动保存 ----
+  forkToSession = async (doc) => {
+    if (forking) throw new Error($t('err.forking'))
+    forking = true
+    try {
+      const c = cases.find((x) => x.id === cur_case) || {}
+      const base = sanitizeName(c.title || cur_case || 'sample') || 'sample'
+      const files = await walkJson()
+      sess_files = files
+      const taken = new Set(files.map((f) => f.path))
+      let name = base, n = 1
+      while (taken.has(name + '/index.json')) {n++; name = base + '-' + n}
+      const rel = name + '/index.json'
+      cur_kind = 'session'
+      cur_case = ''
+      cur_path = rel
+      cur_refs = {}
+      cur_split = true
+      await new Promise((res, rej) => {
+        saveChain = saveChain.then(() => writeDeckFile(rel, doc)).then(res, rej)
+      })
+      try {localStorage.setItem(lastKey(), rel)} catch (e) { }
+      return rel
+    } finally {
+      forking = false
+    }
+  }
+
+  // ---- 首次加载：上次打开的本地文件 → 本地 PPT → 默认样例 ----
+  loadInitial = async () => {
+    if (!stage_ready) return
+    save_state = $t('state.scanningCases')
+    await loadCases()
+    let opened = false
+    try {
+      const files = await walkJson()
+      sess_files = files
+      const taken = new Set(files.map((f) => f.path))
+      const last = localStorage.getItem(lastKey()) || ''
+      const cands = []
+      if (last && taken.has(last)) cands.push(last)
+      files.slice(0, 3).forEach((f) => {if (cands.indexOf(f.path) < 0) cands.push(f.path)})
+      for (const p of cands) {
+        try {await openDeck(p); opened = true; break}
+        catch (e) {console.warn('[PPT] 跳过非 PPT 文件:', p, (e && e.message) || e)}
+      }
+    } catch (e) {
+      console.warn('[PPT] 本地文件扫描失败:', (e && e.message) || e)
+    }
+    if (!opened && cases.length) {
+      try {await openCase(default_case); opened = true}
+      catch (e) {console.warn('[PPT] 默认样例加载失败:', (e && e.message) || e)}
+    }
+    if (!opened) save_state = $t('state.readyNoFile')
+  }
+
+  // ---- 文件列表弹层 ----
+  toggleFiles = () => {
+    show_files = !show_files
+    show_cases = false
+    if (show_files) refreshFiles()
+  }
+  refreshFiles = async () => {
+    files_loading = true
+    try {sess_files = await walkJson()} catch (e) {sess_files = []}
+    files_loading = false
+  }
+
+  // ---- 删除会话文件（删除其所在目录，含 json 与 image/ 图片） ----
+  cancelPendingSave = () => {
+    if (saveTimer) {clearTimeout(saveTimer); saveTimer = null}
+    pendingDoc = null
+  }
+  // 删除当前文档后兜底：打开另一个会话文件，否则回落默认样例
+  openSomething = async () => {
+    let files = []
+    try {files = await walkJson()} catch (e) {files = []}
+    sess_files = files
+    for (const f of files) {
+      try {await openDeck(f.path); return } catch (e) { }
+    }
+    if (cases.length) {
+      try {await openCase(default_case); return } catch (e) { }
+    }
+    save_state = $t('state.readyNoFile')
+  }
+  // rel 形如 会议纪要/会议纪要.json → 删除目录 会议纪要/
+  delFile = (rel) => {
+    const i = rel.lastIndexOf('/')
+    const dir = i >= 0 ? rel.slice(0, i) : rel
+    if (!dir) return
+    $message.confirm($t('msg.deleteConfirm', {dir: dir})).then(() => {
+      const wasCurrent = cur_kind === 'session' && !!cur_path && cur_path.indexOf(dir + '/') === 0
+      fsRm(sessRoot() + dir + '/').then(async () => {
+        $message.success($t('msg.deleted', {dir: dir}))
+        try {localStorage.removeItem(lastKey())} catch (e) { }
+        if (wasCurrent) {
+          cancelPendingSave()
+          cur_path = ''
+          cur_kind = ''
+          title = ''
+          await openSomething()
+        } else {
+          refreshFiles()
+        }
+      }).catch((e) => $message.error($t('msg.deleteFailed', {err: (e && e.message) || e})))
+    }).catch(() => { })
+  }
+
+  // ---- 新建 deck ----
+  sanitizeName = (s) => String(s || '')
+    .replace(/\.\./g, '')
+    .replace(/[\\/:*?"<>|]/g, '-')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 60)
+  newDeck = async (name, deckTitle) => {
+    const n = sanitizeName(name) || 'untitled'
+    const rel = n + '/index.json'
+    const doc = stageApi().starterDoc()
+    if (deckTitle) doc.title = String(deckTitle)
+    cur_refs = {}
+    cur_split = true
+    await writeDeckFile(rel, doc)
+    await openDeck(rel)
+    save_state = $t('state.created')
+    return {path: globalPath(rel), title: doc.title, slide_count: doc.slides.length}
+  }
+  newDeckUI = () => {
+    $message.prompt($t('msg.newPrompt'), $t('msg.newDefault')).then((v) => {
+      if (!v) return
+      newDeck(v, v).catch((e) => $message.error($t('msg.newFailed', {err: (e && e.message) || e})))
+    })
+  }
+
+  // ---- 立即保存（page_exec save_ppt）；样例不自动保存，此显式调用将样例转为会话文件 ----
+  saveNow = async () => {
+    flushSave()
+    if (cur_kind === 'case') {
+      const rel = await forkToSession(stageApi().getDoc())
+      save_state = $t('state.savedToSession')
+      return {path: globalPath(rel), forked: true}
+    }
+    if (!cur_path) throw new Error($t('err.noOpenFile'))
+    await writeDeckFile(cur_path, stageApi().getDoc())
+    save_state = $t('state.saved')
+    return {path: globalPath(cur_path)}
+  }
+
+  // ---- 样例显式存为会话文件（顶栏按钮） ----
+  saveCaseUI = () => {
+    if (cur_kind !== 'case') return
+    save_state = $t('state.savingToSession')
+    forkToSession(stageApi().getDoc()).then((rel) => {
+      save_state = $t('state.savedToSession')
+      $message.success($t('msg.savedAsSession', {path: rel}))
+      refreshFiles()
+    }).catch((e) => {
+      save_state = $t('state.saveFailed')
+      $message.error($t('msg.saveFailed', {err: (e && e.message) || e}))
+    })
+  }
+
+  // ---- stage 事件 ----
+  onDocChange = (doc) => {
+    if (!doc) return
+    title = doc.title || title
+    slide_count = (doc.slides || []).length
+    // 样例只读：任何情况下都不自动保存，编辑仅存于内存；持久化请用顶栏「存入会话」
+    if (cur_kind === 'session') scheduleSave(doc)
+  }
+  onSlideChange = (i) => {current = i}
+  onPresentClose = () => {presenting = false}
+
+  // ---- 工具栏 / 侧栏 ----
+  const applyMode = (m) => { mode = m }
+  switchMode = (m) => {
+    try {stageApi().setMode(m); applyMode(m)} catch (e) { }
+  }
+  runPresent = () => {
+    try {
+      stageApi().present(current || 0)
+      presenting = true
+    } catch (e) {presenting = false}
+  }
+  // ---- 底部缩放丸 ----
+  zoomIn = () => {try {stageApi().zoomIn()} catch (e) { } }
+  zoomOut = () => {try {stageApi().zoomOut()} catch (e) { } }
+  zoomReset = () => {try {stageApi().zoomReset()} catch (e) { } }
+  // ---- 编辑工具栏：状态下发 / 意图中转 ----
+  onStateChange = (s) => {
+    st = s || {}
+    if (s && typeof s.current === 'number') current = s.current
+  }
+  onStageError = (msg) => $message.error(String(msg || 'engine error'))
+
+  onToolbarCmd = (c) => {
+    if (!c || !c.name) return
+    let stg
+    try {stg = stageApi()} catch (e) {$message.error((e && e.message) || String(e)); return }
+    switch (c.name) {
+      case 'insertText': stg.insertText(); break
+      case 'insertShape': stg.insertShape(c.value); break
+      case 'insertImage': stg.insertImage(c.file); break
+      case 'deleteSelected': stg.deleteSelected(); break
+      case 'setFill': stg.setFill(c.value); break
+      case 'setTextColor': stg.setTextColor(c.value); break
+      case 'setFontSize': stg.setFontSize(c.value); break
+      case 'toggleBold': stg.toggleBold(); break
+      case 'setAlign': stg.setAlign(c.value); break
+      case 'setSlideBackground': stg.setSlideBackground(c.value); break
+      case 'setTransition': stg.setTransition(c.value); break
+      case 'addSlide': stg.addSlide(); break
+      case 'duplicateSlide': stg.duplicateSlide(); break
+      case 'deleteSlide': stg.deleteSlide(); break
+      case 'moveSlide': stg.moveSlide(c.value); break
+      case 'undo': stg.undo(); break
+      case 'redo': stg.redo(); break
+      case 'updateSelected': stg.updateSelected(c.props); break
+      case 'updateSlide': stg.updateSlide(c.props); break
+      case 'updateDocSize': stg.updateDocSize(c.w, c.h); break
+      case 'insertTable': stg.insertTable(); break
+      case 'insertChart': stg.insertChart(c.value); break
+      case 'insertMedia': stg.insertMedia(c.kind, c.file); break
+      case 'insertSvg':
+        c.file.text().then((t) => stg.insertSvg(t)).catch((e) => $message.error((e && e.message) || String(e)))
+        break
+      case 'reseedChart': stg.reseedChart(c.value); break
+      case 'penMode': stg.togglePen(); break
+      case 'printDoc': stg.print(); break
+      case 'exportPptx':
+        stg.exportPptx()
+          .then((name) => $message.success($t('msg.exported', {name: name})))
+          .catch((e) => $message.error($t('msg.exportFailed', {err: (e && e.message) || e})))
+        break
+    }
+  }
+
+  // 语音讲解：TTS 限流 3s/个（阿里 Throttling.RateQuota），合成请求按序节流发出（每个请求发出时刻起 3s 后发下一个，合成完成时间不影响节奏）；第一个就绪即可开播，播放环环按序 await 单项
+  const fetchVoiceOnce = (text) => fetch('@' + $mod.scoped + '/api/speech', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({text: String(text)}),
+  })
+    .then((resp) => { if (!resp.ok) throw new Error('HTTP ' + resp.status); return resp.blob() })
+    .then((blob) => URL.createObjectURL(blob))
+    .catch((e) => { console.warn('[PPT] 语音合成失败:', (e && e.message) || e); return null })
+  // 节流合成队列：返回按序 promise 数组（每项就绪即 resolve）
+  const fetchVoicesThrottled = (items) => {
+    const resolvers = []
+    const promises = items.map((item, i) => {
+      if (!item || !item.voice || !$mod.scoped) return Promise.resolve(null)
+      return new Promise((resolve) => { resolvers[i] = resolve })
+    })
+    let chain = Promise.resolve()
+    items.forEach((item, i) => {
+      if (!item || !item.voice || !$mod.scoped) return
+      chain = chain.then(() => {
+        const p = fetchVoiceOnce(item.voice)
+        p.then((url) => resolvers[i](url))
+        return new Promise((r) => setTimeout(r, 3000))
+      })
+    })
+    return promises
+  }
+  // 播放单段语音（阻塞至播放完成或失败），播完释放 URL
+  const playVoiceUrl = (url) => new Promise((resolve) => {
+    const audio = new Audio(url)
+    const done = (ok) => { URL.revokeObjectURL(url); resolve(ok) }
+    audio.onended = () => done(true)
+    audio.onerror = () => done(false)
+    audio.play().catch(() => done(false))
+  })
+
+  // ---- page_exec 事件（AI 通过 exec 1host=page 调用；内容编辑由 AI 直接写文件完成） ----
+  // exec argv 解析：--key val 优先，否则取第一个非 -- 位置参数
+  const arg = (argv, key, dft) => {
+    const i = argv.indexOf('--' + key)
+    if (i >= 0 && argv[i + 1] !== undefined) return String(argv[i + 1])
+    // 位置参数回退：排除已被 --flag 消费的值（避免 --script 的值被当作位置参数）
+    const used = new Set()
+    for (let j = 0; j < argv.length; j++) {
+      if (String(argv[j]).startsWith('--') && argv[j + 1] !== undefined) { used.add(j); used.add(j + 1); j++ }
+    }
+    const pos = argv.find((a, j) => typeof a === 'string' && !String(a).startsWith('--') && !used.has(j))
+    return pos !== undefined ? pos : dft
+  }
+  // 规范化为本地相对路径；仅允许 /ppt/ 根下
+  const normPath = (p) => {
+    p = String(p || '').trim().replace(/^\/+/, '')
+    if (!p || p.indexOf('..') >= 0) throw new Error($t('err.badPath'))
+    const prefix = 'ppt/'
+    if (p.indexOf(prefix) !== 0) throw new Error($t('err.pathScope', {prefix: '/' + prefix}))
+    return p.slice(prefix.length)
+  }
+  const errReply = (e) => ({ok: false, error: String((e && e.message) || e)})
+  const reply = (obj) => ({content: JSON.stringify(obj)})
+  const curGlobalPath = () => cur_kind === 'case' ? 'cases/' + cur_path : (cur_path ? '/ppt/' + cur_path : '')
+
+  // pageDesc：平台操控面声明。外部 AI 经 exec 1host=page {win_id}.{cmd} 调用；
+  // 内容创建/修改由 AI 直接 fs 读写 /ppt/ 完成，页面指令只管打开、播放与状态
+  pageDesc = {
+    desc: 'PPT Studio 幻灯片工作台：本地 /ppt/ JSON 文件驱动，页面负责打开、编辑、预览与全屏演示（支持逐页语音讲解脚本）',
+    commands: [
+      // 页面状态（唯一在未就绪时也可调用的指令）
+      {name: 'ppt_status', desc: '页面与当前文档状态',
+        help: '无参数。返回 {ok, ready, mode, presenting, current, current_kind, current_case, title, slide_count}',
+        handler: async () => {
+          return reply({ok: true, ready: !!stage_ready, mode: mode, presenting: presenting, current: curGlobalPath(), current_kind: cur_kind, current_case: cur_kind === 'case' ? cur_case : '', title: title, slide_count: slide_count})
+        }},
+
+      // 列出本地 /ppt/ 下的 PPT 文件 + 内置样例
+      {name: 'ppt_list', desc: '列出本地 /ppt/ 下的 PPT 文件与内置样例',
+        help: '无参数。返回 {ok, current, current_kind, current_case, files:[{path,size,mod_time}], cases:[{id,title,desc,slides,default}]}',
+        handler: async () => {
+          const files = await walkJson()
+          if (!cases.length) await loadCases()
+          return reply({
+            ok: true,
+            current: curGlobalPath(),
+            current_kind: cur_kind,
+            current_case: cur_kind === 'case' ? cur_case : '',
+            files: files.map((f) => ({path: globalPath(f.path), size: f.size, mod_time: f.mod_time})),
+            cases: cases.map((c) => ({id: c.id, title: c.title, desc: c.desc || '', slides: c.slides || 0, default: c.id === default_case}))
+          })
+        }},
+
+      // 打开指定本地文件（加载为当前文档）
+      {name: 'ppt_open', desc: '打开 /ppt/ 下的指定文档（加载为当前文档）',
+        help: '--path /ppt/xx/xx.json（或位置参数，限 /ppt/ 根下）。返回 {ok, path, title, slide_count}',
+        handler: async (argv) => {
+          try {
+            const rel = normPath(arg(argv, 'path'))
+            await openDeck(rel)
+            return reply({ok: true, path: globalPath(rel), title: title, slide_count: slide_count})
+          } catch (e) {return reply(errReply(e))}
+        }},
+
+      // 打开内置样例
+      {name: 'ppt_case', desc: '打开内置样例（只读模板）',
+        help: '--id 样例 id（或位置参数），省略打开默认样例。返回 {ok, id, title, slide_count}',
+        handler: async (argv) => {
+          try {
+            const r = await openCase(arg(argv, 'id') || default_case)
+            return reply(Object.assign({ok: true}, r))
+          } catch (e) {return reply(errReply(e))}
+        }},
+
+      // 播放：带 path 则先打开再演示；无 path 演示当前文档（含样例）；--script 讲解脚本逐页播放（阻塞）完才返回
+      {name: 'ppt_run', desc: '播放 PPT（全屏演示／演讲模式）',
+        help: '--path 先打开再演示；--index 起始页（1 基）；--script 讲解脚本 JSON 数组 [{"id":"页id","voice":"讲解词","stay":毫秒},...] 按序演讲（支持错序跳页）。返回 {ok, presenting, start, total, path, script?, voiced?, skipped?}',
+        handler: async (argv) => {
+          try {
+            const p = arg(argv, 'path')
+            if (p) await openDeck(normPath(p))
+            const st = stageApi()
+            const total = st.slideCount
+            // --script 讲解脚本：[{id|index, voice}] 按序演讲，可错序跳页；页面位置用 id 定位（稳定），兼容 index 数字（1 基）
+            const scriptRaw = arg(argv, 'script')
+            if (scriptRaw) {
+              let script
+              try { script = JSON.parse(scriptRaw) } catch (_) { throw new Error('--script 需要合法 JSON 数组，如 [{"id":"slide-1","voice":"..."}]') }
+              if (!Array.isArray(script)) throw new Error('--script 需要 JSON 数组')
+              const doc = st.getDoc()
+              const slides = (doc && doc.slides) || []
+              st.present(0)
+              presenting = true
+              // 语音流水线：并行发起全部合成（第一个就绪即可开播），播放环环按序 await 单项；无 voice 项为纯播放演示（只跳页）
+              const voicePromises = fetchVoicesThrottled(script)
+              let voiced = 0
+              const skipped = []
+              for (let i = 0; i < script.length; i++) {
+                const item = script[i]
+                let idx = -1
+                if (item && typeof item === 'object') {
+                  if (typeof item.id === 'string' && item.id) {
+                    idx = slides.findIndex((s) => s && s.id === item.id)
+                  } else if (item.index != null) {
+                    idx = Math.max(0, Number(item.index) - 1)
+                  }
+                }
+                if (idx < 0 || idx >= total) {
+                  skipped.push(item ? (item.id || item.index) : '?')
+                  // 跳过项的语音（如已合成）释放
+                  voicePromises[i].then((u) => { if (u) URL.revokeObjectURL(u) })
+                  continue
+                }
+                st.presentGoTo(idx)
+                const url = await voicePromises[i]
+                if (url && (await playVoiceUrl(url))) {
+                  voiced++
+                } else {
+                  // 无语音或播放失败：停留 stay 毫秒（默认 2000）保持演讲节奏
+                  const stay = item && item.stay != null ? Number(item.stay) || 2000 : 2000
+                  await new Promise((r) => setTimeout(r, stay))
+                }
+              }
+              return reply({ok: true, presenting: true, start: 1, total: total, path: curGlobalPath(), voiced: voiced, script: script.length, skipped: skipped})
+            }
+            // 无脚本：纯演示，从 --index 页开始
+            const start = Math.max(1, asInt(arg(argv, 'index'), 1))
+            if (start > total) throw new Error($t('err.startRange', {total: total}))
+            st.present(start - 1)
+            presenting = true
+            return reply({ok: true, presenting: true, start: start, total: total, path: curGlobalPath()})
+          } catch (e) {return reply(errReply(e))}
+        }},
+
+      // 退出演示
+      {name: 'ppt_stop', desc: '退出全屏演示',
+        help: '无参数。返回 {ok, presenting:false}',
+        handler: async () => {
+          try {stageApi().closePresent(); presenting = false} catch (e) { }
+          return reply({ok: true, presenting: false})
+        }},
+
+      // 新建空白 deck（{name}/index.json 拆分结构），返回全局路径
+      {name: 'ppt_new', desc: '新建空白 PPT（创建后立即打开）',
+        help: '--name 目录名（必填，非法字符转 -），--title 文档标题。返回 {ok, path, slide_count}',
+        handler: async (argv) => {
+          try {
+            const r = await newDeck(arg(argv, 'name'), arg(argv, 'title'))
+            return reply(Object.assign({ok: true}, r))
+          } catch (e) {return reply(errReply(e))}
+        }},
+
+      // 删除本地文件所在目录（{dir}/ 整个目录，含 json 与 image/ 图片）
+      {name: 'ppt_delete', desc: '删除 /ppt/ 下文档所在整个目录（不可恢复）',
+        help: '--path 传目录内任一文件（如 /ppt/xx/index.json），删除 xx/ 全目录。返回 {ok, deleted}',
+        handler: async (argv) => {
+          try {
+            const rel = normPath(arg(argv, 'path'))
+            const i = rel.lastIndexOf('/')
+            const dir = i >= 0 ? rel.slice(0, i) : rel
+            if (!dir) throw new Error($t('err.noDir', {file: rel}))
+            const wasCurrent = cur_kind === 'session' && !!cur_path && cur_path.indexOf(dir + '/') === 0
+            await fsRm(sessRoot() + dir + '/')
+            try {localStorage.removeItem(lastKey())} catch (e) { }
+            if (wasCurrent) {
+              cancelPendingSave()
+              cur_path = ''
+              cur_kind = ''
+              title = ''
+              await openSomething()
+            } else {
+              refreshFiles()
+            }
+            return reply({ok: true, deleted: '/ppt/' + dir + '/'})
+          } catch (e) {return reply(errReply(e))}
+        }},
+
+      // 立即保存当前文档（样例则先复制为 /ppt/ 本地文件）
+      {name: 'ppt_save', desc: '立即保存当前文档（样例先复制为本地文件）',
+        help: '无参数。返回 {ok, path, forked?}',
+        handler: async () => {
+          try {return reply(Object.assign({ok: true}, await saveNow()))} catch (e) {return reply(errReply(e))}
+        }},
+
+      // 当前文档信息（默认摘要；--full true 完整但剥离 assets）
+      {name: 'ppt_get', desc: '当前文档信息',
+        help: '默认返回摘要 {ok, path, kind, title, size, slide_count, slides:[...]}；--full true 返回完整文档（assets 剥离为 key 列表）。读内容优先直接 fs 读 json 文件',
+        handler: async (argv) => {
+          try {
+            const doc = stageApi().getDoc()
+            if (truthy(arg(argv, 'full'))) {
+              return reply({
+                ok: true,
+                path: curGlobalPath(),
+                kind: cur_kind,
+                slide_count: (doc.slides || []).length,
+                doc: slimDoc(doc),
+                note: $t('note.assetsStripped')
+              })
+            }
+            return reply({
+              ok: true,
+              path: curGlobalPath(),
+              kind: cur_kind,
+              title: doc.title || '',
+              size: doc.size || null,
+              slide_count: (doc.slides || []).length,
+              slides: (doc.slides || []).map((s, i) => slideSummary(s, i))
+            })
+          } catch (e) {return reply(errReply(e))}
+        }},
+
+      // 切换 edit / view
+      {name: 'ppt_mode', desc: '切换 edit / view 模式',
+        help: '--mode edit|view。返回 {ok, mode}',
+        handler: async (argv) => {
+          try {
+            const m = String(arg(argv, 'mode') || '')
+            if (m !== 'edit' && m !== 'view') throw new Error($t('err.badMode'))
+            stageApi().setMode(m)
+            applyMode(m)
+            return reply({ok: true, mode: m})
+          } catch (e) {return reply(errReply(e))}
+        }},
+  ]}
+
+  cleanup = () => {
+    if (saveTimer) {clearTimeout(saveTimer); saveTimer = null}
+  }
+
+  // ---- 启动：初始化舞台 → 加载样例清单与会话文件 ----
+  boot = async () => {
+    let n = 0
+    while (n++ < 60 && !($refs.stage && $refs.stage.$data && $refs.stage.$data.init)) {
+      await new Promise((r) => setTimeout(r, 50))
+    }
+    if (!($refs.stage && $refs.stage.$data && $refs.stage.$data.init)) {
+      save_state = $t('state.initFailed')
+      return
+    }
+    await $refs.stage.$data.init({doc: null, mode: 'edit', imageStore: imageStore})
+    mode = 'edit'
+    stage_ready = true
+    loadInitial()
+  }
+</script>
+<script>
+  boot()
+</script>
+<script dispose>
+  cleanup()
+</script>
+
+</html>

@@ -1,0 +1,181 @@
+{
+  "id": "s3",
+  "background": "#0a0f1c",
+  "transition": "morph",
+  "notes": "市场全景。$50B 滚动计数，右侧柱状图展示 2025→2030 规模演进；下方 84%/62% 双指标与关键市场信号。",
+  "elements": [
+    { "id": "grain", "type": "svg", "x": 0, "y": 0, "w": 1280, "h": 720, "asset": "grain", "opacity": 1 },
+    { "id": "dots", "type": "svg", "x": 0, "y": 0, "w": 1280, "h": 720, "asset": "dots", "opacity": 0.9 },
+    {
+      "id": "gl-a-03", "type": "shape", "shape": "ellipse",
+      "x": 780, "y": -200, "w": 600, "h": 600, "blur": 60, "fill": "transparent",
+      "fillGradient": { "angle": 135, "stops": [ { "at": 0, "color": "rgba(79,141,255,0.22)" }, { "at": 1, "color": "rgba(79,141,255,0)" } ] },
+      "fx": { "ambient": "kenburns", "ken": { "dir": "drift", "scale": 1.12, "duration": 26 } }
+    },
+    {
+      "id": "gl-b-03", "type": "shape", "shape": "ellipse",
+      "x": -220, "y": 380, "w": 480, "h": 480, "blur": 60, "fill": "transparent",
+      "fillGradient": { "angle": 315, "stops": [ { "at": 0, "color": "rgba(34,211,238,0.14)" }, { "at": 1, "color": "rgba(34,211,238,0)" } ] },
+      "fx": { "ambient": "kenburns", "ken": { "dir": "drift", "scale": 1.14, "duration": 30 } }
+    },
+    {
+      "id": "ghost-03", "type": "text", "x": 980, "y": -16, "w": 300, "h": 210,
+      "html": "01", "fontSize": 160, "fontWeight": 800, "color": "rgba(79,141,255,0.07)",
+      "fontFamily": "'JetBrains Mono', monospace", "align": "center", "valign": "middle"
+    },
+    {
+      "id": "fx-title", "type": "text",
+      "x": 80, "y": 34, "w": 1040, "h": 66,
+      "html": "<span style=\"font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:4px;color:#4f8dff\">CH.01 — MARKET LANDSCAPE</span><br><b>市场全景：AI Agent 爆发式增长</b>",
+      "fontSize": 30, "fontWeight": 800, "color": "#f8fafc",
+      "align": "left", "valign": "middle", "lineHeight": 1.2
+    },
+    {
+      "id": "fx-rule", "type": "shape", "shape": "rect",
+      "x": 82, "y": 108, "w": 220, "h": 5,
+      "fill": "#4f8dff", "radius": 3,
+      "shadow": { "y": 0, "blur": 12, "color": "rgba(79,141,255,0.4)" }
+    },
+    {
+      "id": "hero-bg", "type": "shape", "shape": "rect",
+      "x": 80, "y": 132, "w": 350, "h": 252,
+      "fill": "#10182c", "radius": 12, "stroke": "rgba(79,141,255,0.30)", "strokeWidth": 1,
+      "shadow": { "y": 10, "blur": 26, "color": "rgba(2,6,18,0.5)" },
+      "fx": { "enter": "fade-up", "order": 1 }
+    },
+    {
+      "id": "hero-kicker", "type": "text", "x": 104, "y": 150, "w": 300, "h": 22,
+      "html": "MARKET SIZE · 2030E", "fontSize": 11, "color": "#64748b", "letterSpacing": 3,
+      "fontFamily": "'JetBrains Mono', monospace", "align": "left", "valign": "middle",
+      "fx": { "enter": "fade", "order": 1 }
+    },
+    {
+      "id": "hero-num", "type": "text", "x": 100, "y": 176, "w": 310, "h": 88,
+      "html": "$50<span style=\"font-size:34px;color:#93b4ff\">B+</span>",
+      "fontSize": 66, "fontWeight": 800, "color": "#4f8dff", "align": "left", "valign": "middle",
+      "fx": { "enter": "fade-up", "order": 2, "countUp": true }
+    },
+    {
+      "id": "hero-label", "type": "text", "x": 104, "y": 268, "w": 310, "h": 26,
+      "html": "2030 年全球 AI Agent 市场规模", "fontSize": 15, "fontWeight": 600, "color": "#f1f5f9", "align": "left", "valign": "middle",
+      "fx": { "enter": "fade-up", "order": 2 }
+    },
+    {
+      "id": "hero-desc", "type": "text", "x": 104, "y": 298, "w": 310, "h": 72,
+      "html": "2025 年 $8B 起步，<b>CAGR 45%+</b><br>北美占据 39.6% 市场份额<br>企业级 Agent 增速 46.2%",
+      "fontSize": 12.5, "color": "#94a3b8", "align": "left", "valign": "top", "lineHeight": 1.7,
+      "fx": { "enter": "fade-up", "order": 3 }
+    },
+    {
+      "id": "chart-bg", "type": "shape", "shape": "rect",
+      "x": 450, "y": 132, "w": 750, "h": 252,
+      "fill": "#10182c", "radius": 12, "stroke": "rgba(148,163,184,0.14)", "strokeWidth": 1,
+      "shadow": { "y": 10, "blur": 26, "color": "rgba(2,6,18,0.5)" },
+      "fx": { "enter": "fade-up", "order": 2 }
+    },
+    {
+      "id": "chart-cap", "type": "text", "x": 474, "y": 150, "w": 500, "h": 22,
+      "html": "全球 AI Agent 市场规模演进", "fontSize": 15, "fontWeight": 700, "color": "#f1f5f9", "align": "left", "valign": "middle",
+      "fx": { "enter": "fade", "order": 2 }
+    },
+    {
+      "id": "chart-cap2", "type": "text", "x": 950, "y": 150, "w": 226, "h": 22,
+      "html": "$B · CAGR 45%+",
+      "fontSize": 12, "color": "#4f8dff",
+      "fontFamily": "'JetBrains Mono', monospace", "align": "right", "valign": "middle",
+      "fx": { "enter": "fade", "order": 2 }
+    },
+    {
+      "id": "chart-mkt", "type": "chart",
+      "x": 466, "y": 178, "w": 720, "h": 196,
+      "option": {
+        "xAxis": { "data": ["2025", "2026E", "2028E", "2030E"] },
+        "series": [ { "type": "bar", "name": "市场规模（$B）", "data": [8, 12, 25, 50] } ],
+        "color": ["#4f8dff"]
+      },
+      "fx": { "enter": "fade-up", "order": 3 }
+    },
+    {
+      "id": "strip-bg", "type": "shape", "shape": "rect",
+      "x": 80, "y": 404, "w": 1120, "h": 92,
+      "fill": "#10182c", "radius": 12, "stroke": "rgba(148,163,184,0.14)", "strokeWidth": 1,
+      "shadow": { "y": 8, "blur": 22, "color": "rgba(2,6,18,0.45)" },
+      "fx": { "enter": "fade-up", "order": 3 }
+    },
+    {
+      "id": "st1-num", "type": "text", "x": 104, "y": 412, "w": 150, "h": 50,
+      "html": "84%", "fontSize": 40, "fontWeight": 800, "color": "#a78bfa", "align": "left", "valign": "middle",
+      "fx": { "enter": "fade-up", "order": 3, "countUp": true }
+    },
+    {
+      "id": "st1-label", "type": "text", "x": 254, "y": 412, "w": 330, "h": 24,
+      "html": "<b>开发者已在使用 AI 编程工具</b>", "fontSize": 14, "fontWeight": 600, "color": "#f1f5f9", "align": "left", "valign": "middle",
+      "fx": { "enter": "fade-up", "order": 3 }
+    },
+    {
+      "id": "st1-sub", "type": "text", "x": 254, "y": 438, "w": 350, "h": 40,
+      "html": "Stack Overflow 2026 · 代码中 <b>41%</b> 由 AI 生成<br>88% 企业已在至少一个职能使用 AI",
+      "fontSize": 12, "color": "#94a3b8", "align": "left", "valign": "top", "lineHeight": 1.6,
+      "fx": { "enter": "fade-up", "order": 4 }
+    },
+    { "id": "strip-div", "type": "shape", "shape": "rect", "x": 640, "y": 420, "w": 1, "h": 60, "fill": "rgba(148,163,184,0.18)" },
+    {
+      "id": "st2-num", "type": "text", "x": 680, "y": 412, "w": 150, "h": 50,
+      "html": "62%", "fontSize": 40, "fontWeight": 800, "color": "#22d3ee", "align": "left", "valign": "middle",
+      "fx": { "enter": "fade-up", "order": 4, "countUp": true }
+    },
+    {
+      "id": "st2-label", "type": "text", "x": 830, "y": 412, "w": 330, "h": 24,
+      "html": "<b>企业正在实验 Agent</b>", "fontSize": 14, "fontWeight": 600, "color": "#f1f5f9", "align": "left", "valign": "middle",
+      "fx": { "enter": "fade-up", "order": 4 }
+    },
+    {
+      "id": "st2-sub", "type": "text", "x": 830, "y": 438, "w": 350, "h": 40,
+      "html": "McKinsey 2026 · 仅 <b>23%</b> 已规模化部署<br>试点 → 生产差距达 <b>39pp</b>",
+      "fontSize": 12, "color": "#94a3b8", "align": "left", "valign": "top", "lineHeight": 1.6,
+      "fx": { "enter": "fade-up", "order": 5 }
+    },
+    {
+      "id": "sig-bg", "type": "shape", "shape": "rect",
+      "x": 80, "y": 512, "w": 1120, "h": 156,
+      "fill": "#10182c", "radius": 12, "stroke": "rgba(148,163,184,0.14)", "strokeWidth": 1,
+      "shadow": { "y": 8, "blur": 22, "color": "rgba(2,6,18,0.45)" },
+      "fx": { "enter": "fade-up", "order": 4 }
+    },
+    {
+      "id": "sig-title", "type": "text", "x": 104, "y": 524, "w": 400, "h": 26,
+      "html": "<b>关键市场信号</b>", "fontSize": 16, "fontWeight": 700, "color": "#f1f5f9", "align": "left", "valign": "middle",
+      "fx": { "enter": "fade", "order": 4 }
+    },
+    {
+      "id": "sig-quote", "type": "text", "x": 104, "y": 552, "w": 1072, "h": 26,
+      "html": "“仅一个月内，从 <b>80% 手动编码</b>转变为 <b>80% Agent 编码</b>” — Andrej Karpathy（获4万点赞）",
+      "fontSize": 14, "color": "#cbd5e1", "align": "left", "valign": "middle",
+      "fx": { "enter": "fade-up", "order": 5 }
+    },
+    {
+      "id": "sig-metrics", "type": "text", "x": 104, "y": 584, "w": 1072, "h": 80,
+      "html": "<span style=\"color:#4f8dff\">✦</span> OpenAI Codex 周活 <b>500万+</b>，OpenAI 内部使用率 <b>85%</b><br><span style=\"color:#a78bfa\">✦</span> Cursor 年化收入超 <b>$10亿</b> · D轮融资 $23亿 · 估值 <b>$293亿</b><br><span style=\"color:#fbbf24\">✦</span> Cognition (Devin) 估值 <b>$260亿</b> · 89% 代码自写<br><span style=\"color:#22d3ee\">✦</span> GitHub 新开发者中 <b>80%</b> 首周即用 Copilot<br><span style=\"color:#34d399\">✦</span> Gartner 预测：2027年底 逾 <b>40%</b> Agent 项目可能被取消 — 试点 ≠ 生产",
+      "fontSize": 12, "color": "#94a3b8", "align": "left", "valign": "top", "lineHeight": 1.65,
+      "fx": { "enter": "fade-up", "order": 6 }
+    },
+    { "id": "pg-num", "type": "text", "x": 1150, "y": 678, "w": 90, "h": 24, "html": "{{page:2}} · {{pages}}", "fontSize": 12, "color": "#475569", "letterSpacing": 2, "fontFamily": "'JetBrains Mono', monospace", "align": "right", "valign": "middle" },
+    {
+      "id": "mg-a", "type": "shape", "shape": "rect",
+      "x": 104, "y": 256, "w": 170, "h": 8,
+      "fill": "#4f8dff", "radius": 4, "opacity": 0.95,
+      "shadow": { "y": 0, "blur": 14, "color": "rgba(79,141,255,0.5)" }
+    },
+    {
+      "id": "mg-b", "type": "shape", "shape": "rect",
+      "x": 104, "y": 462, "w": 120, "h": 6,
+      "fill": "#a78bfa", "radius": 3, "opacity": 0.95,
+      "shadow": { "y": 0, "blur": 14, "color": "rgba(167,139,250,0.5)" }
+    },
+    {
+      "id": "mg-c", "type": "shape", "shape": "ellipse",
+      "x": 668, "y": 406, "w": 120, "h": 58,
+      "fill": "transparent", "stroke": "#22d3ee", "strokeWidth": 2, "opacity": 0.9
+    }
+  ]
+}

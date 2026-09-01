@@ -1,0 +1,82 @@
+{
+  "id": "s5",
+  "background": "#0a0f1c",
+  "transition": "morph",
+  "hover": { "type": "focus-group", "dim": 0.3 },
+  "notes": "海外巨头第一场对决：Claude Code vs OpenAI Codex。悬停任一面板聚焦对比。",
+  "elements": [
+    { "id": "grain", "type": "svg", "x": 0, "y": 0, "w": 1280, "h": 720, "asset": "grain", "opacity": 1 },
+    { "id": "dots", "type": "svg", "x": 0, "y": 0, "w": 1280, "h": 720, "asset": "dots", "opacity": 0.9 },
+    {
+      "id": "gl-a-05", "type": "shape", "shape": "ellipse",
+      "x": -200, "y": -160, "w": 560, "h": 560, "blur": 60, "fill": "transparent",
+      "fillGradient": { "angle": 135, "stops": [ { "at": 0, "color": "rgba(79,141,255,0.18)" }, { "at": 1, "color": "rgba(79,141,255,0)" } ] },
+      "fx": { "ambient": "kenburns", "ken": { "dir": "drift", "scale": 1.12, "duration": 26 } }
+    },
+    {
+      "id": "gl-b-05", "type": "shape", "shape": "ellipse",
+      "x": 900, "y": 320, "w": 560, "h": 560, "blur": 60, "fill": "transparent",
+      "fillGradient": { "angle": 315, "stops": [ { "at": 0, "color": "rgba(52,211,153,0.14)" }, { "at": 1, "color": "rgba(52,211,153,0)" } ] },
+      "fx": { "ambient": "kenburns", "ken": { "dir": "drift", "scale": 1.14, "duration": 30 } }
+    },
+    {
+      "id": "ghost-05", "type": "text", "x": 980, "y": -16, "w": 300, "h": 210,
+      "html": "03", "fontSize": 160, "fontWeight": 800, "color": "rgba(34,211,238,0.06)",
+      "fontFamily": "'JetBrains Mono', monospace", "align": "center", "valign": "middle"
+    },
+    {
+      "id": "fx-title", "type": "text",
+      "x": 80, "y": 34, "w": 1040, "h": 66,
+      "html": "<span style=\"font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:4px;color:#22d3ee\">CH.03 — GLOBAL PLAYERS</span><br><b>海外巨头：Claude Code vs OpenAI Codex</b>",
+      "fontSize": 30, "fontWeight": 800, "color": "#f8fafc",
+      "align": "left", "valign": "middle", "lineHeight": 1.2
+    },
+    {
+      "id": "fx-rule", "type": "shape", "shape": "rect",
+      "x": 82, "y": 108, "w": 220, "h": 5,
+      "fill": "#22d3ee", "radius": 3,
+      "shadow": { "y": 0, "blur": 12, "color": "rgba(34,211,238,0.4)" }
+    },
+    { "id": "l-bg", "type": "shape", "shape": "rect", "x": 50, "y": 126, "w": 570, "h": 534, "fill": "#10182c", "radius": 12, "stroke": "rgba(79,141,255,0.25)", "strokeWidth": 1, "group": "L", "shadow": { "y": 10, "blur": 26, "color": "rgba(2,6,18,0.5)" }, "fx": { "enter": "slide-left", "order": 1 } },
+    { "id": "l-badge", "type": "text", "x": 80, "y": 148, "w": 120, "h": 28, "html": "ANTHROPIC", "fontSize": 11, "fontWeight": 700, "color": "#4f8dff", "letterSpacing": 2, "fontFamily": "'JetBrains Mono', monospace", "align": "left", "valign": "middle", "group": "L", "fx": { "enter": "fade", "order": 1 } },
+    { "id": "l-name", "type": "text", "x": 80, "y": 182, "w": 510, "h": 40, "html": "Claude Code", "fontSize": 30, "fontWeight": 800, "color": "#f8fafc", "align": "left", "valign": "middle", "group": "L", "fx": { "enter": "fade-up", "order": 1 } },
+    { "id": "l-model", "type": "text", "x": 80, "y": 224, "w": 510, "h": 22, "html": "模型：Opus 4.8 · Sonnet 4.6 · Haiku 4.5", "fontSize": 12.5, "color": "#64748b", "fontFamily": "'JetBrains Mono', monospace", "align": "left", "valign": "middle", "group": "L" },
+    { "id": "l-div", "type": "shape", "shape": "rect", "x": 80, "y": 256, "w": 510, "h": 1, "fill": "rgba(148,163,184,0.16)", "group": "L" },
+    {
+      "id": "l-info", "type": "text", "x": 80, "y": 268, "w": 510, "h": 370,
+      "html": "<b style=\"color:#f1f5f9;font-size:15px\">定位：可编程的终端 Agent，业界最深 Harness</b><br><br><b style=\"color:#4f8dff\">✦ 核心亮点</b><br><span style=\"font-size:13px\">· 30+ 生命周期 Hook 事件可脚本化<br>· Dynamic Workflows：单次会话并行数百 Subagent<br>· 覆盖终端 / VS Code / JetBrains / Web / 移动端<br>· SWE-bench Verified <b>88.6%</b>（业界最高）<br>· Skills + Plugins + Subagents + MCP 生态<br>· Bun 作者用其 11 天移植 75 万行代码，99.8% 通过</span><br><br><b style=\"color:#fbbf24\">✦ 定价</b><br><span style=\"font-size:13px\">Pro $20/月（限量） · Max $100/月<br>Token 消耗高，重度用户 ~$1,850/月 API 等效</span><br><br><b style=\"color:#34d399\">✦ 最佳场景</b><br><span style=\"font-size:13px\">深度编程式开发 · 大型重构 · CI/CD 自动化</span>",
+      "fontSize": 13, "color": "#94a3b8", "align": "left", "valign": "top", "lineHeight": 1.68,
+      "group": "L", "fx": { "enter": "fade-up", "order": 2 }
+    },
+    { "id": "r-bg", "type": "shape", "shape": "rect", "x": 660, "y": 126, "w": 570, "h": 534, "fill": "#10182c", "radius": 12, "stroke": "rgba(52,211,153,0.25)", "strokeWidth": 1, "group": "R", "shadow": { "y": 10, "blur": 26, "color": "rgba(2,6,18,0.5)" }, "fx": { "enter": "slide-right", "order": 1 } },
+    { "id": "r-badge", "type": "text", "x": 690, "y": 148, "w": 120, "h": 28, "html": "OPENAI", "fontSize": 11, "fontWeight": 700, "color": "#34d399", "letterSpacing": 2, "fontFamily": "'JetBrains Mono', monospace", "align": "left", "valign": "middle", "group": "R", "fx": { "enter": "fade", "order": 1 } },
+    { "id": "r-name", "type": "text", "x": 690, "y": 182, "w": 510, "h": 40, "html": "OpenAI Codex", "fontSize": 30, "fontWeight": 800, "color": "#f8fafc", "align": "left", "valign": "middle", "group": "R", "fx": { "enter": "fade-up", "order": 1 } },
+    { "id": "r-model", "type": "text", "x": 690, "y": 224, "w": 510, "h": 22, "html": "模型：GPT-5.5 · Rust CLI · 开源 Apache-2.0", "fontSize": 12.5, "color": "#64748b", "fontFamily": "'JetBrains Mono', monospace", "align": "left", "valign": "middle", "group": "R" },
+    { "id": "r-div", "type": "shape", "shape": "rect", "x": 690, "y": 256, "w": 510, "h": 1, "fill": "rgba(148,163,184,0.16)", "group": "R" },
+    {
+      "id": "r-info", "type": "text", "x": 690, "y": 268, "w": 510, "h": 370,
+      "html": "<b style=\"color:#f1f5f9;font-size:15px\">定位：全场景覆盖的统一 Agent</b><br><br><b style=\"color:#34d399\">✦ 核心亮点</b><br><span style=\"font-size:13px\">· CLI + Cloud + IDE + 桌面 App + 移动端全覆盖<br>· 内核级沙箱：Seatbelt / bubblewrap / Landlock<br>· Skills + Plugins 市场 + Subagents + Hooks<br>· Terminal-Bench 2.0 <b>82.7%</b> · SWE-Bench Pro 58.6%<br>· 周活 <b>500万+</b> · OpenAI 内部 85% 使用</span><br><br><b style=\"color:#fbbf24\">✦ 定价</b><br><span style=\"font-size:13px\">Go $8/月 · Plus $20/月 · Pro $100/月<br>最具性价比的入门级 Agent</span><br><br><b style=\"color:#34d399\">✦ 最佳场景</b><br><span style=\"font-size:13px\">多端无缝切换 · PR Review 自动化 · ChatGPT 生态</span>",
+      "fontSize": 13, "color": "#94a3b8", "align": "left", "valign": "top", "lineHeight": 1.68,
+      "group": "R", "fx": { "enter": "fade-up", "order": 2 }
+    },
+    { "id": "pg-num", "type": "text", "x": 1150, "y": 678, "w": 90, "h": 24, "html": "{{page:2}} · {{pages}}", "fontSize": 12, "color": "#475569", "letterSpacing": 2, "fontFamily": "'JetBrains Mono', monospace", "align": "right", "valign": "middle" },
+    {
+      "id": "mg-a", "type": "shape", "shape": "rect",
+      "x": 50, "y": 126, "w": 7, "h": 534,
+      "fill": "#4f8dff", "radius": 3, "opacity": 0.95,
+      "shadow": { "y": 0, "blur": 16, "color": "rgba(79,141,255,0.55)" }
+    },
+    {
+      "id": "mg-b", "type": "shape", "shape": "rect",
+      "x": 1223, "y": 126, "w": 7, "h": 534,
+      "fill": "#34d399", "radius": 3, "opacity": 0.95,
+      "shadow": { "y": 0, "blur": 16, "color": "rgba(52,211,153,0.55)" }
+    },
+    {
+      "id": "mg-c", "type": "shape", "shape": "rect",
+      "x": 629, "y": 380, "w": 22, "h": 22, "rotation": 45,
+      "fill": "#fbbf24", "opacity": 0.95,
+      "shadow": { "y": 0, "blur": 16, "color": "rgba(251,191,36,0.55)" }
+    }
+  ]
+}

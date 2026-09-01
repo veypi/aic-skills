@@ -1,0 +1,393 @@
+{
+  "id": "s5x",
+  "transition": "morph",
+  "notes": "增长曲线：整幅折线图当数据风景（引擎原生 line 图表），512,000 下载量滚动计数，点阵纹理衬底。",
+  "elements": [
+    {
+      "id": "dots-bg",
+      "type": "svg",
+      "x": 0,
+      "y": 0,
+      "w": 1280,
+      "h": 720,
+      "asset": "dots",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-a",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 780,
+      "y": -180,
+      "w": 560,
+      "h": 560,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 45,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(79,127,255,0.3)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(79,127,255,0)"
+          }
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-b",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": -240,
+      "y": 380,
+      "w": 480,
+      "h": 480,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 225,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(139,92,246,0.26)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(139,92,246,0)"
+          }
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "tile-a-15",
+      "type": "shape",
+      "shape": "rect",
+      "x": 1080,
+      "y": -220,
+      "w": 430,
+      "h": 430,
+      "rotation": -10,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 45,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(79,127,255,0.15)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(79,127,255,0)"
+          }
+        ]
+      },
+      "radius": 90,
+      "opacity": 1
+    },
+    {
+      "id": "tile-b-15",
+      "type": "shape",
+      "shape": "rect",
+      "x": -260,
+      "y": 460,
+      "w": 400,
+      "h": 400,
+      "rotation": 12,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 225,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(139,92,246,0.14)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(139,92,246,0)"
+          }
+        ]
+      },
+      "radius": 65,
+      "opacity": 1
+    },
+    {
+      "id": "ghost-15",
+      "type": "text",
+      "x": 880,
+      "y": 40,
+      "w": 340,
+      "h": 210,
+      "html": "48h",
+      "fontSize": 165,
+      "fontWeight": 800,
+      "color": "rgba(79,127,255,0.08)",
+      "align": "center",
+      "valign": "middle",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-title",
+      "type": "text",
+      "x": 80,
+      "y": 56,
+      "w": 1000,
+      "h": 60,
+      "html": "48 小时，<b>50 万下载</b>",
+      "fontSize": 40,
+      "fontWeight": 700,
+      "color": "#ffffff",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 0
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-line",
+      "type": "shape",
+      "shape": "rect",
+      "x": 80,
+      "y": 126,
+      "w": 64,
+      "h": 4,
+      "fill": "#4f7fff",
+      "radius": 2,
+      "fx": {
+        "enter": "fade",
+        "order": 0
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "pg-num",
+      "type": "text",
+      "x": 1150,
+      "y": 676,
+      "w": 80,
+      "h": 24,
+      "html": "{{page:2}}",
+      "fontSize": 13,
+      "color": "rgba(154,165,196,0.5)",
+      "align": "right",
+      "valign": "middle",
+      "letterSpacing": 2,
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s5x-c1",
+      "type": "shape",
+      "shape": "rect",
+      "x": 80,
+      "y": 152,
+      "w": 250,
+      "h": 44,
+      "fill": "#16224a",
+      "stroke": "#3b5bd6",
+      "strokeWidth": 1,
+      "radius": 22,
+      "fx": {
+        "enter": "fade-up",
+        "order": 1
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s5x-c1t",
+      "type": "text",
+      "x": 80,
+      "y": 152,
+      "w": 250,
+      "h": 44,
+      "html": "<b>512,000+</b> 次下载",
+      "fontSize": 16,
+      "color": "#9db8ff",
+      "align": "center",
+      "valign": "middle",
+      "fontWeight": 600,
+      "fx": {
+        "enter": "fade-up",
+        "order": 1,
+        "countUp": true
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s5x-c2",
+      "type": "shape",
+      "shape": "rect",
+      "x": 350,
+      "y": 152,
+      "w": 260,
+      "h": 44,
+      "fill": "#16224a",
+      "stroke": "#3b5bd6",
+      "strokeWidth": 1,
+      "radius": 22,
+      "fx": {
+        "enter": "fade-up",
+        "order": 2
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s5x-c2t",
+      "type": "text",
+      "x": 350,
+      "y": 152,
+      "w": 260,
+      "h": 44,
+      "html": "#1 Hugging Face 趋势榜",
+      "fontSize": 16,
+      "color": "#9db8ff",
+      "align": "center",
+      "valign": "middle",
+      "fontWeight": 600,
+      "fx": {
+        "enter": "fade-up",
+        "order": 2
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s5x-c3",
+      "type": "shape",
+      "shape": "rect",
+      "x": 630,
+      "y": 152,
+      "w": 270,
+      "h": 44,
+      "fill": "#16224a",
+      "stroke": "#3b5bd6",
+      "strokeWidth": 1,
+      "radius": 22,
+      "fx": {
+        "enter": "fade-up",
+        "order": 3
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s5x-c3t",
+      "type": "text",
+      "x": 630,
+      "y": 152,
+      "w": 270,
+      "h": 44,
+      "html": "<b>5,400+</b> Stars 首日新增",
+      "fontSize": 16,
+      "color": "#9db8ff",
+      "align": "center",
+      "valign": "middle",
+      "fontWeight": 600,
+      "fx": {
+        "enter": "fade-up",
+        "order": 3,
+        "countUp": true
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s5x-chart",
+      "type": "chart",
+      "x": 80,
+      "y": 220,
+      "w": 1120,
+      "h": 360,
+      "option": {
+        "xAxis": {
+          "data": [
+            "0h",
+            "6h",
+            "12h",
+            "18h",
+            "24h",
+            "30h",
+            "36h",
+            "42h",
+            "48h"
+          ]
+        },
+        "series": [
+          {
+            "type": "line",
+            "name": "HF 下载量（万）",
+            "data": [
+              0,
+              3,
+              9,
+              16,
+              24,
+              33,
+              41,
+              47,
+              51
+            ]
+          }
+        ],
+        "color": [
+          "#4f7fff"
+        ]
+      },
+      "fx": {
+        "enter": "fade-up",
+        "order": 2
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s5x-cap",
+      "type": "text",
+      "x": 80,
+      "y": 596,
+      "w": 1120,
+      "h": 30,
+      "html": "Kimi K3 权重开放下载后 48 小时的 Hugging Face 下载曲线（来源：Hugging Face 官方统计）",
+      "fontSize": 14,
+      "color": "#8b96b8",
+      "align": "center",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade",
+        "order": 4
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "mg-dot",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 1146,
+      "y": 222,
+      "w": 16,
+      "h": 16,
+      "fill": "#4f7fff",
+      "opacity": 0.85,
+      "shadow": {
+        "y": 0,
+        "blur": 16,
+        "color": "rgba(79,127,255,0.5)"
+      },
+      "rotation": 0
+    }
+  ],
+  "background": "#0b1020"
+}

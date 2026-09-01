@@ -1,0 +1,327 @@
+{
+  "id": "s6",
+  "transition": "morph",
+  "notes": "对标最强闭源：GDPval-AA 全球第三、AA-Briefcase 全球第二。两张图表随 Morph 转场自左向右错峰浮现（fade+rise 编排）。",
+  "elements": [
+    {
+      "id": "fx-a",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 780,
+      "y": -180,
+      "w": 560,
+      "h": 560,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 135,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(79,127,255,0.26)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(79,127,255,0)"
+          }
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-b",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": -240,
+      "y": 380,
+      "w": 480,
+      "h": 480,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 315,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(34,211,238,0.22)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(34,211,238,0)"
+          }
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "tile-a-07",
+      "type": "shape",
+      "shape": "rect",
+      "x": 1060,
+      "y": -230,
+      "w": 470,
+      "h": 470,
+      "rotation": 10,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 135,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(34,211,238,0.15)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(34,211,238,0)"
+          }
+        ]
+      },
+      "radius": 110,
+      "opacity": 1
+    },
+    {
+      "id": "tile-b-07",
+      "type": "shape",
+      "shape": "rect",
+      "x": -210,
+      "y": 450,
+      "w": 370,
+      "h": 370,
+      "rotation": -12,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 315,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(79,127,255,0.15)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(79,127,255,0)"
+          }
+        ]
+      },
+      "radius": 55,
+      "opacity": 1
+    },
+    {
+      "id": "ghost-07",
+      "type": "text",
+      "x": 880,
+      "y": 470,
+      "w": 320,
+      "h": 200,
+      "html": "05",
+      "fontSize": 170,
+      "fontWeight": 800,
+      "color": "rgba(34,211,238,0.08)",
+      "align": "center",
+      "valign": "middle",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-title",
+      "type": "text",
+      "x": 80,
+      "y": 56,
+      "w": 1000,
+      "h": 60,
+      "html": "直面全球最强<b>闭源模型</b>",
+      "fontSize": 40,
+      "fontWeight": 700,
+      "color": "#ffffff",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 0
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-line",
+      "type": "shape",
+      "shape": "rect",
+      "x": 80,
+      "y": 126,
+      "w": 64,
+      "h": 4,
+      "fill": "#4f7fff",
+      "radius": 2,
+      "fx": {
+        "enter": "fade",
+        "order": 0
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "pg-num",
+      "type": "text",
+      "x": 1150,
+      "y": 676,
+      "w": 80,
+      "h": 24,
+      "html": "{{page:2}}",
+      "fontSize": 13,
+      "color": "rgba(154,165,196,0.5)",
+      "align": "right",
+      "valign": "middle",
+      "letterSpacing": 2,
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s6-c1label",
+      "type": "text",
+      "x": 80,
+      "y": 156,
+      "w": 540,
+      "h": 30,
+      "html": "GDPval-AA v2（44 职业 · 9 大行业真实任务）",
+      "fontSize": 16,
+      "color": "#9aa5c4",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 1
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s6-chart1",
+      "type": "chart",
+      "x": 60,
+      "y": 190,
+      "w": 580,
+      "h": 400,
+      "option": {
+        "xAxis": {
+          "data": [
+            "Opus 4.8",
+            "Kimi K3",
+            "GPT-5.6 Max",
+            "Fable 5 Max"
+          ]
+        },
+        "series": [
+          {
+            "type": "bar",
+            "name": "GDPval-AA v2",
+            "data": [
+              1600,
+              1687,
+              1748,
+              1815
+            ]
+          }
+        ],
+        "color": [
+          "#4f7fff"
+        ]
+      },
+      "fx": {
+        "enter": "slide-left",
+        "order": 1
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s6-c2label",
+      "type": "text",
+      "x": 700,
+      "y": 156,
+      "w": 540,
+      "h": 30,
+      "html": "AA-Briefcase（长程知识工作私有评测）",
+      "fontSize": 16,
+      "color": "#9aa5c4",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 2
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s6-chart2",
+      "type": "chart",
+      "x": 680,
+      "y": 190,
+      "w": 560,
+      "h": 400,
+      "option": {
+        "xAxis": {
+          "data": [
+            "GPT-5.6 Max",
+            "Kimi K3",
+            "Fable 5 Max"
+          ]
+        },
+        "series": [
+          {
+            "type": "bar",
+            "name": "AA-Briefcase",
+            "data": [
+              1495,
+              1527,
+              1587
+            ]
+          }
+        ],
+        "color": [
+          "#8b5cf6"
+        ]
+      },
+      "fx": {
+        "enter": "slide-right",
+        "order": 2
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s6-note",
+      "type": "text",
+      "x": 80,
+      "y": 610,
+      "w": 1120,
+      "h": 56,
+      "html": "GDPval-AA 全球第三 · AA-Briefcase 全球第二 —— 除最强闭源旗舰外，稳定超越其他所有模型",
+      "fontSize": 20,
+      "color": "#cdd9ff",
+      "align": "center",
+      "valign": "middle",
+      "fontWeight": 600,
+      "fx": {
+        "enter": "fade",
+        "order": 3
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "mg-dot",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 653,
+      "y": 208,
+      "w": 14,
+      "h": 14,
+      "fill": "#22d3ee",
+      "opacity": 0.85,
+      "shadow": {
+        "y": 0,
+        "blur": 16,
+        "color": "rgba(34,211,238,0.5)"
+      },
+      "rotation": 0
+    }
+  ],
+  "background": "#0b1020"
+}

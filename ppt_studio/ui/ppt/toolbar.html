@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta name="description" content="PPT 编辑工具栏：vhtml 实现的统一 chrome（双语 + 主题变量），:st 接收引擎状态快照，@cmd 上报编辑意图" />
+  <title>PPT Toolbar</title>
+</head>
+<style>
+  body {
+    display: block;
+  }
+
+  .tb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 6px 10px;
+    background: var(--bg-color-secondary);
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .grp {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .sep {
+    width: 1px;
+    height: 18px;
+    background: var(--border-color);
+    margin: 0 4px;
+    flex: none;
+  }
+
+  .tbtn {
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--text-color-secondary);
+    cursor: pointer;
+    padding: 0;
+    transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+  }
+
+  .tbtn svg {
+    width: 15px;
+    height: 15px;
+    display: block;
+  }
+
+  .tbtn:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+    color: var(--color-primary);
+  }
+
+  .tbtn.on {
+    background: color-mix(in srgb, var(--color-primary) 16%, transparent);
+    color: var(--color-primary);
+    border-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
+  }
+
+  .tbtn:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+  }
+
+  .tbtn.danger:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+    color: var(--color-danger);
+  }
+
+  .tbtn.tb-bold b {
+    font-size: 13px;
+    font-weight: var(--font-weight-bold);
+  }
+
+  .cin {
+    width: 26px;
+    height: 26px;
+    padding: 2px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-color-secondary);
+    cursor: pointer;
+  }
+
+  .cin:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+  }
+
+  .nin {
+    width: 48px;
+    height: 26px;
+    padding: 0 4px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-color-secondary);
+    color: var(--text-color);
+    font-size: var(--font-size-xs);
+  }
+
+  .nin:disabled {
+    opacity: .35;
+  }
+
+  .seg3 {
+    display: flex;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .seg3 .tbtn {
+    border: none;
+    border-radius: 0;
+  }
+
+  .seg3 .tbtn + .tbtn {
+    border-left: 1px solid var(--border-color);
+  }
+
+  .tsel {
+    height: 26px;
+    padding: 0 6px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-color-secondary);
+    color: var(--text-color);
+    font-size: var(--font-size-xs);
+    cursor: pointer;
+  }
+
+</style>
+
+<body>
+  <div class="tb">
+    <!-- 插入 -->
+    <div class="grp">
+      <button class="tbtn" :title="$t('tb.text')" @click="cmd('insertText')">
+        <svg viewBox="0 0 15 15"><path d="M3 3.5h9M7.5 3.5v8M5 11.5h5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+      <button class="tbtn" :title="$t('tb.rect')" @click="cmdShape('rect')">
+        <svg viewBox="0 0 15 15"><rect x="2.5" y="4" width="10" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+      </button>
+      <button class="tbtn" :title="$t('tb.ellipse')" @click="cmdShape('ellipse')">
+        <svg viewBox="0 0 15 15"><ellipse cx="7.5" cy="7.5" rx="5" ry="3.8" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+      </button>
+      <button class="tbtn" :title="$t('tb.line')" @click="cmdShape('line')">
+        <svg viewBox="0 0 15 15"><path d="M2.5 12.5L12.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+      <button class="tbtn" :title="$t('tb.arrow')" @click="cmdShape('arrow')">
+        <svg viewBox="0 0 15 15"><path d="M2.5 12.5L11.5 3.5M7 3h5v5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="tbtn" :title="$t('tb.image')" @click="pickImage">
+        <svg viewBox="0 0 15 15"><rect x="2" y="3" width="11" height="9" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="5.2" cy="6.2" r="1.1" fill="currentColor"/><path d="M3.5 10.5l2.7-2.7 1.8 1.8 2.2-2.2 2.3 2.3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="tbtn" :title="$t('tb.table')" @click="cmd('insertTable')">
+        <svg viewBox="0 0 15 15"><rect x="2" y="2.5" width="11" height="10" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M2 5.8h11M2 9.2h11M7.5 2.5v10" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+      </button>
+      <button class="tbtn" :title="$t('tb.chart')" @click="cmd('insertChart', 'bar')">
+        <svg viewBox="0 0 15 15"><path d="M2.5 12.5h10" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><rect x="3.5" y="7" width="2.2" height="5" fill="currentColor"/><rect x="6.8" y="4" width="2.2" height="8" fill="currentColor"/><rect x="10.1" y="2" width="2.2" height="10" fill="currentColor"/></svg>
+      </button>
+      <button class="tbtn" :title="$t('tb.video')" @click="pickMedia('video')">
+        <svg viewBox="0 0 15 15"><rect x="2" y="3.5" width="11" height="8" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 5.8l3.3 1.9-3.3 1.9z" fill="currentColor"/></svg>
+      </button>
+      <button class="tbtn" :title="$t('tb.audio')" @click="pickMedia('audio')">
+        <svg viewBox="0 0 15 15"><path d="M3 9.2V5.8h2.3l3-2.5v8.4l-3-2.5H3z" fill="currentColor"/><path d="M10.3 5.2a3.6 3.6 0 010 4.6M12 3.6a5.8 5.8 0 010 6.8" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      </button>
+      <button class="tbtn" :title="$t('tb.svg')" @click="pickSvg">
+        <svg viewBox="0 0 15 15"><path d="M5.5 2.5L3 7.5l2.5 5M9.5 2.5l2.5 5-2.5 5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="tbtn" :class="{on: !!(st && st.pen)}" :title="$t('tb.pen')" @click="cmd('penMode')">
+        <svg viewBox="0 0 15 15"><path d="M9.5 2.8l2.7 2.7-6.8 6.8-3.4.7.7-3.4 6.7-6.8zM8.6 3.9l2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M2 13c1-1.6 2.5-2.5 4.5-2.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <span class="sep"></span>
+    <!-- 选中元素样式 -->
+    <div class="grp">
+      <input class="cin" type="color" :title="$t('tb.fill')" :value="selFill()" @input="onFill" :disabled="!isShape()">
+      <input class="cin" type="color" :title="$t('tb.textColor')" :value="selColor()" @input="onTextColor" :disabled="!isText()">
+      <input class="nin" type="number" min="8" max="400" :title="$t('tb.fontSize')" :value="selSize()" @change="onSize" :disabled="!isText()">
+      <button class="tbtn tb-bold" :class="{on: selBold()}" :title="$t('tb.bold')" @click="cmd('toggleBold')" :disabled="!isText()"><b>B</b></button>
+      <div class="seg3">
+        <button class="tbtn" :class="{on: selAlign() === 'left'}" :title="$t('tb.alignLeft')" @click="cmdAlign('left')" :disabled="!isText()">
+          <svg viewBox="0 0 15 15"><path d="M3 4h9M3 7.5h6M3 11h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+        <button class="tbtn" :class="{on: selAlign() === 'center'}" :title="$t('tb.alignCenter')" @click="cmdAlign('center')" :disabled="!isText()">
+          <svg viewBox="0 0 15 15"><path d="M3 4h9M4.7 7.5h5.6M3 11h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+        <button class="tbtn" :class="{on: selAlign() === 'right'}" :title="$t('tb.alignRight')" @click="cmdAlign('right')" :disabled="!isText()">
+          <svg viewBox="0 0 15 15"><path d="M3 4h9M6 7.5h6M3 11h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <button class="tbtn danger" :title="$t('tb.delEl')" @click="cmd('deleteSelected')" :disabled="!hasSel()">
+        <svg viewBox="0 0 15 15"><path d="M3 4.2h9M6 4.2V3h3v1.2M4.4 4.2l.6 8.3h5l.6-8.3M6.3 6.3v4M8.7 6.3v4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <span class="sep"></span>
+    <!-- 当前页 -->
+    <div class="grp">
+      <input class="cin" type="color" :title="$t('tb.background')" :value="stBg()" @input="onBg">
+      <select class="tsel" :title="$t('tb.transition')" :value="stTransition()" @change="onTransition">
+        <option v-for="t in transitions" :value="t" :selected="stTransition() === t">{{ $t('tb.trans.' + t) }}</option>
+      </select>
+    </div>
+    <span class="sep"></span>
+    <!-- 幻灯片操作 -->
+    <div class="grp">
+      <button class="tbtn" :title="$t('tb.addSlide')" @click="cmd('addSlide')">
+        <svg viewBox="0 0 15 15"><rect x="3" y="2.5" width="9" height="10" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M7.5 5.5v4M5.5 7.5h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </button>
+      <button class="tbtn" :title="$t('tb.dupSlide')" @click="cmd('duplicateSlide')">
+        <svg viewBox="0 0 15 15"><rect x="2.5" y="2.5" width="7" height="7" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="5.5" y="5.5" width="7" height="7" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
+      </button>
+      <button class="tbtn danger" :title="$t('tb.delSlide')" @click="cmd('deleteSlide')" :disabled="!canDelSlide()">
+        <svg viewBox="0 0 15 15"><rect x="3" y="2.5" width="9" height="10" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M5.8 5.8l3.4 3.4M9.2 5.8L5.8 9.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </button>
+      <button class="tbtn" :title="$t('tb.slideUp')" @click="cmdMove(-1)" :disabled="!canUp()">
+        <svg viewBox="0 0 15 15"><path d="M3.5 9.5l4-4 4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="tbtn" :title="$t('tb.slideDown')" @click="cmdMove(1)" :disabled="!canDown()">
+        <svg viewBox="0 0 15 15"><path d="M3.5 5.5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <span class="sep"></span>
+    <!-- 历史 -->
+    <div class="grp">
+      <button class="tbtn" :title="$t('tb.undo')" @click="cmd('undo')" :disabled="!canUndo()">
+        <svg viewBox="0 0 15 15"><path d="M5.8 3.8L3 6.6l2.8 2.8M3.2 6.6h6a3.7 3.7 0 0 1 0 7.4H8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="tbtn" :title="$t('tb.redo')" @click="cmd('redo')" :disabled="!canRedo()">
+        <svg viewBox="0 0 15 15"><path d="M9.2 3.8L12 6.6l-2.8 2.8M11.8 6.6h-6a3.7 3.7 0 0 0 0 7.4H7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <span class="sep"></span>
+    <!-- 导出：PPT 下载 / 打印 PDF -->
+    <div class="grp">
+      <button class="tbtn" :title="$t('tb.exportPptx')" @click="cmd('exportPptx')">
+        <svg viewBox="0 0 15 15"><path d="M7.5 2.5v7M4.8 7l2.7 2.7L10.2 7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.8 10.8v1.7h9.4v-1.7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+      <button class="tbtn" :title="$t('tb.print')" @click="cmd('printDoc')">
+        <svg viewBox="0 0 15 15"><path d="M4 6V2.5h7V6M4 12.5H2.8v-5h9.4v5H11" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><rect x="4" y="10" width="7" height="3.2" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>
+      </button>
+    </div>
+  </div>
+  <input ref="imgInput" type="file" accept="image/*" style="display:none" @change="onImagePick">
+  <input ref="mediaInput" type="file" accept="video/*" style="display:none" @change="onMediaPick">
+  <input ref="svgInput" type="file" accept=".svg,image/svg+xml" style="display:none" @change="onSvgPick">
+</body>
+<script setup>
+  // ---- props：引擎状态快照（由父组件经 statechange 下发） ----
+  st = null
+  transitions = ['none', 'fade', 'slide', 'zoom', 'morph']
+
+  // ---- 意图上报：父组件 @cmd 接收 {name, value?|file?} ----
+  cmd = (name, value) => {
+    if (value !== undefined) $emit('cmd', {name: name, value: value})
+    else $emit('cmd', {name: name})
+  }
+  cmdShape = (kind) => cmd('insertShape', kind)
+  cmdAlign = (a) => cmd('setAlign', a)
+  cmdMove = (d) => cmd('moveSlide', d)
+
+  // ---- 状态派生（模板绑定每次渲染调用） ----
+  hasSel = () => !!(st && st.selection)
+  isText = () => !!(st && st.selection && st.selection.type === 'text')
+  isShape = () => !!(st && st.selection && st.selection.type === 'shape')
+  selFill = () => (st && st.selection && st.selection.fill) || '#3a6ff7'
+  selColor = () => (st && st.selection && st.selection.color) || '#1f2430'
+  selSize = () => (st && st.selection && st.selection.fontSize) || 32
+  selBold = () => !!(st && st.selection && st.selection.bold)
+  selAlign = () => (st && st.selection && st.selection.align) || 'left'
+  stBg = () => (st && st.background) || '#ffffff'
+  stTransition = () => (st && st.transition) || 'morph'
+  canUndo = () => !!(st && st.canUndo)
+  canRedo = () => !!(st && st.canRedo)
+  canDelSlide = () => !!(st && st.count > 1)
+  canUp = () => !!(st && st.current > 0)
+  canDown = () => !!(st && st.current < st.count - 1)
+
+  // ---- 控件事件 ----
+  onFill = (e) => cmd('setFill', e.target.value)
+  onTextColor = (e) => cmd('setTextColor', e.target.value)
+  onSize = (e) => cmd('setFontSize', e.target.value)
+  onBg = (e) => cmd('setSlideBackground', e.target.value)
+  onTransition = (e) => cmd('setTransition', e.target.value)
+
+  // ---- 文件选择（图片 / 媒体 / SVG） ----
+  let mediaKind = 'video'
+  pickImage = () => { if ($refs.imgInput) $refs.imgInput.click() }
+  pickMedia = (kind) => {
+    mediaKind = kind
+    if ($refs.mediaInput) {
+      $refs.mediaInput.setAttribute('accept', kind === 'audio' ? 'audio/*' : 'video/*')
+      $refs.mediaInput.click()
+    }
+  }
+  pickSvg = () => { if ($refs.svgInput) $refs.svgInput.click() }
+  onImagePick = (e) => {
+    const f = e.target.files && e.target.files[0]
+    e.target.value = ''
+    if (f) $emit('cmd', {name: 'insertImage', file: f})
+  }
+  onMediaPick = (e) => {
+    const f = e.target.files && e.target.files[0]
+    e.target.value = ''
+    if (f) $emit('cmd', {name: 'insertMedia', kind: mediaKind, file: f})
+  }
+  onSvgPick = (e) => {
+    const f = e.target.files && e.target.files[0]
+    e.target.value = ''
+    if (f) $emit('cmd', {name: 'insertSvg', file: f})
+  }
+</script>
+
+</html>

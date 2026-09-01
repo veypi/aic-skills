@@ -1,0 +1,414 @@
+{
+  "id": "s9",
+  "transition": "morph",
+  "notes": "三个真实世界案例：48 小时芯片设计、视觉闭环、长程编码。演示时悬停任意卡片，其余卡片变暗聚焦。",
+  "hover": {
+    "type": "focus-group",
+    "dim": 0.22
+  },
+  "elements": [
+    {
+      "id": "fx-a",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 780,
+      "y": -180,
+      "w": 560,
+      "h": 560,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 90,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(79,127,255,0.26)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(79,127,255,0)"
+          }
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-b",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": -240,
+      "y": 380,
+      "w": 480,
+      "h": 480,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 270,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(139,92,246,0.24)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(139,92,246,0)"
+          }
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "tile-a-11",
+      "type": "shape",
+      "shape": "rect",
+      "x": 420,
+      "y": -270,
+      "w": 490,
+      "h": 490,
+      "rotation": -6,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 90,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(79,127,255,0.15)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(79,127,255,0)"
+          }
+        ]
+      },
+      "radius": 120,
+      "opacity": 1
+    },
+    {
+      "id": "tile-b-11",
+      "type": "shape",
+      "shape": "rect",
+      "x": -210,
+      "y": 430,
+      "w": 390,
+      "h": 390,
+      "rotation": 12,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 270,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(139,92,246,0.15)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(139,92,246,0)"
+          }
+        ]
+      },
+      "radius": 60,
+      "opacity": 1
+    },
+    {
+      "id": "ghost-11",
+      "type": "text",
+      "x": 900,
+      "y": 470,
+      "w": 320,
+      "h": 200,
+      "html": "08",
+      "fontSize": 170,
+      "fontWeight": 800,
+      "color": "rgba(139,92,246,0.08)",
+      "align": "center",
+      "valign": "middle",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-title",
+      "type": "text",
+      "x": 80,
+      "y": 56,
+      "w": 1000,
+      "h": 60,
+      "html": "不止跑分：<b>真实世界的执行力</b>",
+      "fontSize": 40,
+      "fontWeight": 700,
+      "color": "#ffffff",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 0
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-line",
+      "type": "shape",
+      "shape": "rect",
+      "x": 80,
+      "y": 126,
+      "w": 64,
+      "h": 4,
+      "fill": "#4f7fff",
+      "radius": 2,
+      "fx": {
+        "enter": "fade",
+        "order": 0
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "pg-num",
+      "type": "text",
+      "x": 1150,
+      "y": 676,
+      "w": 80,
+      "h": 24,
+      "html": "{{page:2}}",
+      "fontSize": 13,
+      "color": "rgba(154,165,196,0.5)",
+      "align": "right",
+      "valign": "middle",
+      "letterSpacing": 2,
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s9-c1",
+      "type": "shape",
+      "shape": "rect",
+      "x": 80,
+      "y": 180,
+      "w": 357,
+      "h": 380,
+      "fill": "rgba(19,26,48,0.55)",
+      "backdropFilter": 12,
+      "stroke": "#2a3557",
+      "strokeWidth": 1,
+      "radius": 18,
+      "shadow": {
+        "y": 14,
+        "blur": 34,
+        "color": "rgba(0,0,0,0.35)"
+      },
+      "group": "g-chip",
+      "fx": {
+        "enter": "fade-up",
+        "order": 1
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s9-c1n",
+      "type": "text",
+      "x": 112,
+      "y": 214,
+      "w": 293,
+      "h": 70,
+      "html": "48 小时",
+      "fontSize": 44,
+      "fontWeight": 800,
+      "color": "#4f7fff",
+      "valign": "middle",
+      "group": "g-chip",
+      "fx": {
+        "enter": "fade-up",
+        "order": 1,
+        "countUp": true
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s9-c1t",
+      "type": "text",
+      "x": 112,
+      "y": 292,
+      "w": 293,
+      "h": 240,
+      "html": "<b>自主芯片设计</b><br><br><span style='color:#9aa5c4'>官方演示中，K3 在极少人工干预下持续 48 小时推进芯片设计任务，展露月之暗面在 AI for Hardware 上的真实野心。</span>",
+      "fontSize": 20,
+      "color": "#ffffff",
+      "lineHeight": 1.65,
+      "group": "g-chip",
+      "fx": {
+        "enter": "fade-up",
+        "order": 2
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s9-c2",
+      "type": "shape",
+      "shape": "rect",
+      "x": 461,
+      "y": 180,
+      "w": 357,
+      "h": 380,
+      "fill": "rgba(19,26,48,0.55)",
+      "backdropFilter": 12,
+      "stroke": "#2a3557",
+      "strokeWidth": 1,
+      "radius": 18,
+      "shadow": {
+        "y": 14,
+        "blur": 34,
+        "color": "rgba(0,0,0,0.35)"
+      },
+      "group": "g-vis",
+      "fx": {
+        "enter": "fade-up",
+        "order": 2
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s9-c2n",
+      "type": "text",
+      "x": 493,
+      "y": 214,
+      "w": 293,
+      "h": 70,
+      "html": "视觉闭环",
+      "fontSize": 44,
+      "fontWeight": 800,
+      "color": "#8b5cf6",
+      "valign": "middle",
+      "group": "g-vis",
+      "fx": {
+        "enter": "fade-up",
+        "order": 2
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s9-c2t",
+      "type": "text",
+      "x": 493,
+      "y": 292,
+      "w": 293,
+      "h": 240,
+      "html": "<b>软件工程 × 视觉推理</b><br><br><span style='color:#9aa5c4'>利用截图与视觉反馈持续自我修正，优化游戏开发、前端页面与 CAD 设计等强视觉场景。</span>",
+      "fontSize": 20,
+      "color": "#ffffff",
+      "lineHeight": 1.65,
+      "group": "g-vis",
+      "fx": {
+        "enter": "fade-up",
+        "order": 3
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s9-c3",
+      "type": "shape",
+      "shape": "rect",
+      "x": 842,
+      "y": 180,
+      "w": 357,
+      "h": 380,
+      "fill": "rgba(19,26,48,0.55)",
+      "backdropFilter": 12,
+      "stroke": "#2a3557",
+      "strokeWidth": 1,
+      "radius": 18,
+      "shadow": {
+        "y": 14,
+        "blur": 34,
+        "color": "rgba(0,0,0,0.35)"
+      },
+      "group": "g-code",
+      "fx": {
+        "enter": "fade-up",
+        "order": 3
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s9-c3n",
+      "type": "text",
+      "x": 874,
+      "y": 214,
+      "w": 293,
+      "h": 70,
+      "html": "长程编码",
+      "fontSize": 44,
+      "fontWeight": 800,
+      "color": "#22d3ee",
+      "valign": "middle",
+      "group": "g-code",
+      "fx": {
+        "enter": "fade-up",
+        "order": 3
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s9-c3t",
+      "type": "text",
+      "x": 874,
+      "y": 292,
+      "w": 293,
+      "h": 240,
+      "html": "<b>极少监督的持续工程</b><br><br><span style='color:#9aa5c4'>长时间工程任务不间断推进，理解大型代码库，自主协调终端工具完成复杂开发流程。</span>",
+      "fontSize": 20,
+      "color": "#ffffff",
+      "lineHeight": 1.65,
+      "group": "g-code",
+      "fx": {
+        "enter": "fade-up",
+        "order": 4
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s9-quote",
+      "type": "text",
+      "x": 80,
+      "y": 600,
+      "w": 1120,
+      "h": 56,
+      "html": "从芯片设计到长程编码，K3 的 Agent 能力已在真实工作流中完成闭环——不只是榜单上的数字。",
+      "fontSize": 17,
+      "color": "#8b96b8",
+      "align": "center",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade",
+        "order": 5
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "mg-dot",
+      "type": "shape",
+      "shape": "rect",
+      "x": 272,
+      "y": 241,
+      "w": 16,
+      "h": 16,
+      "fill": "#8b5cf6",
+      "opacity": 0.85,
+      "shadow": {
+        "y": 0,
+        "blur": 16,
+        "color": "rgba(139,92,246,0.5)"
+      },
+      "rotation": 0
+    }
+  ],
+  "background": "#0b1020"
+}

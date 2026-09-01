@@ -1,0 +1,33 @@
+{
+  "default": "k3",
+  "cases": [
+    {
+      "id": "k3",
+      "title": "Kimi K3 全球发布",
+      "desc": "17 页暗色电影感 · 全能力版：全程 Morph、图表三连变形、玻璃拟态、表格/散点/折线/贝塞尔、噪点与渐变标题",
+      "slides": 17,
+      "accent": "#4F7FFF"
+    },
+    {
+      "id": "qwen3.8",
+      "title": "Qwen3.8 全球发布",
+      "desc": "Qwen3.8 全球发布",
+      "slides": 10,
+      "accent": "#FF6A4D"
+    },
+    {
+      "id": "agents",
+      "title": "agents调研报告",
+      "desc": "agents报告",
+      "slides": 12,
+      "accent": "#222AcD"
+    },
+    {
+      "id": "weekly-report",
+      "title": "数据周报 · 第 31 周",
+      "desc": "6 页亮色汇报：KPI 总览、趋势图、渠道明细、问题与行动",
+      "slides": 6,
+      "accent": "#0E8C7F"
+    }
+  ]
+}

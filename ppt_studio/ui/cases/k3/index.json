@@ -1,0 +1,50 @@
+{
+  "format": "ppt/1",
+  "version": 1,
+  "title": "Kimi K3 全球发布",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "theme": {
+    "background": "#0b1020",
+    "color": "#eef2ff",
+    "accent": "#4f7fff",
+    "fontFamily": "system-ui",
+    "chartPalette": [
+      "#4f7fff",
+      "#8b5cf6",
+      "#22d3ee",
+      "#34d399",
+      "#6ee7f9",
+      "#39466b"
+    ]
+  },
+  "present": {
+    "progress": true,
+    "slideNumber": false
+  },
+  "assets": {
+    "grain": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1280 720\" preserveAspectRatio=\"none\"><filter id=\"k3-grain\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"0.9\" numOctaves=\"2\" stitchTiles=\"stitch\"/><feColorMatrix type=\"matrix\" values=\"0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.045 0\"/></filter><rect width=\"1280\" height=\"720\" filter=\"url(#k3-grain)\"/></svg>",
+    "dots": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1280 720\" preserveAspectRatio=\"none\"><defs><pattern id=\"k3-dots\" width=\"30\" height=\"30\" patternUnits=\"userSpaceOnUse\"><circle cx=\"1.5\" cy=\"1.5\" r=\"1.4\" fill=\"#FFFFFF\" opacity=\"0.05\"/></pattern></defs><rect width=\"1280\" height=\"720\" fill=\"url(#k3-dots)\"/></svg>"
+  },
+  "slides": [
+    "slides/slide_1.json",
+    "slides/slide_2.json",
+    "slides/slide_3.json",
+    "slides/slide_4.json",
+    "slides/slide_5.json",
+    "slides/slide_6.json",
+    "slides/slide_7.json",
+    "slides/slide_8.json",
+    "slides/slide_9.json",
+    "slides/slide_10.json",
+    "slides/slide_11.json",
+    "slides/slide_12.json",
+    "slides/slide_13.json",
+    "slides/slide_14.json",
+    "slides/slide_15.json",
+    "slides/slide_16.json",
+    "slides/slide_17.json"
+  ]
+}

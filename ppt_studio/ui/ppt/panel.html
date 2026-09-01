@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta name="description"
+    content="PPT 右侧属性面板：无选中时显示幻灯片属性（页面尺寸/背景/切换/名称/状态/备注），选中时显示元素属性（几何/混合/Morph/链接/动画 + 文本/形状专有），@cmd 上报编辑意图" />
+  <title>PPT Panel</title>
+</head>
+<style>
+  body {
+    display: block;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: var(--bg-color-secondary);
+    border-left: 1px solid var(--border-color);
+    font-size: var(--font-size-xs);
+    color: var(--text-color-secondary);
+  }
+
+  .pp-sec {
+    padding: 10px 12px 12px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .pp-sec-t {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-color);
+  }
+
+  .pp-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  .pp-row label {
+    flex: none;
+    width: 62px;
+    color: var(--text-color-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .pp-row .grow {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .pp-in {
+    width: 100%;
+    height: 26px;
+    padding: 0 6px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-color);
+    color: var(--text-color);
+    font-size: var(--font-size-xs);
+    outline: none;
+  }
+
+  .pp-in:focus {
+    border-color: var(--color-primary);
+  }
+
+  /* Morph id 显示的是有效键（morphId 缺省回落到元素 id）；继承态用弱化斜体区分 */
+  .pp-in.inherited {
+    color: var(--text-color-tertiary);
+    font-style: italic;
+  }
+
+  input[type="number"].pp-in {
+    padding-right: 2px;
+  }
+
+  .pp-color {
+    flex: none;
+    width: 34px;
+    height: 26px;
+    padding: 2px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-color);
+    cursor: pointer;
+  }
+
+  .pp-sel {
+    width: 100%;
+    height: 26px;
+    padding: 0 4px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-color);
+    color: var(--text-color);
+    font-size: var(--font-size-xs);
+  }
+
+  .pp-ta {
+    width: 100%;
+    min-height: 64px;
+    padding: 6px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-color);
+    color: var(--text-color);
+    font-size: var(--font-size-xs);
+    font-family: inherit;
+    resize: vertical;
+    outline: none;
+  }
+
+  .pp-ta:focus {
+    border-color: var(--color-primary);
+  }
+
+  .pp-grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  .pp-field {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .pp-field label {
+    flex: none;
+    color: var(--text-color-tertiary);
+  }
+
+  .pp-seg {
+    display: flex;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .pp-seg button {
+    flex: 1;
+    border: none;
+    background: var(--bg-color);
+    color: var(--text-color-secondary);
+    height: 24px;
+    cursor: pointer;
+    font-size: 11px;
+  }
+
+  .pp-seg button+button {
+    border-left: 1px solid var(--border-color);
+  }
+
+  .pp-seg button.on {
+    background: color-mix(in srgb, var(--color-primary) 16%, transparent);
+    color: var(--color-primary);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .pp-chk {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .pp-multi {
+    margin: 10px 12px 0;
+    padding: 6px 10px;
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    color: var(--color-primary);
+    font-weight: var(--font-weight-medium);
+  }
+
+  .pp-del {
+    margin: 10px 12px;
+    width: calc(100% - 24px);
+    height: 28px;
+    border: 1px solid color-mix(in srgb, var(--color-danger) 40%, transparent);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+    color: var(--color-danger);
+    cursor: pointer;
+    font-size: var(--font-size-xs);
+  }
+
+  .pp-del:hover {
+    background: color-mix(in srgb, var(--color-danger) 14%, transparent);
+  }
+
+  .pp-hint {
+    margin-top: 6px;
+    color: var(--text-color-tertiary);
+    line-height: 1.5;
+  }
+</style>
+
+<body>
+  <!-- 多选提示 -->
+  <div class="pp-multi" v-if="selCount() > 1">{{ $t('pn.multi', { n: selCount() }) }}</div>
+
+  <!-- ================= 无选中：幻灯片属性 ================= -->
+  <template v-if="!hasSel()">
+    <div class="pp-sec">
+      <div class="pp-sec-t">{{ $t('pn.slide') }}</div>
+      <div class="pp-row">
+        <label>{{ $t('pn.pageSize') }}</label>
+        <div class="grow">
+          <select class="pp-sel" :value="sizePreset()" @change="onSizePreset">
+            <option value="960x540">960 × 540 (16:9)</option>
+            <option value="1280x720">1280 × 720 (16:9 HD)</option>
+            <option value="1024x768">1024 × 768 (4:3)</option>
+            <option value="720x720">720 × 720 (1:1)</option>
+            <option value="794x1123">794 × 1123 (A4)</option>
+            <option value="custom">{{ $t('pn.custom') }}</option>
+          </select>
+        </div>
+      </div>
+      <div class="pp-grid2">
+        <div class="pp-field">
+          <label>{{ $t('pn.w') }}</label>
+          <input class="pp-in" type="number" min="240" max="4096" :value="st.size && st.size.width" @change="onDocW">
+        </div>
+        <div class="pp-field">
+          <label>{{ $t('pn.h') }}</label>
+          <input class="pp-in" type="number" min="240" max="4096" :value="st.size && st.size.height" @change="onDocH">
+        </div>
+      </div>
+      <div class="pp-row">
+        <label>{{ $t('pn.bg') }}</label>
+        <input class="pp-color" type="color" :value="st.background || '#ffffff'" @change="onSlideBg">
+        <div class="grow">
+          <select class="pp-sel" :value="st.transition || 'morph'" @change="onSlideTrans">
+            <option v-for="t in transitions" :value="t" :selected="(st.transition || 'morph') === t">{{
+              $t('tb.trans.' + t) }}</option>
+          </select>
+        </div>
+      </div>
+      <div class="pp-row">
+        <label>{{ $t('pn.name') }}</label>
+        <div class="grow"><input class="pp-in" type="text" :value="slideName()" @change="onSlideName"></div>
+      </div>
+      <div class="pp-row">
+        <label>{{ $t('pn.stateOf') }}</label>
+        <div class="grow">
+          <select class="pp-sel" :value="slideStateOf()" @change="onSlideStateOf">
+            <option value="">{{ $t('pn.stateNone') }}</option>
+            <option v-for="s in otherSlides()" :value="s.id" :selected="slideStateOf() === s.id">{{
+              slideLabel(s) }}</option>
+          </select>
+        </div>
+      </div>
+      <div class="pp-hint">{{ $t('pn.stateTip') }}</div>
+    </div>
+    <div class="pp-sec">
+      <div class="pp-sec-t">{{ $t('pn.notes') }}</div>
+      <textarea class="pp-ta" :value="slideNotes()" @change="onSlideNotes" :placeholder="$t('pn.notesPh')"></textarea>
+    </div>
+  </template>
+
+  <!-- ================= 选中：元素属性 ================= -->
+  <template v-if="hasSel()">
+    <div class="pp-sec">
+      <div class="pp-sec-t">{{ $t('pn.element') }}<span style="color:var(--text-color-tertiary);font-weight:400">{{
+          sel().type }}</span></div>
+      <div class="pp-grid2">
+        <div class="pp-field"><label>X</label><input class="pp-in" type="number" :value="sel().x"
+            @change="onNum('x', $event)"></div>
+        <div class="pp-field"><label>Y</label><input class="pp-in" type="number" :value="sel().y"
+            @change="onNum('y', $event)"></div>
+        <div class="pp-field"><label>{{ $t('pn.w') }}</label><input class="pp-in" type="number" min="4" :value="sel().w"
+            @change="onNum('w', $event)"></div>
+        <div class="pp-field"><label>{{ $t('pn.h') }}</label><input class="pp-in" type="number" min="4" :value="sel().h"
+            @change="onNum('h', $event)"></div>
+      </div>
+      <div class="pp-grid2">
+        <div class="pp-field"><label>{{ $t('pn.rot') }}</label><input class="pp-in" type="number" step="1"
+            :value="sel().rotation || 0" @change="onNum('rotation', $event)"></div>
+        <div class="pp-field"><label>{{ $t('pn.opacity') }}</label><input class="pp-in" type="number" min="0" max="100"
+            :value="Math.round((sel().opacity == null ? 1 : sel().opacity) * 100)" @change="onOpacity"></div>
+      </div>
+      <div class="pp-row">
+        <label>{{ $t('pn.blend') }}</label>
+        <div class="grow">
+          <select class="pp-sel" :value="sel().blend || ''" @change="onBlend">
+            <option v-for="b in blends" :value="b" :selected="(sel().blend || '') === b">{{ b ? b :
+              $t('pn.blendNormal') }}</option>
+          </select>
+        </div>
+      </div>
+      <div class="pp-row">
+        <label>Morph id</label>
+        <div class="grow"><input class="pp-in" type="text" :value="sel().morphId || sel().id || ''"
+            :class="{ inherited: !sel().morphId }" :title="sel().morphId ? '' : $t('pn.morphInherited')"
+            @change="onText('morphId', $event)" :placeholder="$t('pn.morphPh')"></div>
+      </div>
+      <div class="pp-row">
+        <label>{{ $t('pn.link') }}</label>
+        <div class="grow">
+          <select class="pp-sel" :value="sel().link || ''" @change="onLink">
+            <option value="">{{ $t('pn.linkNone') }}</option>
+            <option v-for="s in st.slides || []" :value="s.id" :selected="(sel().link || '') === s.id">{{
+              slideLabel(s) }}</option>
+          </select>
+        </div>
+      </div>
+      <div class="pp-row">
+        <label>{{ $t('pn.group') }}</label>
+        <div class="grow"><input class="pp-in" type="text" :value="sel().group || ''" @change="onText('group', $event)">
+        </div>
+      </div>
+    </div>
+
+    <!-- 动画 -->
+    <div class="pp-sec">
+      <div class="pp-sec-t">{{ $t('pn.fx') }}</div>
+      <div class="pp-row">
+        <label>{{ $t('pn.enter') }}</label>
+        <div class="grow">
+          <select class="pp-sel" :value="fxVal('enter') || ''" @change="onFxEnter">
+            <option value="">{{ $t('pn.fxNone') }}</option>
+            <option v-for="f in enters" :value="f" :selected="(fxVal('enter') || '') === f">{{ $t('pn.fx.' + f)
+              }}</option>
+          </select>
+        </div>
+      </div>
+      <div class="pp-grid2">
+        <div class="pp-field"><label>{{ $t('pn.enterDur') }}</label><input class="pp-in" type="number" min="0.1" max="5"
+            step="0.05" :value="fxVal('enterDur') || ''" @change="onFxNum('enterDur', $event)"></div>
+        <div class="pp-field"><label>{{ $t('pn.order') }}</label><input class="pp-in" type="number" min="0" max="20"
+            :value="fxVal('order') || 0" @change="onFxNum('order', $event)"></div>
+      </div>
+    </div>
+
+    <!-- 文本 -->
+    <div class="pp-sec" v-if="sel().type === 'text'">
+      <div class="pp-sec-t">{{ $t('pn.text') }}</div>
+      <div class="pp-row">
+        <label>{{ $t('pn.font') }}</label>
+        <div class="grow">
+          <input class="pp-in" type="text" list="ppt-fonts" :value="sel().fontFamily || ''"
+            @change="onText('fontFamily', $event)">
+          <datalist id="ppt-fonts">
+            <option value="system-ui, sans-serif"></option>
+            <option value="Arial, sans-serif"></option>
+            <option value="Georgia, serif"></option>
+            <option value="'Times New Roman', serif"></option>
+            <option value="'Courier New', monospace"></option>
+            <option value="Impact, sans-serif"></option>
+          </datalist>
+        </div>
+      </div>
+      <div class="pp-grid2">
+        <div class="pp-field">
+          <label>{{ $t('pn.weight') }}</label>
+          <select class="pp-sel" :value="String(sel().fontWeight || 400)" @change="onWeight">
+            <option v-for="w in weights" :value="w" :selected="String(sel().fontWeight || 400) === w">{{ w }}
+            </option>
+          </select>
+        </div>
+        <div class="pp-field"><label>{{ $t('pn.size') }}</label><input class="pp-in" type="number" min="8" max="400"
+            :value="sel().fontSize || 32" @change="onNum('fontSize', $event)"></div>
+      </div>
+      <div class="pp-row">
+        <label>{{ $t('pn.color') }}</label>
+        <input class="pp-color" type="color" :value="sel().color" @change="onColor">
+        <label class="pp-chk" style="flex:1;justify-content:flex-end">
+          <input type="checkbox" :checked="!!sel().colorGradient" @change="onTextGradToggle"> {{ $t('pn.gradText') }}
+        </label>
+      </div>
+      <template v-if="sel().colorGradient">
+        <div class="pp-row">
+          <label>{{ $t('pn.gradAngle') }}</label>
+          <input class="pp-in" type="number" step="5" :value="gradAngle('colorGradient')"
+            @change="onGradAngle('colorGradient', $event)">
+        </div>
+        <div class="pp-row">
+          <label>{{ $t('pn.gradStops') }}</label>
+          <input class="pp-color" type="color" :value="gradStop('colorGradient', 0)"
+            @change="onGradStop('colorGradient', 0, $event)">
+          <input class="pp-color" type="color" :value="gradStop('colorGradient', 1)"
+            @change="onGradStop('colorGradient', 1, $event)">
+        </div>
+      </template>
+      <div class="pp-row">
+        <label>{{ $t('pn.align') }}</label>
+        <div class="grow">
+          <div class="pp-seg">
+            <button :class="{ on: (sel().align || 'left') === 'left' }" @click="setPatch({ align: 'left' })">⇤</button>
+            <button :class="{ on: sel().align === 'center' }" @click="setPatch({ align: 'center' })">↔</button>
+            <button :class="{ on: sel().align === 'right' }" @click="setPatch({ align: 'right' })">⇥</button>
+          </div>
+        </div>
+        <div class="grow">
+          <div class="pp-seg">
+            <button :class="{ on: (sel().valign || 'top') === 'top' }" @click="setPatch({ valign: 'top' })">⤒</button>
+            <button :class="{ on: sel().valign === 'middle' }" @click="setPatch({ valign: 'middle' })">↕</button>
+            <button :class="{ on: sel().valign === 'bottom' }" @click="setPatch({ valign: 'bottom' })">⤓</button>
+          </div>
+        </div>
+      </div>
+      <div class="pp-grid2">
+        <div class="pp-field"><label>{{ $t('pn.lineHeight') }}</label><input class="pp-in" type="number" min="0.8"
+            max="3" step="0.05" :value="sel().lineHeight || 1.25" @change="onFloat('lineHeight', $event)"></div>
+        <div class="pp-field"><label>{{ $t('pn.tracking') }}</label><input class="pp-in" type="number" step="0.5"
+            :value="sel().letterSpacing || 0" @change="onFloat('letterSpacing', $event)"></div>
+      </div>
+      <div class="pp-row">
+        <label class="pp-chk">
+          <input type="checkbox" :checked="!!(sel().textStroke && sel().textStroke.width)" @change="onStrokeTextToggle">
+          {{ $t('pn.outline') }}
+        </label>
+        <template v-if="sel().textStroke && sel().textStroke.width">
+          <input class="pp-color" type="color" :value="sel().textStroke.color || '#000000'" @change="onStrokeTextColor">
+          <label class="pp-chk" style="margin-left:auto">
+            <input type="checkbox" :checked="sel().textStroke.fill === 'none'" @change="onStrokeTextHollow"> {{
+            $t('pn.hollow') }}
+          </label>
+        </template>
+      </div>
+    </div>
+
+    <!-- 形状 -->
+    <div class="pp-sec" v-if="sel().type === 'shape'">
+      <div class="pp-sec-t">{{ $t('pn.shape') }}</div>
+      <div class="pp-row">
+        <label>{{ $t('pn.fill') }}</label>
+        <input class="pp-color" type="color" :value="sel().fill" @change="onFill">
+        <label class="pp-chk" style="flex:1;justify-content:flex-end">
+          <input type="checkbox" :checked="!!sel().fillGradient" @change="onShapeGradToggle"> {{ $t('pn.gradFill') }}
+        </label>
+      </div>
+      <template v-if="sel().fillGradient">
+        <div class="pp-row">
+          <label>{{ $t('pn.gradAngle') }}</label>
+          <input class="pp-in" type="number" step="5" :value="gradAngle('fillGradient')"
+            @change="onGradAngle('fillGradient', $event)">
+        </div>
+        <div class="pp-row">
+          <label>{{ $t('pn.gradStops') }}</label>
+          <input class="pp-color" type="color" :value="gradStop('fillGradient', 0)"
+            @change="onGradStop('fillGradient', 0, $event)">
+          <input class="pp-color" type="color" :value="gradStop('fillGradient', 1)"
+            @change="onGradStop('fillGradient', 1, $event)">
+        </div>
+      </template>
+      <div class="pp-row">
+        <label>{{ $t('pn.stroke') }}</label>
+        <input class="pp-color" type="color" :value="sel().stroke || '#000000'" @change="onStroke">
+        <input class="pp-in" type="number" min="0" max="60" style="width:56px;flex:none" :value="sel().strokeWidth || 0"
+          @change="onNum('strokeWidth', $event)">
+        <select class="pp-sel" style="width:76px;flex:none" :value="sel().strokeStyle || 'solid'"
+          @change="onStrokeStyle">
+          <option value="solid">{{ $t('pn.dashSolid') }}</option>
+          <option value="dashed">{{ $t('pn.dashDashed') }}</option>
+          <option value="dotted">{{ $t('pn.dashDotted') }}</option>
+        </select>
+      </div>
+      <div class="pp-row" v-if="sel().shape === 'rect'">
+        <label>{{ $t('pn.radius') }}</label>
+        <input class="pp-in" type="number" min="0" max="300" :value="sel().radius || 0"
+          @change="onNum('radius', $event)">
+      </div>
+      <template v-if="sel().shape === 'line'">
+        <div class="pp-row">
+          <label>{{ $t('pn.lineStart') }}</label>
+          <div class="grow">
+            <select class="pp-sel" :value="sel().lineStart || 'none'" @change="onLineEnd('lineStart', $event)">
+              <option v-for="e in lineEnds" :value="e" :selected="(sel().lineStart || 'none') === e">{{
+                $t('pn.le.' + e) }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="pp-row">
+          <label>{{ $t('pn.lineEnd') }}</label>
+          <div class="grow">
+            <select class="pp-sel" :value="sel().lineEnd || 'none'" @change="onLineEnd('lineEnd', $event)">
+              <option v-for="e in lineEnds" :value="e" :selected="(sel().lineEnd || 'none') === e">{{
+                $t('pn.le.' + e) }}</option>
+            </select>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <!-- 表格 -->
+    <div class="pp-sec" v-if="sel().type === 'table'">
+      <div class="pp-sec-t">{{ $t('pn.table') }}</div>
+      <div class="pp-row">
+        <label class="pp-chk">
+          <input type="checkbox" :checked="!!sel().header" @change="onTableHeader"> {{ $t('pn.tblHeader') }}
+        </label>
+        <label class="pp-chk" style="margin-left:auto">
+          <input type="checkbox" :checked="!!tblStyle('zebra')" @change="onTableZebra"> {{ $t('pn.tblZebra') }}
+        </label>
+      </div>
+      <div class="pp-row">
+        <label>{{ $t('pn.tblHeadBg') }}</label>
+        <input class="pp-color" type="color" :value="hex(tblStyle('headerBg'), '#3a6ff7')"
+          @change="onTblColor('headerBg', $event)">
+        <label>{{ $t('pn.tblHeadTx') }}</label>
+        <input class="pp-color" type="color" :value="hex(tblStyle('headerColor'), '#ffffff')"
+          @change="onTblColor('headerColor', $event)">
+      </div>
+      <div class="pp-row">
+        <label>{{ $t('pn.tblBorder') }}</label>
+        <input class="pp-color" type="color" :value="hex(tblStyle('borderColor'), '#999999')"
+          @change="onTblColor('borderColor', $event)">
+        <input class="pp-in" type="number" min="0" max="10" style="width:56px;flex:none"
+          :value="tblStyle('borderWidth') == null ? 1 : tblStyle('borderWidth')"
+          @change="onTblNum('borderWidth', $event)">
+      </div>
+      <div class="pp-grid2">
+        <div class="pp-field"><label>{{ $t('pn.size') }}</label><input class="pp-in" type="number" min="8" max="60"
+            :value="tblStyle('fontSize') || 15" @change="onTblNum('fontSize', $event)"></div>
+        <div class="pp-field"><label>{{ $t('pn.radius') }}</label><input class="pp-in" type="number" min="0" max="40"
+            :value="tblStyle('radius') || 0" @change="onTblNum('radius', $event)"></div>
+      </div>
+      <div class="pp-hint">{{ $t('pn.tblEditTip') }}</div>
+    </div>
+
+    <!-- 图表 -->
+    <div class="pp-sec" v-if="sel().type === 'chart'">
+      <div class="pp-sec-t">{{ $t('pn.chart') }}</div>
+      <div class="pp-row">
+        <label>{{ $t('pn.chartType') }}</label>
+        <div class="grow">
+          <select class="pp-sel" :value="chartType()" @change="onChartType">
+            <option v-for="t in chartTypes" :value="t" :selected="chartType() === t">{{ $t('pn.ct.' + t) }}
+            </option>
+          </select>
+        </div>
+      </div>
+      <div class="pp-row">
+        <label>Option</label>
+      </div>
+      <textarea class="pp-ta" style="min-height:110px;font-family:var(--font-mono)" :value="chartOptionText()"
+        @change="onChartOption"></textarea>
+      <div class="pp-hint">{{ $t('pn.chartTip') }}</div>
+    </div>
+
+    <!-- 媒体 -->
+    <div class="pp-sec" v-if="sel().type === 'media'">
+      <div class="pp-sec-t">{{ $t('pn.media') }}</div>
+      <div class="pp-row">
+        <label>URL</label>
+        <div class="grow"><input class="pp-in" type="text" :value="sel().src || ''" @change="onText('src', $event)">
+        </div>
+      </div>
+      <div class="pp-row" v-if="sel().kind === 'video'">
+        <label>{{ $t('pn.fit') }}</label>
+        <div class="grow">
+          <select class="pp-sel" :value="sel().fit || 'contain'" @change="onFit">
+            <option value="contain">contain</option>
+            <option value="cover">cover</option>
+            <option value="fill">fill</option>
+          </select>
+        </div>
+      </div>
+      <div class="pp-row">
+        <label class="pp-chk"><input type="checkbox" :checked="!!sel().autoplay" @change="onFlag('autoplay', $event)">
+          {{ $t('pn.autoplay') }}</label>
+        <label class="pp-chk"><input type="checkbox" :checked="!!sel().loop" @change="onFlag('loop', $event)"> {{
+          $t('pn.loop') }}</label>
+      </div>
+      <div class="pp-row">
+        <label class="pp-chk"><input type="checkbox" :checked="!!sel().muted" @change="onFlag('muted', $event)"> {{
+          $t('pn.muted') }}</label>
+        <label class="pp-chk"><input type="checkbox" :checked="sel().controls !== false"
+            @change="onFlag('controls', $event)"> {{ $t('pn.controls') }}</label>
+      </div>
+      <div class="pp-hint">{{ $t('pn.mediaTip') }}</div>
+    </div>
+
+    <!-- SVG -->
+    <div class="pp-sec" v-if="sel().type === 'svg'">
+      <div class="pp-sec-t">SVG</div>
+      <textarea class="pp-ta" style="min-height:110px;font-family:var(--font-mono)" :value="sel().markup || ''"
+        @change="onText('markup', $event)"></textarea>
+    </div>
+
+    <!-- 图片 -->
+    <div class="pp-sec" v-if="sel().type === 'image'">
+      <div class="pp-sec-t">{{ $t('pn.image') }}</div>
+      <div class="pp-row">
+        <label>{{ $t('pn.fit') }}</label>
+        <div class="grow">
+          <select class="pp-sel" :value="sel().fit || 'contain'" @change="onFit">
+            <option value="contain">contain</option>
+            <option value="cover">cover</option>
+            <option value="fill">fill</option>
+          </select>
+        </div>
+      </div>
+      <div class="pp-row">
+        <label>{{ $t('pn.radius') }}</label>
+        <input class="pp-in" type="number" min="0" max="300" :value="sel().radius || 0"
+          @change="onNum('radius', $event)">
+      </div>
+    </div>
+
+    <button class="pp-del" @click="delSel">{{ $t('pn.delete') }}</button>
+  </template>
+</body>
+<script setup>
+  // ---- props：引擎状态快照（statechange 下发，selection 为主选中元素的深拷贝） ----
+  st = {}
+  transitions = ['none', 'fade', 'slide', 'zoom', 'morph']
+  blends = ['', 'multiply', 'screen', 'overlay', 'darken', 'lighten', 'color-dodge', 'difference']
+  enters = ['fade-up', 'fade', 'fade-down', 'slide-left', 'slide-right', 'slide-up', 'slide-down']
+  weights = ['300', '400', '500', '600', '700', '800', '900']
+  lineEnds = ['none', 'arrow', 'dot', 'bar']
+  chartTypes = ['bar', 'line', 'scatter', 'pie']
+
+  // rgba/名称 → color input 可用的 #rrggbb
+  hex = (v, dft) => {
+    if (!v) return dft
+    if (/^#[0-9a-fA-F]{6}$/.test(v)) return v
+    if (/^#[0-9a-fA-F]{3}$/.test(v)) return '#' + v[1] + v[1] + v[2] + v[2] + v[3] + v[3]
+    const m = /^rgba?\((\d+)[,\s]+(\d+)[,\s]+(\d+)/.exec(v)
+    if (m) return '#' + [m[1], m[2], m[3]].map((x) => (+x).toString(16).padStart(2, '0')).join('')
+    return dft
+  }
+
+  sel = () => (st && st.selection) || {}
+  hasSel = () => !!(st && st.selection)   // 模板判空用这个：sel() 为绑定安全总返回对象，永远为真值
+  selCount = () => (st && st.selection && st.selection._count) || 0
+
+  // ---- 意图上报 ----
+  setPatch = (props) => $emit('cmd', {name: 'updateSelected', props: props})
+  slidePatch = (props) => $emit('cmd', {name: 'updateSlide', props: props})
+
+  // ---- 幻灯片区 ----
+  sizePreset = () => {
+    const s = st && st.size
+    if (!s) return '960x540'
+    const k = s.width + 'x' + s.height
+    return ['960x540', '1280x720', '1024x768', '720x720', '794x1123'].indexOf(k) >= 0 ? k : 'custom'
+  }
+  onSizePreset = (e) => {
+    const v = e.target.value
+    if (v === 'custom') return
+    const p = v.split('x')
+    $emit('cmd', {name: 'updateDocSize', w: +p[0], h: +p[1]})
+  }
+  onDocW = (e) => $emit('cmd', {name: 'updateDocSize', w: +e.target.value || st.size.width, h: st.size.height})
+  onDocH = (e) => $emit('cmd', {name: 'updateDocSize', w: st.size.width, h: +e.target.value || st.size.height})
+  onSlideBg = (e) => slidePatch({background: e.target.value})
+  onSlideTrans = (e) => slidePatch({transition: e.target.value})
+  onSlideName = (e) => slidePatch({name: e.target.value.trim() || null})
+  onSlideStateOf = (e) => slidePatch({stateOf: e.target.value || null})
+  onSlideNotes = (e) => slidePatch({notes: e.target.value})
+  slideName = () => (st && st.slide && st.slide.name) || ''
+  slideStateOf = () => (st && st.slide && st.slide.stateOf) || ''
+  slideNotes = () => (st && st.slide && st.slide.notes) || ''
+  otherSlides = () => (st.slides || []).filter((s) => s.index !== st.current)
+  slideLabel = (s) => {
+    let t = (s.index + 1) + (s.name ? ' · ' + s.name : '')
+    if (s.hidden) t += ' (' + $t('pn.stateBadge') + ')'
+    return t
+  }
+
+  // ---- 元素通用 ----
+  onNum = (k, e) => {
+    const v = parseFloat(e.target.value)
+    if (isNaN(v)) return
+    setPatch({[k]: v})
+  }
+  onFloat = (k, e) => {
+    const v = parseFloat(e.target.value)
+    if (isNaN(v)) return
+    setPatch({[k]: v})
+  }
+  onText = (k, e) => setPatch({[k]: e.target.value.trim() || null})
+  onOpacity = (e) => {
+    const v = parseFloat(e.target.value)
+    if (isNaN(v)) return
+    setPatch({opacity: Math.min(100, Math.max(0, v)) / 100})
+  }
+  onBlend = (e) => setPatch({blend: e.target.value || null})
+  onLink = (e) => setPatch({link: e.target.value || null})
+  delSel = () => $emit('cmd', {name: 'deleteSelected'})
+
+  // ---- 动画 fx ----
+  fxVal = (k) => {
+    const s = sel()
+    return s && s.fx ? s.fx[k] : undefined
+  }
+  fxPatch = (k, v) => {
+    const s = sel()
+    const fx = Object.assign({}, (s && s.fx) || {})
+    if (v == null || v === '') delete fx[k]
+    else fx[k] = v
+    setPatch({fx: Object.keys(fx).length ? fx : null})
+  }
+  onFxEnter = (e) => fxPatch('enter', e.target.value || null)
+  onFxNum = (k, e) => {
+    const v = parseFloat(e.target.value)
+    fxPatch(k, isNaN(v) ? null : v)
+  }
+
+  // ---- 文本 ----
+  onWeight = (e) => setPatch({fontWeight: +e.target.value})
+  onColor = (e) => setPatch({color: e.target.value, colorGradient: null})
+  onTextGradToggle = (e) => {
+    const s = sel()
+    if (e.target.checked) {
+      setPatch({colorGradient: {angle: 90, stops: [{at: 0, color: s.color || '#1f2430'}, {at: 1, color: '#ffffff'}]}})
+    } else {
+      setPatch({colorGradient: null})
+    }
+  }
+  onStrokeTextToggle = (e) => {
+    if (e.target.checked) setPatch({textStroke: {width: 2, color: '#000000'}})
+    else setPatch({textStroke: null})
+  }
+  onStrokeTextColor = (e) => {
+    const ts = Object.assign({}, sel().textStroke || {width: 2})
+    ts.color = e.target.value
+    setPatch({textStroke: ts})
+  }
+  onStrokeTextHollow = (e) => {
+    const ts = Object.assign({}, sel().textStroke || {width: 2})
+    ts.fill = e.target.checked ? 'none' : undefined
+    if (!e.target.checked) delete ts.fill
+    setPatch({textStroke: ts})
+  }
+
+  // ---- 形状 ----
+  onFill = (e) => setPatch({fill: e.target.value, fillGradient: null})
+  onShapeGradToggle = (e) => {
+    const s = sel()
+    if (e.target.checked) {
+      setPatch({fillGradient: {angle: 90, stops: [{at: 0, color: s.fill || '#3a6ff7'}, {at: 1, color: '#ffffff'}]}})
+    } else {
+      setPatch({fillGradient: null})
+    }
+  }
+  onStroke = (e) => setPatch({stroke: e.target.value})
+  onStrokeStyle = (e) => setPatch({strokeStyle: e.target.value})
+  onLineEnd = (k, e) => setPatch({[k]: e.target.value})
+  onFit = (e) => setPatch({fit: e.target.value})
+  onFlag = (k, e) => setPatch({[k]: e.target.checked ? true : (k === 'controls' ? false : null)})
+
+  // ---- 表格 ----
+  tblStyle = (k) => {
+    const s = sel()
+    return s && s.style ? s.style[k] : undefined
+  }
+  tblPatch = (k, v) => {
+    const s = sel()
+    const st = Object.assign({}, (s && s.style) || {})
+    if (v == null) delete st[k]
+    else st[k] = v
+    setPatch({style: st})
+  }
+  onTableHeader = (e) => setPatch({header: e.target.checked ? true : null})
+  onTableZebra = (e) => tblPatch('zebra', e.target.checked ? 'rgba(128,128,128,.08)' : null)
+  onTblColor = (k, e) => tblPatch(k, e.target.value)
+  onTblNum = (k, e) => {
+    const v = parseFloat(e.target.value)
+    if (!isNaN(v)) tblPatch(k, v)
+  }
+
+  // ---- 图表 ----
+  chartType = () => {
+    const s = sel()
+    const srs = s && s.option && s.option.series
+    return (srs && srs[0] && srs[0].type) || 'bar'
+  }
+  onChartType = (e) => $emit('cmd', {name: 'reseedChart', value: e.target.value})
+  chartOptionText = () => {
+    const s = sel()
+    try {return JSON.stringify((s && s.option) || {}, null, 1)} catch (e) {return '{}'}
+  }
+  onChartOption = (e) => {
+    try {
+      const j = JSON.parse(e.target.value)
+      if (!j || typeof j !== 'object') throw new Error('bad')
+      setPatch({option: j})
+    } catch (err) {
+      $message.error($t('pn.chartBadJson'))
+    }
+  }
+
+  // ---- 渐变通用（首末两个 stop） ----
+  gradOf = (k) => {
+    const s = sel()
+    return s && s[k] && s[k].stops && s[k].stops.length ? s[k] : null
+  }
+  gradAngle = (k) => {
+    const g = gradOf(k)
+    return g ? (g.angle == null ? 90 : g.angle) : 90
+  }
+  gradStop = (k, i) => {
+    const g = gradOf(k)
+    if (!g) return '#000000'
+    const stops = g.stops
+    const c = i === 0 ? stops[0].color : stops[stops.length - 1].color
+    // color input 需要 #rrggbb
+    const m = /^#[0-9a-fA-F]{6}$/.test(c) ? c : null
+    return m || (i === 0 ? '#000000' : '#ffffff')
+  }
+  onGradAngle = (k, e) => {
+    const g = gradOf(k)
+    if (!g) return
+    const v = parseFloat(e.target.value)
+    if (isNaN(v)) return
+    const ng = {angle: v, stops: JSON.parse(JSON.stringify(g.stops))}
+    setPatch({[k]: ng})
+  }
+  onGradStop = (k, i, e) => {
+    const g = gradOf(k)
+    if (!g) return
+    // 只保留首末两个 stop（编辑即归一化为双色渐变）
+    const stops = [
+      {at: 0, color: i === 0 ? e.target.value : g.stops[0].color},
+      {at: 1, color: i === 1 ? e.target.value : g.stops[g.stops.length - 1].color}
+    ]
+    setPatch({[k]: {angle: g.angle == null ? 90 : g.angle, stops: stops}})
+  }
+</script>
+
+</html>

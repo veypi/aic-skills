@@ -1,0 +1,104 @@
+{
+  "id": "s8",
+  "background": "#0a0f1c",
+  "transition": "morph",
+  "hover": { "type": "focus-group", "dim": 0.28 },
+  "notes": "中国厂商四强：WorkBuddy · Trae · 通义灵码 · Comate。三条侧标收束为两条 + 一个角标，聚焦头 two 厂商。",
+  "elements": [
+    { "id": "grain", "type": "svg", "x": 0, "y": 0, "w": 1280, "h": 720, "asset": "grain", "opacity": 1 },
+    { "id": "dots", "type": "svg", "x": 0, "y": 0, "w": 1280, "h": 720, "asset": "dots", "opacity": 0.9 },
+    {
+      "id": "gl-a-08", "type": "shape", "shape": "ellipse",
+      "x": 820, "y": -180, "w": 560, "h": 560, "blur": 60, "fill": "transparent",
+      "fillGradient": { "angle": 135, "stops": [ { "at": 0, "color": "rgba(251,191,36,0.16)" }, { "at": 1, "color": "rgba(251,191,36,0)" } ] },
+      "fx": { "ambient": "kenburns", "ken": { "dir": "drift", "scale": 1.12, "duration": 26 } }
+    },
+    {
+      "id": "gl-b-08", "type": "shape", "shape": "ellipse",
+      "x": -220, "y": 400, "w": 480, "h": 480, "blur": 60, "fill": "transparent",
+      "fillGradient": { "angle": 315, "stops": [ { "at": 0, "color": "rgba(79,141,255,0.14)" }, { "at": 1, "color": "rgba(79,141,255,0)" } ] },
+      "fx": { "ambient": "kenburns", "ken": { "dir": "drift", "scale": 1.14, "duration": 30 } }
+    },
+    {
+      "id": "ghost-08", "type": "text", "x": 980, "y": -16, "w": 300, "h": 210,
+      "html": "04", "fontSize": 160, "fontWeight": 800, "color": "rgba(251,191,36,0.06)",
+      "fontFamily": "'JetBrains Mono', monospace", "align": "center", "valign": "middle"
+    },
+    {
+      "id": "fx-title", "type": "text",
+      "x": 80, "y": 34, "w": 1040, "h": 66,
+      "html": "<span style=\"font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:4px;color:#fbbf24\">CH.04 — CHINA VENDORS</span><br><b>中国厂商：四强格局</b>",
+      "fontSize": 30, "fontWeight": 800, "color": "#f8fafc",
+      "align": "left", "valign": "middle", "lineHeight": 1.2
+    },
+    {
+      "id": "fx-rule", "type": "shape", "shape": "rect",
+      "x": 82, "y": 108, "w": 220, "h": 5,
+      "fill": "#fbbf24", "radius": 3,
+      "shadow": { "y": 0, "blur": 12, "color": "rgba(251,191,36,0.4)" }
+    },
+    { "id": "w1-bg", "type": "shape", "shape": "rect", "x": 50, "y": 124, "w": 570, "h": 256, "fill": "#10182c", "radius": 12, "stroke": "rgba(79,141,255,0.22)", "strokeWidth": 1, "group": "A", "shadow": { "y": 8, "blur": 22, "color": "rgba(2,6,18,0.45)" }, "fx": { "enter": "fade-up", "order": 1 } },
+    { "id": "w1-badge", "type": "text", "x": 78, "y": 142, "w": 120, "h": 26, "html": "腾讯云", "fontSize": 11, "fontWeight": 700, "color": "#4f8dff", "letterSpacing": 2, "align": "left", "valign": "middle", "group": "A", "fx": { "enter": "fade", "order": 1 } },
+    { "id": "w1-name", "type": "text", "x": 78, "y": 170, "w": 400, "h": 34, "html": "WorkBuddy AI", "fontSize": 25, "fontWeight": 800, "color": "#f8fafc", "align": "left", "valign": "middle", "group": "A", "fx": { "enter": "fade-up", "order": 1 } },
+    { "id": "w1-sub", "type": "text", "x": 78, "y": 204, "w": 514, "h": 20, "html": "多智能体办公 Agent · 90 天登顶中国区第一", "fontSize": 12, "color": "#64748b", "align": "left", "valign": "middle", "group": "A" },
+    { "id": "w1-div", "type": "shape", "shape": "rect", "x": 78, "y": 230, "w": 514, "h": 1, "fill": "rgba(148,163,184,0.16)", "group": "A" },
+    {
+      "id": "w1-info", "type": "text", "x": 78, "y": 240, "w": 514, "h": 126,
+      "html": "· 多 Agent 并行编排 · 本地文件直接操作 · 20+ 内置技能<br>· 集成微信/企业微信/飞书/钉钉/QQ · GitHub/Jira/Notion<br>· 消息驱动：在聊天工具中委派任务即可获得结果<br>· 个人版 <b>58 元/月</b> · 企业版 <b>198 元/月</b> · 国际版 ~<b>$10/月</b>",
+      "fontSize": 12.5, "color": "#94a3b8", "align": "left", "valign": "top", "lineHeight": 1.72,
+      "group": "A", "fx": { "enter": "fade-up", "order": 2 }
+    },
+    { "id": "w2-bg", "type": "shape", "shape": "rect", "x": 660, "y": 124, "w": 570, "h": 256, "fill": "#10182c", "radius": 12, "stroke": "rgba(167,139,250,0.22)", "strokeWidth": 1, "group": "B", "shadow": { "y": 8, "blur": 22, "color": "rgba(2,6,18,0.45)" }, "fx": { "enter": "fade-up", "order": 2 } },
+    { "id": "w2-badge", "type": "text", "x": 688, "y": 142, "w": 120, "h": 26, "html": "字节跳动", "fontSize": 11, "fontWeight": 700, "color": "#a78bfa", "letterSpacing": 2, "align": "left", "valign": "middle", "group": "B", "fx": { "enter": "fade", "order": 2 } },
+    { "id": "w2-name", "type": "text", "x": 688, "y": 170, "w": 400, "h": 34, "html": "Trae / Trae Agent", "fontSize": 25, "fontWeight": 800, "color": "#f8fafc", "align": "left", "valign": "middle", "group": "B", "fx": { "enter": "fade-up", "order": 2 } },
+    { "id": "w2-sub", "type": "text", "x": 688, "y": 204, "w": 514, "h": 20, "html": "AI-Native IDE · 更懂中文开发者 · 开源", "fontSize": 12, "color": "#64748b", "align": "left", "valign": "middle", "group": "B" },
+    { "id": "w2-div", "type": "shape", "shape": "rect", "x": 688, "y": 230, "w": 514, "h": 1, "fill": "rgba(148,163,184,0.16)", "group": "B" },
+    {
+      "id": "w2-info", "type": "text", "x": 688, "y": 240, "w": 514, "h": 126,
+      "html": "· VS Code 分支 AI-Native IDE · SOLO 模式全自动编码<br>· Trae Agent：通用软件工程 LLM Agent（GitHub 开源）<br>· 深度中文优化 · 火山引擎生态集成 · 免费使用<br>· 对标 Cursor，中文开发者体验最优",
+      "fontSize": 12.5, "color": "#94a3b8", "align": "left", "valign": "top", "lineHeight": 1.72,
+      "group": "B", "fx": { "enter": "fade-up", "order": 3 }
+    },
+    { "id": "w3-bg", "type": "shape", "shape": "rect", "x": 50, "y": 400, "w": 570, "h": 256, "fill": "#10182c", "radius": 12, "stroke": "rgba(251,191,36,0.22)", "strokeWidth": 1, "group": "C", "shadow": { "y": 8, "blur": 22, "color": "rgba(2,6,18,0.45)" }, "fx": { "enter": "fade-up", "order": 3 } },
+    { "id": "w3-badge", "type": "text", "x": 78, "y": 418, "w": 120, "h": 26, "html": "阿里云", "fontSize": 11, "fontWeight": 700, "color": "#fbbf24", "letterSpacing": 2, "align": "left", "valign": "middle", "group": "C", "fx": { "enter": "fade", "order": 3 } },
+    { "id": "w3-name", "type": "text", "x": 78, "y": 446, "w": 400, "h": 34, "html": "通义灵码 (Lingma)", "fontSize": 25, "fontWeight": 800, "color": "#f8fafc", "align": "left", "valign": "middle", "group": "C", "fx": { "enter": "fade-up", "order": 3 } },
+    { "id": "w3-sub", "type": "text", "x": 78, "y": 480, "w": 514, "h": 20, "html": "免费 AI 编程助手 · 通义大模型驱动", "fontSize": 12, "color": "#64748b", "align": "left", "valign": "middle", "group": "C" },
+    { "id": "w3-div", "type": "shape", "shape": "rect", "x": 78, "y": 506, "w": 514, "h": 1, "fill": "rgba(148,163,184,0.16)", "group": "C" },
+    {
+      "id": "w3-info", "type": "text", "x": 78, "y": 516, "w": 514, "h": 126,
+      "html": "· VS Code / JetBrains 插件 · 「AI 程序员」模式全自动编码<br>· 基于通义大模型 · 阿里云深度集成 · 完全免费<br>· 2026 年国内免费 AI 编程助手测评 <b>综合排名第一</b><br>· 企业级代码安全与合规",
+      "fontSize": 12.5, "color": "#94a3b8", "align": "left", "valign": "top", "lineHeight": 1.72,
+      "group": "C", "fx": { "enter": "fade-up", "order": 4 }
+    },
+    { "id": "w4-bg", "type": "shape", "shape": "rect", "x": 660, "y": 400, "w": 570, "h": 256, "fill": "#10182c", "radius": 12, "stroke": "rgba(34,211,238,0.22)", "strokeWidth": 1, "group": "D", "shadow": { "y": 8, "blur": 22, "color": "rgba(2,6,18,0.45)" }, "fx": { "enter": "fade-up", "order": 4 } },
+    { "id": "w4-badge", "type": "text", "x": 688, "y": 418, "w": 120, "h": 26, "html": "百度", "fontSize": 11, "fontWeight": 700, "color": "#22d3ee", "letterSpacing": 2, "align": "left", "valign": "middle", "group": "D", "fx": { "enter": "fade", "order": 4 } },
+    { "id": "w4-name", "type": "text", "x": 688, "y": 446, "w": 400, "h": 34, "html": "文心快码 (Comate)", "fontSize": 25, "fontWeight": 800, "color": "#f8fafc", "align": "left", "valign": "middle", "group": "D", "fx": { "enter": "fade-up", "order": 4 } },
+    { "id": "w4-sub", "type": "text", "x": 688, "y": 480, "w": 514, "h": 20, "html": "AI IDE + 智能代码助手 · 文心大模型", "fontSize": 12, "color": "#64748b", "align": "left", "valign": "middle", "group": "D" },
+    { "id": "w4-div", "type": "shape", "shape": "rect", "x": 688, "y": 506, "w": 514, "h": 1, "fill": "rgba(148,163,184,0.16)", "group": "D" },
+    {
+      "id": "w4-info", "type": "text", "x": 688, "y": 516, "w": 514, "h": 126,
+      "html": "· 2025.6 发布独立 AI IDE（Code-OSS 分支）<br>· 文心大模型驱动 · 百度云生态集成 · 免费使用<br>· VS Code / JetBrains 插件双覆盖<br>· 国产 IDE 中功能最全、生态最完整之一",
+      "fontSize": 12.5, "color": "#94a3b8", "align": "left", "valign": "top", "lineHeight": 1.72,
+      "group": "D", "fx": { "enter": "fade-up", "order": 5 }
+    },
+    { "id": "pg-num", "type": "text", "x": 1150, "y": 678, "w": 90, "h": 24, "html": "{{page:2}} · {{pages}}", "fontSize": 12, "color": "#475569", "letterSpacing": 2, "fontFamily": "'JetBrains Mono', monospace", "align": "right", "valign": "middle" },
+    {
+      "id": "mg-a", "type": "shape", "shape": "rect",
+      "x": 50, "y": 124, "w": 6, "h": 256,
+      "fill": "#4f8dff", "radius": 3, "opacity": 0.95,
+      "shadow": { "y": 0, "blur": 14, "color": "rgba(79,141,255,0.5)" }
+    },
+    {
+      "id": "mg-b", "type": "shape", "shape": "rect",
+      "x": 660, "y": 124, "w": 6, "h": 256,
+      "fill": "#a78bfa", "radius": 3, "opacity": 0.95,
+      "shadow": { "y": 0, "blur": 14, "color": "rgba(167,139,250,0.5)" }
+    },
+    {
+      "id": "mg-c", "type": "shape", "shape": "rect",
+      "x": 588, "y": 410, "w": 14, "h": 14, "rotation": 45,
+      "fill": "#fbbf24", "opacity": 0.9,
+      "shadow": { "y": 0, "blur": 14, "color": "rgba(251,191,36,0.5)" }
+    }
+  ]
+}

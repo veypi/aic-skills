@@ -1,0 +1,517 @@
+{
+  "id": "s12",
+  "background": "#080c18",
+  "transition": "morph",
+  "notes": "收尾：开源的边界，再次被推远。点「回到封面」可循环播放；按 Esc 退出演示。",
+  "elements": [
+    {
+      "id": "grain",
+      "type": "svg",
+      "x": 0,
+      "y": 0,
+      "w": 1280,
+      "h": 720,
+      "asset": "grain",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-a",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 780,
+      "y": -180,
+      "w": 560,
+      "h": 560,
+      "blur": 60,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 135,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(79,127,255,0.35)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(79,127,255,0)"
+          }
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-b",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": -240,
+      "y": 380,
+      "w": 480,
+      "h": 480,
+      "blur": 60,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 315,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(139,92,246,0.3)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(139,92,246,0)"
+          }
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "tile-a-14",
+      "type": "shape",
+      "shape": "rect",
+      "x": 340,
+      "y": -230,
+      "w": 520,
+      "h": 520,
+      "rotation": 0,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 135,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(79,127,255,0.17)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(79,127,255,0)"
+          }
+        ]
+      },
+      "radius": 130,
+      "opacity": 1
+    },
+    {
+      "id": "tile-b-14",
+      "type": "shape",
+      "shape": "rect",
+      "x": -190,
+      "y": 410,
+      "w": 430,
+      "h": 430,
+      "rotation": 0,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 315,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(139,92,246,0.16)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(139,92,246,0)"
+          }
+        ]
+      },
+      "radius": 85,
+      "opacity": 1
+    },
+    {
+      "id": "ghost-14",
+      "type": "text",
+      "x": 830,
+      "y": 420,
+      "w": 380,
+      "h": 230,
+      "html": "∞",
+      "fontSize": 190,
+      "fontWeight": 800,
+      "color": "rgba(126,162,255,0.09)",
+      "align": "center",
+      "valign": "middle",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "bk1",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 1020,
+      "y": 120,
+      "w": 26,
+      "h": 26,
+      "fill": "#7ea2ff",
+      "opacity": 0.4,
+      "shadow": {
+        "y": 0,
+        "blur": 12,
+        "color": "rgba(126,162,255,0.45)"
+      },
+      "rotation": 0
+    },
+    {
+      "id": "bk2",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 720,
+      "y": 520,
+      "w": 18,
+      "h": 18,
+      "fill": "#a98bff",
+      "opacity": 0.35,
+      "shadow": {
+        "y": 0,
+        "blur": 10,
+        "color": "rgba(169,139,255,0.4)"
+      },
+      "rotation": 0
+    },
+    {
+      "id": "bk3",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 1180,
+      "y": 440,
+      "w": 14,
+      "h": 14,
+      "fill": "#6ee7f9",
+      "opacity": 0.3,
+      "shadow": {
+        "y": 0,
+        "blur": 10,
+        "color": "rgba(110,231,249,0.4)"
+      },
+      "rotation": 0
+    },
+    {
+      "id": "bk4",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 160,
+      "y": 120,
+      "w": 10,
+      "h": 10,
+      "fill": "#7ea2ff",
+      "opacity": 0.3,
+      "shadow": {
+        "y": 0,
+        "blur": 8,
+        "color": "rgba(126,162,255,0.4)"
+      },
+      "rotation": 0
+    },
+    {
+      "id": "bk5",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 1080,
+      "y": 600,
+      "w": 12,
+      "h": 12,
+      "fill": "#a98bff",
+      "opacity": 0.3,
+      "shadow": {
+        "y": 0,
+        "blur": 8,
+        "color": "rgba(169,139,255,0.4)"
+      },
+      "rotation": 0
+    },
+    {
+      "id": "bk6",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 420,
+      "y": 640,
+      "w": 8,
+      "h": 8,
+      "fill": "#6ee7f9",
+      "opacity": 0.3,
+      "shadow": {
+        "y": 0,
+        "blur": 8,
+        "color": "rgba(110,231,249,0.4)"
+      },
+      "rotation": 0
+    },
+    {
+      "id": "bk7",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 700,
+      "y": 90,
+      "w": 9,
+      "h": 9,
+      "fill": "#7ea2ff",
+      "opacity": 0.25,
+      "shadow": {
+        "y": 0,
+        "blur": 8,
+        "color": "rgba(126,162,255,0.35)"
+      },
+      "rotation": 0
+    },
+    {
+      "id": "s12-img",
+      "type": "image",
+      "src": "image/cover.webp",
+      "x": 0,
+      "y": 0,
+      "w": 1280,
+      "h": 720,
+      "fit": "cover",
+      "opacity": 0.25,
+      "rotation": 0
+    },
+    {
+      "id": "s12-kicker",
+      "type": "text",
+      "x": 240,
+      "y": 170,
+      "w": 800,
+      "h": 30,
+      "html": "MOONSHOT AI · KIMI K3",
+      "fontSize": 18,
+      "color": "#7ea2ff",
+      "align": "center",
+      "valign": "middle",
+      "fontWeight": 600,
+      "fx": {
+        "enter": "fade-up",
+        "order": 0
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-title",
+      "type": "text",
+      "x": 140,
+      "y": 210,
+      "w": 1000,
+      "h": 110,
+      "html": "开源的边界，再次被推远",
+      "fontSize": 56,
+      "fontWeight": 800,
+      "colorGradient": {
+        "angle": 120,
+        "stops": [
+          {
+            "at": 0,
+            "color": "#ffffff"
+          },
+          {
+            "at": 1,
+            "color": "#c0b2ff"
+          }
+        ]
+      },
+      "align": "center",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 1,
+        "ambient": "kenburns",
+        "ken": {
+          "dir": "out",
+          "scale": 1.04,
+          "duration": 2.6
+        }
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s12-sub",
+      "type": "text",
+      "x": 240,
+      "y": 336,
+      "w": 800,
+      "h": 40,
+      "html": "2.8 万亿参数 · 100 万上下文 · 全球顶尖 Agent 能力 · 全面开源",
+      "fontSize": 22,
+      "color": "#c6d2f5",
+      "align": "center",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 2
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s12-b1",
+      "type": "shape",
+      "shape": "rect",
+      "x": 340,
+      "y": 430,
+      "w": 280,
+      "h": 60,
+      "fill": "#4f7fff",
+      "radius": 30,
+      "shadow": {
+        "y": 10,
+        "blur": 26,
+        "color": "rgba(0,0,0,0.4)"
+      },
+      "fx": {
+        "enter": "fade-up",
+        "order": 3
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s12-b1t",
+      "type": "text",
+      "x": 340,
+      "y": 430,
+      "w": 280,
+      "h": 60,
+      "html": "立即体验 kimi.com",
+      "fontSize": 20,
+      "color": "#ffffff",
+      "align": "center",
+      "valign": "middle",
+      "fontWeight": 700,
+      "fx": {
+        "enter": "fade-up",
+        "order": 3
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s12-b2",
+      "type": "shape",
+      "shape": "rect",
+      "x": 660,
+      "y": 430,
+      "w": 280,
+      "h": 60,
+      "fill": "#16224a",
+      "stroke": "#3b5bd6",
+      "strokeWidth": 1,
+      "radius": 30,
+      "fx": {
+        "enter": "fade-up",
+        "order": 4
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s12-b2t",
+      "type": "text",
+      "x": 660,
+      "y": 430,
+      "w": 280,
+      "h": 60,
+      "html": "获取开源权重",
+      "fontSize": 20,
+      "color": "#cdd9ff",
+      "align": "center",
+      "valign": "middle",
+      "fontWeight": 700,
+      "fx": {
+        "enter": "fade-up",
+        "order": 4
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s12-b3",
+      "type": "shape",
+      "shape": "rect",
+      "x": 550,
+      "y": 536,
+      "w": 180,
+      "h": 44,
+      "fill": "rgba(22,34,74,0.6)",
+      "stroke": "#3b5bd6",
+      "strokeWidth": 1,
+      "radius": 22,
+      "fx": {
+        "enter": "fade-up",
+        "order": 5
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s12-b3t",
+      "type": "text",
+      "x": 550,
+      "y": 536,
+      "w": 180,
+      "h": 44,
+      "html": "↺ 回到封面",
+      "fontSize": 16,
+      "color": "#9db8ff",
+      "align": "center",
+      "valign": "middle",
+      "fontWeight": 600,
+      "fx": {
+        "enter": "fade-up",
+        "order": 5
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s12-b3go",
+      "type": "shape",
+      "shape": "rect",
+      "x": 550,
+      "y": 536,
+      "w": 180,
+      "h": 44,
+      "fill": "rgba(0,0,0,0)",
+      "link": "s1",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s12-foot",
+      "type": "text",
+      "x": 240,
+      "y": 640,
+      "w": 800,
+      "h": 28,
+      "html": "资料来源：Moonshot AI 官方技术报告 · VentureBeat · IT之家 · BenchLM · Artificial Analysis",
+      "fontSize": 14,
+      "color": "#6b7799",
+      "align": "center",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade",
+        "order": 6
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "mg-dot",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 990,
+      "y": 255,
+      "w": 18,
+      "h": 18,
+      "fill": "#7ea2ff",
+      "opacity": 0.5,
+      "shadow": {
+        "y": 0,
+        "blur": 16,
+        "color": "rgba(126,162,255,0.5)"
+      },
+      "rotation": 0
+    }
+  ]
+}
+

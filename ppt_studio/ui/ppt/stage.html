@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta name="description" content="ppt.js 舞台组件：ESM 引入引擎、$data 持有实例、body 前缀宿主样式表、转发命令式 API 与状态事件" />
+  <title>PPT Stage</title>
+</head>
+<style>
+  body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    position: relative;
+  }
+
+  .stage-host {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stage-mask {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    color: var(--text-color-tertiary);
+    font-size: var(--font-size-md);
+    background: var(--bg-color-secondary);
+    z-index: 5;
+  }
+
+  .stage-mask.error {
+    color: var(--color-danger);
+  }
+
+  .stage-spin {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-full);
+    border: 3px solid var(--border-color);
+    border-top-color: var(--color-primary);
+    animation: stage-rot 0.9s linear infinite;
+  }
+
+  @keyframes stage-rot {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* =====================================================================
+   * ppt.js 宿主样式表（headless 引擎不注入任何 CSS，.ppt-* 样式由引入方提供）
+   * 引擎 DOM 是运行时注入的、不带组件作用域属性 —— 选择器一律以 body 开头，
+   * 让组件内所有子元素（含动态注入）生效；演示覆盖层挂在引擎 root 内，同样
+   * 处于本子树。
+   * ===================================================================== */
+  body .ppt-root {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-height: 200px;
+    background: #f2f1ed;
+    color: #1f2430;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    overflow: hidden;
+  }
+
+  body .ppt-root * {
+    box-sizing: border-box;
+  }
+
+  body .ppt-slide {
+    position: relative;
+    overflow: hidden;
+  }
+
+  body .ppt-el {
+    position: absolute;
+  }
+
+  body .ppt-el svg {
+    display: block;
+  }
+
+  body .ppt-el-svg svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  body .ppt-el-unknown {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed #999;
+    color: #999;
+    font-size: 12px;
+  }
+
+  body .ppt-placeholder {
+    opacity: .35;
+  }
+
+  body .ppt-slide-broken {
+    outline: 2px dashed rgba(245, 158, 11, 0.55);
+    outline-offset: -2px;
+    background-image: repeating-linear-gradient(-45deg,
+        rgba(245, 158, 11, 0.04) 0 14px,
+        transparent 14px 28px);
+  }
+
+  body .ppt-editing {
+    outline: 2px solid #4f6ef7;
+    outline-offset: 1px;
+    cursor: text;
+  }
+
+  /* 引擎内最小交互件：预览模式翻页按钮（工具栏由 ppt-toolbar 接管） */
+  body .ppt-btn {
+    border: 1px solid #e2e0da;
+    background: #fff;
+    border-radius: 8px;
+    padding: 5px 11px;
+    font-size: 12px;
+    cursor: pointer;
+    color: #3a3a40;
+    line-height: 1.4;
+    transition: background .12s, border-color .12s;
+  }
+
+  body .ppt-btn:hover {
+    background: #f6f5f2;
+    border-color: #cfc9c5;
+  }
+
+  body .ppt-btn:active {
+    transform: translateY(.5px);
+  }
+
+  /* ---- 编辑模式 body：缩略图栏 + 画布 ---- */
+  body .ppt-body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+
+  body .ppt-thumbs {
+    width: 184px;
+    flex: none;
+    overflow-y: auto;
+    padding: 14px 12px;
+    background: #faf9f6;
+    border-right: 1px solid #e6e4de;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+  }
+
+  body .ppt-thumb {
+    position: relative;
+    width: 160px;
+    flex: none;
+    cursor: pointer;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    padding: 2px;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .08);
+    transition: border-color .12s, box-shadow .12s;
+  }
+
+  body .ppt-thumb:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .12);
+  }
+
+  body .ppt-thumb.ppt-active {
+    border-color: #4f6ef7;
+    box-shadow: 0 2px 10px rgba(79, 110, 247, .25);
+  }
+
+  body .ppt-thumb-inner {
+    transform-origin: top left;
+    pointer-events: none;
+    border-radius: 5px;
+    overflow: hidden;
+  }
+
+  body .ppt-thumb-num {
+    position: absolute;
+    left: 6px;
+    bottom: 4px;
+    font-size: 10px;
+    color: #fff;
+    background: rgba(20, 20, 24, .55);
+    border-radius: 4px;
+    padding: 0 5px;
+    line-height: 1.6;
+  }
+
+  body .ppt-canvas-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    overflow: auto;
+    display: flex;
+    background: #f2f1ed;
+    background-image: radial-gradient(circle, #d8d5cd 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+
+  /* 编辑画布：scaler 是 sizer 盒（布局尺寸=缩放后尺寸），margin:auto 居中并可滚动 */
+  body .ppt-canvas-scaler {
+    margin: auto;
+    flex: none;
+    position: relative;
+    box-shadow: 0 8px 40px rgba(30, 28, 24, .18), 0 2px 8px rgba(30, 28, 24, .10);
+    border-radius: 2px;
+  }
+
+  body .ppt-view-scaler {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform-origin: center;
+    box-shadow: 0 8px 40px rgba(30, 28, 24, .18), 0 2px 8px rgba(30, 28, 24, .10);
+    border-radius: 2px;
+  }
+
+  body .ppt-canvas-scaler .ppt-slide {
+    background-clip: padding-box;
+  }
+
+  /* ---- 选中框与八向手柄 ---- */
+  body .ppt-sel {
+    position: absolute;
+    border: 1.5px solid #4f6ef7;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  body .ppt-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #fff;
+    border: 1.5px solid #4f6ef7;
+    border-radius: 3px;
+    pointer-events: auto;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .18);
+  }
+
+  body .ppt-h-nw {
+    left: -6px;
+    top: -6px;
+    cursor: nwse-resize;
+  }
+
+  body .ppt-h-se {
+    right: -6px;
+    bottom: -6px;
+    cursor: nwse-resize;
+  }
+
+  body .ppt-h-ne {
+    right: -6px;
+    top: -6px;
+    cursor: nesw-resize;
+  }
+
+  body .ppt-h-sw {
+    left: -6px;
+    bottom: -6px;
+    cursor: nesw-resize;
+  }
+
+  body .ppt-h-n {
+    left: 50%;
+    margin-left: -5px;
+    top: -6px;
+    cursor: ns-resize;
+  }
+
+  body .ppt-h-s {
+    left: 50%;
+    margin-left: -5px;
+    bottom: -6px;
+    cursor: ns-resize;
+  }
+
+  body .ppt-h-e {
+    right: -6px;
+    top: 50%;
+    margin-top: -5px;
+    cursor: ew-resize;
+  }
+
+  body .ppt-h-w {
+    left: -6px;
+    top: 50%;
+    margin-top: -5px;
+    cursor: ew-resize;
+  }
+
+  /* ---- 旋转手柄（选中框上方，带连接线） ---- */
+  body .ppt-rot {
+    position: absolute;
+    left: 50%;
+    top: -27px;
+    width: 12px;
+    height: 12px;
+    margin-left: -6px;
+    background: #fff;
+    border: 1.5px solid #4f6ef7;
+    border-radius: 50%;
+    cursor: grab;
+    pointer-events: auto;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .18);
+  }
+
+  body .ppt-rot::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 12px;
+    width: 1.5px;
+    height: 14px;
+    margin-left: -.75px;
+    background: #4f6ef7;
+  }
+
+  /* ---- 多选的辅助选中框 ---- */
+  body .ppt-sel-aux {
+    border-style: dashed;
+    border-color: #7b93f8;
+  }
+
+  /* ---- 对齐吸附参考线 ---- */
+  body .ppt-guide {
+    position: absolute;
+    background: #ff4d8d;
+    pointer-events: none;
+    z-index: 20;
+  }
+
+  body .ppt-guide-v {
+    top: 0;
+    bottom: 0;
+    width: 1px;
+  }
+
+  body .ppt-guide-h {
+    left: 0;
+    right: 0;
+    height: 1px;
+  }
+
+  /* ---- 框选矩形 ---- */
+  body .ppt-marquee {
+    position: absolute;
+    border: 1px solid #4f6ef7;
+    background: rgba(79, 110, 247, .12);
+    pointer-events: none;
+    z-index: 15;
+  }
+
+  /* ---- 直线端点手柄 ---- */
+  body .ppt-lp {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    margin: -6px 0 0 -6px;
+    background: #fff;
+    border: 1.5px solid #4f6ef7;
+    border-radius: 50%;
+    cursor: crosshair;
+    z-index: 12;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .2);
+  }
+
+  body .ppt-lp-linked {
+    background: #4f6ef7;
+  }
+
+  /* ---- 连接线吸附目标高亮 ---- */
+  body .ppt-anchor-hint {
+    outline: 2px dashed #4f6ef7;
+    outline-offset: 2px;
+  }
+
+  /* ---- 缩略图：拖拽放置指示 + 页间插入按钮 ---- */
+  body .ppt-thumb.ppt-drop {
+    border-color: #ff4d8d;
+    box-shadow: 0 0 0 3px rgba(255, 77, 141, .25);
+  }
+
+  body .ppt-gap {
+    flex: none;
+    align-self: stretch;
+    margin: -7px 0;
+    height: 15px;
+    line-height: 15px;
+    text-align: center;
+    font-size: 11px;
+    color: transparent;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: color .12s, background .12s;
+    user-select: none;
+  }
+
+  body .ppt-gap:hover {
+    color: #4f6ef7;
+    background: rgba(79, 110, 247, .12);
+  }
+
+  /* ---- 表格编辑态 ---- */
+  body .ppt-el-table.ppt-editing td,
+  body .ppt-el-table.ppt-editing th {
+    cursor: text;
+  }
+
+  /* ---- 钢笔模式 ---- */
+  body .ppt-canvas-wrap.ppt-pen-mode {
+    cursor: crosshair;
+  }
+
+  body .ppt-pen {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 30;
+    pointer-events: none;
+  }
+
+  body .ppt-pen .ppt-pen-path {
+    fill: none;
+    stroke: #4f6ef7;
+    stroke-width: 2;
+    stroke-dasharray: 5 3;
+    vector-effect: non-scaling-stroke;
+  }
+
+  body .ppt-pen .ppt-pen-live {
+    pointer-events: none;
+  }
+
+  body .ppt-pen .ppt-pen-hl {
+    stroke: #4f6ef7;
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+
+  body .ppt-pen .ppt-pen-h,
+  body .ppt-pen .ppt-bh {
+    fill: #fff;
+    stroke: #4f6ef7;
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
+    pointer-events: all;
+    cursor: move;
+  }
+
+  body .ppt-pen .ppt-pen-a,
+  body .ppt-pen .ppt-ba {
+    fill: #fff;
+    stroke: #4f6ef7;
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
+    pointer-events: all;
+    cursor: move;
+  }
+
+  body .ppt-pen .ppt-pen-first {
+    fill: #4f6ef7;
+  }
+
+  body .ppt-bh {
+    cursor: crosshair;
+  }
+
+  /* 贝塞尔编辑中的原始路径：淡出，只保留覆盖层上的实时预览 */
+  body .ppt-el.ppt-path-src {
+    opacity: .15 !important;
+  }
+
+  /* ---- 预览模式 ---- */
+  body .ppt-viewer {
+    background: #f2f1ed;
+    background-image: radial-gradient(circle, #d8d5cd 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+
+  body .ppt-view-stage-wrap {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body .ppt-view-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 8px;
+    background: #fff;
+    border-top: 1px solid #e6e4de;
+    flex: none;
+  }
+
+  body .ppt-view-count {
+    color: #55534d;
+    font-size: 12px;
+    min-width: 52px;
+    text-align: center;
+  }
+
+  /* ---- 演示模式（覆盖层挂在引擎 root 内、仍在组件子树） ---- */
+  body .ppt-present {
+    position: fixed;
+    inset: 0;
+    background: #0b0c10;
+    z-index: 99999;
+    overflow: hidden;
+  }
+
+  body .ppt-present-stage {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform-origin: center;
+  }
+
+  body .ppt-present-layer {
+    position: absolute;
+    inset: 0;
+  }
+
+  body .ppt-present-progress {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 3px;
+    background: rgba(255, 255, 255, .10);
+  }
+
+  body .ppt-present-progress i {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: #4f6ef7;
+    transition: width .3s;
+  }
+
+  body .ppt-present-num {
+    position: fixed;
+    right: 14px;
+    bottom: 10px;
+    color: rgba(255, 255, 255, .55);
+    font: 12px system-ui;
+  }
+
+  /* ---- 演示：图表悬停 tooltip ---- */
+  body .ppt-chart-tip {
+    position: fixed;
+    z-index: 70;
+    background: rgba(18, 19, 26, .94);
+    color: #eef1f6;
+    font-size: 12px;
+    line-height: 1.7;
+    padding: 7px 10px;
+    border-radius: 8px;
+    pointer-events: none;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .35);
+    max-width: 260px;
+  }
+
+  body .ppt-chart-tip .t {
+    font-weight: 600;
+    margin-bottom: 1px;
+  }
+
+  body .ppt-chart-tip i {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    margin-right: 6px;
+    vertical-align: 1px;
+  }
+
+  body .ppt-chart-tip b {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- 入场动画关键帧（JSON 中 fx.enter / fx.ambient 引用） ---- */
+  @keyframes ppt-enter-fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes ppt-enter-fade {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes ppt-enter-fade-down {
+    from {
+      opacity: 0;
+      transform: translateY(-16px);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes ppt-enter-slide-left {
+    from {
+      opacity: 0;
+      transform: translateX(120px);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes ppt-enter-slide-right {
+    from {
+      opacity: 0;
+      transform: translateX(-120px);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes ppt-enter-slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(120px);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes ppt-enter-slide-down {
+    from {
+      opacity: 0;
+      transform: translateY(-120px);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes ppt-kenburns {
+    from {
+      transform: scale(1);
+    }
+
+    to {
+      transform: scale(1.08) translate(-1.5%, -1%);
+    }
+  }
+</style>
+
+<body>
+  <div ref="host" class="stage-host"></div>
+  <div v-if="!ready && !error" class="stage-mask">
+    <div class="stage-spin"></div>
+    <div>{{ $t('stage.loading') }}</div>
+  </div>
+  <div v-if="error" class="stage-mask error">
+    <div>{{ $t('stage.loadFailed', {err: error}) }}</div>
+  </div>
+</body>
+<script setup>
+  import PPT from './ppt.js'
+
+  ready = false
+  error = ''
+  mode = 'edit'
+  current = 0
+  slideCount = 0
+  presenting = false
+  st = null       // 引擎状态快照（statechange），供工具栏渲染
+  engine = null   // PPT 实例挂在 $data：dispose 只能访问 $data 成员
+
+  // 由父组件在挂载后调用：init({ doc, mode, imageStore })
+  init = async (opts) => {
+    opts = opts || {}
+    try {
+      if (engine) return // 只允许初始化一次
+      mode = opts.mode === 'view' ? 'view' : 'edit'
+      const p = new PPT($refs.host, {
+        doc: opts.doc || undefined,
+        mode: mode,
+        imageStore: opts.imageStore || null,
+        onChange: (doc) => {
+          slideCount = doc && doc.slides ? doc.slides.length : 0
+          $emit('update', doc)
+        }
+      })
+      p.on('slidechange', (ev) => {
+        current = (ev && typeof ev.index === 'number') ? ev.index : 0
+        $emit('slidechange', current)
+      })
+      p.on('statechange', (s) => {
+        st = s
+        $emit('statechange', s)
+      })
+      p.on('presentclose', () => {
+        presenting = false
+        $emit('presentclose')
+      })
+      p.on('error', (ev) => {
+        $emit('error', (ev && ev.message) || 'engine error')
+      })
+      engine = p
+      const d = p.getDoc()
+      slideCount = (d && d.slides ? d.slides.length : 0)
+      st = p.getState()
+      ready = true
+      $emit('ready')
+      $emit('statechange', st)
+    } catch (e) {
+      error = String((e && e.message) || e)
+    }
+  }
+
+  // ---- 以下为父组件可调用的命令式 API（$refs.stage.$data.xxx） ----
+  starterDoc = () => PPT.starterDoc()
+
+  getDoc = () => (engine ? engine.getDoc() : null)
+
+  setDoc = (doc) => {
+    if (!engine || !doc) return
+    engine.setDoc(doc)
+    slideCount = doc.slides ? doc.slides.length : 0
+    current = 0
+  }
+
+  setMode = (m) => {
+    if (!engine || (m !== 'edit' && m !== 'view')) return
+    if (m === mode) return
+    mode = m
+    engine.setMode(m)
+  }
+
+  present = (idx) => {
+    if (!engine) return
+    const n = parseInt(idx, 10)
+    presenting = true
+    engine.present(isNaN(n) || n < 0 ? 0 : n)
+  }
+
+  closePresent = () => {if (engine) engine.closePresent()}
+
+  // ---- 编辑 API 透传（headless 引擎的 toolbar 接口） ----
+  insertText = () => {if (engine) engine.insertText()}
+  insertShape = (kind) => {if (engine) engine.insertShape(kind)}
+  insertImage = (file) => {if (engine) engine.insertImage(file)}
+  deleteSelected = () => {if (engine) engine.deleteSelected()}
+  setFill = (color) => {if (engine) engine.setFill(color)}
+  setTextColor = (color) => {if (engine) engine.setTextColor(color)}
+  setFontSize = (n) => {if (engine) engine.setFontSize(n)}
+  toggleBold = () => {if (engine) engine.toggleBold()}
+  setAlign = (a) => {if (engine) engine.setAlign(a)}
+  setSlideBackground = (color) => {if (engine) engine.setSlideBackground(color)}
+  setTransition = (t) => {if (engine) engine.setTransition(t)}
+  addSlide = () => {if (engine) engine.addSlide()}
+  duplicateSlide = () => {if (engine) engine.duplicateSlide()}
+  deleteSlide = () => {if (engine) engine.deleteSlide()}
+  moveSlide = (d) => {if (engine) engine.moveSlide(d)}
+  undo = () => {if (engine) engine.undo()}
+  redo = () => {if (engine) engine.redo()}
+
+  // ---- 属性面板 / 缩放 / 导航 API ----
+  updateSelected = (props) => {if (engine) engine.updateSelected(props)}
+  updateSlide = (props) => {if (engine) engine.updateSlide(props)}
+  updateDocSize = (w, h) => {if (engine) engine.updateDocSize(w, h)}
+  goTo = (d) => {if (engine) engine.goTo(d)}
+  // 绝对跳页：演示态操作 Presenter（show 同步 presenter.idx），编辑态 fallback 相对 goTo
+  presentGoTo = (idx) => {
+    if (!engine) return
+    const n = parseInt(idx, 10)
+    if (engine.presenter && engine.presenter.overlay) {
+      engine.presenter.show(n, 0, true)
+    } else if (engine.editor) {
+      engine.goTo(n - engine.editor.current)
+    }
+  }
+  zoomIn = () => {if (engine) engine.zoomIn()}
+  zoomOut = () => {if (engine) engine.zoomOut()}
+  zoomReset = () => {if (engine) engine.zoomReset()}
+  setZoom = (z) => {if (engine) engine.setZoom(z)}
+
+  // ---- 插入 / 剪贴板 / 页序 API ----
+  insertTable = () => {if (engine) engine.insertTable()}
+  insertChart = (preset) => {if (engine) engine.insertChart(preset)}
+  insertMedia = (kind, file) => {if (engine) engine.insertMedia(kind, file)}
+  insertSvg = (markup) => {if (engine) engine.insertSvg(markup)}
+  reseedChart = (preset) => {if (engine) engine.reseedChart(preset)}
+  duplicateSelected = () => {if (engine) engine.duplicateSelected()}
+  copySelection = (cut) => {if (engine) engine.copySelection(cut)}
+  moveSlideTo = (from, to) => {if (engine) engine.moveSlideTo(from, to)}
+  insertSlideAt = (i) => {if (engine) engine.insertSlideAt(i)}
+  togglePen = () => {if (engine) engine.togglePen()}
+  print = () => {if (engine) engine.print()}
+  // PPT 导出：传入 $mod.scoped 前缀的 vendor 绝对 URL，引擎动态 import 不依赖模块基址
+  exportPptx = (opts) => engine
+    ? engine.exportPptx(Object.assign({pptxgenUrl: String($mod.scoped || '').replace(/\/+$/, '') + '/ppt/vendor/pptxgen.esm.js'}, opts || {}))
+    : Promise.reject(new Error('engine not ready'))
+</script>
+<script dispose>
+  if (engine) {
+    try {engine.destroy()} catch (e) { }
+    engine = null
+  }
+</script>
+
+</html>

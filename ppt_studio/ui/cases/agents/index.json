@@ -1,0 +1,37 @@
+{
+  "format": "ppt/1",
+  "version": 1,
+  "title": "AI Agent 产品深度调研报告 2026",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "theme": {
+    "background": "#0b1120",
+    "color": "#f1f5f9",
+    "accent": "#3b82f6",
+    "fontFamily": "system-ui, -apple-system, sans-serif",
+    "chartPalette": [
+      "#3a6ff7",
+      "#f0773a",
+      "#3abf7c",
+      "#b04ad9",
+      "#d9a53a",
+      "#3ab0c9"
+    ]
+  },
+  "slides": [
+    "slides/slide_1.json",
+    "slides/slide_2.json",
+    "slides/slide_3.json",
+    "slides/slide_4.json",
+    "slides/slide_5.json",
+    "slides/slide_6.json",
+    "slides/slide_7.json",
+    "slides/slide_8.json",
+    "slides/slide_9.json",
+    "slides/slide_10.json",
+    "slides/slide_11.json",
+    "slides/slide_12.json"
+  ]
+}

@@ -1,0 +1,138 @@
+{
+  "id": "s1",
+  "background": "#070b16",
+  "transition": "morph",
+  "notes": "开场封面。左侧标题锚点，右侧终端视觉点题『AI 编程 Agent』，底部 8 大厂商 ticker。等标题落定后翻页。",
+  "elements": [
+    { "id": "grain", "type": "svg", "x": 0, "y": 0, "w": 1280, "h": 720, "asset": "grain", "opacity": 1 },
+    { "id": "dots", "type": "svg", "x": 0, "y": 0, "w": 1280, "h": 720, "asset": "dots", "opacity": 0.9 },
+    {
+      "id": "gl-a-01", "type": "shape", "shape": "ellipse",
+      "x": 700, "y": -200, "w": 660, "h": 660, "blur": 60, "fill": "transparent",
+      "fillGradient": { "angle": 135, "stops": [ { "at": 0, "color": "rgba(79,141,255,0.30)" }, { "at": 1, "color": "rgba(79,141,255,0)" } ] },
+      "fx": { "ambient": "kenburns", "ken": { "dir": "drift", "scale": 1.12, "duration": 26 } }
+    },
+    {
+      "id": "gl-b-01", "type": "shape", "shape": "ellipse",
+      "x": -240, "y": 320, "w": 560, "h": 560, "blur": 60, "fill": "transparent",
+      "fillGradient": { "angle": 315, "stops": [ { "at": 0, "color": "rgba(167,139,250,0.20)" }, { "at": 1, "color": "rgba(167,139,250,0)" } ] },
+      "fx": { "ambient": "kenburns", "ken": { "dir": "drift", "scale": 1.15, "duration": 30 } }
+    },
+    {
+      "id": "top-kicker", "type": "text", "x": 80, "y": 62, "w": 800, "h": 24,
+      "html": "AI CODING AGENT · FIELD REPORT",
+      "fontSize": 13, "fontWeight": 500, "color": "#22d3ee", "letterSpacing": 4,
+      "fontFamily": "'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace",
+      "align": "left", "valign": "middle",
+      "fx": { "enter": "fade-down", "order": 0 }
+    },
+    {
+      "id": "top-meta", "type": "text", "x": 900, "y": 62, "w": 300, "h": 24,
+      "html": "2026.07 · VOL.12",
+      "fontSize": 12, "color": "#475569", "letterSpacing": 2,
+      "fontFamily": "'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace",
+      "align": "right", "valign": "middle",
+      "fx": { "enter": "fade-down", "order": 0 }
+    },
+    {
+      "id": "fx-title", "type": "text",
+      "x": 80, "y": 190, "w": 760, "h": 190,
+      "html": "AI Agent 产品<br><span style=\"color:#4f8dff\">深度调研报告</span>",
+      "fontSize": 74, "fontWeight": 800, "color": "#f8fafc",
+      "align": "left", "valign": "top", "lineHeight": 1.1,
+      "fx": { "enter": "fade-up", "order": 1 }
+    },
+    {
+      "id": "fx-rule", "type": "shape", "shape": "rect",
+      "x": 84, "y": 396, "w": 130, "h": 7,
+      "fill": "#fbbf24", "radius": 3,
+      "shadow": { "y": 0, "blur": 14, "color": "rgba(251,191,36,0.45)" },
+      "fx": { "enter": "fade", "order": 2 }
+    },
+    {
+      "id": "subtitle", "type": "text", "x": 82, "y": 424, "w": 740, "h": 34,
+      "html": "2026 年全球主流 AI 编程 Agent 产品全景分析",
+      "fontSize": 21, "color": "#94a3b8", "align": "left", "valign": "middle",
+      "fx": { "enter": "fade-up", "order": 3 }
+    },
+    {
+      "id": "meta-line", "type": "text", "x": 82, "y": 466, "w": 740, "h": 24,
+      "html": "8 大头部产品 · 4 大形态 · 12 页 · 数据截至 2026 年 7 月",
+      "fontSize": 13, "color": "#64748b", "align": "left", "valign": "middle",
+      "fontFamily": "'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace",
+      "fx": { "enter": "fade-up", "order": 4 }
+    },
+    {
+      "id": "term-bg", "type": "shape", "shape": "rect",
+      "x": 880, "y": 168, "w": 330, "h": 262,
+      "fill": "#0d1526", "radius": 12, "stroke": "rgba(79,141,255,0.28)", "strokeWidth": 1,
+      "shadow": { "y": 12, "blur": 30, "color": "rgba(2,6,18,0.55)" },
+      "fx": { "enter": "slide-left", "order": 2 }
+    },
+    { "id": "term-d1", "type": "shape", "shape": "ellipse", "x": 902, "y": 190, "w": 10, "h": 10, "fill": "#f87171", "group": "term" },
+    { "id": "term-d2", "type": "shape", "shape": "ellipse", "x": 920, "y": 190, "w": 10, "h": 10, "fill": "#fbbf24", "group": "term" },
+    { "id": "term-d3", "type": "shape", "shape": "ellipse", "x": 938, "y": 190, "w": 10, "h": 10, "fill": "#34d399", "group": "term" },
+    {
+      "id": "term-cap", "type": "text", "x": 960, "y": 184, "w": 230, "h": 22,
+      "html": "agent@studio: ~/report",
+      "fontSize": 11, "color": "#475569",
+      "fontFamily": "'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace",
+      "align": "right", "valign": "middle", "group": "term"
+    },
+    {
+      "id": "term-lines", "type": "text", "x": 900, "y": 216, "w": 292, "h": 200,
+      "html": "<span style=\"color:#34d399\">$</span> agent report --year 2026<br><span style=\"color:#64748b\">resolving vendors…</span> 8 found<br><span style=\"color:#64748b\">benchmarks</span> <span style=\"color:#34d399\">✓</span> swe-bench<br><span style=\"color:#64748b\">pricing</span> <span style=\"color:#34d399\">✓</span> 11 products<br><span style=\"color:#22d3ee\">✓ report ready — 12 slides</span>",
+      "fontSize": 12.5, "color": "#cbd5e1", "lineHeight": 2.0,
+      "fontFamily": "'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace",
+      "align": "left", "valign": "top", "group": "term",
+      "fx": { "enter": "fade", "order": 3 }
+    },
+    {
+      "id": "ticker-line", "type": "shape", "shape": "rect",
+      "x": 80, "y": 560, "w": 1120, "h": 1, "fill": "rgba(148,163,184,0.14)",
+      "fx": { "enter": "fade", "order": 4 }
+    },
+    {
+      "id": "ticker-cap", "type": "text", "x": 80, "y": 570, "w": 300, "h": 20,
+      "html": "TRACKED VENDORS",
+      "fontSize": 10, "color": "#475569", "letterSpacing": 3,
+      "fontFamily": "'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace",
+      "align": "left", "valign": "middle"
+    },
+    { "id": "ch1", "type": "shape", "shape": "rect", "x": 80, "y": 600, "w": 128, "h": 34, "fill": "#0f1729", "radius": 17, "stroke": "rgba(148,163,184,0.16)", "strokeWidth": 1 },
+    { "id": "ch1t", "type": "text", "x": 80, "y": 600, "w": 128, "h": 34, "html": "Claude Code", "fontSize": 12, "color": "#94a3b8", "fontFamily": "'JetBrains Mono', monospace", "align": "center", "valign": "middle" },
+    { "id": "ch2", "type": "shape", "shape": "rect", "x": 220, "y": 600, "w": 128, "h": 34, "fill": "#0f1729", "radius": 17, "stroke": "rgba(148,163,184,0.16)", "strokeWidth": 1 },
+    { "id": "ch2t", "type": "text", "x": 220, "y": 600, "w": 128, "h": 34, "html": "Cursor", "fontSize": 12, "color": "#94a3b8", "fontFamily": "'JetBrains Mono', monospace", "align": "center", "valign": "middle" },
+    { "id": "ch3", "type": "shape", "shape": "rect", "x": 360, "y": 600, "w": 128, "h": 34, "fill": "#0f1729", "radius": 17, "stroke": "rgba(148,163,184,0.16)", "strokeWidth": 1 },
+    { "id": "ch3t", "type": "text", "x": 360, "y": 600, "w": 128, "h": 34, "html": "Codex", "fontSize": 12, "color": "#94a3b8", "fontFamily": "'JetBrains Mono', monospace", "align": "center", "valign": "middle" },
+    { "id": "ch4", "type": "shape", "shape": "rect", "x": 500, "y": 600, "w": 128, "h": 34, "fill": "#0f1729", "radius": 17, "stroke": "rgba(148,163,184,0.16)", "strokeWidth": 1 },
+    { "id": "ch4t", "type": "text", "x": 500, "y": 600, "w": 128, "h": 34, "html": "Copilot", "fontSize": 12, "color": "#94a3b8", "fontFamily": "'JetBrains Mono', monospace", "align": "center", "valign": "middle" },
+    { "id": "ch5", "type": "shape", "shape": "rect", "x": 640, "y": 600, "w": 128, "h": 34, "fill": "#0f1729", "radius": 17, "stroke": "rgba(148,163,184,0.16)", "strokeWidth": 1 },
+    { "id": "ch5t", "type": "text", "x": 640, "y": 600, "w": 128, "h": 34, "html": "Devin", "fontSize": 12, "color": "#94a3b8", "fontFamily": "'JetBrains Mono', monospace", "align": "center", "valign": "middle" },
+    { "id": "ch6", "type": "shape", "shape": "rect", "x": 780, "y": 600, "w": 128, "h": 34, "fill": "#0f1729", "radius": 17, "stroke": "rgba(148,163,184,0.16)", "strokeWidth": 1 },
+    { "id": "ch6t", "type": "text", "x": 780, "y": 600, "w": 128, "h": 34, "html": "Trae", "fontSize": 12, "color": "#94a3b8", "fontFamily": "'JetBrains Mono', monospace", "align": "center", "valign": "middle" },
+    { "id": "ch7", "type": "shape", "shape": "rect", "x": 920, "y": 600, "w": 128, "h": 34, "fill": "#0f1729", "radius": 17, "stroke": "rgba(148,163,184,0.16)", "strokeWidth": 1 },
+    { "id": "ch7t", "type": "text", "x": 920, "y": 600, "w": 128, "h": 34, "html": "WorkBuddy", "fontSize": 12, "color": "#94a3b8", "fontFamily": "'JetBrains Mono', monospace", "align": "center", "valign": "middle" },
+    { "id": "ch8", "type": "shape", "shape": "rect", "x": 1060, "y": 600, "w": 128, "h": 34, "fill": "#0f1729", "radius": 17, "stroke": "rgba(148,163,184,0.16)", "strokeWidth": 1 },
+    { "id": "ch8t", "type": "text", "x": 1060, "y": 600, "w": 128, "h": 34, "html": "通义灵码", "fontSize": 12, "color": "#94a3b8", "align": "center", "valign": "middle" },
+    { "id": "pg-num", "type": "text", "x": 1150, "y": 678, "w": 90, "h": 24, "html": "{{page:2}} · {{pages}}", "fontSize": 12, "color": "#475569", "letterSpacing": 2, "fontFamily": "'JetBrains Mono', monospace", "align": "right", "valign": "middle" },
+    {
+      "id": "mg-b", "type": "shape", "shape": "rect",
+      "x": 54, "y": 611, "w": 12, "h": 12, "rotation": 45,
+      "fill": "#fbbf24", "opacity": 0.9,
+      "shadow": { "y": 0, "blur": 14, "color": "rgba(251,191,36,0.5)" }
+    },
+    {
+      "id": "mg-c", "type": "shape", "shape": "ellipse",
+      "x": 1200, "y": 612, "w": 10, "h": 10,
+      "fill": "#4f8dff", "opacity": 0.9,
+      "shadow": { "y": 0, "blur": 14, "color": "rgba(79,141,255,0.5)" }
+    },
+    {
+      "id": "mg-a", "type": "shape", "shape": "rect",
+      "x": 1100, "y": 318, "w": 10, "h": 20,
+      "fill": "#22d3ee", "opacity": 0.95,
+      "shadow": { "y": 0, "blur": 14, "color": "rgba(34,211,238,0.55)" }
+    }
+  ]
+}

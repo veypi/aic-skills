@@ -1,0 +1,498 @@
+{
+  "id": "s3",
+  "transition": "morph",
+  "notes": "时间线：07.16 发布 → 07.27 权重开源 → Infra 三件套 → 生态迁移。脉冲环标出最关键的权重开源节点。",
+  "elements": [
+    {
+      "id": "fx-a",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 780,
+      "y": -180,
+      "w": 560,
+      "h": 560,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 135,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(139,92,246,0.28)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(139,92,246,0)"
+          }
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-b",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": -240,
+      "y": 380,
+      "w": 480,
+      "h": 480,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 315,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(79,127,255,0.24)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(79,127,255,0)"
+          }
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "tile-a-03",
+      "type": "shape",
+      "shape": "rect",
+      "x": 1020,
+      "y": -240,
+      "w": 460,
+      "h": 460,
+      "rotation": -12,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 135,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(34,211,238,0.15)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(34,211,238,0)"
+          }
+        ]
+      },
+      "radius": 100,
+      "opacity": 1
+    },
+    {
+      "id": "tile-b-03",
+      "type": "shape",
+      "shape": "rect",
+      "x": -240,
+      "y": 430,
+      "w": 380,
+      "h": 380,
+      "rotation": 8,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 315,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(79,127,255,0.15)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(79,127,255,0)"
+          }
+        ]
+      },
+      "radius": 60,
+      "opacity": 1
+    },
+    {
+      "id": "ghost-03",
+      "type": "text",
+      "x": 60,
+      "y": 480,
+      "w": 300,
+      "h": 200,
+      "html": "02",
+      "fontSize": 170,
+      "fontWeight": 800,
+      "color": "rgba(34,211,238,0.08)",
+      "align": "center",
+      "valign": "middle",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-title",
+      "type": "text",
+      "x": 80,
+      "y": 56,
+      "w": 1000,
+      "h": 60,
+      "html": "从发布到<b>全面开源</b>",
+      "fontSize": 40,
+      "fontWeight": 700,
+      "color": "#ffffff",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 0
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-line",
+      "type": "shape",
+      "shape": "rect",
+      "x": 80,
+      "y": 126,
+      "w": 64,
+      "h": 4,
+      "fill": "#4f7fff",
+      "radius": 2,
+      "fx": {
+        "enter": "fade",
+        "order": 0
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "pg-num",
+      "type": "text",
+      "x": 1150,
+      "y": 676,
+      "w": 80,
+      "h": 24,
+      "html": "{{page:2}}",
+      "fontSize": 13,
+      "color": "rgba(154,165,196,0.5)",
+      "align": "right",
+      "valign": "middle",
+      "letterSpacing": 2,
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s3-arc",
+      "type": "shape",
+      "shape": "path",
+      "x": 80,
+      "y": 150,
+      "w": 1120,
+      "h": 120,
+      "d": "M 0 96 C 200 18, 430 112, 660 58 S 980 8, 1120 68",
+      "pathBox": [
+        0,
+        0,
+        1120,
+        120
+      ],
+      "fill": "none",
+      "stroke": "rgba(126,162,255,0.18)",
+      "strokeWidth": 2,
+      "fx": {
+        "enter": "fade",
+        "order": 1
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s3-axis",
+      "type": "shape",
+      "shape": "line",
+      "x": 120,
+      "y": 334,
+      "w": 1040,
+      "h": 6,
+      "fill": "transparent",
+      "stroke": "#3b5bd6",
+      "strokeWidth": 2,
+      "strokeStyle": "dashed",
+      "lineStart": "dot",
+      "lineEnd": "arrow",
+      "fx": {
+        "enter": "fade",
+        "order": 1
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s3-d1",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 196,
+      "y": 326,
+      "w": 22,
+      "h": 22,
+      "fill": "#4f7fff",
+      "fx": {
+        "enter": "fade-up",
+        "order": 2
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s3-d2",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 476,
+      "y": 326,
+      "w": 22,
+      "h": 22,
+      "fill": "#8b5cf6",
+      "fx": {
+        "enter": "fade-up",
+        "order": 3
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s3-pulse",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 467,
+      "y": 317,
+      "w": 40,
+      "h": 40,
+      "fill": "transparent",
+      "stroke": "#a98bff",
+      "strokeWidth": 2,
+      "opacity": 0.7,
+      "fx": {
+        "ambient": "kenburns",
+        "ken": {
+          "dir": "drift",
+          "scale": 1.25,
+          "duration": 2.2
+        }
+      },
+      "rotation": 0
+    },
+    {
+      "id": "s3-d3",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 756,
+      "y": 326,
+      "w": 22,
+      "h": 22,
+      "fill": "#22d3ee",
+      "fx": {
+        "enter": "fade-up",
+        "order": 4
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s3-d4",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 1036,
+      "y": 326,
+      "w": 22,
+      "h": 22,
+      "fill": "#34d399",
+      "fx": {
+        "enter": "fade-up",
+        "order": 5
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s3-t1",
+      "type": "text",
+      "x": 120,
+      "y": 220,
+      "w": 260,
+      "h": 90,
+      "html": "<b style='color:#7ea2ff'>07.16</b><br><b>模型发布</b>",
+      "fontSize": 22,
+      "color": "#ffffff",
+      "lineHeight": 1.5,
+      "align": "center",
+      "fx": {
+        "enter": "fade-up",
+        "order": 2
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s3-b1",
+      "type": "text",
+      "x": 110,
+      "y": 380,
+      "w": 280,
+      "h": 120,
+      "html": "API 同步上线<br>kimi.com 即刻体验<br>抢滩 WAIC 2026",
+      "fontSize": 17,
+      "color": "#9aa5c4",
+      "lineHeight": 1.8,
+      "align": "center",
+      "fx": {
+        "enter": "fade-up",
+        "order": 3
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s3-t2",
+      "type": "text",
+      "x": 400,
+      "y": 220,
+      "w": 260,
+      "h": 90,
+      "html": "<b style='color:#a98bff'>07.27</b><br><b>权重开源</b>",
+      "fontSize": 22,
+      "color": "#ffffff",
+      "lineHeight": 1.5,
+      "align": "center",
+      "fx": {
+        "enter": "fade-up",
+        "order": 3
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s3-b2",
+      "type": "text",
+      "x": 390,
+      "y": 380,
+      "w": 280,
+      "h": 120,
+      "html": "Hugging Face 全量权重<br>GitHub 技术报告<br>免费商用级开放",
+      "fontSize": 17,
+      "color": "#9aa5c4",
+      "lineHeight": 1.8,
+      "align": "center",
+      "fx": {
+        "enter": "fade-up",
+        "order": 4
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s3-t3",
+      "type": "text",
+      "x": 680,
+      "y": 220,
+      "w": 260,
+      "h": 90,
+      "html": "<b style='color:#6ee7f9'>Infra</b><br><b>三件套开源</b>",
+      "fontSize": 22,
+      "color": "#ffffff",
+      "lineHeight": 1.5,
+      "align": "center",
+      "fx": {
+        "enter": "fade-up",
+        "order": 4
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s3-b3",
+      "type": "text",
+      "x": 670,
+      "y": 380,
+      "w": 280,
+      "h": 120,
+      "html": "MoonEP 高性能通信<br>FlashKDA 高性能算子<br>AgentEnv 分布式 RL",
+      "fontSize": 17,
+      "color": "#9aa5c4",
+      "lineHeight": 1.8,
+      "align": "center",
+      "fx": {
+        "enter": "fade-up",
+        "order": 5
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s3-t4",
+      "type": "text",
+      "x": 960,
+      "y": 220,
+      "w": 260,
+      "h": 90,
+      "html": "<b style='color:#7dedc0'>生态</b><br><b>零门槛迁移</b>",
+      "fontSize": 22,
+      "color": "#ffffff",
+      "lineHeight": 1.5,
+      "align": "center",
+      "fx": {
+        "enter": "fade-up",
+        "order": 5
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s3-b4",
+      "type": "text",
+      "x": 950,
+      "y": 380,
+      "w": 280,
+      "h": 120,
+      "html": "兼容 OpenAI SDK<br>现有工具链无缝接入<br>开发者即刻上手",
+      "fontSize": 17,
+      "color": "#9aa5c4",
+      "lineHeight": 1.8,
+      "align": "center",
+      "fx": {
+        "enter": "fade-up",
+        "order": 6
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s3-note",
+      "type": "text",
+      "x": 80,
+      "y": 600,
+      "w": 1120,
+      "h": 56,
+      "html": "发布节点精准卡位 2026 世界人工智能大会（WAIC），被 VentureBeat 称为「开源 AI 运动的转折点」",
+      "fontSize": 18,
+      "color": "#c6d2f5",
+      "align": "center",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade",
+        "order": 7
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "mg-dot",
+      "type": "shape",
+      "shape": "triangle",
+      "x": 479,
+      "y": 356,
+      "w": 16,
+      "h": 16,
+      "fill": "#8b5cf6",
+      "opacity": 0.85,
+      "shadow": {
+        "y": 0,
+        "blur": 16,
+        "color": "rgba(139,92,246,0.5)"
+      },
+      "rotation": 0
+    }
+  ],
+  "background": "#0b1020"
+}

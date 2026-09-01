@@ -1,0 +1,482 @@
+{
+  "id": "s4",
+  "transition": "morph",
+  "notes": "三大架构创新：KDA、注意力残差、稀疏 MoE。演示时把鼠标悬停在某张卡片上，其余卡片会变暗聚焦。",
+  "hover": {
+    "type": "focus-group",
+    "dim": 0.22
+  },
+  "elements": [
+    {
+      "id": "fx-a",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 780,
+      "y": -180,
+      "w": 560,
+      "h": 560,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 90,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(34,211,238,0.24)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(34,211,238,0)"
+          }
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-b",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": -240,
+      "y": 380,
+      "w": 480,
+      "h": 480,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 270,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(139,92,246,0.26)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(139,92,246,0)"
+          }
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "tile-a-04",
+      "type": "shape",
+      "shape": "rect",
+      "x": 420,
+      "y": -300,
+      "w": 520,
+      "h": 520,
+      "rotation": 6,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 90,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(52,211,153,0.14)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(52,211,153,0)"
+          }
+        ]
+      },
+      "radius": 140,
+      "opacity": 1
+    },
+    {
+      "id": "tile-b-04",
+      "type": "shape",
+      "shape": "rect",
+      "x": -220,
+      "y": 300,
+      "w": 420,
+      "h": 420,
+      "rotation": -14,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 270,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(139,92,246,0.15)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(139,92,246,0)"
+          }
+        ]
+      },
+      "radius": 70,
+      "opacity": 1
+    },
+    {
+      "id": "ghost-04",
+      "type": "text",
+      "x": 880,
+      "y": 440,
+      "w": 340,
+      "h": 220,
+      "html": "03",
+      "fontSize": 180,
+      "fontWeight": 800,
+      "color": "rgba(52,211,153,0.08)",
+      "align": "center",
+      "valign": "middle",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-title",
+      "type": "text",
+      "x": 80,
+      "y": 56,
+      "w": 1000,
+      "h": 60,
+      "html": "三大<b>架构创新</b>",
+      "fontSize": 40,
+      "fontWeight": 700,
+      "color": "#ffffff",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 0
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-line",
+      "type": "shape",
+      "shape": "rect",
+      "x": 80,
+      "y": 126,
+      "w": 64,
+      "h": 4,
+      "fill": "#4f7fff",
+      "radius": 2,
+      "fx": {
+        "enter": "fade",
+        "order": 0
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "pg-num",
+      "type": "text",
+      "x": 1150,
+      "y": 676,
+      "w": 80,
+      "h": 24,
+      "html": "{{page:2}}",
+      "fontSize": 13,
+      "color": "rgba(154,165,196,0.5)",
+      "align": "right",
+      "valign": "middle",
+      "letterSpacing": 2,
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s4-c1",
+      "type": "shape",
+      "shape": "rect",
+      "x": 80,
+      "y": 180,
+      "w": 357,
+      "h": 330,
+      "fill": "#131a30",
+      "stroke": "#2a3557",
+      "strokeWidth": 1,
+      "radius": 18,
+      "shadow": {
+        "y": 14,
+        "blur": 34,
+        "color": "rgba(0,0,0,0.35)"
+      },
+      "group": "g-kda",
+      "fx": {
+        "enter": "fade-up",
+        "order": 1
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s4-c1h",
+      "type": "shape",
+      "shape": "rect",
+      "x": 80,
+      "y": 180,
+      "w": 357,
+      "h": 6,
+      "fill": "#4f7fff",
+      "radius": 3,
+      "group": "g-kda",
+      "fx": {
+        "enter": "fade",
+        "order": 1
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s4-c1t",
+      "type": "text",
+      "x": 112,
+      "y": 216,
+      "w": 293,
+      "h": 90,
+      "html": "KDA<br><span style='font-size:16px;color:#7ea2ff'>Kimi Delta Attention</span>",
+      "fontSize": 28,
+      "fontWeight": 700,
+      "color": "#ffffff",
+      "lineHeight": 1.3,
+      "group": "g-kda",
+      "fx": {
+        "enter": "fade-up",
+        "order": 2
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s4-c1b",
+      "type": "text",
+      "x": 112,
+      "y": 316,
+      "w": 293,
+      "h": 170,
+      "html": "混合线性注意力机制，让 100 万 Token 长上下文的推理成本大幅下降，长文检索与多轮工程任务更高效。",
+      "fontSize": 17,
+      "color": "#9aa5c4",
+      "lineHeight": 1.7,
+      "group": "g-kda",
+      "fx": {
+        "enter": "fade-up",
+        "order": 3
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s4-c2",
+      "type": "shape",
+      "shape": "rect",
+      "x": 461,
+      "y": 180,
+      "w": 357,
+      "h": 330,
+      "fill": "#131a30",
+      "stroke": "#2a3557",
+      "strokeWidth": 1,
+      "radius": 18,
+      "shadow": {
+        "y": 14,
+        "blur": 34,
+        "color": "rgba(0,0,0,0.35)"
+      },
+      "group": "g-res",
+      "fx": {
+        "enter": "fade-up",
+        "order": 2
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s4-c2h",
+      "type": "shape",
+      "shape": "rect",
+      "x": 461,
+      "y": 180,
+      "w": 357,
+      "h": 6,
+      "fill": "#8b5cf6",
+      "radius": 3,
+      "group": "g-res",
+      "fx": {
+        "enter": "fade",
+        "order": 2
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s4-c2t",
+      "type": "text",
+      "x": 493,
+      "y": 216,
+      "w": 293,
+      "h": 90,
+      "html": "注意力残差<br><span style='font-size:16px;color:#a98bff'>Attention Residuals</span>",
+      "fontSize": 28,
+      "fontWeight": 700,
+      "color": "#ffffff",
+      "lineHeight": 1.3,
+      "group": "g-res",
+      "fx": {
+        "enter": "fade-up",
+        "order": 3
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s4-c2b",
+      "type": "text",
+      "x": 493,
+      "y": 316,
+      "w": 293,
+      "h": 170,
+      "html": "残差连接的即插即用替代方案，在持续放大模型规模时带来稳定收益，是 2.8T 参数可训练的关键。",
+      "fontSize": 17,
+      "color": "#9aa5c4",
+      "lineHeight": 1.7,
+      "group": "g-res",
+      "fx": {
+        "enter": "fade-up",
+        "order": 4
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s4-c3",
+      "type": "shape",
+      "shape": "rect",
+      "x": 842,
+      "y": 180,
+      "w": 357,
+      "h": 330,
+      "fill": "#131a30",
+      "stroke": "#2a3557",
+      "strokeWidth": 1,
+      "radius": 18,
+      "shadow": {
+        "y": 14,
+        "blur": 34,
+        "color": "rgba(0,0,0,0.35)"
+      },
+      "group": "g-moe",
+      "fx": {
+        "enter": "fade-up",
+        "order": 3
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s4-c3h",
+      "type": "shape",
+      "shape": "rect",
+      "x": 842,
+      "y": 180,
+      "w": 357,
+      "h": 6,
+      "fill": "#22d3ee",
+      "radius": 3,
+      "group": "g-moe",
+      "fx": {
+        "enter": "fade",
+        "order": 3
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s4-c3t",
+      "type": "text",
+      "x": 874,
+      "y": 216,
+      "w": 293,
+      "h": 90,
+      "html": "稀疏 MoE<br><span style='font-size:16px;color:#6ee7f9'>Stable LatentMoE</span>",
+      "fontSize": 28,
+      "fontWeight": 700,
+      "color": "#ffffff",
+      "lineHeight": 1.3,
+      "group": "g-moe",
+      "fx": {
+        "enter": "fade-up",
+        "order": 4
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s4-c3b",
+      "type": "text",
+      "x": 874,
+      "y": 316,
+      "w": 293,
+      "h": 170,
+      "html": "稀疏度再升级：896 个专家中仅激活 16 个，以极小激活成本撬动 2.8 万亿参数的知识容量。",
+      "fontSize": 17,
+      "color": "#9aa5c4",
+      "lineHeight": 1.7,
+      "group": "g-moe",
+      "fx": {
+        "enter": "fade-up",
+        "order": 5
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s4-strip",
+      "type": "shape",
+      "shape": "rect",
+      "x": 80,
+      "y": 550,
+      "w": 1119,
+      "h": 90,
+      "fill": "#16224a",
+      "radius": 14,
+      "fx": {
+        "enter": "fade-up",
+        "order": 6
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s4-stript",
+      "type": "text",
+      "x": 120,
+      "y": 550,
+      "w": 1040,
+      "h": 90,
+      "html": "原生视觉理解　·　常开 Thinking 推理模式　·　训练方法与数据配方全面优化",
+      "fontSize": 21,
+      "color": "#cdd9ff",
+      "align": "center",
+      "valign": "middle",
+      "fontWeight": 600,
+      "fx": {
+        "enter": "fade-up",
+        "order": 6
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "mg-dot",
+      "type": "shape",
+      "shape": "rect",
+      "x": 108,
+      "y": 586,
+      "w": 14,
+      "h": 14,
+      "fill": "#34d399",
+      "opacity": 0.85,
+      "shadow": {
+        "y": 0,
+        "blur": 16,
+        "color": "rgba(52,211,153,0.5)"
+      },
+      "rotation": 0
+    }
+  ],
+  "background": "#0b1020"
+}

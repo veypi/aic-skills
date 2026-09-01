@@ -1,0 +1,366 @@
+{
+  "id": "s7-scatter",
+  "name": "效率散点",
+  "stateOf": "s7",
+  "transition": "morph",
+  "notes": "隐藏状态页第三弹：同一张图表从饼图再变形为散点（柱状 → 饼图 → 散点三连 morph）。K3 以 2.8T 规模把 Agent 综合得分推到 88.6。按 ← 返回主线，或点按钮逐级返回。",
+  "elements": [
+    {
+      "id": "fx-a",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 780,
+      "y": -180,
+      "w": 560,
+      "h": 560,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 45,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(34,211,238,0.26)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(34,211,238,0)"
+          }
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-b",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": -240,
+      "y": 380,
+      "w": 480,
+      "h": 480,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 225,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(79,127,255,0.26)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(79,127,255,0)"
+          }
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "tile-a-16",
+      "type": "shape",
+      "shape": "rect",
+      "x": 1120,
+      "y": -140,
+      "w": 390,
+      "h": 390,
+      "rotation": 10,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 225,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(34,211,238,0.15)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(34,211,238,0)"
+          }
+        ]
+      },
+      "radius": 75,
+      "opacity": 1
+    },
+    {
+      "id": "tile-b-16",
+      "type": "shape",
+      "shape": "rect",
+      "x": -180,
+      "y": 420,
+      "w": 400,
+      "h": 400,
+      "rotation": -8,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 45,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(79,127,255,0.15)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(79,127,255,0)"
+          }
+        ]
+      },
+      "radius": 85,
+      "opacity": 1
+    },
+    {
+      "id": "ghost-16",
+      "type": "text",
+      "x": 840,
+      "y": 440,
+      "w": 360,
+      "h": 210,
+      "html": "XY",
+      "fontSize": 160,
+      "fontWeight": 800,
+      "color": "rgba(34,211,238,0.09)",
+      "align": "center",
+      "valign": "middle",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-title",
+      "type": "text",
+      "x": 80,
+      "y": 56,
+      "w": 1000,
+      "h": 60,
+      "html": "规模 × 得分，<b>效率为王</b>",
+      "fontSize": 40,
+      "fontWeight": 700,
+      "color": "#ffffff",
+      "valign": "middle",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-line",
+      "type": "shape",
+      "shape": "rect",
+      "x": 80,
+      "y": 126,
+      "w": 64,
+      "h": 4,
+      "fill": "#4f7fff",
+      "radius": 2,
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "pg-num",
+      "type": "text",
+      "x": 1150,
+      "y": 676,
+      "w": 80,
+      "h": 24,
+      "html": "{{page:2}}",
+      "fontSize": 13,
+      "color": "rgba(154,165,196,0.5)",
+      "align": "right",
+      "valign": "middle",
+      "letterSpacing": 2,
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s7-chart",
+      "type": "chart",
+      "x": 60,
+      "y": 160,
+      "w": 620,
+      "h": 440,
+      "option": {
+        "xAxis": {
+          "data": ["K2 · 1.0T", "V4 Pro · 1.6T", "K3 · 2.8T"]
+        },
+        "series": [
+          {
+            "type": "scatter",
+            "name": "Agent 综合得分",
+            "data": [68.5, 74.1, 88.6]
+          }
+        ],
+        "color": ["#22d3ee"]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s7-img",
+      "type": "image",
+      "src": "image/benchmarks.png",
+      "x": 720,
+      "y": 170,
+      "w": 480,
+      "h": 330,
+      "fit": "contain",
+      "radius": 12,
+      "fx": {
+        "ambient": "kenburns",
+        "ken": {
+          "dir": "drift",
+          "scale": 1.05,
+          "duration": 16
+        }
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s7-imgcap",
+      "type": "text",
+      "x": 720,
+      "y": 506,
+      "w": 480,
+      "h": 30,
+      "html": "同一张图表的第三次原地变形：柱状 → 饼图 → 散点",
+      "fontSize": 14,
+      "color": "#8b96b8",
+      "align": "center",
+      "valign": "middle",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s7-bkb",
+      "type": "shape",
+      "shape": "rect",
+      "x": 80,
+      "y": 616,
+      "w": 210,
+      "h": 44,
+      "fill": "#16224a",
+      "stroke": "#3b5bd6",
+      "strokeWidth": 1,
+      "radius": 22,
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s7-bkt",
+      "type": "text",
+      "x": 80,
+      "y": 616,
+      "w": 210,
+      "h": 44,
+      "html": "← 返回分布",
+      "fontSize": 16,
+      "color": "#cdd9ff",
+      "align": "center",
+      "valign": "middle",
+      "fontWeight": 600,
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s7-bk1",
+      "type": "shape",
+      "shape": "rect",
+      "x": 80,
+      "y": 616,
+      "w": 210,
+      "h": 44,
+      "fill": "rgba(0,0,0,0)",
+      "link": "s7-dist",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s7-hmb",
+      "type": "shape",
+      "shape": "rect",
+      "x": 310,
+      "y": 616,
+      "w": 210,
+      "h": 44,
+      "fill": "#16224a",
+      "stroke": "#3b5bd6",
+      "strokeWidth": 1,
+      "radius": 22,
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s7-hmt",
+      "type": "text",
+      "x": 310,
+      "y": 616,
+      "w": 210,
+      "h": 44,
+      "html": "回到跑分图",
+      "fontSize": 16,
+      "color": "#cdd9ff",
+      "align": "center",
+      "valign": "middle",
+      "fontWeight": 600,
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s7-hm",
+      "type": "shape",
+      "shape": "rect",
+      "x": 310,
+      "y": 616,
+      "w": 210,
+      "h": 44,
+      "fill": "rgba(0,0,0,0)",
+      "link": "s7",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s7-note",
+      "type": "shape",
+      "shape": "rect",
+      "x": 720,
+      "y": 560,
+      "w": 480,
+      "h": 100,
+      "fill": "#16224a",
+      "radius": 12,
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s7-notet",
+      "type": "text",
+      "x": 744,
+      "y": 560,
+      "w": 432,
+      "h": 100,
+      "html": "K3 以近两倍的参数规模，把 Agent 综合得分推到 88.6——规模与效率第一次同时登顶",
+      "fontSize": 17,
+      "color": "#cdd9ff",
+      "valign": "middle",
+      "fontWeight": 600,
+      "lineHeight": 1.6,
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "mg-dot",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 566,
+      "y": 196,
+      "w": 16,
+      "h": 16,
+      "fill": "#ffffff",
+      "opacity": 0.85,
+      "shadow": {
+        "y": 0,
+        "blur": 16,
+        "color": "rgba(255,255,255,0.5)"
+      },
+      "rotation": 0
+    }
+  ],
+  "background": "#0b1020"
+}
+

@@ -1,0 +1,290 @@
+{
+  "id": "s5",
+  "transition": "morph",
+  "notes": "性能基准：官方无完整基准表；Trilogy AI StackPerf 实测 Qwen3.8 80 分 vs Kimi K3 83 分；工具调用 44/44 全部成功；厂商自评“仅次于 Fable 5”有待验证。",
+  "elements": [
+    {
+      "id": "mg-a",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 1090,
+      "y": -130,
+      "w": 330,
+      "h": 330,
+      "fill": "#8fa3b8",
+      "opacity": 0.22,
+      "rotation": 0
+    },
+    {
+      "id": "mg-b",
+      "type": "shape",
+      "shape": "rect",
+      "x": -150,
+      "y": -130,
+      "w": 320,
+      "h": 320,
+      "fill": "#e8b04b",
+      "opacity": 0.2,
+      "radius": 52,
+      "rotation": 0
+    },
+    {
+      "id": "mg-c",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 1090,
+      "y": 520,
+      "w": 210,
+      "h": 210,
+      "fill": "#b07b2e",
+      "opacity": 0.3,
+      "rotation": 0
+    },
+    {
+      "id": "fx-title",
+      "type": "text",
+      "x": 80,
+      "y": 44,
+      "w": 900,
+      "h": 50,
+      "html": "性能基准",
+      "fontSize": 30,
+      "fontWeight": 700,
+      "color": "#e8b04b",
+      "align": "left",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s5-sub",
+      "type": "text",
+      "x": 80,
+      "y": 96,
+      "w": 1000,
+      "h": 26,
+      "html": "官方未发布基准表 · 以下为第三方实测与厂商声明",
+      "fontSize": 14,
+      "color": "#a89a80",
+      "align": "left",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "pg",
+      "type": "text",
+      "x": 1170,
+      "y": 680,
+      "w": 70,
+      "h": 24,
+      "html": "{{page}} / {{pages}}",
+      "fontSize": 12,
+      "color": "#6b6250",
+      "align": "right",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "claim-bg",
+      "type": "shape",
+      "shape": "rect",
+      "x": 80,
+      "y": 140,
+      "w": 1120,
+      "h": 84,
+      "fill": "#1a160f",
+      "stroke": "#3a2f1c",
+      "strokeWidth": 1,
+      "radius": 16,
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "claim-t",
+      "type": "text",
+      "x": 106,
+      "y": 152,
+      "w": 800,
+      "h": 60,
+      "html": "厂商自评：“与最顶尖前沿模型并列，仅次于 Claude Fable 5”",
+      "fontSize": 20,
+      "fontWeight": 700,
+      "color": "#f3ead8",
+      "align": "left",
+      "valign": "middle",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "claim-tag",
+      "type": "shape",
+      "shape": "rect",
+      "x": 990,
+      "y": 160,
+      "w": 186,
+      "h": 44,
+      "fill": "#f6a723",
+      "opacity": 0.14,
+      "stroke": "#f6a723",
+      "strokeWidth": 1,
+      "radius": 22,
+      "rotation": 0
+    },
+    {
+      "id": "claim-tag-t",
+      "type": "text",
+      "x": 990,
+      "y": 160,
+      "w": 186,
+      "h": 44,
+      "html": "尚待第三方验证",
+      "fontSize": 14,
+      "fontWeight": 600,
+      "color": "#f6a723",
+      "align": "center",
+      "valign": "middle",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "ch1-bg",
+      "type": "shape",
+      "shape": "rect",
+      "x": 80,
+      "y": 248,
+      "w": 545,
+      "h": 320,
+      "fill": "#141109",
+      "stroke": "#2c2618",
+      "strokeWidth": 1,
+      "radius": 16,
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "ch1-t",
+      "type": "text",
+      "x": 104,
+      "y": 264,
+      "w": 500,
+      "h": 30,
+      "html": "StackPerf 综合得分（满分 100）",
+      "fontSize": 15,
+      "fontWeight": 700,
+      "color": "#e8b04b",
+      "align": "left",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "ch1",
+      "type": "chart",
+      "x": 96,
+      "y": 300,
+      "w": 513,
+      "h": 256,
+      "option": {
+        "color": [
+          "#e8b04b",
+          "#8fa3b8"
+        ],
+        "xAxis": {
+          "data": [
+            "Qwen3.8",
+            "Kimi K3"
+          ]
+        },
+        "series": [
+          {
+            "type": "bar",
+            "name": "得分",
+            "data": [
+              80,
+              83
+            ]
+          }
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "ch2-bg",
+      "type": "shape",
+      "shape": "rect",
+      "x": 655,
+      "y": 248,
+      "w": 545,
+      "h": 320,
+      "fill": "#141109",
+      "stroke": "#2c2618",
+      "strokeWidth": 1,
+      "radius": 16,
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "ch2-t",
+      "type": "text",
+      "x": 679,
+      "y": 264,
+      "w": 500,
+      "h": 30,
+      "html": "工具调用次数 · Qwen 44/44 全部成功",
+      "fontSize": 15,
+      "fontWeight": 700,
+      "color": "#e8b04b",
+      "align": "left",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "ch2",
+      "type": "chart",
+      "x": 671,
+      "y": 300,
+      "w": 513,
+      "h": 256,
+      "option": {
+        "color": [
+          "#e8b04b",
+          "#8fa3b8"
+        ],
+        "xAxis": {
+          "data": [
+            "Qwen3.8",
+            "Kimi K3"
+          ]
+        },
+        "series": [
+          {
+            "type": "bar",
+            "name": "调用次数",
+            "data": [
+              44,
+              53
+            ]
+          }
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s5-note",
+      "type": "text",
+      "x": 80,
+      "y": 592,
+      "w": 1120,
+      "h": 60,
+      "html": "来源：Trilogy AI 同仓库盲测（269 个冻结文件）· Qwen 系统边界更清晰、工具调用零失败；Kimi 生命周期设计更完整、速度与 token 消耗更优。单次测试，仅供早期信号参考。",
+      "fontSize": 13,
+      "color": "#8d8268",
+      "align": "left",
+      "valign": "top",
+      "lineHeight": 1.5,
+      "rotation": 0,
+      "opacity": 1
+    }
+  ],
+  "background": "#0e0c09"
+}

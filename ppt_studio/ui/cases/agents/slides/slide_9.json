@@ -1,0 +1,84 @@
+{
+  "id": "s9",
+  "background": "#0a0f1c",
+  "transition": "morph",
+  "notes": "横向对比矩阵：原生 table 元素（斑马纹、列宽权重、单元格着色）。无单一焦点，三个引导形状退场为表头小刻度。",
+  "elements": [
+    { "id": "grain", "type": "svg", "x": 0, "y": 0, "w": 1280, "h": 720, "asset": "grain", "opacity": 1 },
+    { "id": "dots", "type": "svg", "x": 0, "y": 0, "w": 1280, "h": 720, "asset": "dots", "opacity": 0.9 },
+    {
+      "id": "gl-a-09", "type": "shape", "shape": "ellipse",
+      "x": 780, "y": -200, "w": 600, "h": 600, "blur": 60, "fill": "transparent",
+      "fillGradient": { "angle": 135, "stops": [ { "at": 0, "color": "rgba(52,211,153,0.15)" }, { "at": 1, "color": "rgba(52,211,153,0)" } ] },
+      "fx": { "ambient": "kenburns", "ken": { "dir": "drift", "scale": 1.12, "duration": 26 } }
+    },
+    {
+      "id": "ghost-09", "type": "text", "x": 980, "y": -16, "w": 300, "h": 210,
+      "html": "05", "fontSize": 160, "fontWeight": 800, "color": "rgba(52,211,153,0.06)",
+      "fontFamily": "'JetBrains Mono', monospace", "align": "center", "valign": "middle"
+    },
+    {
+      "id": "fx-title", "type": "text",
+      "x": 80, "y": 34, "w": 1040, "h": 66,
+      "html": "<span style=\"font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:4px;color:#34d399\">CH.05 — BENCHMARK MATRIX</span><br><b>横向对比矩阵</b>",
+      "fontSize": 30, "fontWeight": 800, "color": "#f8fafc",
+      "align": "left", "valign": "middle", "lineHeight": 1.2
+    },
+    {
+      "id": "fx-rule", "type": "shape", "shape": "rect",
+      "x": 82, "y": 108, "w": 220, "h": 5,
+      "fill": "#34d399", "radius": 3,
+      "shadow": { "y": 0, "blur": 12, "color": "rgba(52,211,153,0.4)" }
+    },
+    {
+      "id": "sub", "type": "text", "x": 80, "y": 124, "w": 1120, "h": 26,
+      "html": "主流 AI 编程 Agent 产品关键维度对比 — 截至 2026 年 7 月",
+      "fontSize": 14, "color": "#94a3b8", "align": "left", "valign": "middle",
+      "fx": { "enter": "fade", "order": 1 }
+    },
+    {
+      "id": "matrix", "type": "table",
+      "x": 40, "y": 168, "w": 1200, "h": 480,
+      "header": true,
+      "columns": [ { "w": 0.135 }, { "w": 0.095 }, { "w": 0.075 }, { "w": 0.125 }, { "w": 0.06 }, { "w": 0.06 }, { "w": 0.105 }, { "w": 0.175 }, { "w": 0.17 } ],
+      "style": {
+        "headerColor": "#e2e8f0",
+        "zebra": "rgba(79,141,255,0.05)",
+        "borderColor": "rgba(148,163,184,0.12)",
+        "borderWidth": 1,
+        "cellPadX": 10,
+        "cellPadY": 7,
+        "fontSize": 12,
+        "color": "#cbd5e1",
+        "radius": 10
+      },
+      "rows": [
+        { "cells": [ { "html": "产品" }, { "html": "形态", "align": "center" }, { "html": "入门价", "align": "center" }, { "html": "默认模型", "align": "center" }, { "html": "BYOK", "align": "center" }, { "html": "MCP", "align": "center" }, { "html": "SWE-bench", "align": "center" }, { "html": "核心优势", "align": "center" }, { "html": "适用场景", "align": "center" } ] },
+        { "cells": [ { "html": "Claude Code", "bold": true, "color": "#4f8dff" }, { "html": "CLI+IDE", "align": "center" }, { "html": "$20", "align": "center" }, { "html": "Opus 4.8", "align": "center" }, { "html": "✗", "align": "center", "color": "#64748b" }, { "html": "✓", "align": "center", "color": "#34d399" }, { "html": "88.6%", "align": "center", "bold": true, "color": "#4f8dff" }, { "html": "最深 Harness" }, { "html": "深度编程 · 重构" } ] },
+        { "cells": [ { "html": "OpenAI Codex", "bold": true, "color": "#34d399" }, { "html": "CLI+Cloud", "align": "center" }, { "html": "$8", "align": "center", "bold": true, "color": "#34d399" }, { "html": "GPT-5.5", "align": "center" }, { "html": "✗", "align": "center", "color": "#64748b" }, { "html": "✓", "align": "center", "color": "#34d399" }, { "html": "58.6% Pro", "align": "center" }, { "html": "全场景覆盖" }, { "html": "多端 · PR Review" } ] },
+        { "cells": [ { "html": "Cursor", "bold": true, "color": "#a78bfa" }, { "html": "IDE", "align": "center" }, { "html": "$20", "align": "center" }, { "html": "Composer 2.5", "align": "center" }, { "html": "✓", "align": "center", "color": "#34d399" }, { "html": "✓", "align": "center", "color": "#34d399" }, { "html": "62 (CAI)", "align": "center" }, { "html": "性价比最高" }, { "html": "快速编辑器编码" } ] },
+        { "cells": [ { "html": "GitHub Copilot", "bold": true, "color": "#fbbf24" }, { "html": "EXT+Cloud", "align": "center" }, { "html": "$10", "align": "center" }, { "html": "多模型可选", "align": "center" }, { "html": "✗", "align": "center", "color": "#64748b" }, { "html": "✓", "align": "center", "color": "#34d399" }, { "html": "—", "align": "center", "color": "#64748b" }, { "html": "覆盖面最广" }, { "html": "GitHub 生态 · 团队" } ] },
+        { "cells": [ { "html": "Devin", "bold": true, "color": "#fbbf24" }, { "html": "Cloud", "align": "center" }, { "html": "$20", "align": "center" }, { "html": "SWE-1.6", "align": "center" }, { "html": "✓", "align": "center", "color": "#34d399" }, { "html": "✓", "align": "center", "color": "#34d399" }, { "html": "—", "align": "center", "color": "#64748b" }, { "html": "全自主开发" }, { "html": "委派式任务" } ] },
+        { "cells": [ { "html": "Antigravity", "bold": true, "color": "#34d399" }, { "html": "IDE", "align": "center" }, { "html": "Free", "align": "center", "bold": true, "color": "#34d399" }, { "html": "Gemini 3.5", "align": "center" }, { "html": "✓", "align": "center", "color": "#34d399" }, { "html": "✓", "align": "center", "color": "#34d399" }, { "html": "76.2% TB", "align": "center" }, { "html": "多 Agent 编排" }, { "html": "Google 生态" } ] },
+        { "cells": [ { "html": "Trae", "bold": true, "color": "#a78bfa" }, { "html": "IDE", "align": "center" }, { "html": "Free", "align": "center", "bold": true, "color": "#34d399" }, { "html": "国产模型", "align": "center" }, { "html": "✗", "align": "center", "color": "#64748b" }, { "html": "—", "align": "center", "color": "#64748b" }, { "html": "—", "align": "center", "color": "#64748b" }, { "html": "中文最优" }, { "html": "Cursor 中文替代" } ] },
+        { "cells": [ { "html": "WorkBuddy", "bold": true, "color": "#4f8dff" }, { "html": "Cloud", "align": "center" }, { "html": "￥58", "align": "center" }, { "html": "多模型", "align": "center" }, { "html": "✗", "align": "center", "color": "#64748b" }, { "html": "—", "align": "center", "color": "#64748b" }, { "html": "—", "align": "center", "color": "#64748b" }, { "html": "消息驱动 · 办公" }, { "html": "腾讯生态 · 企业" } ] },
+        { "cells": [ { "html": "通义灵码", "bold": true, "color": "#fbbf24" }, { "html": "EXT", "align": "center" }, { "html": "Free", "align": "center", "bold": true, "color": "#34d399" }, { "html": "通义", "align": "center" }, { "html": "✗", "align": "center", "color": "#64748b" }, { "html": "—", "align": "center", "color": "#64748b" }, { "html": "—", "align": "center", "color": "#64748b" }, { "html": "完全免费" }, { "html": "阿里云生态" } ] },
+        { "cells": [ { "html": "文心快码", "bold": true, "color": "#22d3ee" }, { "html": "IDE+EXT", "align": "center" }, { "html": "Free", "align": "center", "bold": true, "color": "#34d399" }, { "html": "文心", "align": "center" }, { "html": "✗", "align": "center", "color": "#64748b" }, { "html": "—", "align": "center", "color": "#64748b" }, { "html": "—", "align": "center", "color": "#64748b" }, { "html": "AI IDE + 插件" }, { "html": "百度生态" } ] },
+        { "cells": [ { "html": "Aider / Cline", "bold": true, "color": "#94a3b8" }, { "html": "CLI/EXT", "align": "center" }, { "html": "BYO", "align": "center" }, { "html": "任意模型", "align": "center" }, { "html": "✓", "align": "center", "color": "#34d399" }, { "html": "✓", "align": "center", "color": "#34d399" }, { "html": "—", "align": "center", "color": "#64748b" }, { "html": "开源 · 灵活" }, { "html": "DIY · 模型自由" } ] }
+      ],
+      "fx": { "enter": "fade-up", "order": 2 }
+    },
+    {
+      "id": "foot-note", "type": "text", "x": 40, "y": 662, "w": 900, "h": 24,
+      "html": "✓ 支持 · ✗ 不支持 · — 未公开；CAI = Coding Agent Index；TB = Terminal-Bench",
+      "fontSize": 11, "color": "#64748b",
+      "fontFamily": "'JetBrains Mono', monospace",
+      "align": "left", "valign": "middle",
+      "fx": { "enter": "fade", "order": 3 }
+    },
+    { "id": "pg-num", "type": "text", "x": 1150, "y": 678, "w": 90, "h": 24, "html": "{{page:2}} · {{pages}}", "fontSize": 12, "color": "#475569", "letterSpacing": 2, "fontFamily": "'JetBrains Mono', monospace", "align": "right", "valign": "middle" },
+    { "id": "mg-a", "type": "shape", "shape": "rect", "x": 40, "y": 168, "w": 4, "h": 36, "fill": "#34d399", "radius": 2, "opacity": 0.55 },
+    { "id": "mg-b", "type": "shape", "shape": "rect", "x": 34, "y": 656, "w": 10, "h": 10, "fill": "#34d399", "opacity": 0.5 },
+    { "id": "mg-c", "type": "shape", "shape": "rect", "x": 1230, "y": 164, "w": 8, "h": 8, "fill": "#34d399", "opacity": 0.5 }
+  ]
+}

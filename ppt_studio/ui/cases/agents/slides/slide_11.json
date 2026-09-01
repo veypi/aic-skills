@@ -1,0 +1,90 @@
+{
+  "id": "s11",
+  "background": "#0a0f1c",
+  "transition": "morph",
+  "hover": { "type": "focus-group", "dim": 0.28 },
+  "notes": "四大技术趋势。侧标变为序号环，聚焦前两大趋势；红色底线落在 Gartner 警示条上。",
+  "elements": [
+    { "id": "grain", "type": "svg", "x": 0, "y": 0, "w": 1280, "h": 720, "asset": "grain", "opacity": 1 },
+    { "id": "dots", "type": "svg", "x": 0, "y": 0, "w": 1280, "h": 720, "asset": "dots", "opacity": 0.9 },
+    {
+      "id": "gl-a-11", "type": "shape", "shape": "ellipse",
+      "x": 820, "y": -180, "w": 560, "h": 560, "blur": 60, "fill": "transparent",
+      "fillGradient": { "angle": 135, "stops": [ { "at": 0, "color": "rgba(244,114,182,0.15)" }, { "at": 1, "color": "rgba(244,114,182,0)" } ] },
+      "fx": { "ambient": "kenburns", "ken": { "dir": "drift", "scale": 1.12, "duration": 26 } }
+    },
+    {
+      "id": "gl-b-11", "type": "shape", "shape": "ellipse",
+      "x": -220, "y": 400, "w": 480, "h": 480, "blur": 60, "fill": "transparent",
+      "fillGradient": { "angle": 315, "stops": [ { "at": 0, "color": "rgba(79,141,255,0.14)" }, { "at": 1, "color": "rgba(79,141,255,0)" } ] },
+      "fx": { "ambient": "kenburns", "ken": { "dir": "drift", "scale": 1.14, "duration": 30 } }
+    },
+    {
+      "id": "ghost-11", "type": "text", "x": 980, "y": -16, "w": 300, "h": 210,
+      "html": "06", "fontSize": 160, "fontWeight": 800, "color": "rgba(244,114,182,0.06)",
+      "fontFamily": "'JetBrains Mono', monospace", "align": "center", "valign": "middle"
+    },
+    {
+      "id": "fx-title", "type": "text",
+      "x": 80, "y": 34, "w": 1040, "h": 66,
+      "html": "<span style=\"font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:4px;color:#f472b6\">CH.06 — OUTLOOK</span><br><b>技术趋势与未来展望</b>",
+      "fontSize": 30, "fontWeight": 800, "color": "#f8fafc",
+      "align": "left", "valign": "middle", "lineHeight": 1.2
+    },
+    {
+      "id": "fx-rule", "type": "shape", "shape": "rect",
+      "x": 82, "y": 108, "w": 220, "h": 5,
+      "fill": "#f472b6", "radius": 3,
+      "shadow": { "y": 0, "blur": 12, "color": "rgba(244,114,182,0.4)" }
+    },
+    { "id": "t1-bg", "type": "shape", "shape": "rect", "x": 50, "y": 124, "w": 570, "h": 206, "fill": "#10182c", "radius": 12, "stroke": "rgba(148,163,184,0.14)", "strokeWidth": 1, "group": "A", "shadow": { "y": 8, "blur": 22, "color": "rgba(2,6,18,0.45)" }, "fx": { "enter": "fade-up", "order": 1 } },
+    { "id": "t1-num", "type": "shape", "shape": "rect", "x": 74, "y": 142, "w": 46, "h": 46, "fill": "rgba(79,141,255,0.14)", "radius": 10, "group": "A" },
+    { "id": "t1-num-t", "type": "text", "x": 74, "y": 142, "w": 46, "h": 46, "html": "1", "fontSize": 22, "fontWeight": 800, "color": "#4f8dff", "fontFamily": "'JetBrains Mono', monospace", "align": "center", "valign": "middle", "group": "A", "fx": { "enter": "fade", "order": 1 } },
+    { "id": "t1-title", "type": "text", "x": 134, "y": 142, "w": 462, "h": 46, "html": "<b>从单 Agent 到多 Agent 编排</b>", "fontSize": 18, "fontWeight": 700, "color": "#f1f5f9", "align": "left", "valign": "middle", "group": "A", "fx": { "enter": "fade-up", "order": 1 } },
+    { "id": "t1-desc", "type": "text", "x": 74, "y": 200, "w": 522, "h": 116, "html": "Claude Code Dynamic Workflows、Antigravity Agent Manager、WorkBuddy 多 Agent 编排均表明：单 Agent 已不够。下一个战场是让 AI 像团队一样协作 — 规划者、执行者、审查者分工配合。多 Agent 平台预计 2035 年达 <b>$391B</b>。", "fontSize": 12.5, "color": "#94a3b8", "align": "left", "valign": "top", "lineHeight": 1.7, "group": "A", "fx": { "enter": "fade-up", "order": 2 } },
+    { "id": "t2-bg", "type": "shape", "shape": "rect", "x": 660, "y": 124, "w": 570, "h": 206, "fill": "#10182c", "radius": 12, "stroke": "rgba(148,163,184,0.14)", "strokeWidth": 1, "group": "B", "shadow": { "y": 8, "blur": 22, "color": "rgba(2,6,18,0.45)" }, "fx": { "enter": "fade-up", "order": 2 } },
+    { "id": "t2-num", "type": "shape", "shape": "rect", "x": 684, "y": 142, "w": 46, "h": 46, "fill": "rgba(167,139,250,0.14)", "radius": 10, "group": "B" },
+    { "id": "t2-num-t", "type": "text", "x": 684, "y": 142, "w": 46, "h": 46, "html": "2", "fontSize": 22, "fontWeight": 800, "color": "#a78bfa", "fontFamily": "'JetBrains Mono', monospace", "align": "center", "valign": "middle", "group": "B", "fx": { "enter": "fade", "order": 2 } },
+    { "id": "t2-title", "type": "text", "x": 744, "y": 142, "w": 462, "h": 46, "html": "<b>模型趋同，Harness 决胜</b>", "fontSize": 18, "fontWeight": 700, "color": "#f1f5f9", "align": "left", "valign": "middle", "group": "B", "fx": { "enter": "fade-up", "order": 2 } },
+    { "id": "t2-desc", "type": "text", "x": 684, "y": 200, "w": 522, "h": 116, "html": "Opus 4.8 vs GPT-5.5 vs Gemini 3.5 — 前沿模型能力已收敛。竞争焦点从「谁更聪明」转向「谁的包装更好用」：Hook 系统、Skills 生态、MCP 集成、权限控制、多端连续性成为真正差异化因素。", "fontSize": 12.5, "color": "#94a3b8", "align": "left", "valign": "top", "lineHeight": 1.7, "group": "B", "fx": { "enter": "fade-up", "order": 3 } },
+    { "id": "t3-bg", "type": "shape", "shape": "rect", "x": 50, "y": 346, "w": 570, "h": 206, "fill": "#10182c", "radius": 12, "stroke": "rgba(148,163,184,0.14)", "strokeWidth": 1, "group": "C", "shadow": { "y": 8, "blur": 22, "color": "rgba(2,6,18,0.45)" }, "fx": { "enter": "fade-up", "order": 3 } },
+    { "id": "t3-num", "type": "shape", "shape": "rect", "x": 74, "y": 364, "w": 46, "h": 46, "fill": "rgba(34,211,238,0.14)", "radius": 10, "group": "C" },
+    { "id": "t3-num-t", "type": "text", "x": 74, "y": 364, "w": 46, "h": 46, "html": "3", "fontSize": 22, "fontWeight": 800, "color": "#22d3ee", "fontFamily": "'JetBrains Mono', monospace", "align": "center", "valign": "middle", "group": "C", "fx": { "enter": "fade", "order": 3 } },
+    { "id": "t3-title", "type": "text", "x": 134, "y": 364, "w": 462, "h": 46, "html": "<b>Sandbox 与安全成为标配</b>", "fontSize": 18, "fontWeight": 700, "color": "#f1f5f9", "align": "left", "valign": "middle", "group": "C", "fx": { "enter": "fade-up", "order": 3 } },
+    { "id": "t3-desc", "type": "text", "x": 74, "y": 422, "w": 522, "h": 116, "html": "Codex 内核级沙箱（Seatbelt / bubblewrap）、Copilot Cloud Agent 防火墙、Devin 隔离 VM — 安全不再是可选项。模型默认关闭网络、文件访问需审批、沙箱化执行成为行业基准。", "fontSize": 12.5, "color": "#94a3b8", "align": "left", "valign": "top", "lineHeight": 1.7, "group": "C", "fx": { "enter": "fade-up", "order": 4 } },
+    { "id": "t4-bg", "type": "shape", "shape": "rect", "x": 660, "y": 346, "w": 570, "h": 206, "fill": "#10182c", "radius": 12, "stroke": "rgba(148,163,184,0.14)", "strokeWidth": 1, "group": "D", "shadow": { "y": 8, "blur": 22, "color": "rgba(2,6,18,0.45)" }, "fx": { "enter": "fade-up", "order": 4 } },
+    { "id": "t4-num", "type": "shape", "shape": "rect", "x": 684, "y": 364, "w": 46, "h": 46, "fill": "rgba(52,211,153,0.14)", "radius": 10, "group": "D" },
+    { "id": "t4-num-t", "type": "text", "x": 684, "y": 364, "w": 46, "h": 46, "html": "4", "fontSize": 22, "fontWeight": 800, "color": "#34d399", "fontFamily": "'JetBrains Mono', monospace", "align": "center", "valign": "middle", "group": "D", "fx": { "enter": "fade", "order": 4 } },
+    { "id": "t4-title", "type": "text", "x": 744, "y": 364, "w": 462, "h": 46, "html": "<b>中国厂商加速追赶</b>", "fontSize": 18, "fontWeight": 700, "color": "#f1f5f9", "align": "left", "valign": "middle", "group": "D", "fx": { "enter": "fade-up", "order": 4 } },
+    { "id": "t4-desc", "type": "text", "x": 684, "y": 422, "w": 522, "h": 116, "html": "WorkBuddy 90 天登顶中国区第一、Trae 开源 Agent、通义灵码测评领衔 — 中国厂商在办公场景集成（微信/企业微信/飞书）和中文优化上建立独特壁垒。「消息驱动 Agent」模式可能为全球提供新范式。", "fontSize": 12.5, "color": "#94a3b8", "align": "left", "valign": "top", "lineHeight": 1.7, "group": "D", "fx": { "enter": "fade-up", "order": 5 } },
+    {
+      "id": "warn-bg", "type": "shape", "shape": "rect",
+      "x": 50, "y": 572, "w": 1180, "h": 76,
+      "fill": "rgba(248,113,113,0.08)", "radius": 12, "stroke": "rgba(248,113,113,0.35)", "strokeWidth": 1,
+      "fx": { "enter": "fade-up", "order": 5 }
+    },
+    {
+      "id": "warn-text", "type": "text", "x": 78, "y": 572, "w": 1124, "h": 76,
+      "html": "<b style=\"color:#f87171\">⚠ Gartner 警示：</b><span style=\"font-size:13.5px\">预计 2027 年底超过 <b style=\"color:#f87171\">40%</b> 的 Agentic AI 项目将被取消。核心原因：试点容易，规模化生产难 — 集成复杂度、安全合规、成本控制是三大拦路虎。</span>",
+      "fontSize": 13.5, "color": "#cbd5e1", "align": "left", "valign": "middle", "lineHeight": 1.6,
+      "fx": { "enter": "fade-up", "order": 6 }
+    },
+    { "id": "pg-num", "type": "text", "x": 1150, "y": 678, "w": 90, "h": 24, "html": "{{page:2}} · {{pages}}", "fontSize": 12, "color": "#475569", "letterSpacing": 2, "fontFamily": "'JetBrains Mono', monospace", "align": "right", "valign": "middle" },
+    {
+      "id": "mg-a", "type": "shape", "shape": "rect",
+      "x": 68, "y": 136, "w": 58, "h": 58,
+      "fill": "transparent", "stroke": "#4f8dff", "strokeWidth": 2, "radius": 14, "opacity": 0.95
+    },
+    {
+      "id": "mg-b", "type": "shape", "shape": "rect",
+      "x": 678, "y": 136, "w": 58, "h": 58,
+      "fill": "transparent", "stroke": "#a78bfa", "strokeWidth": 2, "radius": 14, "opacity": 0.95
+    },
+    {
+      "id": "mg-c", "type": "shape", "shape": "rect",
+      "x": 50, "y": 654, "w": 180, "h": 5,
+      "fill": "#f87171", "radius": 3, "opacity": 0.9,
+      "shadow": { "y": 0, "blur": 12, "color": "rgba(248,113,113,0.5)" }
+    }
+  ]
+}

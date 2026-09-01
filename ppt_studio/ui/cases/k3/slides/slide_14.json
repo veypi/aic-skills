@@ -1,0 +1,507 @@
+{
+  "id": "s10",
+  "transition": "morph",
+  "notes": "价格：输入 $3、输出 $15、缓存输入 $0.30——三个价格数字滚动计数。强调缓存输入让长上下文成本再降一个数量级。",
+  "elements": [
+    {
+      "id": "fx-a",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 780,
+      "y": -180,
+      "w": 560,
+      "h": 560,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 45,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(52,211,153,0.22)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(52,211,153,0)"
+          }
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-b",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": -240,
+      "y": 380,
+      "w": 480,
+      "h": 480,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 225,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(79,127,255,0.26)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(79,127,255,0)"
+          }
+        ]
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "tile-a-12",
+      "type": "shape",
+      "shape": "rect",
+      "x": -210,
+      "y": -230,
+      "w": 450,
+      "h": 450,
+      "rotation": 10,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 45,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(52,211,153,0.14)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(52,211,153,0)"
+          }
+        ]
+      },
+      "radius": 90,
+      "opacity": 1
+    },
+    {
+      "id": "tile-b-12",
+      "type": "shape",
+      "shape": "rect",
+      "x": 1060,
+      "y": 380,
+      "w": 410,
+      "h": 410,
+      "rotation": -12,
+      "fill": "transparent",
+      "fillGradient": {
+        "angle": 225,
+        "stops": [
+          {
+            "at": 0,
+            "color": "rgba(79,127,255,0.15)"
+          },
+          {
+            "at": 1,
+            "color": "rgba(79,127,255,0)"
+          }
+        ]
+      },
+      "radius": 70,
+      "opacity": 1
+    },
+    {
+      "id": "ghost-12",
+      "type": "text",
+      "x": 880,
+      "y": 40,
+      "w": 320,
+      "h": 210,
+      "html": "09",
+      "fontSize": 175,
+      "fontWeight": 800,
+      "color": "rgba(52,211,153,0.08)",
+      "align": "center",
+      "valign": "middle",
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-title",
+      "type": "text",
+      "x": 80,
+      "y": 56,
+      "w": 1000,
+      "h": 60,
+      "html": "旗舰性能 · <b>中端价格</b>",
+      "fontSize": 40,
+      "fontWeight": 700,
+      "color": "#ffffff",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 0
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "fx-line",
+      "type": "shape",
+      "shape": "rect",
+      "x": 80,
+      "y": 126,
+      "w": 64,
+      "h": 4,
+      "fill": "#4f7fff",
+      "radius": 2,
+      "fx": {
+        "enter": "fade",
+        "order": 0
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "pg-num",
+      "type": "text",
+      "x": 1150,
+      "y": 676,
+      "w": 80,
+      "h": 24,
+      "html": "{{page:2}}",
+      "fontSize": 13,
+      "color": "rgba(154,165,196,0.5)",
+      "align": "right",
+      "valign": "middle",
+      "letterSpacing": 2,
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s10-p1",
+      "type": "shape",
+      "shape": "rect",
+      "x": 80,
+      "y": 190,
+      "w": 357,
+      "h": 240,
+      "fill": "#131a30",
+      "stroke": "#2a3557",
+      "strokeWidth": 1,
+      "radius": 18,
+      "shadow": {
+        "y": 14,
+        "blur": 34,
+        "color": "rgba(0,0,0,0.35)"
+      },
+      "fx": {
+        "enter": "fade-up",
+        "order": 1
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s10-p1label",
+      "type": "text",
+      "x": 112,
+      "y": 214,
+      "w": 293,
+      "h": 26,
+      "html": "输入（每百万 Token）",
+      "fontSize": 16,
+      "color": "#8b96b8",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 1
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s10-p1n",
+      "type": "text",
+      "x": 112,
+      "y": 244,
+      "w": 293,
+      "h": 84,
+      "html": "$3",
+      "fontSize": 60,
+      "fontWeight": 800,
+      "color": "#4f7fff",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 1,
+        "countUp": true
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s10-p1d",
+      "type": "text",
+      "x": 112,
+      "y": 340,
+      "w": 293,
+      "h": 66,
+      "html": "与西方中端模型同价位，性能逼近顶部",
+      "fontSize": 15,
+      "color": "#8b96b8",
+      "lineHeight": 1.6,
+      "fx": {
+        "enter": "fade-up",
+        "order": 2
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s10-p2",
+      "type": "shape",
+      "shape": "rect",
+      "x": 461,
+      "y": 190,
+      "w": 357,
+      "h": 240,
+      "fill": "#131a30",
+      "stroke": "#2a3557",
+      "strokeWidth": 1,
+      "radius": 18,
+      "shadow": {
+        "y": 14,
+        "blur": 34,
+        "color": "rgba(0,0,0,0.35)"
+      },
+      "fx": {
+        "enter": "fade-up",
+        "order": 2
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s10-p2label",
+      "type": "text",
+      "x": 493,
+      "y": 214,
+      "w": 293,
+      "h": 26,
+      "html": "输出（每百万 Token）",
+      "fontSize": 16,
+      "color": "#8b96b8",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 2
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s10-p2n",
+      "type": "text",
+      "x": 493,
+      "y": 244,
+      "w": 293,
+      "h": 84,
+      "html": "$15",
+      "fontSize": 60,
+      "fontWeight": 800,
+      "color": "#8b5cf6",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 2,
+        "countUp": true
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s10-p2d",
+      "type": "text",
+      "x": 493,
+      "y": 340,
+      "w": 293,
+      "h": 66,
+      "html": "Thinking 模式常开，复杂推理不加价",
+      "fontSize": 15,
+      "color": "#8b96b8",
+      "lineHeight": 1.6,
+      "fx": {
+        "enter": "fade-up",
+        "order": 3
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s10-p3",
+      "type": "shape",
+      "shape": "rect",
+      "x": 842,
+      "y": 190,
+      "w": 357,
+      "h": 240,
+      "fill": "#131a30",
+      "stroke": "#2a3557",
+      "strokeWidth": 1,
+      "radius": 18,
+      "shadow": {
+        "y": 14,
+        "blur": 34,
+        "color": "rgba(0,0,0,0.35)"
+      },
+      "fx": {
+        "enter": "fade-up",
+        "order": 3
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s10-p3label",
+      "type": "text",
+      "x": 874,
+      "y": 214,
+      "w": 293,
+      "h": 26,
+      "html": "缓存输入（每百万 Token）",
+      "fontSize": 16,
+      "color": "#8b96b8",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 3
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s10-p3n",
+      "type": "text",
+      "x": 874,
+      "y": 244,
+      "w": 293,
+      "h": 84,
+      "html": "$0.30",
+      "fontSize": 60,
+      "fontWeight": 800,
+      "color": "#22d3ee",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 3,
+        "countUp": true
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s10-p3d",
+      "type": "text",
+      "x": 874,
+      "y": 340,
+      "w": 293,
+      "h": 66,
+      "html": "长上下文场景成本再降一个数量级",
+      "fontSize": 15,
+      "color": "#8b96b8",
+      "lineHeight": 1.6,
+      "fx": {
+        "enter": "fade-up",
+        "order": 4
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s10-s1",
+      "type": "shape",
+      "shape": "rect",
+      "x": 80,
+      "y": 470,
+      "w": 550,
+      "h": 150,
+      "fill": "#16224a",
+      "radius": 14,
+      "fx": {
+        "enter": "fade-up",
+        "order": 4
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s10-s1t",
+      "type": "text",
+      "x": 112,
+      "y": 470,
+      "w": 486,
+      "h": 150,
+      "html": "<b style='font-size:22px'>开发者零门槛</b><br><br><span style='font-size:17px;color:#9aa5c4'>API 兼容 OpenAI SDK，基于 OpenAI / Anthropic 工具链的应用可平滑迁移</span>",
+      "fontSize": 20,
+      "color": "#ffffff",
+      "lineHeight": 1.6,
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 4
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s10-s2",
+      "type": "shape",
+      "shape": "rect",
+      "x": 650,
+      "y": 470,
+      "w": 550,
+      "h": 150,
+      "fill": "#16224a",
+      "radius": 14,
+      "fx": {
+        "enter": "fade-up",
+        "order": 5
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "s10-s2t",
+      "type": "text",
+      "x": 682,
+      "y": 470,
+      "w": 486,
+      "h": 150,
+      "html": "<b style='font-size:22px'>限时充值返利</b><br><br><span style='font-size:17px;color:#9aa5c4'>8 月 12 日前，API 充值满 $1,000 最高返 30% 代金券</span>",
+      "fontSize": 20,
+      "color": "#ffffff",
+      "lineHeight": 1.6,
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "order": 5
+      },
+      "rotation": 0,
+      "opacity": 1
+    },
+    {
+      "id": "mg-dot",
+      "type": "shape",
+      "shape": "rect",
+      "x": 1050,
+      "y": 265,
+      "w": 12,
+      "h": 46,
+      "fill": "#22d3ee",
+      "opacity": 0.85,
+      "shadow": {
+        "y": 0,
+        "blur": 16,
+        "color": "rgba(34,211,238,0.5)"
+      },
+      "rotation": 0
+    }
+  ],
+  "background": "#0b1020"
+}
