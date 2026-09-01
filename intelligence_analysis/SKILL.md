@@ -1,20 +1,30 @@
 ---
 name: intelligence_analysis
 nickname: 商业航天情报分析
-description: ORBITALINTEL 商业航天情报分析：全产业链公司/产品/发射/融资/关系数据库、事故案例库、监管知识库、AI 合规审查，世界地图情报舱联动。外部 AI 经同源 api 读写数据、经 pageDesc 指令驱动地图
+description: ORBITALINTEL 商业航天情报分析：全产业链公司/产品/发射/融资/关系数据库、事故案例库、监管知识库、AI 合规审查，三维地球情报舱联动。外部 AI 经同源 api 读写数据、经 pageDesc 指令驱动地图
 keywords: [航天, 商业航天, 公司分析, 事故案例, 监管法规, 合规审查, 情报分析, aerospace, space, launch, satellite, regulation, compliance]
 icon: fa-solid fa-satellite
 ui:
   - path: index.html
-    desc: ORBITALINTEL 情报舱主页面（世界地图 + 航天设施/公司/事故图层 + 情报卡，AI 地图联动指令面）
+    desc: 情报舱入口（SPA 壳，按路径路由子页面；根路径与 index.html 均默认加载 dashboard.html）
+  - path: dashboard.html
+    desc: ORBITALINTEL 情报舱主页面（Cesium 三维地球高清卫星影像 + 航天设施/公司/事故图层 + 任意地点搜索定位 + 情报卡，AI 地图联动指令面）
   - path: companies.html
     desc: 公司列表（搜索/筛选/分页）
+  - path: company.html
+    desc: 公司详情页（?id= 必填：基本信息 + 产品/发射/融资/关系网络）
   - path: accidents.html
     desc: 事故案例库列表（类型/严重度/调查状态筛选）
+  - path: accident.html
+    desc: 事故详情页（?id= 必填：根因/教训/纠正措施/关联项全字段）
   - path: regulations.html
     desc: 监管知识库列表（类型/机构/状态筛选）
+  - path: regulation.html
+    desc: 法规详情页（?id= 必填：含全文 content 与版本链）
   - path: reviews.html
     desc: 合规审查案件列表（新建审查入口）
+  - path: review.html
+    desc: 审查案件详情页（?id= 必填：发现项明细与处理状态）
 ---
 
 # 商业航天情报分析（ORBITALINTEL）
@@ -30,16 +40,37 @@ ui:
 数据存于本 skill 私有 sqlite（11 张表），经 `api/` 声明式接口读写。页面零内嵌 AI——
 操控面 = `pageDesc` 指令 + 同源 api，全部由外部 AI 驱动。
 
+## 页面结构（SPA）
+
+- `index.html` 是**壳组件**：按 `location.pathname` 自动路由到同目录子页面
+  （`/skills/{scope}/{ref}/{page}.html` → 装载 `./{page}.html`），根路径或 `index.html`
+  均默认装载 `dashboard.html`。
+- **唯一带地图指令的页面是 `dashboard.html`**（即 `index.html` / 根路径）；
+  其余页面（公司/事故/法规/审查的列表与详情）`pageDesc` 为 null，纯数据展示。
+- 详情页直开需带 `?id=`：`open {url_prefix}/company.html?id=<记录id>`；
+  同理 `accident.html` `regulation.html` `review.html`。打开后页面自行调 api 取数渲染。
+- 平台 `page list` 可看到窗口与 `{win_id}.*` 事件；换页后指令面会重建，需重新 `list`
+  确认事件名（`{win_id}` 可能变化）。
+
 ## 外部 AI 操作方式
 
 1. **打开页面**：`open {url_prefix}/index.html`（`url_prefix` 由 skills 工具返回，形如
    `/skills/local/intelligence_analysis` 或 `/skills/public/{id}`，**勿硬编码**）。
    用户亦可从 skill 列表/关联技能点击开窗。
-2. **数据读写与地图指令都依赖窗口存在**：页面未打开时 `exec 1host=page` 无响应——
+2. **窗口复用（默认做法）**：情报舱开好后，列表/详情页一律在同一窗口内打开，**不要另开新窗口**：
+   - 列表页：`open {url_prefix}/companies.html --win <win_id>`（同理 accidents/regulations/reviews）
+   - 详情页：`open {url_prefix}/company.html?id=<记录id> --win <win_id>`（同理 accident/regulation/review）
+   - 列表/详情页**无地图指令面**，看完记得导航回 `open {url_prefix}/index.html --win <win_id>`
+     恢复地图指令；全程只保留一个情报窗口，避免窗口越开越多。
+3. **数据读写与地图指令都依赖窗口存在**：页面未打开时 `exec 1host=page` 无响应——
    先 `open`，再 `exec 1host=page list` 确认窗口与 `{win_id}.*` 事件。
-3. **探测地图指令**：`exec 1host=page commands`（或 `list`），指令清单以 pageDesc 声明为准。
-   首开建议先 `{win_id}.orbital_status` 确认 `ready: true`（echarts/世界地图异步加载）。
-4. **读写数据**：page 通道 `curl` **同源**调 `{url_prefix}/api/{name}`（浏览器带登录态，
+4. **探测/调用地图指令**：`exec 1host=page commands`（或 `list`）看指令清单（以 pageDesc 声明为准）；
+   调用格式为 `exec 1host=page {win_id}.{指令名}` + argv，例：
+   `exec 1host=page w045h.orbital_status`、`exec 1host=page w045h.focus_site --name 酒泉`。
+   指令是 exec action **不是 URL，勿用 curl 调**（会 404）。换页后先重新 `list` 拿最新 `{win_id}`。
+   首开建议先 `{win_id}.orbital_status` 确认 `ready: true`（Cesium 引擎/高清瓦片异步加载）；
+   `ready: false` 时稍候重试。
+5. **读写数据**：page 通道 `curl` **同源**调 `{url_prefix}/api/{name}`（浏览器带登录态，
    服务端注入 user_id，无需也不能伪造）：
 
    ```
@@ -48,7 +79,8 @@ ui:
    ```
 
    get 走 query 参数；post 走 JSON body。响应：get → `{"rows":[…],"truncated":bool}`
-   （恒数组）；post → `{"rows":[],"affected":n,"last_insert_id":n}`。
+   （恒数组；`truncated:true` 表示结果被截断，可加筛选缩小范围）；
+   post → `{"rows":[],"affected":n,"last_insert_id":n}`。
 
 **URL 形态**：api 文件名 `{get|post}.{name}.sqlx` 的前缀是 HTTP 方法绑定描述符，
 **不进 URL**——端点路径一律是 `{url_prefix}/api/{name}`（name = 文件名去掉
@@ -57,6 +89,10 @@ ui:
 
 **参数纪律**：sqlx 里声明的**每个参数都必须传**（缺失报 `missing sqlx param`，
 400）；空串 `""` = 不限/不变（按端点语义），未知可空字段传 `null`。
+例如 `company?id=`（空串）返回空数组（查无此记录），而 `company` 不带 id 才报 400。
+
+**测试数据约定**：写端点**无删除接口**，自动化测试/演练写入请用 `deadbeef` 开头的 id 并在
+名称中标注"测试"（如"ZZ接口验证测试公司"），便于与正式数据区分、事后识别；正式采集不要用该前缀。
 
 ## 数据通道（api 清单）
 
@@ -64,7 +100,7 @@ ui:
 
 | 端点 name | 参数 | 用途 |
 |---|---|---|
-| `dashboard_counts` | — | 六板块记录数（单行） |
+| `dashboard_counts` | — | 六板块记录数（单行；数值为字符串类型） |
 | `map_sites` / `map_companies` / `map_accidents` | — | 情报舱地图点位（只要带坐标的行） |
 | `companies` | `q` `sub_sector` `status` | 公司列表（名称/英文名/简称模糊） |
 | `company` | `id` | 公司详情 |
@@ -102,17 +138,20 @@ ui:
 
 | 指令 | argv | 返回/效果 |
 |---|---|---|
-| `orbital_status` | 无 | `{ready, layers, counts}` 就绪探测 |
+| `orbital_status` | 无 | `{ready, layers, counts}` 就绪探测（counts 为字符串值） |
 | `focus_site` | `--name <名称>` | 聚焦设施并弹情报卡（中英模糊） |
 | `focus_company` | `--name <名称>` | 聚焦公司总部并弹公司卡 |
 | `open_accident` | `--title <模糊>` 或 `--id` | 聚焦事故点并弹事故卡 |
+| `locate` | `--name <任意地名>` | 地理编码定位任意地点（三维地球飞达+青色定位钉），如 `酒泉`、`Cape Canaveral`；编码服务 OSM Nominatim（免 key，依赖外网，偶发超时可重试） |
 | `set_layers` | `--sites/--companies/--accidents on\|off` | 开关图层 |
 | `clear_card` | 无 | 关闭情报卡 |
 | `list_targets` | 无 | 全部可聚焦目标名清单 |
 
 返回统一 `{content: "<JSON 字符串>"}`，反序列化后 `{ok:true, …}` 或
 `{ok:false, error}`（可原样转述用户）。找不到目标时先 `list_targets` 再重试。
-讲解地点/公司/事故时**必须同步调用对应指令**让地图聚焦（"边讲边指"）。
+以上指令**仅 `dashboard.html`（主页面）提供**；列表/详情页无地图指令面。
+讲解地点/公司/事故时**必须同步调用对应指令**让地图聚焦（"边讲边指"）；
+讲到一个地名（非库内目标）时用 `locate` 定位。
 
 ## 数据库架构（11 表）
 
@@ -191,7 +230,16 @@ spaceport）`country` `region` `lat*` `lng*` `operator` `status`（active/inacti
 1. `companies?q=` 先查库；已有则补充最新动态，无则采集
 2. `web_search`/`web_fetch` 采集 → `company` post 端点（新）或补充写入
    products/launches/fundings/relations/news
-3. 返回时标注数据来源（数据库记录 id vs 网络来源 URL）
+3. 产业链展示：`company_relations?company_id=` + `company_names` 解析对端名称，
+   按 supplier/customer/partner/investor 分类列出上下游
+4. 返回时标注数据来源（数据库记录 id vs 网络来源 URL）
+
+### 事故分析（"分析/讲解某某事故/故障"）
+1. `accidents?q=` 或 `accident?id=` 取详情（先查库，无结果再 `web_search` 采集入库）
+2. 同步调用 `open_accident`（或 `focus_site`/`locate` 定位地点）——"边讲边指"
+3. 输出结构化分析：事件经过 → 直接原因 → 根本原因 → 促成因素 → 经验教训 →
+   纠正措施 → 调查状态（调查中注明"待结案"）；跨案例对比用 Markdown 表格
+4. 关联项（related_*_ids）顺带点出影响面；引用记录 id 与 source_url
 
 ### 事故采集
 `web_search`（英语关键词 "rocket explosion"/"launch failure"/"anomaly" 优先）→ 详情页 →
@@ -222,8 +270,23 @@ suggestion 为 info）→ 5. `review_case_update` 汇总结论：
 5. **地图联动**：讲解地点/公司/事故时同步调用 pageDesc 聚焦指令
 6. 中文为主、英文术语保留原文；结构化信息优先 Markdown 表格
 
+## 排障速查
+
+| 现象 | 处理 |
+|---|---|
+| `exec 1host=page` 无响应 | 页面未打开：先 `open {url_prefix}/index.html`，再 `page list` 确认窗口 |
+| 指令调用返回 HTTP 404 | 误用 curl 调指令：pageDesc 指令是 `exec` action（`{win_id}.{event}`），不是 URL；curl 只能访问 `{url_prefix}/api/*` |
+| `orbital_status.ready=false` | Cesium 引擎/瓦片异步加载中，稍候重试 |
+| 指令报 `{ok:false, error:"not found"}` | 先 `list_targets` 取准确名称（支持中英模糊），或另用 `locate` 定位相近地名 |
+| `locate` 超时/失败 | 编码服务依赖外网（OSM Nominatim），重试；库内目标改用 `focus_site`/`focus_company` |
+| get 响应 `truncated:true` | 加筛选参数（如 `q=`、`status=`）缩小范围后重查 |
+| post 报 `missing sqlx param` | 该端点声明参数缺传：按上文 api 清单补齐（空串或 null 填位） |
+| 窗口越开越多 | 用 `--win <win_id>` 复用已开窗口；多余窗口 `close <win_id>` 关闭 |
+| 换页后旧指令失效 | SPA 路由切换会清空 pageDesc，重新 `page list` 获取新 `{win_id}` 与事件 |
+
 ## 其他
 
 - 需求背景文档（智能体集群模块需求书节选）在包根目录
   `需求文档_商业航天智能体集群模块.md`，需要业务背景时经 fs.read 只读查看
   （`/u/{uid}/skills/intelligence_analysis/` 前缀）。
+- 界面为中文；`status`/`overall_result` 等枚举值按表结构原样写库，展示时中文化。
