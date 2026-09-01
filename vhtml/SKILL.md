@@ -197,7 +197,7 @@ Static imports are supported; relative paths resolve against the component's own
 <button @click="save()">Save</button>
 <button @click.stop.prevent="remove(id)">Delete</button>
 <input v:value="value" />                            <!-- two-way binding -->
-<div v-show="loading">Loading</div>
+<div v-show="loading">Loading...</div>
 <div v-if="a">A</div>
 <div v-else-if="b">B</div>
 <div v-else>C</div>
@@ -291,6 +291,24 @@ export default async ($mod, manager) => {
 - `manager.addAlias(prefix, baseUrl, isGlobal)` — register a component path alias. `prefix` must be letters only (it matches the tag's first `-`-segment); `baseUrl` must start with `/` or `https://`. Non-global aliases only register while an `env.js` is loading; aliases resolve only in non-root modules (`scoped` ≠ `''`).
 - `$mod.define(key, value, opts?)` / `manager.define(key, value, opts?)` — module-local vs shared entries (semantics see the `$mod` section).
 
+## Cache & refresh
+
+`templateLoader` (from the vhtml runtime) keeps per-URL template descriptors and per-module contexts. A module that changed on disk can be invalidated at runtime without a full page reload:
+
+```js
+import { templateLoader } from '/vhtml/src/loader.js'   // or: window.$vhtml.templateLoader
+
+templateLoader.clearScoped('/skills/local/mypkg')   // drop caches whose URL/scoped starts with the prefix
+templateLoader.clear()                              // drop everything (login / user switch)
+```
+
+- `clearScoped(prefix)` purges: template descriptors + in-flight fetches under the prefix, injected `<style vref>` nodes under the prefix, and module contexts/aliases registered for matching scopes (`prefix` exactly, or `prefix/…`; `/a` never collides with `/a2`). An absolute-URL prefix targets that origin; a file-level prefix (`…/x.html`) also matches descriptor-level keys (`…/x`); an empty prefix matches everything.
+- Prefer the instance ref (`window.$vhtml.templateLoader`) when the host page runs the bundled build — a direct `/vhtml/src/loader.js` import creates a second, independent loader instance in production.
+- `scopeOf(url, runtime)` returns the module root (`descriptor.scoped`) of a cached descriptor, or null — the lookup uses the same key formula as `fetchUI`. Reload flows use it to widen a page refresh to its whole module scope: `clearScoped(scopeOf(pageHtml, runtime) ?? pageHtml)`.
+- Semantics = **invalidation, not HMR**: instances and router-cached pages that are already alive keep running the old code; everything loaded afterwards builds from fresh sources. `reload` = `clearScoped` + revisit the route (page cache rebuild).
+- Not purged, by design: `compile.js` / `source-cache.js` entries (content-addressed — a changed file naturally misses and recompiles) and head `<script>`/`<link>` nodes (URL-addressed; the browser already caches them by URL).
+- In-flight fetches started before the clear are guarded by a cache epoch: their results are discarded instead of being written back into the purged cache.
+
 Do NOT use `env.js` for route guards, per-page state, or component-local data.
 
 ## `routes.js`
@@ -343,7 +361,7 @@ Route record fields:
 | `component` | required. HTML path or `(path, params) => url`; `params` includes fixed `:params` values plus matched route params |
 | `layout` | layout name → `/layout/{name}.html`; layouts should expose a default `<vslot>` for the page outlet |
 | `redirect` | string, `{ path, params, query, hash }`, or `(matchedRoute) => target` |
-| `error_redirect` | fallback when the component fails to load |
+| `error_redirect` | fallback when the component fails to load（未配置时：应用内导航失败保留当前页 + 错误登记；首 mount 失败降级为可见错误盒页 commit，不白屏杀应用） |
 | `meta` | arbitrary metadata, exposed on `$router.current.meta` |
 | `children` | nested routes; child paths relative to parent; children inherit parent layout/meta |
 | `cacheKey` | `false` (no cache) · string (shared instance) · `(matchedRoute) => key` · default: path-based, query/hash excluded (query changes update router state, page DOM kept) |
@@ -480,7 +498,7 @@ Structural edits (insert / remove / reorder): either in-place mutators (`splice`
 2. For streaming/animation (typewriter, count-up): drive from top-level scalar `$data` props, not nested object fields; lists should be append-only immutable records.
 3. Writes from within a reactive evaluation (watchers, binding expressions) do not notify — mutate state from event handlers, timers, or rAF callbacks instead.
 4. A runaway feedback loop (a callback writing its own dependency every round) aborts after 10 rounds in one refresh, throwing an error — check `window.__vhtml_dev.cascadeErrors` for the effect chain.
-5. Errors are exposed, never silent: template compilation failures throw; a component that fails to mount renders a visible red `[vhtml] ... failed` placeholder instead of blank space; every compile/expression/mount error is recorded in `window.__vhtml_dev.errors` (newest last) with code preview and component location. Undefined identifiers read inside sandboxed code warn once per name (spelling check).
+5. Errors are exposed, never silent: template compilation failures throw; a component that fails to mount renders a visible red `[vhtml] ... failed` placeholder instead of blank space; every compile/expression/mount error is recorded in `window.__vhtml_dev.errors` (newest last) with code preview and component location. Undefined identifiers read inside sandboxed code warn once per name (spelling check). Router page-load failure: in-app navigation keeps the current page and records the error; initial mount (no current page) commits a visible `[Load Error]` box page instead of rejecting the whole mount (white screen = visual silence) — route-level `error_redirect` overrides both.
 
 #### Compile stats (`__vhtml_dev.compileStats`)
 
@@ -500,7 +518,7 @@ Counters for compile-vs-render profiling: `nodeCompiles` / `nodeMs` (DOM-compile
   <body>
     <h1>{{ $t('page.title') }}</h1>
     <input v:value="keyword" placeholder="Search" />
-    <div v-if="loading">Loading</div>
+    <div v-if="loading">Loading...</div>
     <div v-else>
       <div v-for="item in list" class="card">
         <h3>{{ item.name }}</h3>

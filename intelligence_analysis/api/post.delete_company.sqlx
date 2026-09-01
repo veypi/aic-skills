@@ -1,0 +1,1 @@
+DELETE FROM space_companies WHERE id = :id AND user_id = :user_id

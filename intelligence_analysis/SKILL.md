@@ -91,8 +91,9 @@ ui:
 400）；空串 `""` = 不限/不变（按端点语义），未知可空字段传 `null`。
 例如 `company?id=`（空串）返回空数组（查无此记录），而 `company` 不带 id 才报 400。
 
-**测试数据约定**：写端点**无删除接口**，自动化测试/演练写入请用 `deadbeef` 开头的 id 并在
-名称中标注"测试"（如"ZZ接口验证测试公司"），便于与正式数据区分、事后识别；正式采集不要用该前缀。
+**测试数据约定**：测试/演练写入请用 `deadbeef` 开头的 id 并在名称中标注"测试"（如
+"ZZ接口验证测试公司"），便于与正式数据区分；清理时按下方 delete 端点逐个删除（幂等，
+不存在的 id 不影响），正式采集不要用该前缀。
 
 ## 数据通道（api 清单）
 
@@ -134,6 +135,19 @@ ui:
 （`id` `status` `overall_result` `summary` `reviewed_by` `reviewed_at`；
 **空串 = 不改**，只传要更新的字段）。
 
+### 删除（POST `{url_prefix}/api/delete_{表名}`，JSON body：`{"id":"…"}`）
+
+| 端点 | 删除目标 | 说明 |
+|---|---|---|
+| `delete_company` / `delete_product` / `delete_launch` / `delete_funding` / `delete_relation` / `delete_news` | 公司主表 / 产品 / 发射 / 融资 / 关系 / 动态 | 按 id 删；**先删子表再删主表**（product/launch/funding/relation/news 依赖 company） |
+| `delete_accident` / `delete_regulation` | 事故 / 法规 | 按 id 删 |
+| `delete_site` | 航天设施 | 按 id 删 |
+| `delete_review_finding` / `delete_review_case` | 审查发现项 / 审查案件 | **先删发现项再删案件**（findings 依赖 case）；无级联 |
+
+规则：`id` 必传；按 `id + user_id` 双重过滤（只能删自己的数据）；**幂等**——
+不存在的 id 返回 `affected:0` 不报错；响应同 post：`{"rows":[],"affected":n,"last_insert_id":n}`
+（affected=0 时可能省略该字段）。
+
 ## pageDesc 指令表（情报舱地图联动）
 
 | 指令 | argv | 返回/效果 |
@@ -142,7 +156,7 @@ ui:
 | `focus_site` | `--name <名称>` | 聚焦设施并弹情报卡（中英模糊） |
 | `focus_company` | `--name <名称>` | 聚焦公司总部并弹公司卡 |
 | `open_accident` | `--title <模糊>` 或 `--id` | 聚焦事故点并弹事故卡 |
-| `locate` | `--name <任意地名>` | 地理编码定位任意地点（三维地球飞达+青色定位钉），如 `酒泉`、`Cape Canaveral`；编码服务 OSM Nominatim（免 key，依赖外网，偶发超时可重试） |
+| `locate` | `--name <任意地名>` | 地理编码定位任意地点（三维地球飞达+青色定位钉，中文名优先 open-meteo GeoNames，如 `西安`、`Jiuquan`；外部服务不可达时自动回退库内设施/公司/事故模糊匹配） |
 | `set_layers` | `--sites/--companies/--accidents on\|off` | 开关图层 |
 | `clear_card` | 无 | 关闭情报卡 |
 | `list_targets` | 无 | 全部可聚焦目标名清单 |
@@ -278,7 +292,7 @@ suggestion 为 info）→ 5. `review_case_update` 汇总结论：
 | 指令调用返回 HTTP 404 | 误用 curl 调指令：pageDesc 指令是 `exec` action（`{win_id}.{event}`），不是 URL；curl 只能访问 `{url_prefix}/api/*` |
 | `orbital_status.ready=false` | Cesium 引擎/瓦片异步加载中，稍候重试 |
 | 指令报 `{ok:false, error:"not found"}` | 先 `list_targets` 取准确名称（支持中英模糊），或另用 `locate` 定位相近地名 |
-| `locate` 超时/失败 | 编码服务依赖外网（OSM Nominatim），重试；库内目标改用 `focus_site`/`focus_company` |
+| `locate` 超时/失败 | 编码多源自动切换（open-meteo→photon→库内兜底，单源 8s 超时 AbortController），网络全挂时库内目标仍可定位；库内目标建议优先 `focus_site`/`focus_company` |
 | get 响应 `truncated:true` | 加筛选参数（如 `q=`、`status=`）缩小范围后重查 |
 | post 报 `missing sqlx param` | 该端点声明参数缺传：按上文 api 清单补齐（空串或 null 填位） |
 | 窗口越开越多 | 用 `--win <win_id>` 复用已开窗口；多余窗口 `close <win_id>` 关闭 |

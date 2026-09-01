@@ -1,0 +1,1 @@
+DELETE FROM space_review_findings WHERE id = :id AND user_id = :user_id

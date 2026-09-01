@@ -1,0 +1,1 @@
+DELETE FROM space_company_relations WHERE id = :id AND user_id = :user_id
