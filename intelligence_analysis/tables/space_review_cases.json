@@ -1,0 +1,26 @@
+{
+  "title": "合规审查案件表",
+  "description": "合规审查案件主表，记录每次审查申请及总体结论",
+  "fields": [
+    { "name": "id", "type": "string", "required": true, "description": "行 ID（写入方生成，32 位十六进制）" },
+    { "name": "user_id", "type": "string", "required": true, "description": "写入者 uid（服务端注入）" },
+    { "name": "created_at", "type": "time", "required": true },
+    { "name": "updated_at", "type": "time", "required": true },
+    { "name": "company_id", "type": "string", "required": true, "description": "申请公司 ID" },
+    { "name": "case_type", "type": "string", "required": true, "description": "审查类型：launch_application / test_plan / frequency_usage / remote_sensing / other" },
+    { "name": "title", "type": "string", "description": "审查标题/项目名称" },
+    { "name": "materials_list", "type": "text", "description": "材料清单（JSON 格式数组）" },
+    { "name": "submitted_at", "type": "time", "description": "提交日期" },
+    { "name": "status", "type": "string", "description": "pending / in_review / completed / returned" },
+    { "name": "overall_result", "type": "string", "description": "pass / conditional_pass / fail" },
+    { "name": "summary", "type": "text", "description": "审查总结" },
+    { "name": "reviewed_at", "type": "time", "description": "审查完成时间" },
+    { "name": "reviewed_by", "type": "string", "description": "审查人" }
+  ],
+  "indexes": [
+    { "fields": ["company_id"] },
+    { "fields": ["case_type"] },
+    { "fields": ["status"] },
+    { "fields": ["submitted_at"] }
+  ]
+}

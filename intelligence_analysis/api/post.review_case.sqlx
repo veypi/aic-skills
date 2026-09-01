@@ -1,0 +1,2 @@
+INSERT INTO space_review_cases (id, user_id, created_at, updated_at, company_id, case_type, title, materials_list, submitted_at, status)
+VALUES (:id, :user_id, datetime('now'), datetime('now'), :company_id, :case_type, :title, :materials_list, :submitted_at, 'pending')

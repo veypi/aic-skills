@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head><title>商业航天情报分析</title></head>
+<style>
+  /* 壳 host = :vsrc 挂载点。子组件 body{} 规则不落在本节点（scope 只属于壳），
+     故满高布局契约由壳承担：column flex，子页面内容（dashboard 的 wrap / 详情页 .page）直接作 flex 子项 */
+  body { display:flex; flex-direction:column; width:100%; height:100%; }
+  .skill-sub { display:flex; flex-direction:column; width:100%; height:100%; min-height:0; }
+</style>
+<body>
+  <div class="skill-sub" :vsrc="subpage" ref="sub" @mounted="syncDesc"></div>
+</body>
+<script setup>
+  // skill = 单页应用：平台路由 /skills/:scope/:ref/*path? 组件恒为本文件（壳），
+  // 子页面（dashboard/company/accident/...）由本壳按 location 自有路由，:vsrc 直装包内组件。
+  subpage = './dashboard.html'
+  // pageDesc 平台只采集活动路由组件（本壳）的 $data.pageDesc——
+  // 壳不自有指令，转发子组件声明（dashboard 提供地图指令；其余页面为 null）。
+  pageDesc = null
+  syncDesc = () => {
+    const pd = ($refs.sub && $refs.sub.$data) ? $refs.sub.$data.pageDesc : null
+    pageDesc = (pd && typeof pd.desc === 'string' && Array.isArray(pd.commands)) ? pd : null
+  }
+  syncRoute = () => {
+    const m = location.pathname.match(/\/skills\/[^/]+\/[^/]+\/([^/]+)$/)
+    let p = (m && m[1]) || ''
+    if (p === '' || p === 'index.html') p = 'dashboard.html'
+    if (!/^[a-z0-9][a-z0-9-_]*\.html$/i.test(p)) p = 'dashboard.html'
+    subpage = './' + p
+  }
+  syncRoute()
+</script>
+<script>
+  // SPA 内路由变化（平台 vrouter 拦截 <a>/pushState）；独立直开时无 $router，首次 syncRoute 已就绪
+  if ($router && $router.onChange) {
+    $router.onChange(() => {
+      syncRoute()
+      // 换页间隙清空指令面，@mounted 后 syncDesc 重建（防旧页指令残留）
+      pageDesc = null
+    })
+  }
+</script>
+</html>

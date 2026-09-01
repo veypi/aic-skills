@@ -1,0 +1,7 @@
+SELECT id, title, doc_type, issuing_authority, document_number, published_at, effective_at, status, summary, keywords, tags, version, replaces_id
+FROM space_regulations
+WHERE (:q = '' OR title LIKE '%' || :q || '%' OR summary LIKE '%' || :q || '%' OR keywords LIKE '%' || :q || '%' OR content LIKE '%' || :q || '%' OR document_number LIKE '%' || :q || '%')
+  AND (:doc_type = '' OR doc_type = :doc_type)
+  AND (:issuing_authority = '' OR issuing_authority = :issuing_authority)
+  AND (:status = '' OR status = :status)
+ORDER BY published_at DESC

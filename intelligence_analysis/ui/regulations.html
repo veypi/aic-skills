@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head><title>监管知识库 - 商业航天分析</title></head>
+<style>
+  .page { padding:var(--spacing-lg) var(--spacing-xl); max-width:1440px; margin:0 auto; }
+  .breadcrumb { display:flex; align-items:center; gap:var(--spacing-sm); margin-bottom:var(--spacing-md); font-size:var(--font-size-xs); font-family:var(--font-mono); color:var(--text-color-tertiary); }
+  .breadcrumb a { color:var(--color-primary); text-decoration:none; }
+  .breadcrumb a:hover { text-decoration:underline; }
+
+  .hd { display:flex; justify-content:space-between; align-items:flex-end; padding-bottom:var(--spacing-md); border-bottom:1px solid var(--border-color); margin-bottom:var(--spacing-lg); }
+  .hd-left .kicker { font-family:var(--font-mono); font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--color-info); font-weight:var(--font-weight-semibold); display:flex; align-items:center; gap:8px; }
+  .hd-left h1 { font-size:var(--font-size-xl); font-weight:var(--font-weight-bold); color:var(--text-color); margin:6px 0 0; }
+  .hd-left p { font-size:var(--font-size-xs); color:var(--text-color-tertiary); margin:4px 0 0; }
+  .hd-count { font-family:var(--font-mono); font-size:var(--font-size-xs); color:var(--text-color-tertiary); font-variant-numeric:tabular-nums; }
+  .hd-count b { color:var(--text-color); font-size:var(--font-size-lg); }
+  .dot { width:8px; height:8px; border-radius:var(--radius-full); display:inline-block; flex:0 0 auto; }
+  .dot-blue { background:var(--color-info); box-shadow:0 0 0 3px rgba(14,165,233,0.18); animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.45 } }
+
+  .toolbar { display:flex; gap:var(--spacing-sm); margin-bottom:var(--spacing-md); flex-wrap:wrap; align-items:center; }
+  .search { flex:1; min-width:240px; padding:8px 14px; border:1px solid var(--border-color); border-radius:var(--radius-md); font-size:var(--font-size-sm); background:#fff; transition:border-color var(--transition-fast), box-shadow var(--transition-fast); }
+  .search:focus { outline:none; border-color:var(--color-primary); box-shadow:0 0 0 3px rgba(67,97,238,0.1); }
+  select { padding:8px 12px; border:1px solid var(--border-color); border-radius:var(--radius-md); font-size:var(--font-size-sm); background:#fff; cursor:pointer; font-family:var(--font-mono); }
+  select:focus { outline:none; border-color:var(--color-primary); }
+
+  .panel { background:#fff; border:1px solid var(--border-color); border-radius:var(--radius-lg); overflow:hidden; }
+  .tabs { display:flex; gap:2px; padding:0 var(--spacing-md); border-bottom:1px solid var(--border-color); background:var(--bg-color-secondary); overflow-x:auto; scrollbar-width:none; }
+  .tabs::-webkit-scrollbar { display:none; }
+  .tab { padding:10px 14px; font-family:var(--font-mono); font-size:var(--font-size-xs); color:var(--text-color-tertiary); cursor:pointer; border-bottom:2px solid transparent; transition:all var(--transition-fast); white-space:nowrap; font-weight:var(--font-weight-medium); }
+  .tab:hover { color:var(--text-color); }
+  .tab.active { color:var(--color-primary); border-bottom-color:var(--color-primary); font-weight:var(--font-weight-semibold); }
+
+  .rows { display:flex; flex-direction:column; }
+  .r-item { display:flex; flex-direction:column; gap:5px; padding:12px var(--spacing-lg); border-bottom:1px solid var(--border-color); cursor:pointer; transition:background var(--transition-fast); }
+  .r-item:last-child { border-bottom:none; }
+  .r-item:hover { background:var(--bg-color-secondary); }
+  .r-title-row { display:flex; justify-content:space-between; align-items:center; gap:var(--spacing-md); }
+  .r-title { font-weight:var(--font-weight-semibold); font-size:var(--font-size-sm); color:var(--text-color); }
+  .r-date { font-family:var(--font-mono); font-size:var(--font-size-xs); color:var(--text-color-tertiary); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .r-meta { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .r-summary { font-size:var(--font-size-xs); color:var(--text-color-secondary); line-height:1.6; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+
+  .chip { display:inline-flex; align-items:center; font-family:var(--font-mono); font-size:11px; font-weight:var(--font-weight-medium); padding:2px 8px; border-radius:var(--radius-sm); letter-spacing:0.02em; white-space:nowrap; }
+  .chip-primary { background:rgba(67,97,238,0.09); color:var(--color-primary); }
+  .chip-green { background:rgba(34,197,94,0.1); color:#15803d; }
+  .chip-yellow { background:rgba(251,191,36,0.14); color:#b45309; }
+  .chip-blue { background:rgba(14,165,233,0.1); color:#0369a1; }
+  .chip-red { background:rgba(239,68,68,0.1); color:#b91c1c; }
+  .chip-purple { background:rgba(139,92,246,0.1); color:#6d28d9; }
+  .chip-teal { background:rgba(20,184,166,0.1); color:#0f766e; }
+  .chip-gray { background:var(--bg-color-tertiary); color:var(--text-color-secondary); }
+
+  .pagination { display:flex; justify-content:space-between; align-items:center; margin-top:var(--spacing-md); }
+  .pg-info { font-family:var(--font-mono); font-size:var(--font-size-xs); color:var(--text-color-tertiary); font-variant-numeric:tabular-nums; }
+  .pg-btns { display:flex; gap:var(--spacing-sm); }
+  .pagination button { padding:6px 14px; border:1px solid var(--border-color); border-radius:var(--radius-md); background:#fff; cursor:pointer; font-family:var(--font-mono); font-size:var(--font-size-xs); font-weight:var(--font-weight-medium); transition:all var(--transition-fast); }
+  .pagination button:hover:not(:disabled) { border-color:var(--color-primary); color:var(--color-primary); }
+  .pagination button:disabled { opacity:0.4; cursor:default; }
+  .empty { text-align:center; padding:var(--spacing-3xl); color:var(--text-color-tertiary); font-size:var(--font-size-sm); font-family:var(--font-mono); }
+  @media (max-width:768px) {
+    .page { padding:var(--spacing-md); }
+    .toolbar { flex-direction:column; align-items:stretch; }
+    .search { min-width:auto; }
+    .r-summary { display:none; }
+  }
+
+  /* ===== 主题适配层 ===== */
+  .panel, .search, select, .pagination button { background:var(--bg-color-secondary); color:var(--text-color); }
+  .tabs { background:var(--bg-color-tertiary); }
+  .r-item:hover { background:var(--bg-color-tertiary); }
+  .chip-red { color:var(--color-danger); }
+  .chip-yellow { color:var(--color-warning); }
+  .chip-blue { color:var(--color-info); }
+  .chip-primary { color:var(--color-primary); }
+  .chip-green { color:var(--color-success); }
+  .chip-purple { color:#a78bfa; }
+  .chip-teal { color:#2dd4bf; }
+  .chip-gray { background:var(--bg-color-tertiary); color:var(--text-color-secondary); }
+</style>
+<body>
+  <div class="page">
+    <div class="breadcrumb">
+      <a href="index.html">DASHBOARD</a><span>/</span><span>REGULATIONS</span>
+    </div>
+    <div class="hd">
+      <div class="hd-left">
+        <div class="kicker"><span class="dot dot-blue"></span>Regulatory Knowledge Base</div>
+        <h1>监管知识库</h1>
+        <p>法律法规 · 政策文件 · 标准规范 · 审批规则 · 技术指南 · 监管经验</p>
+      </div>
+      <div class="hd-count"><b>{{ total }}</b> 条知识</div>
+    </div>
+
+    <div class="toolbar">
+      <input class="search" v:value="keyword" @input="search" placeholder="搜索标题、关键词...">
+      <select v:value="filterAuthority" @change="search">
+        <option value="">全部机构</option>
+        <option v-for="a in authorities" :value="a">{{ a }}</option>
+      </select>
+      <select v:value="filterStatus" @change="search">
+        <option value="">全部状态</option>
+        <option value="现行有效">现行有效</option>
+        <option value="已修订">已修订</option>
+        <option value="修订中">修订中</option>
+        <option value="已废止">已废止</option>
+      </select>
+    </div>
+
+    <div class="panel">
+      <div class="tabs">
+        <div :class="'tab ' + (filterType === '' ? 'active' : '')" @click="setType('')">全部</div>
+        <div :class="'tab ' + (filterType === 'law' ? 'active' : '')" @click="setType('law')">法律</div>
+        <div :class="'tab ' + (filterType === 'regulation' ? 'active' : '')" @click="setType('regulation')">行政法规</div>
+        <div :class="'tab ' + (filterType === 'policy' ? 'active' : '')" @click="setType('policy')">政策文件</div>
+        <div :class="'tab ' + (filterType === 'standard' ? 'active' : '')" @click="setType('standard')">标准规范</div>
+        <div :class="'tab ' + (filterType === 'approval_rule' ? 'active' : '')" @click="setType('approval_rule')">审批规则</div>
+        <div :class="'tab ' + (filterType === 'technical_guide' ? 'active' : '')" @click="setType('technical_guide')">技术指南</div>
+        <div :class="'tab ' + (filterType === 'regulatory_experience' ? 'active' : '')" @click="setType('regulatory_experience')">监管经验</div>
+      </div>
+
+      <div v-if="items.length === 0" class="empty">NO DATA</div>
+      <div class="rows" v-else>
+        <div v-for="r in items" class="r-item" @click="nav('regulation.html?id=' + r.id)">
+          <div class="r-title-row">
+            <div class="r-title">{{ r.title }}</div>
+            <span class="r-date">{{ dateStr(r.published_at) }}</span>
+          </div>
+          <div class="r-meta">
+            <span :class="'chip ' + typeChip(r.doc_type)">{{ typeLabel(r.doc_type) }}</span>
+            <span class="chip chip-gray" v-if="r.issuing_authority">{{ r.issuing_authority }}</span>
+            <span class="chip chip-gray" v-if="r.document_number">{{ r.document_number }}</span>
+            <span :class="'chip ' + statusChip(r.status)" v-if="r.status">{{ r.status }}</span>
+          </div>
+          <div class="r-summary" v-if="r.summary">{{ r.summary }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pagination" v-if="total > size">
+      <span class="pg-info">PAGE {{ page }} / {{ Math.ceil(total / size) }} · TOTAL {{ total }}</span>
+      <div class="pg-btns">
+        <button @click="go(page - 1)" :disabled="page <= 1">&#8592; PREV</button>
+        <button @click="go(page + 1)" :disabled="page >= Math.ceil(total / size)">NEXT &#8594;</button>
+      </div>
+    </div>
+  </div>
+</body>
+<script setup>
+  keyword = ''
+  filterType = ''
+  filterAuthority = ''
+  filterStatus = ''
+  authorities = []
+  rows = []
+  items = []
+  page = 1
+  size = 20
+  total = 0
+  typeLabels = { law:'法律', regulation:'行政法规', policy:'政策文件', standard:'标准规范', approval_rule:'审批规则', technical_guide:'技术指南', regulatory_experience:'监管经验' }
+  typeLabel = (t) => typeLabels[t] || t
+  typeChip = (t) => ({ law:'chip-red', regulation:'chip-primary', policy:'chip-blue', standard:'chip-teal', approval_rule:'chip-yellow', technical_guide:'chip-purple', regulatory_experience:'chip-green' })[t] || 'chip-gray'
+  statusChip = (s) => ({ '现行有效':'chip-green', '已废止':'chip-red', '已修订':'chip-yellow', '修订中':'chip-yellow' })[s] || 'chip-gray'
+  dateStr = (d) => d ? d.substring(0,10) : '未知'
+
+  nav = (url) => { try { if ($router) { $router.push(url); return } } catch (e) {} location.href = url }
+
+  apiGet = async (name, params) => {
+    const usp = new URLSearchParams(params || {})
+    const r = await fetch('api/' + name + (usp.toString() ? '?' + usp.toString() : ''))
+    if (!r.ok) throw new Error('api ' + name + ' HTTP ' + r.status)
+    const d = await r.json()
+    return d.rows || []
+  }
+
+  setType = (t) => { filterType = t; page = 1; load() }
+  search = () => { page = 1; load() }
+  go = (p) => { page = p; applyPage() }
+  applyPage = () => {
+    items = rows.slice((page - 1) * size, page * size)
+  }
+  load = async () => {
+    try {
+      rows = await apiGet('regulations', { q: keyword, doc_type: filterType, issuing_authority: filterAuthority, status: filterStatus })
+      total = rows.length
+      applyPage()
+    } catch(e) {}
+  }
+</script>
+<script>
+  load()
+  // 机构选项：全量（不受筛选影响）一次拉取后本地归纳
+  ;(async () => {
+    try {
+      const all = await apiGet('regulations', { q: '', doc_type: '', issuing_authority: '', status: '' })
+      const set = {}
+      all.forEach(function(i){ if(i.issuing_authority) set[i.issuing_authority] = true })
+      authorities = Object.keys(set).sort()
+    } catch(e) {}
+  })()
+</script>
+</html>

@@ -1,0 +1,2 @@
+INSERT INTO space_sites (id, user_id, created_at, updated_at, name, name_en, site_type, country, region, lat, lng, operator, status, established, description, source)
+VALUES (:id, :user_id, datetime('now'), datetime('now'), :name, :name_en, :site_type, :country, :region, :lat, :lng, :operator, :status, :established, :description, :source)

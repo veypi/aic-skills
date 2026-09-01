@@ -1,0 +1,3 @@
+SELECT id, title, doc_type, issuing_authority, document_number, published_at, effective_at, status, summary, content, keywords, tags, source, source_url, version, replaces_id, notes
+FROM space_regulations
+WHERE id = :id

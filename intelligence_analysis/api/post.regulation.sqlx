@@ -1,0 +1,2 @@
+INSERT INTO space_regulations (id, user_id, created_at, updated_at, title, doc_type, issuing_authority, document_number, published_at, effective_at, status, summary, content, keywords, tags, source, source_url, version, replaces_id, notes)
+VALUES (:id, :user_id, datetime('now'), datetime('now'), :title, :doc_type, :issuing_authority, :document_number, :published_at, :effective_at, :status, :summary, :content, :keywords, :tags, :source, :source_url, :version, :replaces_id, :notes)

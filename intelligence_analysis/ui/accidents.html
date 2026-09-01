@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head><title>事故案例库 - 商业航天分析</title></head>
+<style>
+  .page { padding:var(--spacing-lg) var(--spacing-xl); max-width:1440px; margin:0 auto; }
+  .breadcrumb { display:flex; align-items:center; gap:var(--spacing-sm); margin-bottom:var(--spacing-md); font-size:var(--font-size-xs); font-family:var(--font-mono); color:var(--text-color-tertiary); }
+  .breadcrumb a { color:var(--color-primary); text-decoration:none; }
+  .breadcrumb a:hover { text-decoration:underline; }
+
+  .hd { display:flex; justify-content:space-between; align-items:flex-end; padding-bottom:var(--spacing-md); border-bottom:1px solid var(--border-color); margin-bottom:var(--spacing-lg); }
+  .hd-left .kicker { font-family:var(--font-mono); font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--color-danger); font-weight:var(--font-weight-semibold); display:flex; align-items:center; gap:8px; }
+  .hd-left h1 { font-size:var(--font-size-xl); font-weight:var(--font-weight-bold); color:var(--text-color); margin:6px 0 0; }
+  .hd-left p { font-size:var(--font-size-xs); color:var(--text-color-tertiary); margin:4px 0 0; }
+  .hd-count { font-family:var(--font-mono); font-size:var(--font-size-xs); color:var(--text-color-tertiary); font-variant-numeric:tabular-nums; }
+  .hd-count b { color:var(--text-color); font-size:var(--font-size-lg); }
+
+  .dot { width:8px; height:8px; border-radius:var(--radius-full); display:inline-block; flex:0 0 auto; }
+  .dot-red { background:var(--color-danger); box-shadow:0 0 0 3px rgba(239,68,68,0.18); animation:pulse 2s infinite; }
+  .sev-dot { width:8px; height:8px; border-radius:var(--radius-full); display:inline-block; flex:0 0 auto; }
+  .sev-致命 { background:#dc2626; box-shadow:0 0 0 2px rgba(220,38,38,0.2); }
+  .sev-重大 { background:#f97316; box-shadow:0 0 0 2px rgba(249,115,22,0.18); }
+  .sev-较大 { background:#eab308; box-shadow:0 0 0 2px rgba(234,179,8,0.18); }
+  .sev-一般 { background:#3b82f6; box-shadow:0 0 0 2px rgba(59,130,246,0.16); }
+  @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.45 } }
+
+  .toolbar { display:flex; gap:var(--spacing-sm); margin-bottom:var(--spacing-md); flex-wrap:wrap; align-items:center; }
+  .search { flex:1; min-width:240px; padding:8px 14px; border:1px solid var(--border-color); border-radius:var(--radius-md); font-size:var(--font-size-sm); background:#fff; transition:border-color var(--transition-fast), box-shadow var(--transition-fast); }
+  .search:focus { outline:none; border-color:var(--color-primary); box-shadow:0 0 0 3px rgba(67,97,238,0.1); }
+  select { padding:8px 12px; border:1px solid var(--border-color); border-radius:var(--radius-md); font-size:var(--font-size-sm); background:#fff; cursor:pointer; font-family:var(--font-mono); }
+  select:focus { outline:none; border-color:var(--color-primary); }
+
+  .panel { background:#fff; border:1px solid var(--border-color); border-radius:var(--radius-lg); overflow:hidden; }
+  .tabs { display:flex; gap:2px; padding:0 var(--spacing-md); border-bottom:1px solid var(--border-color); background:var(--bg-color-secondary); overflow-x:auto; scrollbar-width:none; }
+  .tabs::-webkit-scrollbar { display:none; }
+  .tab { padding:10px 14px; font-family:var(--font-mono); font-size:var(--font-size-xs); color:var(--text-color-tertiary); cursor:pointer; border-bottom:2px solid transparent; transition:all var(--transition-fast); white-space:nowrap; font-weight:var(--font-weight-medium); }
+  .tab:hover { color:var(--text-color); }
+  .tab.active { color:var(--color-primary); border-bottom-color:var(--color-primary); font-weight:var(--font-weight-semibold); }
+
+  .rows { display:flex; flex-direction:column; }
+  .r-item { display:flex; gap:var(--spacing-md); padding:13px var(--spacing-lg); border-bottom:1px solid var(--border-color); cursor:pointer; transition:background var(--transition-fast); align-items:flex-start; }
+  .r-item:last-child { border-bottom:none; }
+  .r-item:hover { background:var(--bg-color-secondary); }
+  .r-sev { padding-top:5px; }
+  .r-body { flex:1; min-width:0; display:flex; flex-direction:column; gap:5px; }
+  .r-title-row { display:flex; justify-content:space-between; align-items:center; gap:var(--spacing-md); }
+  .r-title { font-weight:var(--font-weight-semibold); font-size:var(--font-size-sm); color:var(--text-color); }
+  .r-meta { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .r-summary { font-size:var(--font-size-xs); color:var(--text-color-secondary); line-height:1.6; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .r-date { font-family:var(--font-mono); font-size:var(--font-size-xs); color:var(--text-color-tertiary); font-variant-numeric:tabular-nums; white-space:nowrap; }
+
+  .chip { display:inline-flex; align-items:center; font-family:var(--font-mono); font-size:11px; font-weight:var(--font-weight-medium); padding:2px 8px; border-radius:var(--radius-sm); letter-spacing:0.02em; white-space:nowrap; }
+  .chip-red { background:rgba(239,68,68,0.1); color:#b91c1c; }
+  .chip-yellow { background:rgba(251,191,36,0.14); color:#b45309; }
+  .chip-blue { background:rgba(14,165,233,0.1); color:#0369a1; }
+  .chip-primary { background:rgba(67,97,238,0.09); color:var(--color-primary); }
+  .chip-green { background:rgba(34,197,94,0.1); color:#15803d; }
+  .chip-gray { background:var(--bg-color-tertiary); color:var(--text-color-secondary); }
+
+  .pagination { display:flex; justify-content:space-between; align-items:center; margin-top:var(--spacing-md); }
+  .pg-info { font-family:var(--font-mono); font-size:var(--font-size-xs); color:var(--text-color-tertiary); font-variant-numeric:tabular-nums; }
+  .pg-btns { display:flex; gap:var(--spacing-sm); }
+  .pagination button { padding:6px 14px; border:1px solid var(--border-color); border-radius:var(--radius-md); background:#fff; cursor:pointer; font-family:var(--font-mono); font-size:var(--font-size-xs); font-weight:var(--font-weight-medium); transition:all var(--transition-fast); }
+  .pagination button:hover:not(:disabled) { border-color:var(--color-primary); color:var(--color-primary); }
+  .pagination button:disabled { opacity:0.4; cursor:default; }
+  .empty { text-align:center; padding:var(--spacing-3xl); color:var(--text-color-tertiary); font-size:var(--font-size-sm); font-family:var(--font-mono); }
+  @media (max-width:768px) {
+    .page { padding:var(--spacing-md); }
+    .toolbar { flex-direction:column; align-items:stretch; }
+    .search { min-width:auto; }
+    .r-summary { display:none; }
+  }
+
+  /* ===== 主题适配层 ===== */
+  .panel, .search, select, .pagination button { background:var(--bg-color-secondary); color:var(--text-color); }
+  .tabs { background:var(--bg-color-tertiary); }
+  .r-item:hover { background:var(--bg-color-tertiary); }
+  .chip-red { color:var(--color-danger); }
+  .chip-yellow { color:var(--color-warning); }
+  .chip-blue { color:var(--color-info); }
+  .chip-primary { color:var(--color-primary); }
+  .chip-green { color:var(--color-success); }
+  .chip-gray { background:var(--bg-color-tertiary); color:var(--text-color-secondary); }
+</style>
+<body>
+  <div class="page">
+    <div class="breadcrumb">
+      <a href="index.html">DASHBOARD</a><span>/</span><span>ACCIDENTS</span>
+    </div>
+    <div class="hd">
+      <div class="hd-left">
+        <div class="kicker"><span class="dot dot-red"></span>Accident Case Library</div>
+        <h1>事故案例库</h1>
+        <p>发射事故 · 地面测试 · 设施事故 · 发动机测试 — 追溯根因与经验教训</p>
+      </div>
+      <div class="hd-count"><b>{{ total }}</b> 条案例</div>
+    </div>
+
+    <div class="toolbar">
+      <input class="search" v:value="keyword" @input="search" placeholder="搜索标题、公司、火箭、任务...">
+      <select v:value="filterSeverity" @change="search">
+        <option value="">全部严重程度</option>
+        <option value="致命">致命</option>
+        <option value="重大">重大</option>
+        <option value="较大">较大</option>
+        <option value="一般">一般</option>
+      </select>
+      <select v:value="filterStatus" @change="search">
+        <option value="">全部调查状态</option>
+        <option value="调查中">调查中</option>
+        <option value="已结案">已结案</option>
+      </select>
+    </div>
+
+    <div class="panel">
+      <div class="tabs">
+        <div :class="'tab ' + (filterType === '' ? 'active' : '')" @click="setType('')">全部</div>
+        <div :class="'tab ' + (filterType === '飞行事故' ? 'active' : '')" @click="setType('飞行事故')">飞行事故</div>
+        <div :class="'tab ' + (filterType === '地面测试事故' ? 'active' : '')" @click="setType('地面测试事故')">地面测试事故</div>
+        <div :class="'tab ' + (filterType === '设施事故' ? 'active' : '')" @click="setType('设施事故')">设施事故</div>
+        <div :class="'tab ' + (filterType === '发动机测试' ? 'active' : '')" @click="setType('发动机测试')">发动机测试</div>
+      </div>
+
+      <div v-if="items.length === 0" class="empty">NO DATA</div>
+      <div class="rows" v-else>
+        <div v-for="a in items" class="r-item" @click="nav('accident.html?id=' + a.id)">
+          <div class="r-sev"><span :class="'sev-dot ' + sevClass(a.severity)" :title="a.severity"></span></div>
+          <div class="r-body">
+            <div class="r-title-row">
+              <div class="r-title">{{ a.title }}</div>
+              <span class="r-date">{{ dateStr(a.incident_date) }}</span>
+            </div>
+            <div class="r-meta">
+              <span :class="'chip ' + typeChip(a.accident_type)">{{ a.accident_type }}</span>
+              <span class="chip chip-gray" v-if="a.company_name">{{ a.company_name }}</span>
+              <span class="chip chip-gray" v-if="a.vehicle">{{ a.vehicle }}</span>
+              <span :class="'chip ' + statusChip(a.investigation_status)" v-if="a.investigation_status">{{ a.investigation_status }}</span>
+            </div>
+            <div class="r-summary" v-if="a.description">{{ a.description }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pagination" v-if="total > size">
+      <span class="pg-info">PAGE {{ page }} / {{ Math.ceil(total / size) }} · TOTAL {{ total }}</span>
+      <div class="pg-btns">
+        <button @click="go(page - 1)" :disabled="page <= 1">&#8592; PREV</button>
+        <button @click="go(page + 1)" :disabled="page >= Math.ceil(total / size)">NEXT &#8594;</button>
+      </div>
+    </div>
+  </div>
+</body>
+<script setup>
+  keyword = ''
+  filterType = ''
+  filterSeverity = ''
+  filterStatus = ''
+  rows = []
+  items = []
+  page = 1
+  size = 20
+  total = 0
+  sevClass = (s) => 'sev-' + (s || '一般')
+  typeChip = (t) => ({ '飞行事故':'chip-red', '地面测试事故':'chip-yellow', '设施事故':'chip-blue', '发动机测试':'chip-primary' })[t] || 'chip-gray'
+  statusChip = (s) => ({ '调查中':'chip-yellow', '已结案':'chip-green', '报告已发布':'chip-primary' })[s] || 'chip-gray'
+  dateStr = (d) => d ? d.substring(0,10) : '未知'
+
+  nav = (url) => { try { if ($router) { $router.push(url); return } } catch (e) {} location.href = url }
+
+  apiGet = async (name, params) => {
+    const usp = new URLSearchParams(params || {})
+    const r = await fetch('api/' + name + (usp.toString() ? '?' + usp.toString() : ''))
+    if (!r.ok) throw new Error('api ' + name + ' HTTP ' + r.status)
+    const d = await r.json()
+    return d.rows || []
+  }
+
+  setType = (t) => { filterType = t; page = 1; load() }
+  search = () => { page = 1; load() }
+  go = (p) => { page = p; applyPage() }
+  applyPage = () => {
+    items = rows.slice((page - 1) * size, page * size)
+  }
+  load = async () => {
+    try {
+      rows = await apiGet('accidents', { q: keyword, accident_type: filterType, severity: filterSeverity, investigation_status: filterStatus })
+      total = rows.length
+      applyPage()
+    } catch(e) {}
+  }
+</script>
+<script>load()</script>
+</html>

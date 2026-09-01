@@ -1,0 +1,7 @@
+SELECT id, title, incident_date, location, company_name, company_id, vehicle, accident_type, severity, phase, casualties, investigation_status, description
+FROM space_accidents
+WHERE (:q = '' OR title LIKE '%' || :q || '%' OR company_name LIKE '%' || :q || '%' OR vehicle LIKE '%' || :q || '%' OR keywords LIKE '%' || :q || '%')
+  AND (:accident_type = '' OR accident_type = :accident_type)
+  AND (:severity = '' OR severity = :severity)
+  AND (:investigation_status = '' OR investigation_status = :investigation_status)
+ORDER BY incident_date DESC

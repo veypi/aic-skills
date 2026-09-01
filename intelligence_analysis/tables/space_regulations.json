@@ -1,0 +1,34 @@
+{
+  "title": "监管知识库",
+  "description": "商业航天监管知识体系：法律法规、政策文件、标准规范、审批规则、技术指南、监管经验的统一管理，独立于事故案例库",
+  "fields": [
+    { "name": "id", "type": "string", "required": true, "description": "行 ID（写入方生成，32 位十六进制）" },
+    { "name": "user_id", "type": "string", "required": true, "description": "写入者 uid（服务端注入）" },
+    { "name": "created_at", "type": "time", "required": true },
+    { "name": "updated_at", "type": "time", "required": true },
+    { "name": "title", "type": "string", "description": "文档标题", "required": true },
+    { "name": "doc_type", "type": "string", "description": "文档类型", "required": true, "enum": ["law", "regulation", "policy", "standard", "approval_rule", "technical_guide", "regulatory_experience"] },
+    { "name": "issuing_authority", "type": "string", "description": "发布/制定机构" },
+    { "name": "document_number", "type": "string", "description": "文号/标准号（如 GB/T 12345-2023）" },
+    { "name": "published_at", "type": "time", "description": "发布日期" },
+    { "name": "effective_at", "type": "time", "description": "生效/实施日期" },
+    { "name": "status", "type": "string", "description": "效力状态：现行有效/已废止/已修订/修订中" },
+    { "name": "summary", "type": "text", "description": "内容摘要" },
+    { "name": "content", "type": "text", "description": "全文/详细内容" },
+    { "name": "keywords", "type": "text", "description": "搜索关键词，逗号分隔" },
+    { "name": "tags", "type": "text", "description": "标签，逗号分隔" },
+    { "name": "source", "type": "string", "description": "来源" },
+    { "name": "source_url", "type": "text", "description": "原文链接" },
+    { "name": "version", "type": "string", "description": "版本号" },
+    { "name": "replaces_id", "type": "string", "description": "被替换/废止的文档ID（用于版本追溯）" },
+    { "name": "notes", "type": "text", "description": "监管经验备注" }
+  ],
+  "indexes": [
+    { "name": "idx_reg_title", "fields": ["title"] },
+    { "name": "idx_reg_doc_type", "fields": ["doc_type"] },
+    { "name": "idx_reg_authority", "fields": ["issuing_authority"] },
+    { "name": "idx_reg_doc_number", "fields": ["document_number"] },
+    { "name": "idx_reg_status", "fields": ["status"] },
+    { "name": "idx_reg_published_at", "fields": ["published_at"] }
+  ]
+}

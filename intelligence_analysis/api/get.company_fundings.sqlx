@@ -1,0 +1,4 @@
+SELECT id, round, amount, currency, announced_at, investors, valuation, source
+FROM space_fundings
+WHERE company_id = :company_id
+ORDER BY announced_at DESC

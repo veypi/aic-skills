@@ -1,0 +1,4 @@
+SELECT id, name, name_en, sub_sector, status, headquarters, established_at, founder, employee_count, description, hq_lat, hq_lng
+FROM space_companies
+WHERE hq_lat IS NOT NULL AND hq_lng IS NOT NULL
+ORDER BY name

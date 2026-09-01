@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html>
+<head><title>商业航天情报分析</title></head>
+<style>
+  :root {
+    --ink: #05080f;
+    --ink-panel: #0a0f1a;
+    --ink-panel-2: #0d1524;
+    --ink-border: #1c2942;
+    --ink-border-strong: #2a3d5f;
+    --ink-text: #e2e8f0;
+    --ink-text-2: #8b98b8;
+    --ink-text-3: #4d5b7a;
+    --ink-cyan: #22d3ee;
+    --ink-amber: #f59e0b;
+    --ink-red: #ef4444;
+    --ink-blue: #3b82f6;
+    --ink-purple: #a78bfa;
+    --ink-green: #34d399;
+  }
+  /* 布局锚点：经壳嵌套时组件 body{} 规则不生效（host scope 属壳），满高布局落在本 wrap 上；
+     独立直开时 body 规则提供同契约。两者同声明，保证两条路径一致 */
+  body { display:flex; flex-direction:column; width:100%; height:100%; background:var(--ink); color:var(--ink-text); font-family:var(--font-mono); overflow:hidden; }
+  .dash { display:flex; flex-direction:column; width:100%; height:100%; }
+
+  /* ===== Top bar ===== */
+  .topbar { height:48px; flex:0 0 auto; display:flex; align-items:center; gap:var(--spacing-md); padding:0 var(--spacing-md); background:var(--ink-panel); border-bottom:1px solid var(--ink-border); }
+  .brand { display:flex; align-items:center; gap:10px; }
+  .brand .logo { width:22px; height:22px; border-radius:var(--radius-full); border:2px solid var(--ink-cyan); position:relative; animation:spin 12s linear infinite; }
+  .brand .logo::after { content:''; position:absolute; top:50%; left:50%; width:6px; height:6px; margin:-3px 0 0 -3px; border-radius:var(--radius-full); background:var(--ink-cyan); box-shadow:0 0 8px var(--ink-cyan); }
+  @keyframes spin { to { transform:rotate(360deg) } }
+  .brand .name { font-size:13px; font-weight:var(--font-weight-bold); letter-spacing:0.18em; color:var(--ink-text); }
+  .brand .name b { color:var(--ink-cyan); }
+  .brand .cn { font-size:11px; color:var(--ink-text-2); letter-spacing:0.1em; }
+
+  .layers { display:flex; gap:6px; margin-left:var(--spacing-md); }
+  .lyr { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border:1px solid var(--ink-border); border-radius:var(--radius-sm); font-size:11px; color:var(--ink-text-2); cursor:pointer; user-select:none; transition:all var(--transition-fast); background:transparent; letter-spacing:0.05em; }
+  .lyr:hover { border-color:var(--ink-border-strong); color:var(--ink-text); }
+  .lyr.on { background:var(--ink-panel-2); color:var(--ink-text); border-color:var(--ink-border-strong); }
+  .lyr .ld { width:7px; height:7px; border-radius:var(--radius-full); background:var(--c,#fff); box-shadow:0 0 6px var(--c,#fff); }
+  .lyr:not(.on) .ld { background:var(--ink-text-3); box-shadow:none; }
+  .lyr .cnt { font-variant-numeric:tabular-nums; color:var(--ink-text-3); }
+  .lyr.on .cnt { color:var(--ink-text-2); }
+
+  .top-right { margin-left:auto; display:flex; align-items:center; gap:var(--spacing-md); font-size:11px; color:var(--ink-text-2); }
+  .utc { font-variant-numeric:tabular-nums; letter-spacing:0.08em; }
+  .live { display:inline-flex; align-items:center; gap:6px; color:var(--ink-green); font-weight:var(--font-weight-semibold); letter-spacing:0.1em; }
+  .pulse { width:7px; height:7px; border-radius:var(--radius-full); background:var(--ink-green); box-shadow:0 0 8px var(--ink-green); animation:blink 1.6s infinite; }
+  @keyframes blink { 0%,100% { opacity:1 } 50% { opacity:0.3 } }
+
+  /* ===== Main ===== */
+  .main { flex:1; display:flex; min-height:0; }
+
+  .map-zone { flex:1; position:relative; min-width:0; background:radial-gradient(ellipse at 50% 40%, #081020 0%, var(--ink) 75%); }
+  #map { position:absolute; inset:0; }
+  .map-loading { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--ink-text-3); font-size:12px; letter-spacing:0.2em; }
+
+  .corner { position:absolute; width:18px; height:18px; border:1px solid var(--ink-border-strong); pointer-events:none; z-index:5; }
+  .corner.tl { top:10px; left:10px; border-right:none; border-bottom:none; }
+  .corner.tr { top:10px; right:10px; border-left:none; border-bottom:none; }
+  .corner.bl { bottom:10px; left:10px; border-right:none; border-top:none; }
+  .corner.br { bottom:10px; right:10px; border-left:none; border-top:none; }
+
+  .map-hint { position:absolute; top:14px; left:50%; transform:translateX(-50%); font-size:10px; letter-spacing:0.22em; color:var(--ink-text-3); pointer-events:none; z-index:5; }
+
+  /* ===== Intel card ===== */
+  .card { position:absolute; left:16px; bottom:16px; width:360px; max-width:calc(100% - 32px); background:rgba(10,15,26,0.94); border:1px solid var(--ink-border-strong); border-radius:var(--radius-md); backdrop-filter:blur(6px); z-index:10; transform:translateY(12px); opacity:0; pointer-events:none; transition:all var(--transition-base); box-shadow:0 12px 40px rgba(0,0,0,0.5); }
+  .card.show { transform:translateY(0); opacity:1; pointer-events:auto; }
+  .card-hd { display:flex; align-items:center; gap:8px; padding:10px 14px; border-bottom:1px solid var(--ink-border); font-size:10px; letter-spacing:0.16em; color:var(--ink-text-2); font-weight:var(--font-weight-semibold); }
+  .card-hd .kdot { width:8px; height:8px; border-radius:2px; background:var(--kc,var(--ink-cyan)); box-shadow:0 0 8px var(--kc,var(--ink-cyan)); }
+  .card-close { margin-left:auto; cursor:pointer; color:var(--ink-text-3); font-size:14px; line-height:1; padding:2px 4px; }
+  .card-close:hover { color:var(--ink-text); }
+  .card-bd { padding:12px 14px; max-height:300px; overflow-y:auto; }
+  .card-name { font-size:15px; font-weight:var(--font-weight-bold); color:var(--ink-text); line-height:1.35; }
+  .card-sub { font-size:11px; color:var(--ink-text-2); margin-top:2px; }
+  .card-chips { display:flex; gap:5px; flex-wrap:wrap; margin-top:8px; }
+  .kchip { font-size:10px; padding:2px 7px; border-radius:2px; background:var(--ink-panel-2); border:1px solid var(--ink-border); color:var(--ink-text-2); letter-spacing:0.04em; }
+  .kchip.hl { color:var(--kc,var(--ink-cyan)); border-color:var(--kc,var(--ink-cyan)); }
+  .card-desc { font-size:12px; line-height:1.7; color:var(--ink-text-2); margin-top:10px; font-family:var(--font-body, inherit); }
+  .card-kv { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--ink-border); border:1px solid var(--ink-border); border-radius:var(--radius-sm); overflow:hidden; margin-top:10px; }
+  .card-kv .kv { background:var(--ink-panel); padding:7px 10px; }
+  .kv .k { font-size:9px; letter-spacing:0.14em; color:var(--ink-text-3); text-transform:uppercase; }
+  .kv .v { font-size:12px; color:var(--ink-text); margin-top:2px; font-variant-numeric:tabular-nums; }
+  .card-ft { display:flex; gap:8px; padding:10px 14px; border-top:1px solid var(--ink-border); }
+  .btn-go { flex:1; padding:7px 10px; background:transparent; border:1px solid var(--ink-border-strong); color:var(--ink-text-2); border-radius:var(--radius-sm); font-family:var(--font-mono); font-size:11px; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; }
+  .btn-go:hover { color:var(--ink-text); border-color:var(--ink-text-2); }
+
+  /* ===== Status bar ===== */
+  .statusbar { height:32px; flex:0 0 auto; display:flex; align-items:center; gap:var(--spacing-lg); padding:0 var(--spacing-md); background:var(--ink-panel); border-top:1px solid var(--ink-border); font-size:10px; letter-spacing:0.1em; color:var(--ink-text-3); overflow:hidden; white-space:nowrap; }
+  .statusbar .st { display:inline-flex; align-items:center; gap:6px; }
+  .statusbar .st b { color:var(--ink-text-2); font-variant-numeric:tabular-nums; font-weight:var(--font-weight-semibold); }
+  .statusbar .sep { color:var(--ink-border-strong); }
+
+  @media (max-width:900px) {
+    .brand .cn { display:none; }
+    .card { width:calc(100% - 32px); }
+  }
+</style>
+<body>
+  <div class="dash">
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <span class="name">ORBITAL<b>INTEL</b></span>
+      <span class="cn">商业航天情报分析</span>
+    </div>
+    <div class="layers">
+      <span :class="'lyr ' + (layers.sites ? 'on' : '')" style="--c:var(--ink-amber)" @click="toggleLayer('sites')"><span class="ld"></span>发射场 <span class="cnt">{{ counts.sites }}</span></span>
+      <span :class="'lyr ' + (layers.companies ? 'on' : '')" style="--c:var(--ink-blue)" @click="toggleLayer('companies')"><span class="ld"></span>公司 <span class="cnt">{{ counts.companies }}</span></span>
+      <span :class="'lyr ' + (layers.accidents ? 'on' : '')" style="--c:var(--ink-red)" @click="toggleLayer('accidents')"><span class="ld"></span>事故 <span class="cnt">{{ counts.accidents }}</span></span>
+    </div>
+    <div class="top-right">
+      <span class="utc">{{ utcTime }}</span>
+      <span class="live"><span class="pulse"></span>LIVE</span>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="map-zone">
+      <div id="map"></div>
+      <div class="map-loading" v-if="!mapReady">INITIALIZING GLOBAL SCAN...</div>
+      <div class="corner tl"></div>
+      <div class="corner tr"></div>
+      <div class="corner bl"></div>
+      <div class="corner br"></div>
+      <div class="map-hint">GLOBAL SPACE SITUATIONAL AWARENESS</div>
+
+      <div :class="'card ' + (card.show ? 'show' : '')" :style="'--kc:' + card.color">
+        <div class="card-hd">
+          <span class="kdot"></span>{{ card.kindLabel }}
+          <span class="card-close" @click="closeCard()">&#10005;</span>
+        </div>
+        <div class="card-bd">
+          <div class="card-name">{{ card.name }}</div>
+          <div class="card-sub" v-if="card.sub">{{ card.sub }}</div>
+          <div class="card-chips">
+            <span v-for="c in card.chips" class="kchip">{{ c }}</span>
+          </div>
+          <div class="card-desc" v-if="card.desc">{{ card.desc }}</div>
+          <div class="card-kv" v-if="card.kvs.length">
+            <div v-for="kv in card.kvs" class="kv">
+              <div class="k">{{ kv.k }}</div>
+              <div class="v">{{ kv.v }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="card-ft">
+          <span class="btn-go" v-if="card.link" @click="openDetail()">详情 &#8599;</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="statusbar">
+    <span class="st">SITES <b>{{ counts.sites }}</b></span><span class="sep">/</span>
+    <span class="st">COMPANIES <b>{{ counts.companies }}</b></span><span class="sep">/</span>
+    <span class="st">ACCIDENTS <b>{{ counts.accidents }}</b></span><span class="sep">/</span>
+    <span class="st">REGULATIONS <b>{{ counts.regulations }}</b></span><span class="sep">/</span>
+    <span class="st">REVIEW CASES <b>{{ counts.reviews }}</b></span><span class="sep">/</span>
+    <span class="st">LAUNCH RECORDS <b>{{ counts.launches }}</b></span>
+  </div>
+  </div>
+</body>
+<script setup>
+  import { store } from './lib/mapstore.js'
+  utcTime = ''
+  mapReady = false
+  layers = { sites: true, companies: true, accidents: true }
+  counts = { sites: 0, companies: 0, accidents: 0, regulations: 0, reviews: 0, launches: 0 }
+  card = { show: false, kind: '', kindLabel: '', color: '#22d3ee', name: '', sub: '', chips: [], desc: '', kvs: [], link: '' }
+
+  sites = []
+  companies = []
+  accidents = []
+
+  const KIND_COLOR = { site: '#f59e0b', company: '#3b82f6', accident: '#ef4444' }
+  const SEV_SIZE = { '致命': 16, '重大': 13, '较大': 10, '一般': 8 }
+  const SITE_TYPE_LABEL = { launch_site: '发射场', test_facility: '试车台', landing_zone: '着陆区', tracking_station: '测控站', spaceport: '商业航天港' }
+
+  // ---- 数据通道：同包 api（sqlx 执行器），相对路径自动锚定包前缀 ----
+  apiGet = async (name, params) => {
+    const usp = new URLSearchParams(params || {})
+    const r = await fetch('api/' + name + (usp.toString() ? '?' + usp.toString() : ''))
+    if (!r.ok) throw new Error('api ' + name + ' HTTP ' + r.status)
+    const d = await r.json()
+    return d.rows || []
+  }
+
+  // ---- AI 指令辅助 ----
+  const reply = (obj) => ({ content: JSON.stringify(obj) })
+  const errReply = (e) => ({ ok: false, error: String((e && e.message) || e) })
+  const arg = (argv, key, dft) => {
+    const i = (argv || []).indexOf('--' + key)
+    if (i >= 0 && argv[i + 1] !== undefined) return String(argv[i + 1])
+    const pos = (argv || []).find((a) => typeof a === 'string' && !String(a).startsWith('--'))
+    return pos !== undefined ? pos : dft
+  }
+  const norm = (s) => String(s || '').trim().toLowerCase()
+  // 可选参数显式取值（不带位置 fallback，防止误吃其他 flag 的值）
+  const optArg = (argv, key) => {
+    const a = argv || []
+    const i = a.indexOf('--' + key)
+    return i >= 0 && a[i + 1] !== undefined ? String(a[i + 1]) : ''
+  }
+
+  openDetail = () => { if (card.link) window.open(card.link, '_blank') }
+
+  // 当前缩放级别（标签联动：放大后常显发射场名称）
+  labelZoom = () => {
+    try {
+      const opt = store.chart && store.chart.getOption()
+      const z = opt && opt.geo && opt.geo[0] && opt.geo[0].zoom
+      return (z || 1.25) >= 1.8
+    } catch (e) { return false }
+  }
+
+  // 同坐标点环形展开（确定性：按 id 排序分配角度），避免同地点多点完全重叠
+  const spreadOverlaps = (list, getLng, getLat) => {
+    const groups = {}
+    list.forEach(it => {
+      const key = Number(getLng(it)).toFixed(3) + ',' + Number(getLat(it)).toFixed(3)
+      ;(groups[key] || (groups[key] = [])).push(it)
+    })
+    const pos = {}
+    Object.keys(groups).forEach(k => {
+      const g = groups[k].slice().sort((a, b) => String(a.id).localeCompare(String(b.id)))
+      const lng0 = Number(getLng(g[0])), lat0 = Number(getLat(g[0]))
+      if (g.length === 1) { pos[g[0].id] = [lng0, lat0]; return }
+      const n = g.length
+      const r = 0.42 + n * 0.03
+      const cosLat = Math.max(Math.cos(lat0 * Math.PI / 180), 0.3)
+      g.forEach((it, i) => {
+        const ang = (2 * Math.PI * i) / n - Math.PI / 2
+        pos[it.id] = [lng0 + r * Math.cos(ang) / cosLat, lat0 + r * Math.sin(ang)]
+      })
+    })
+    return pos
+  }
+
+  // ---- 地图渲染 ----
+  renderMap = () => {
+    if (!store.chart || !store.worldLoaded) return
+    const sitePos = spreadOverlaps(sites, s => s.lng, s => s.lat)
+    const compPos = spreadOverlaps(companies, c => c.hq_lng, c => c.hq_lat)
+    const accPos = spreadOverlaps(accidents, a => a.lng, a => a.lat)
+    const series = []
+    if (layers.sites) {
+      series.push({
+        id: 'sites', name: 'site', type: 'effectScatter', coordinateSystem: 'geo', zlevel: 3,
+        rippleEffect: { brushType: 'stroke', scale: 2.8 },
+        symbolSize: 8,
+        itemStyle: { color: '#f59e0b', shadowBlur: 8, shadowColor: 'rgba(245,158,11,0.8)' },
+        label: { show: labelZoom(), position: 'right', formatter: '{b}', color: '#d9a85c', fontSize: 10, fontFamily: 'monospace' },
+        emphasis: { label: { show: true, color: '#fff' } },
+        data: sites.map(s => ({ name: String(s.name), value: sitePos[s.id], kid: String(s.id), kind: 'site' }))
+      })
+    }
+    if (layers.companies) {
+      series.push({
+        id: 'companies', name: 'company', type: 'scatter', coordinateSystem: 'geo', zlevel: 2,
+        symbolSize: 7,
+        itemStyle: { color: '#3b82f6', shadowBlur: 6, shadowColor: 'rgba(59,130,246,0.8)', borderColor: 'rgba(255,255,255,0.35)', borderWidth: 0.5 },
+        label: { show: false },
+        emphasis: { label: { show: true, position: 'right', formatter: '{b}', color: '#cfe3ff', fontSize: 10, fontFamily: 'monospace' }, scale: 1.6 },
+        data: companies.map(c => ({ name: String(c.name), value: compPos[c.id], kid: String(c.id), kind: 'company' }))
+      })
+    }
+    if (layers.accidents) {
+      series.push({
+        id: 'accidents', name: 'accident', type: 'effectScatter', coordinateSystem: 'geo', zlevel: 4,
+        rippleEffect: { brushType: 'fill', scale: 2.2 },
+        symbolSize: (v, p) => SEV_SIZE[p.data.sev] || 9,
+        itemStyle: { color: '#ef4444', shadowBlur: 10, shadowColor: 'rgba(239,68,68,0.9)' },
+        label: { show: false },
+        emphasis: { label: { show: true, position: 'right', formatter: '{b}', color: '#ffc9c9', fontSize: 10, fontFamily: 'monospace' } },
+        data: accidents.map(a => ({ name: String(a.title), value: accPos[a.id], kid: String(a.id), kind: 'accident', sev: String(a.severity || '') }))
+      })
+    }
+    // replaceMerge：关闭图层时整体替换 series，避免 merge 模式下旧系列残留
+    store.chart.setOption({ series }, { replaceMerge: ['series'] })
+  }
+
+  focusOn = (lng, lat, zoom) => {
+    if (!store.chart) return
+    const z = zoom || 3.2
+    const opt = { geo: { center: [lng, lat], zoom: z } }
+    if (layers.sites) opt.series = [{ id: 'sites', label: { show: z >= 1.8 } }]
+    store.chart.setOption(opt)
+  }
+
+  toggleLayer = (k) => {
+    layers[k] = !layers[k]
+    renderMap()
+  }
+
+  // ---- 情报卡 ----
+  openSiteCard = (s) => {
+    card = {
+      show: true, kind: 'site', kindLabel: 'SITE / 航天设施', color: KIND_COLOR.site,
+      name: s.name, sub: s.name_en || '',
+      chips: [SITE_TYPE_LABEL[s.site_type] || s.site_type, s.country || '', s.status === 'active' ? '运行中' : (s.status === 'construction' ? '在建' : '停用')].filter(Boolean),
+      desc: s.description || '',
+      kvs: [
+        { k: '运营方', v: s.operator || '-' },
+        { k: '启用', v: s.established || '-' },
+        { k: '纬度', v: s.lat },
+        { k: '经度', v: s.lng }
+      ],
+      link: ''
+    }
+  }
+  openCompanyCard = (c) => {
+    card = {
+      show: true, kind: 'company', kindLabel: 'COMPANY / 公司情报', color: KIND_COLOR.company,
+      name: c.name, sub: c.name_en || '',
+      chips: [c.sub_sector || '未分类', c.status === 'active' ? '运营中' : (c.status || '')].filter(Boolean),
+      desc: c.description || '',
+      kvs: [
+        { k: '总部', v: c.headquarters || '-' },
+        { k: '成立', v: (c.established_at || '-').substring(0, 10) },
+        { k: '创始人', v: c.founder || '-' },
+        { k: '员工', v: c.employee_count || '-' }
+      ],
+      link: 'company.html?id=' + c.id
+    }
+  }
+  openAccidentCard = (a) => {
+    card = {
+      show: true, kind: 'accident', kindLabel: 'ACCIDENT / 事故情报', color: KIND_COLOR.accident,
+      name: a.title, sub: (a.incident_date || '').substring(0, 10) + ' · ' + (a.location || ''),
+      chips: [a.accident_type, a.severity, a.investigation_status].filter(Boolean),
+      desc: a.description || '',
+      kvs: [
+        { k: '涉事公司', v: a.company_name || '-' },
+        { k: '飞行器', v: a.vehicle || '-' },
+        { k: '阶段', v: a.phase || '-' },
+        { k: '伤亡', v: a.casualties || '无' }
+      ],
+      link: 'accident.html?id=' + a.id
+    }
+  }
+  closeCard = () => { card.show = false }
+
+  // ---- 操控面声明：平台 OS/page 通道按 win_id 命名空间自动采集注册（{win_id}.{cmd}）----
+  pageDesc = {
+    desc: 'ORBITALINTEL 商业航天情报舱：世界地图标注航天设施/公司总部/事故地点，提供 focus_site/focus_company/open_accident 地图聚焦联动与情报卡弹出。',
+    commands: [
+      { name: 'orbital_status', desc: '查询情报舱状态（地图就绪/图层开关/各板块记录数）', help: '无参数；返回 {ready, layers, counts}', handler: async () => reply({ ok: true, ready: mapReady, layers, counts }) },
+      {
+        name: 'focus_site', desc: '聚焦地图到指定发射场/航天设施并打开其情报卡（--name 必填，支持中文名/英文名模糊匹配）',
+        help: '--name <名称>',
+        handler: async (argv) => {
+          try {
+            const q = norm(arg(argv, 'name'))
+            if (!q) throw new Error('--name 必填')
+            const s = sites.find(x => norm(x.name).includes(q) || norm(x.name_en).includes(q))
+            if (!s) throw new Error('未找到设施: ' + q + '，可用 list_targets 查看全部目标')
+            focusOn(s.lng, s.lat, 4)
+            openSiteCard(s)
+            return reply({ ok: true, site: s.name, lat: s.lat, lng: s.lng })
+          } catch (e) { return reply(errReply(e)) }
+        }
+      },
+      {
+        name: 'focus_company', desc: '聚焦地图到指定公司总部并打开公司情报卡（--name 必填，支持模糊匹配）',
+        help: '--name <名称>',
+        handler: async (argv) => {
+          try {
+            const q = norm(arg(argv, 'name'))
+            if (!q) throw new Error('--name 必填')
+            const c = companies.find(x => norm(x.name).includes(q) || norm(x.name_en || '').includes(q))
+            if (!c) throw new Error('未找到公司: ' + q)
+            focusOn(c.hq_lng, c.hq_lat, 4)
+            openCompanyCard(c)
+            return reply({ ok: true, company: c.name })
+          } catch (e) { return reply(errReply(e)) }
+        }
+      },
+      {
+        name: 'open_accident', desc: '聚焦地图到事故地点并打开事故情报卡（--title 模糊匹配或 --id）',
+        help: '--title <模糊标题> 或 --id <行ID>',
+        handler: async (argv) => {
+          try {
+            const id = optArg(argv, 'id')
+            const q = norm(optArg(argv, 'title') || arg(argv, 'q', ''))
+            const a = id ? accidents.find(x => x.id === id) : accidents.find(x => norm(x.title).includes(q))
+            if (!a) throw new Error('未找到事故: ' + (id || q))
+            focusOn(a.lng, a.lat, 4)
+            openAccidentCard(a)
+            return reply({ ok: true, accident: a.title })
+          } catch (e) { return reply(errReply(e)) }
+        }
+      },
+      {
+        name: 'set_layers', desc: '开关地图图层（--sites/--companies/--accidents 取值 on/off，可多个）',
+        help: '--sites on|off --companies on|off --accidents on|off',
+        handler: async (argv) => {
+          try {
+            const a = argv || []
+            const setOne = (key, layer) => {
+              const i = a.indexOf('--' + key)
+              if (i >= 0) layers[layer] = String(a[i + 1]).toLowerCase() !== 'off'
+            }
+            setOne('sites', 'sites'); setOne('companies', 'companies'); setOne('accidents', 'accidents')
+            renderMap()
+            return reply({ ok: true, layers })
+          } catch (e) { return reply(errReply(e)) }
+        }
+      },
+      { name: 'clear_card', desc: '关闭当前打开的情报卡', help: '无参数', handler: async () => { closeCard(); return reply({ ok: true }) } },
+      {
+        name: 'list_targets', desc: '列出地图上全部可聚焦目标：发射场/设施、公司、事故（名称清单）',
+        help: '无参数',
+        handler: async () => reply({
+          ok: true,
+          sites: sites.map(s => s.name),
+          companies: companies.map(c => c.name),
+          accidents: accidents.map(a => a.title)
+        })
+      }
+    ]
+  }
+</script>
+<script>
+  // 共享 store（动态 import 需 $mod.scoped 拼绝对路径）
+  let storeRef = null
+  const storeReady = (async () => {
+    const m = await import($mod.scoped + '/lib/mapstore.js')
+    storeRef = m.store
+  })()
+
+  // UTC 时钟
+  const tick = () => {
+    const d = new Date()
+    utcTime = d.toISOString().substring(0, 19).replace('T', ' ') + ' UTC'
+  }
+  tick()
+  setInterval(tick, 1000)
+
+  // 数据加载
+  const loadData = async () => {
+    const get = async (u) => { try { const r = await fetch(u); return await r.json() } catch (e) { return {} } }
+    const [st, co, ac, cn] = await Promise.all([
+      apiGet('map_sites'),
+      apiGet('map_companies'),
+      apiGet('map_accidents'),
+      apiGet('dashboard_counts')
+    ])
+    sites = st
+    companies = co
+    accidents = ac
+    const total = (cn && cn[0]) || {}
+    // 有记录缺坐标时显示 上图数/总数，避免静默丢失
+    counts.sites = total.sites != null ? String(total.sites) : String(st.length)
+    counts.companies = total.companies != null ? String(total.companies) : String(co.length)
+    counts.accidents = total.accidents != null ? String(total.accidents) : String(ac.length)
+    counts.regulations = total.regulations || 0
+    counts.reviews = total.reviews || 0
+    counts.launches = total.launches || 0
+  }
+
+  // echarts 动态加载（运行时创建 script 需手动拼 scoped 全路径）
+  const loadEcharts = () => new Promise((resolve, reject) => {
+    if (window.echarts) return resolve()
+    const s = document.createElement('script')
+    s.src = $mod.scoped + '/lib/echarts.min.js'
+    s.onload = () => resolve()
+    s.onerror = () => reject(new Error('echarts load failed'))
+    document.head.appendChild(s)
+  })
+
+  const initMap = async () => {
+    await loadEcharts()
+    const geo = await (await fetch('data/world.json')).json()
+    window.echarts.registerMap('world', geo)
+    storeRef.worldLoaded = true
+    storeRef.chart = window.echarts.init(document.getElementById('map'), null, { renderer: 'canvas' })
+    storeRef.chart.setOption({
+      backgroundColor: 'transparent',
+      geo: {
+        map: 'world', roam: true, zoom: 1.25, center: [15, 25],
+        scaleLimit: { min: 0.8, max: 12 },
+        itemStyle: { areaColor: '#0c1526', borderColor: '#1c2942', borderWidth: 0.6 },
+        emphasis: { itemStyle: { areaColor: '#152344' }, label: { show: false }, focus: 'none' },
+        select: { disabled: true }
+      },
+      series: []
+    })
+    storeRef.chart.on('click', (params) => {
+      if (!params.data || !params.data.kid) return
+      const kid = params.data.kid
+      if (params.seriesName === 'site') { const r = sites.find(x => x.id === kid); if (r) openSiteCard(r) }
+      else if (params.seriesName === 'company') { const r = companies.find(x => x.id === kid); if (r) openCompanyCard(r) }
+      else if (params.seriesName === 'accident') { const r = accidents.find(x => x.id === kid); if (r) openAccidentCard(r) }
+    })
+    storeRef.chart.on('georoam', () => {
+      try { if (layers.sites) storeRef.chart.setOption({ series: [{ id: 'sites', label: { show: labelZoom() } }] }) } catch (e) {}
+    })
+    window.addEventListener('resize', () => storeRef.chart && storeRef.chart.resize())
+    mapReady = true
+    renderMap()
+  }
+
+  ;(async () => {
+    try { await storeReady } catch (e) {}
+    try { await loadData() } catch (e) {}
+    try { if (storeRef) await initMap() } catch (e) { mapReady = false }
+  })()
+</script>
+</html>

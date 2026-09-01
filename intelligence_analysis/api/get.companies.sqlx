@@ -1,0 +1,6 @@
+SELECT id, name, name_en, short_name, description, sub_sector, headquarters, status, tags, founder, established_at, employee_count, created_at
+FROM space_companies
+WHERE (:q = '' OR name LIKE '%' || :q || '%' OR name_en LIKE '%' || :q || '%' OR short_name LIKE '%' || :q || '%')
+  AND (:sub_sector = '' OR sub_sector = :sub_sector)
+  AND (:status = '' OR status = :status)
+ORDER BY created_at DESC

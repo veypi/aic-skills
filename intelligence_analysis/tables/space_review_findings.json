@@ -1,0 +1,25 @@
+{
+  "title": "审查发现项明细表",
+  "description": "审查发现的具体问题项，每一条对应一个缺项/冲突/风险/建议",
+  "fields": [
+    { "name": "id", "type": "string", "required": true, "description": "行 ID（写入方生成，32 位十六进制）" },
+    { "name": "user_id", "type": "string", "required": true, "description": "写入者 uid（服务端注入）" },
+    { "name": "created_at", "type": "time", "required": true },
+    { "name": "updated_at", "type": "time", "required": true },
+    { "name": "case_id", "type": "string", "required": true, "description": "关联案件 ID（space_review_cases.id）" },
+    { "name": "finding_type", "type": "string", "required": true, "description": "missing_item / rule_conflict / risk_point / suggestion" },
+    { "name": "severity", "type": "string", "description": "critical / major / minor / info" },
+    { "name": "rule_id", "type": "string", "description": "关联的法规条目 ID（space_regulations.id 或 space_accidents.id）" },
+    { "name": "rule_ref", "type": "text", "description": "引用的法规条文原文" },
+    { "name": "description", "type": "text", "description": "问题描述" },
+    { "name": "recommendation", "type": "text", "description": "整改建议" },
+    { "name": "resolution_status", "type": "string", "description": "unresolved / resolved / closed" },
+    { "name": "resolution_notes", "type": "text", "description": "处理备注" }
+  ],
+  "indexes": [
+    { "fields": ["case_id"] },
+    { "fields": ["finding_type"] },
+    { "fields": ["severity"] },
+    { "fields": ["rule_id"] }
+  ]
+}

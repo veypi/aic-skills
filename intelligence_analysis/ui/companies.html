@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head><title>公司列表 - 商业航天分析</title></head>
+<style>
+  .page { padding:var(--spacing-lg) var(--spacing-xl); max-width:1440px; margin:0 auto; }
+
+  .hd { display:flex; justify-content:space-between; align-items:flex-end; padding-bottom:var(--spacing-md); border-bottom:1px solid var(--border-color); margin-bottom:var(--spacing-lg); }
+  .hd-left .kicker { font-family:var(--font-mono); font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--color-primary); font-weight:var(--font-weight-semibold); display:flex; align-items:center; gap:8px; }
+  .hd-left h1 { font-size:var(--font-size-xl); font-weight:var(--font-weight-bold); color:var(--text-color); margin:6px 0 0; }
+  .hd-count { font-family:var(--font-mono); font-size:var(--font-size-xs); color:var(--text-color-tertiary); font-variant-numeric:tabular-nums; }
+  .hd-count b { color:var(--text-color); font-size:var(--font-size-lg); }
+  .dot { width:8px; height:8px; border-radius:var(--radius-full); display:inline-block; flex:0 0 auto; }
+  .dot-green { background:var(--color-success); box-shadow:0 0 0 3px rgba(34,197,94,0.18); animation:pulse 2s infinite; }
+  .dot-gray { background:var(--text-color-disabled); }
+  @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.45 } }
+
+  .toolbar { display:flex; gap:var(--spacing-sm); margin-bottom:var(--spacing-md); flex-wrap:wrap; align-items:center; }
+  .search { flex:1; min-width:240px; padding:8px 14px; border:1px solid var(--border-color); border-radius:var(--radius-md); font-size:var(--font-size-sm); background:#fff; transition:border-color var(--transition-fast), box-shadow var(--transition-fast); }
+  .search:focus { outline:none; border-color:var(--color-primary); box-shadow:0 0 0 3px rgba(67,97,238,0.1); }
+  select { padding:8px 12px; border:1px solid var(--border-color); border-radius:var(--radius-md); font-size:var(--font-size-sm); background:#fff; cursor:pointer; font-family:var(--font-mono); }
+  select:focus { outline:none; border-color:var(--color-primary); }
+
+  .panel { background:#fff; border:1px solid var(--border-color); border-radius:var(--radius-lg); overflow:hidden; }
+  .table-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; }
+  th { text-align:left; padding:10px 14px; background:var(--bg-color-secondary); color:var(--text-color-tertiary); font-family:var(--font-mono); font-weight:var(--font-weight-semibold); font-size:11px; text-transform:uppercase; letter-spacing:0.08em; border-bottom:1px solid var(--border-color); white-space:nowrap; }
+  td { padding:11px 14px; border-bottom:1px solid var(--border-color); vertical-align:middle; }
+  tbody tr { cursor:pointer; transition:background var(--transition-fast); }
+  tbody tr:hover { background:var(--bg-color-secondary); }
+  tbody tr:last-child td { border-bottom:none; }
+
+  .c-name { font-size:var(--font-size-sm); font-weight:var(--font-weight-semibold); color:var(--text-color); }
+  .c-sub { font-size:var(--font-size-xs); color:var(--text-color-tertiary); font-family:var(--font-mono); margin-top:1px; }
+  .c-desc { font-size:var(--font-size-xs); color:var(--text-color-secondary); line-height:1.5; max-width:340px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .mono { font-family:var(--font-mono); font-size:var(--font-size-xs); color:var(--text-color-secondary); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .status-cell { display:inline-flex; align-items:center; gap:6px; font-size:var(--font-size-xs); color:var(--text-color-secondary); white-space:nowrap; }
+
+  .chip { display:inline-flex; align-items:center; font-family:var(--font-mono); font-size:11px; font-weight:var(--font-weight-medium); padding:2px 8px; border-radius:var(--radius-sm); letter-spacing:0.02em; white-space:nowrap; }
+  .chip-primary { background:rgba(67,97,238,0.09); color:var(--color-primary); }
+  .chip-gray { background:var(--bg-color-tertiary); color:var(--text-color-secondary); }
+  .chips { display:flex; gap:4px; flex-wrap:wrap; }
+
+  .pagination { display:flex; justify-content:space-between; align-items:center; margin-top:var(--spacing-md); }
+  .pg-info { font-family:var(--font-mono); font-size:var(--font-size-xs); color:var(--text-color-tertiary); font-variant-numeric:tabular-nums; }
+  .pg-btns { display:flex; gap:var(--spacing-sm); }
+  .pagination button { padding:6px 14px; border:1px solid var(--border-color); border-radius:var(--radius-md); background:#fff; cursor:pointer; font-family:var(--font-mono); font-size:var(--font-size-xs); font-weight:var(--font-weight-medium); transition:all var(--transition-fast); }
+  .pagination button:hover:not(:disabled) { border-color:var(--color-primary); color:var(--color-primary); }
+  .pagination button:disabled { opacity:0.4; cursor:default; }
+  .empty { text-align:center; padding:var(--spacing-3xl); color:var(--text-color-tertiary); font-size:var(--font-size-sm); font-family:var(--font-mono); }
+  .breadcrumb { display:flex; align-items:center; gap:var(--spacing-sm); margin-bottom:var(--spacing-md); font-size:var(--font-size-xs); font-family:var(--font-mono); color:var(--text-color-tertiary); }
+  .breadcrumb a { color:var(--color-primary); text-decoration:none; }
+  .breadcrumb a:hover { text-decoration:underline; }
+  @media (max-width:768px) {
+    .page { padding:var(--spacing-md); }
+    .toolbar { flex-direction:column; align-items:stretch; }
+    .search { min-width:auto; }
+    .c-desc { display:none; }
+  }
+
+  /* ===== 主题适配层 ===== */
+  .panel, .search, select, .pagination button { background:var(--bg-color-secondary); color:var(--text-color); }
+  th { background:var(--bg-color-tertiary); }
+  tbody tr:hover { background:var(--bg-color-tertiary); }
+  .chip-primary { color:var(--color-primary); }
+  .chip-gray { background:var(--bg-color-tertiary); color:var(--text-color-secondary); }
+</style>
+<body>
+  <div class="page">
+    <div class="breadcrumb">
+      <a href="index.html">DASHBOARD</a><span>/</span><span>COMPANIES</span>
+    </div>
+    <div class="hd">
+      <div class="hd-left">
+        <div class="kicker"><span class="dot dot-green"></span>Industry Chain Database</div>
+        <h1>公司分析</h1>
+      </div>
+      <div class="hd-count"><b>{{ total }}</b> 家公司</div>
+    </div>
+
+    <div class="toolbar">
+      <input class="search" v:value="keyword" @input="search" placeholder="搜索公司名称...">
+      <select v:value="filterSector" @change="search">
+        <option value="">全部分类</option>
+        <option v-for="s in sectors" :value="s">{{ s }}</option>
+      </select>
+      <select v:value="filterStatus" @change="search">
+        <option value="">全部状态</option>
+        <option value="active">运营中</option>
+        <option value="inactive">已停运</option>
+      </select>
+    </div>
+
+    <div class="panel">
+      <div v-if="items.length === 0" class="empty">NO DATA</div>
+      <div class="table-wrap" v-else>
+        <table>
+          <thead><tr><th>公司</th><th>简介</th><th>分类</th><th>总部</th><th>状态</th><th>标签</th></tr></thead>
+          <tbody>
+            <tr v-for="c in items" @click="nav('company.html?id=' + c.id)">
+              <td>
+                <div class="c-name">{{ c.name }}</div>
+                <div class="c-sub" v-if="c.name_en">{{ c.name_en }}</div>
+              </td>
+              <td><div class="c-desc" v-if="c.description">{{ c.description }}</div><span class="mono" v-else>-</span></td>
+              <td><span class="chip chip-primary">{{ c.sub_sector || '未分类' }}</span></td>
+              <td><span class="mono">{{ c.headquarters || '-' }}</span></td>
+              <td>
+                <span class="status-cell" v-if="c.status === 'active'"><span class="dot dot-green"></span>运营中</span>
+                <span class="status-cell" v-else><span class="dot dot-gray"></span>{{ c.status === 'inactive' ? '已停运' : (c.status || '-') }}</span>
+              </td>
+              <td><div class="chips"><span v-for="t in tagList(c.tags)" class="chip chip-gray">{{ t }}</span></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="pagination" v-if="total > size">
+      <span class="pg-info">PAGE {{ page }} / {{ Math.ceil(total / size) }} · TOTAL {{ total }}</span>
+      <div class="pg-btns">
+        <button @click="go(page - 1)" :disabled="page <= 1">&#8592; PREV</button>
+        <button @click="go(page + 1)" :disabled="page >= Math.ceil(total / size)">NEXT &#8594;</button>
+      </div>
+    </div>
+  </div>
+</body>
+<script setup>
+  keyword = ''
+  filterSector = ''
+  filterStatus = ''
+  sectors = ['火箭制造','发动机','卫星制造','发射服务','卫星运营','遥感服务','航天材料','地面设备','测控','航天电子','太空旅游']
+  rows = []
+  items = []
+  page = 1
+  size = 20
+  total = 0
+  tagList = (tags) => tags ? tags.split(',').map(function(t){ return t.trim() }).filter(function(t){ return t }).slice(0, 3) : []
+
+  // SPA 内经平台 vrouter 导航（子路径由壳组件路由）；独立直开时为真实浏览器跳转
+  nav = (url) => { try { if ($router) { $router.push(url); return } } catch (e) {} location.href = url }
+
+  apiGet = async (name, params) => {
+    const usp = new URLSearchParams(params || {})
+    const r = await fetch('api/' + name + (usp.toString() ? '?' + usp.toString() : ''))
+    if (!r.ok) throw new Error('api ' + name + ' HTTP ' + r.status)
+    const d = await r.json()
+    return d.rows || []
+  }
+
+  search = () => { page = 1; load() }
+  go = (p) => { page = p; applyPage() }
+  applyPage = () => {
+    items = rows.slice((page - 1) * size, page * size)
+  }
+  load = async () => {
+    try {
+      rows = await apiGet('companies', { q: keyword, sub_sector: filterSector, status: filterStatus })
+      total = rows.length
+      applyPage()
+    } catch(e) {}
+  }
+</script>
+<script>load()</script>
+</html>

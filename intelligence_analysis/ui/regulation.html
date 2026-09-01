@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head><title>法规详情 - 商业航天分析</title></head>
+<style>
+  .page { padding:var(--spacing-lg) var(--spacing-xl); max-width:1080px; margin:0 auto; }
+  .breadcrumb { display:flex; align-items:center; gap:var(--spacing-sm); margin-bottom:var(--spacing-md); font-size:var(--font-size-xs); font-family:var(--font-mono); color:var(--text-color-tertiary); }
+  .breadcrumb a { color:var(--color-primary); text-decoration:none; }
+  .breadcrumb a:hover { text-decoration:underline; }
+
+  .hero { position:relative; background:#fff; border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:var(--spacing-lg) var(--spacing-xl) var(--spacing-lg) calc(var(--spacing-xl) + 4px); margin-bottom:var(--spacing-lg); overflow:hidden; }
+  .hero::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--color-info); }
+  .h-kicker { font-family:var(--font-mono); font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--color-info); font-weight:var(--font-weight-semibold); }
+  .h-title { font-size:var(--font-size-xl); font-weight:var(--font-weight-bold); color:var(--text-color); line-height:1.4; margin-top:6px; }
+  .h-meta { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:var(--spacing-md); }
+  .h-meta .txt { font-size:var(--font-size-xs); color:var(--text-color-tertiary); font-family:var(--font-mono); }
+
+  .chip { display:inline-flex; align-items:center; font-family:var(--font-mono); font-size:11px; font-weight:var(--font-weight-medium); padding:3px 8px; border-radius:var(--radius-sm); letter-spacing:0.02em; white-space:nowrap; }
+  .chip-primary { background:rgba(67,97,238,0.09); color:var(--color-primary); }
+  .chip-green { background:rgba(34,197,94,0.1); color:#15803d; }
+  .chip-yellow { background:rgba(251,191,36,0.14); color:#b45309; }
+  .chip-blue { background:rgba(14,165,233,0.1); color:#0369a1; }
+  .chip-red { background:rgba(239,68,68,0.1); color:#b91c1c; }
+  .chip-purple { background:rgba(139,92,246,0.1); color:#6d28d9; }
+  .chip-teal { background:rgba(20,184,166,0.1); color:#0f766e; }
+  .chip-gray { background:var(--bg-color-tertiary); color:var(--text-color-secondary); }
+
+  .info-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:var(--border-color); border:1px solid var(--border-color); border-radius:var(--radius-md); overflow:hidden; margin-top:var(--spacing-lg); }
+  .info-item { display:flex; flex-direction:column; gap:4px; padding:var(--spacing-md); background:#fff; }
+  .info-label { color:var(--text-color-tertiary); font-size:11px; font-family:var(--font-mono); font-weight:var(--font-weight-medium); text-transform:uppercase; letter-spacing:0.08em; }
+  .info-value { color:var(--text-color); font-size:var(--font-size-sm); }
+  .version-link { color:var(--color-primary); text-decoration:none; font-family:var(--font-mono); font-size:var(--font-size-xs); }
+  .version-link:hover { text-decoration:underline; }
+
+  .panel { background:#fff; border:1px solid var(--border-color); border-radius:var(--radius-lg); overflow:hidden; margin-bottom:var(--spacing-lg); }
+  .panel-hd { display:flex; align-items:center; gap:8px; padding:11px var(--spacing-lg); border-bottom:1px solid var(--border-color); background:var(--bg-color-secondary); font-family:var(--font-mono); font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-color-secondary); font-weight:var(--font-weight-semibold); }
+  .panel-hd .sq { width:8px; height:8px; border-radius:2px; background:var(--color-info); }
+  .panel-bd { padding:var(--spacing-lg); font-size:var(--font-size-sm); line-height:1.8; color:var(--text-color); }
+  .content-box { white-space:pre-wrap; max-height:640px; overflow-y:auto; line-height:1.9; }
+
+  .keywords { display:flex; gap:6px; flex-wrap:wrap; }
+  .kw { font-family:var(--font-mono); font-size:11px; padding:3px 10px; border-radius:var(--radius-sm); background:var(--bg-color-secondary); color:var(--text-color-secondary); border:1px solid var(--border-color); }
+  .empty { text-align:center; padding:var(--spacing-3xl); color:var(--text-color-tertiary); font-size:var(--font-size-sm); font-family:var(--font-mono); }
+  @media (max-width:768px) {
+    .page { padding:var(--spacing-md); }
+    .info-grid { grid-template-columns:1fr; }
+    .h-title { font-size:var(--font-size-lg); }
+  }
+
+  /* ===== 主题适配层 ===== */
+  .hero, .panel, .info-item { background:var(--bg-color-secondary); }
+  .panel-hd { background:var(--bg-color-tertiary); }
+  .chip-red { color:var(--color-danger); }
+  .chip-yellow { color:var(--color-warning); }
+  .chip-blue { color:var(--color-info); }
+  .chip-primary { color:var(--color-primary); }
+  .chip-green { color:var(--color-success); }
+  .chip-purple { color:#a78bfa; }
+  .chip-teal { color:#2dd4bf; }
+  .chip-gray { background:var(--bg-color-tertiary); color:var(--text-color-secondary); }
+  .kw { background:var(--bg-color-tertiary); border-color:var(--border-color); }
+</style>
+<body>
+  <div class="page">
+    <div class="breadcrumb">
+      <a href="index.html">DASHBOARD</a><span>/</span><a href="regulations.html">REGULATIONS</a><span>/</span><span>DOCUMENT</span>
+    </div>
+
+    <div v-if="item === null" class="empty">LOADING...</div>
+    <template v-else>
+      <div class="hero">
+        <div class="h-kicker">{{ typeLabel(item.doc_type) }} Document</div>
+        <div class="h-title">{{ item.title }}</div>
+        <div class="h-meta">
+          <span :class="'chip ' + typeChip(item.doc_type)">{{ typeLabel(item.doc_type) }}</span>
+          <span :class="'chip ' + statusChip(item.status)">{{ item.status || '未知' }}</span>
+          <span class="txt" v-if="item.issuing_authority">{{ item.issuing_authority }}</span>
+          <span class="txt" v-if="item.document_number">· {{ item.document_number }}</span>
+        </div>
+        <div class="info-grid">
+          <div class="info-item"><span class="info-label">发布日期</span><span class="info-value">{{ dateStr(item.published_at) }}</span></div>
+          <div class="info-item"><span class="info-label">生效日期</span><span class="info-value">{{ dateStr(item.effective_at) }}</span></div>
+          <div class="info-item"><span class="info-label">版本</span><span class="info-value">{{ item.version || '-' }}</span></div>
+          <div class="info-item" v-if="item.source_url"><span class="info-label">原文链接</span><span class="info-value"><a :href="item.source_url" target="_blank" class="version-link">查看原文 &#8599;</a></span></div>
+          <div class="info-item" v-if="item.replaces_id"><span class="info-label">替代文档</span><span class="info-value"><a :href="'regulation.html?id=' + item.replaces_id" class="version-link">查看被替代版本 &#8594;</a></span></div>
+          <div class="info-item" v-if="prevVersion !== null"><span class="info-label">被替代为</span><span class="info-value"><a :href="'regulation.html?id=' + prevVersion.id" class="version-link">查看新版本 &#8594;</a></span></div>
+        </div>
+        <div class="keywords" v-if="item.keywords" style="margin-top:var(--spacing-md)">
+          <span v-for="k in item.keywords.split(',').map(function(x){ return x.trim() }).filter(function(x){ return x })" class="kw">{{ k }}</span>
+        </div>
+      </div>
+
+      <div class="panel" v-if="item.summary">
+        <div class="panel-hd"><span class="sq"></span>内容摘要 / Summary</div>
+        <div class="panel-bd">{{ item.summary }}</div>
+      </div>
+
+      <div class="panel" v-if="item.content">
+        <div class="panel-hd"><span class="sq"></span>全文内容 / Full Text</div>
+        <div class="panel-bd content-box">{{ item.content }}</div>
+      </div>
+
+      <div class="panel" v-if="item.notes">
+        <div class="panel-hd"><span class="sq"></span>备注 / Notes</div>
+        <div class="panel-bd">{{ item.notes }}</div>
+      </div>
+    </template>
+  </div>
+</body>
+<script setup>
+  item = null
+  prevVersion = null
+  rid = ''
+  typeLabels = { law:'法律', regulation:'行政法规', policy:'政策文件', standard:'标准规范', approval_rule:'审批规则', technical_guide:'技术指南', regulatory_experience:'监管经验' }
+  typeLabel = (t) => typeLabels[t] || t
+  typeChip = (t) => ({ law:'chip-red', regulation:'chip-primary', policy:'chip-blue', standard:'chip-teal', approval_rule:'chip-yellow', technical_guide:'chip-purple', regulatory_experience:'chip-green' })[t] || 'chip-gray'
+  statusChip = (s) => ({ '现行有效':'chip-green', '已废止':'chip-red', '已修订':'chip-yellow', '修订中':'chip-yellow' })[s] || 'chip-gray'
+  dateStr = (d) => d ? d.substring(0,10) : '-'
+
+  apiGet = async (name, params) => {
+    const usp = new URLSearchParams(params || {})
+    const r = await fetch('api/' + name + (usp.toString() ? '?' + usp.toString() : ''))
+    if (!r.ok) throw new Error('api ' + name + ' HTTP ' + r.status)
+    const d = await r.json()
+    return d.rows || []
+  }
+
+  init = async () => {
+    rid = new URLSearchParams(location.search).get('id') || ''
+    item = null
+    prevVersion = null
+    if (!rid) { item = { title:'未找到' }; return }
+    try {
+      const rows = await apiGet('regulation', { id: rid })
+      item = rows[0] || { title: '未找到' }
+      if (item && item.id) {
+        const sv = await apiGet('regulation_successor', { id: item.id })
+        prevVersion = (sv && sv.length) ? sv[0] : null
+      }
+    } catch(e) { item = { title:'加载失败' } }
+  }
+</script>
+<script>
+  init()
+  if ($router && $router.onChange) $router.onChange(() => init())
+</script>
+</html>

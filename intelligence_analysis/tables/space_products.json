@@ -1,0 +1,26 @@
+{
+  "title": "产品/业务线表",
+  "description": "覆盖全产业链各类产品：火箭、发动机、卫星、地面设备、材料、服务等",
+  "fields": [
+    { "name": "id", "type": "string", "required": true, "description": "行 ID（写入方生成，32 位十六进制）" },
+    { "name": "user_id", "type": "string", "required": true, "description": "写入者 uid（服务端注入）" },
+    { "name": "created_at", "type": "time", "required": true },
+    { "name": "updated_at", "type": "time", "required": true },
+    { "name": "company_id", "type": "string", "required": true, "description": "所属公司 ID（space_companies.id）" },
+    { "name": "name", "type": "string", "required": true, "description": "产品名称" },
+    { "name": "product_type", "type": "string", "required": true, "description": "类型：rocket/engine/satellite/launch_service/component/material/software/service/ground_equipment/constellation/other" },
+    { "name": "sub_type", "type": "string", "description": "子类型：固体/液体/可重复使用/液氧煤油/液氧甲烷/电推等" },
+    { "name": "description", "type": "text", "description": "产品描述" },
+    { "name": "key_params", "type": "text", "description": "关键参数（JSON 格式，如 {\"thrust\":\"500kN\",\"isp\":\"265s\"}）" },
+    { "name": "status", "type": "string", "description": "研发中/在产/已退役/首飞成功/首飞失败" },
+    { "name": "reusable", "type": "bool", "description": "是否可重复使用" },
+    { "name": "first_flight_at", "type": "time", "description": "首飞时间" },
+    { "name": "source", "type": "string", "description": "信息来源" }
+  ],
+  "indexes": [
+    { "fields": ["company_id", "name"], "unique": true },
+    { "fields": ["product_type"] },
+    { "fields": ["sub_type"] },
+    { "fields": ["status"] }
+  ]
+}

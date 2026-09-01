@@ -1,0 +1,4 @@
+SELECT id, name, name_en, site_type, country, region, lat, lng, operator, status, established, description
+FROM space_sites
+WHERE lat IS NOT NULL AND lng IS NOT NULL
+ORDER BY name

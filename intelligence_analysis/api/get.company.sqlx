@@ -1,0 +1,3 @@
+SELECT id, name, name_en, short_name, founder, established_at, headquarters, website, description, sub_sector, employee_count, status, tags, hq_lat, hq_lng, created_at
+FROM space_companies
+WHERE id = :id

@@ -1,0 +1,4 @@
+SELECT id, company_a_id, company_b_id, relation_type, contract_name, description, signed_at, end_at, status, source
+FROM space_company_relations
+WHERE company_a_id = :company_id OR company_b_id = :company_id
+ORDER BY signed_at DESC

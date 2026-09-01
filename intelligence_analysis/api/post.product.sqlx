@@ -1,0 +1,2 @@
+INSERT INTO space_products (id, user_id, created_at, updated_at, company_id, name, product_type, sub_type, description, key_params, status, reusable, first_flight_at, source)
+VALUES (:id, :user_id, datetime('now'), datetime('now'), :company_id, :name, :product_type, :sub_type, :description, :key_params, :status, :reusable, :first_flight_at, :source)

@@ -1,0 +1,2 @@
+INSERT INTO space_launches (id, user_id, created_at, updated_at, company_id, product_id, mission_name, flight_number, launch_at, launch_site, launch_method, orbit_type, payload, payload_count, customer, result, failure_reason, source, notes)
+VALUES (:id, :user_id, datetime('now'), datetime('now'), :company_id, :product_id, :mission_name, :flight_number, :launch_at, :launch_site, :launch_method, :orbit_type, :payload, :payload_count, :customer, :result, :failure_reason, :source, :notes)

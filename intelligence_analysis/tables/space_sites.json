@@ -1,0 +1,26 @@
+{
+  "title": "航天设施情报",
+  "description": "全球航天发射场、试车台、着陆区等设施情报（含经纬度，供地图标注与合规审查引用）",
+  "fields": [
+    { "name": "id", "type": "string", "required": true, "description": "行 ID（写入方生成，32 位十六进制）" },
+    { "name": "user_id", "type": "string", "required": true, "description": "写入者 uid（服务端注入）" },
+    { "name": "created_at", "type": "time", "required": true },
+    { "name": "updated_at", "type": "time", "required": true },
+    { "name": "name", "type": "string", "title": "名称", "description": "设施名称", "required": true },
+    { "name": "name_en", "type": "string", "title": "英文名", "description": "英文名称" },
+    { "name": "site_type", "type": "string", "title": "类型", "description": "设施类型", "required": true, "enum": ["launch_site", "test_facility", "landing_zone", "tracking_station", "spaceport"] },
+    { "name": "country", "type": "string", "title": "国家", "description": "所在国家" },
+    { "name": "region", "type": "string", "title": "地区", "description": "省/州/地区" },
+    { "name": "lat", "type": "number", "title": "纬度", "description": "纬度", "required": true },
+    { "name": "lng", "type": "number", "title": "经度", "description": "经度", "required": true },
+    { "name": "operator", "type": "string", "title": "运营方", "description": "运营机构/公司" },
+    { "name": "status", "type": "string", "title": "状态", "description": "active=运行中 inactive=停用 construction=在建", "enum": ["active", "inactive", "construction"] },
+    { "name": "established", "type": "string", "title": "启用年份", "description": "启用年份" },
+    { "name": "description", "type": "text", "title": "简介", "description": "设施简介（能力、历史、承担任务）" },
+    { "name": "source", "type": "string", "title": "来源", "description": "信息来源" }
+  ],
+  "indexes": [
+    { "name": "idx_site_type", "fields": ["site_type"] },
+    { "name": "idx_country", "fields": ["country"] }
+  ]
+}

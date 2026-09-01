@@ -1,0 +1,7 @@
+SELECT
+  (SELECT COUNT(*) FROM space_sites) AS sites,
+  (SELECT COUNT(*) FROM space_companies) AS companies,
+  (SELECT COUNT(*) FROM space_accidents) AS accidents,
+  (SELECT COUNT(*) FROM space_regulations) AS regulations,
+  (SELECT COUNT(*) FROM space_review_cases) AS reviews,
+  (SELECT COUNT(*) FROM space_launches) AS launches

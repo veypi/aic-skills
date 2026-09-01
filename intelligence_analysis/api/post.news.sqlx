@@ -1,0 +1,2 @@
+INSERT INTO space_news (id, user_id, created_at, updated_at, company_id, title, url, published_at, summary, news_type, source)
+VALUES (:id, :user_id, datetime('now'), datetime('now'), :company_id, :title, :url, :published_at, :summary, :news_type, :source)

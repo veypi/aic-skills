@@ -1,0 +1,30 @@
+{
+  "title": "航天公司主表",
+  "description": "商业航天全产业链公司基本信息",
+  "fields": [
+    { "name": "id", "type": "string", "required": true, "description": "行 ID（写入方生成，32 位十六进制）" },
+    { "name": "user_id", "type": "string", "required": true, "description": "写入者 uid（服务端注入）" },
+    { "name": "created_at", "type": "time", "required": true },
+    { "name": "updated_at", "type": "time", "required": true },
+    { "name": "name", "type": "string", "required": true, "description": "公司全称" },
+    { "name": "name_en", "type": "string", "description": "英文名称" },
+    { "name": "short_name", "type": "string", "description": "常用简称" },
+    { "name": "founder", "type": "string", "description": "创始人/CEO" },
+    { "name": "established_at", "type": "time", "description": "成立日期" },
+    { "name": "headquarters", "type": "string", "description": "总部所在地" },
+    { "name": "website", "type": "string", "description": "官网地址" },
+    { "name": "description", "type": "text", "description": "公司简介" },
+    { "name": "sub_sector", "type": "string", "description": "细分领域：火箭制造/发动机/卫星制造/发射服务/卫星运营/遥感服务/航天材料/地面设备/测控/航天电子/太空旅游等" },
+    { "name": "employee_count", "type": "int", "description": "员工人数" },
+    { "name": "status", "type": "string", "description": "active / inactive" },
+    { "name": "tags", "type": "text", "description": "标签，逗号分隔：民营/国家队/上市/独角兽/专精特新/军工等" },
+    { "name": "hq_lat", "type": "number", "title": "总部纬度", "description": "总部纬度（供地图标注）" },
+    { "name": "hq_lng", "type": "number", "title": "总部经度", "description": "总部经度（供地图标注）" }
+  ],
+  "indexes": [
+    { "fields": ["name"], "unique": true },
+    { "fields": ["short_name"] },
+    { "fields": ["sub_sector"] },
+    { "fields": ["status"] }
+  ]
+}

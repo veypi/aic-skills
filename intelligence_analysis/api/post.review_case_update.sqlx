@@ -1,0 +1,8 @@
+UPDATE space_review_cases
+SET status = CASE WHEN :status = '' THEN status ELSE :status END,
+    overall_result = CASE WHEN :overall_result = '' THEN overall_result ELSE :overall_result END,
+    summary = CASE WHEN :summary = '' THEN summary ELSE :summary END,
+    reviewed_by = CASE WHEN :reviewed_by = '' THEN reviewed_by ELSE :reviewed_by END,
+    reviewed_at = COALESCE(NULLIF(:reviewed_at, ''), reviewed_at),
+    updated_at = datetime('now')
+WHERE id = :id

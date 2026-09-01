@@ -1,0 +1,2 @@
+INSERT INTO space_company_relations (id, user_id, created_at, updated_at, company_a_id, company_b_id, relation_type, contract_name, description, signed_at, end_at, status, source)
+VALUES (:id, :user_id, datetime('now'), datetime('now'), :company_a_id, :company_b_id, :relation_type, :contract_name, :description, :signed_at, :end_at, :status, :source)

@@ -1,0 +1,4 @@
+SELECT id, case_id, finding_type, severity, rule_id, rule_ref, description, recommendation, resolution_status, resolution_notes
+FROM space_review_findings
+WHERE case_id = :case_id
+ORDER BY rowid

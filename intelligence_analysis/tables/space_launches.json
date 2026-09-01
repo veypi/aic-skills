@@ -1,0 +1,32 @@
+{
+  "title": "发射记录表",
+  "description": "航天发射任务详细记录",
+  "fields": [
+    { "name": "id", "type": "string", "required": true, "description": "行 ID（写入方生成，32 位十六进制）" },
+    { "name": "user_id", "type": "string", "required": true, "description": "写入者 uid（服务端注入）" },
+    { "name": "created_at", "type": "time", "required": true },
+    { "name": "updated_at", "type": "time", "required": true },
+    { "name": "company_id", "type": "string", "required": true, "description": "执行发射的公司 ID" },
+    { "name": "product_id", "type": "string", "description": "使用的火箭产品 ID（space_products.id）" },
+    { "name": "mission_name", "type": "string", "description": "任务代号" },
+    { "name": "flight_number", "type": "string", "description": "飞行序号（如 遥一、海遥一）" },
+    { "name": "launch_at", "type": "time", "description": "发射时间" },
+    { "name": "launch_site", "type": "string", "description": "发射场/工位" },
+    { "name": "launch_method", "type": "string", "description": "陆射/海射" },
+    { "name": "orbit_type", "type": "string", "description": "目标轨道：LEO/SSO/GTO/GEO/MEO" },
+    { "name": "payload", "type": "text", "description": "载荷描述" },
+    { "name": "payload_count", "type": "int", "description": "卫星数量" },
+    { "name": "customer", "type": "string", "description": "客户名称" },
+    { "name": "result", "type": "string", "description": "成功/失败/部分成功" },
+    { "name": "failure_reason", "type": "text", "description": "失败原因" },
+    { "name": "source", "type": "string", "description": "信息来源" },
+    { "name": "notes", "type": "text", "description": "备注" }
+  ],
+  "indexes": [
+    { "fields": ["company_id"] },
+    { "fields": ["product_id"] },
+    { "fields": ["result"] },
+    { "fields": ["launch_at"] },
+    { "fields": ["orbit_type"] }
+  ]
+}

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head><title>公司详情 - 商业航天分析</title></head>
+<style>
+  .page { padding:var(--spacing-lg) var(--spacing-xl); max-width:1440px; margin:0 auto; }
+  .breadcrumb { display:flex; align-items:center; gap:var(--spacing-sm); margin-bottom:var(--spacing-md); font-size:var(--font-size-xs); font-family:var(--font-mono); color:var(--text-color-tertiary); }
+  .breadcrumb a { color:var(--color-primary); text-decoration:none; }
+  .breadcrumb a:hover { text-decoration:underline; }
+  .dot { width:8px; height:8px; border-radius:var(--radius-full); display:inline-block; flex:0 0 auto; }
+  .dot-green { background:var(--color-success); box-shadow:0 0 0 3px rgba(34,197,94,0.18); animation:pulse 2s infinite; }
+  .dot-gray { background:var(--text-color-disabled); }
+  @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.45 } }
+
+  .profile { background:#fff; border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:var(--spacing-lg) var(--spacing-xl); margin-bottom:var(--spacing-lg); }
+  .p-top { display:flex; justify-content:space-between; align-items:flex-start; gap:var(--spacing-lg); }
+  .p-kicker { font-family:var(--font-mono); font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--color-primary); font-weight:var(--font-weight-semibold); }
+  .p-name { font-size:var(--font-size-2xl); font-weight:var(--font-weight-bold); color:var(--text-color); margin-top:4px; }
+  .p-sub { color:var(--text-color-tertiary); font-size:var(--font-size-xs); margin-top:4px; font-family:var(--font-mono); }
+  .p-desc { color:var(--text-color-secondary); font-size:var(--font-size-sm); margin-top:var(--spacing-md); line-height:1.7; max-width:860px; }
+  .p-tags { display:flex; gap:6px; flex-wrap:wrap; margin-top:var(--spacing-md); }
+  .chip { display:inline-flex; align-items:center; gap:5px; font-family:var(--font-mono); font-size:11px; font-weight:var(--font-weight-medium); padding:3px 8px; border-radius:var(--radius-sm); letter-spacing:0.02em; white-space:nowrap; }
+  .chip-primary { background:rgba(67,97,238,0.09); color:var(--color-primary); }
+  .chip-green { background:rgba(34,197,94,0.1); color:#15803d; }
+  .chip-yellow { background:rgba(251,191,36,0.14); color:#b45309; }
+  .chip-gray { background:var(--bg-color-tertiary); color:var(--text-color-secondary); }
+
+  .stat-row { display:grid; grid-template-columns:repeat(4,1fr); gap:var(--spacing-md); margin-bottom:var(--spacing-lg); }
+  .stat-box { position:relative; background:#fff; border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:var(--spacing-md) var(--spacing-lg) var(--spacing-md) calc(var(--spacing-lg) + 4px); overflow:hidden; }
+  .stat-box::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--bar,var(--color-primary)); }
+  .stat-box .num { font-family:var(--font-mono); font-size:26px; font-weight:var(--font-weight-bold); color:var(--text-color); font-variant-numeric:tabular-nums; line-height:1.15; }
+  .stat-box .lbl { font-family:var(--font-mono); font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-color-tertiary); margin-top:2px; }
+
+  .panel { background:#fff; border:1px solid var(--border-color); border-radius:var(--radius-lg); overflow:hidden; }
+  .tabs { display:flex; gap:2px; padding:0 var(--spacing-md); border-bottom:1px solid var(--border-color); background:var(--bg-color-secondary); overflow-x:auto; scrollbar-width:none; }
+  .tabs::-webkit-scrollbar { display:none; }
+  .tab { display:inline-flex; align-items:center; gap:5px; padding:10px 14px; font-family:var(--font-mono); font-size:var(--font-size-xs); color:var(--text-color-tertiary); cursor:pointer; border-bottom:2px solid transparent; transition:all var(--transition-fast); white-space:nowrap; font-weight:var(--font-weight-medium); }
+  .tab:hover { color:var(--text-color); }
+  .tab.active { color:var(--color-primary); border-bottom-color:var(--color-primary); font-weight:var(--font-weight-semibold); }
+  .tab .cnt { font-variant-numeric:tabular-nums; opacity:0.75; }
+  .tab-content { display:none; padding:var(--spacing-lg); }
+  .tab-content.active { display:block; }
+
+  .info-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--border-color); border:1px solid var(--border-color); border-radius:var(--radius-md); overflow:hidden; }
+  .info-item { display:flex; flex-direction:column; gap:4px; padding:var(--spacing-md); background:#fff; }
+  .info-label { color:var(--text-color-tertiary); font-size:11px; font-family:var(--font-mono); font-weight:var(--font-weight-medium); text-transform:uppercase; letter-spacing:0.08em; }
+  .info-value { color:var(--text-color); font-size:var(--font-size-sm); }
+  .info-value a { color:var(--color-primary); text-decoration:none; word-break:break-all; }
+  .info-value a:hover { text-decoration:underline; }
+
+  .table-wrap { overflow-x:auto; border:1px solid var(--border-color); border-radius:var(--radius-md); }
+  table { width:100%; border-collapse:collapse; }
+  th { text-align:left; padding:9px 14px; background:var(--bg-color-secondary); color:var(--text-color-tertiary); font-family:var(--font-mono); font-weight:var(--font-weight-semibold); font-size:11px; text-transform:uppercase; letter-spacing:0.08em; border-bottom:1px solid var(--border-color); white-space:nowrap; }
+  td { padding:10px 14px; border-bottom:1px solid var(--border-color); color:var(--text-color); font-size:var(--font-size-sm); }
+  tbody tr { transition:background var(--transition-fast); }
+  tbody tr:hover { background:var(--bg-color-secondary); }
+  tbody tr:last-child td { border-bottom:none; }
+  .num-cell { font-family:var(--font-mono); font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap; }
+  .mono { font-family:var(--font-mono); font-size:var(--font-size-xs); color:var(--text-color-secondary); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  th.r, td.r { text-align:right; }
+  .lnk { color:var(--color-primary); font-size:var(--font-size-xs); font-family:var(--font-mono); text-decoration:none; }
+  .lnk:hover { text-decoration:underline; }
+  .tag { display:inline-flex; font-family:var(--font-mono); font-size:11px; font-weight:var(--font-weight-semibold); padding:2px 8px; border-radius:var(--radius-sm); white-space:nowrap; }
+  .tag-success { background:rgba(34,197,94,0.1); color:#15803d; }
+  .tag-fail { background:rgba(239,68,68,0.1); color:#b91c1c; }
+  .empty { text-align:center; padding:var(--spacing-2xl); color:var(--text-color-tertiary); font-size:var(--font-size-sm); font-family:var(--font-mono); }
+  @media (max-width:768px) {
+    .page { padding:var(--spacing-md); }
+    .info-grid { grid-template-columns:1fr 1fr; }
+    .stat-row { grid-template-columns:repeat(2,1fr); }
+    .p-name { font-size:var(--font-size-xl); }
+    .p-top { flex-direction:column; }
+  }
+
+  /* ===== 主题适配层 ===== */
+  .profile, .stat-box, .panel, .info-item { background:var(--bg-color-secondary); }
+  .tabs { background:var(--bg-color-tertiary); }
+  th { background:var(--bg-color-tertiary); }
+  tbody tr:hover { background:var(--bg-color-tertiary); }
+  .chip-green { color:var(--color-success); }
+  .chip-yellow { color:var(--color-warning); }
+  .chip-primary { color:var(--color-primary); }
+  .chip-gray { background:var(--bg-color-tertiary); color:var(--text-color-secondary); }
+  .tag-success { color:var(--color-success); }
+  .tag-fail { color:var(--color-danger); }
+</style>
+<body>
+  <div class="page">
+    <div class="breadcrumb">
+      <a href="index.html">DASHBOARD</a><span>/</span><a href="companies.html">COMPANIES</a><span>/</span><span>DETAIL</span>
+    </div>
+
+    <div v-if="company === null" class="empty">LOADING...</div>
+    <template v-else>
+      <div class="profile">
+        <div class="p-top">
+          <div>
+            <div class="p-kicker">{{ company.sub_sector || 'Company Profile' }}</div>
+            <div class="p-name">{{ company.name }}</div>
+            <div class="p-sub">{{ company.name_en || '' }}{{ company.name_en ? ' · ' : '' }}{{ company.headquarters || '未知' }} · EST {{ dateStr(company.established_at) }}</div>
+          </div>
+          <span :class="'chip ' + (company.status === 'active' ? 'chip-green' : 'chip-yellow')">
+            <span :class="'dot ' + (company.status === 'active' ? 'dot-green' : 'dot-gray')"></span>{{ company.status === 'active' ? '运营中' : (company.status === 'inactive' ? '已停运' : company.status || '-') }}
+          </span>
+        </div>
+        <div class="p-desc" v-if="company.description">{{ company.description }}</div>
+        <div class="p-tags">
+          <span class="chip chip-primary">{{ company.sub_sector || '未分类' }}</span>
+          <span v-for="t in tagList(company.tags)" class="chip chip-gray">{{ t }}</span>
+        </div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-box" style="--bar:var(--color-primary)"><div class="num">{{ launches.length }}</div><div class="lbl">总发射 Launches</div></div>
+        <div class="stat-box" style="--bar:var(--color-success)"><div class="num" style="color:var(--color-success)">{{ successCount }}</div><div class="lbl">成功 Success</div></div>
+        <div class="stat-box" style="--bar:var(--color-danger)"><div class="num" style="color:var(--color-danger)">{{ launches.length - successCount }}</div><div class="lbl">失败 Failed</div></div>
+        <div class="stat-box" style="--bar:var(--color-info)"><div class="num">{{ rate }}%</div><div class="lbl">成功率 Rate</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="tabs">
+          <div :class="'tab ' + (tab === 'info' ? 'active' : '')" @click="tab = 'info'">基本信息</div>
+          <div :class="'tab ' + (tab === 'products' ? 'active' : '')" @click="tab = 'products'">产品 <span class="cnt">{{ products.length }}</span></div>
+          <div :class="'tab ' + (tab === 'launches' ? 'active' : '')" @click="tab = 'launches'">发射 <span class="cnt">{{ launches.length }}</span></div>
+          <div :class="'tab ' + (tab === 'fundings' ? 'active' : '')" @click="tab = 'fundings'">融资 <span class="cnt">{{ fundings.length }}</span></div>
+          <div :class="'tab ' + (tab === 'relations' ? 'active' : '')" @click="tab = 'relations'">关系 <span class="cnt">{{ relations.length }}</span></div>
+        </div>
+
+        <div :class="'tab-content ' + (tab === 'info' ? 'active' : '')">
+          <div class="info-grid">
+            <div class="info-item"><span class="info-label">英文名</span><span class="info-value">{{ company.name_en || '-' }}</span></div>
+            <div class="info-item"><span class="info-label">简称</span><span class="info-value">{{ company.short_name || '-' }}</span></div>
+            <div class="info-item"><span class="info-label">创始人</span><span class="info-value">{{ company.founder || '-' }}</span></div>
+            <div class="info-item"><span class="info-label">总部</span><span class="info-value">{{ company.headquarters || '-' }}</span></div>
+            <div class="info-item"><span class="info-label">官网</span><span class="info-value"><a v-if="company.website" :href="company.website" target="_blank">{{ company.website }}</a><span v-else>-</span></span></div>
+            <div class="info-item"><span class="info-label">员工人数</span><span class="info-value">{{ company.employee_count || '-' }}</span></div>
+          </div>
+        </div>
+
+        <div :class="'tab-content ' + (tab === 'products' ? 'active' : '')">
+          <div v-if="products.length === 0" class="empty">NO DATA</div>
+          <div class="table-wrap" v-else>
+            <table>
+              <thead><tr><th>产品名称</th><th>类型</th><th>子类型</th><th>状态</th><th>可复用</th><th>来源</th></tr></thead>
+              <tbody>
+                <tr v-for="p in products">
+                  <td><strong>{{ p.name }}</strong></td>
+                  <td><span class="chip chip-primary">{{ p.product_type }}</span></td>
+                  <td>{{ p.sub_type || '-' }}</td>
+                  <td><span class="chip chip-gray">{{ p.status || '-' }}</span></td>
+                  <td class="mono">{{ p.reusable ? 'YES' : 'NO' }}</td>
+                  <td><a v-if="p.source" :href="firstUrl(p.source)" target="_blank" class="lnk">SRC &#8599;</a><span class="mono" v-else>-</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div :class="'tab-content ' + (tab === 'launches' ? 'active' : '')">
+          <div v-if="launches.length === 0" class="empty">NO DATA</div>
+          <div class="table-wrap" v-else>
+            <table>
+              <thead><tr><th>序号</th><th>任务</th><th>时间</th><th>轨道</th><th>方式</th><th class="r">载荷数</th><th>结果</th><th>来源</th></tr></thead>
+              <tbody>
+                <tr v-for="l in launches">
+                  <td class="mono">{{ l.flight_number || '-' }}</td>
+                  <td>{{ l.mission_name || '-' }}</td>
+                  <td class="mono">{{ dateStr(l.launch_at) }}</td>
+                  <td class="mono">{{ l.orbit_type || '-' }}</td>
+                  <td class="mono">{{ l.launch_method || '-' }}</td>
+                  <td class="num-cell">{{ l.payload_count || 0 }}</td>
+                  <td><span :class="'tag ' + (l.result === '成功' ? 'tag-success' : 'tag-fail')">{{ l.result }}</span></td>
+                  <td><a v-if="l.source" :href="firstUrl(l.source)" target="_blank" class="lnk">SRC &#8599;</a><span class="mono" v-else>-</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div :class="'tab-content ' + (tab === 'fundings' ? 'active' : '')">
+          <div v-if="fundings.length === 0" class="empty">NO DATA</div>
+          <div class="table-wrap" v-else>
+            <table>
+              <thead><tr><th>轮次</th><th class="r">金额(亿元)</th><th>币种</th><th>日期</th><th>投资方</th><th>来源</th></tr></thead>
+              <tbody>
+                <tr v-for="f in fundings">
+                  <td><strong>{{ f.round || '-' }}</strong></td>
+                  <td class="num-cell">{{ f.amount || '-' }}</td>
+                  <td class="mono">{{ f.currency || 'CNY' }}</td>
+                  <td class="mono">{{ dateStr(f.announced_at) }}</td>
+                  <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ f.investors || '-' }}</td>
+                  <td><a v-if="f.source" :href="firstUrl(f.source)" target="_blank" class="lnk">SRC &#8599;</a><span class="mono" v-else>-</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div :class="'tab-content ' + (tab === 'relations' ? 'active' : '')">
+          <div v-if="relations.length === 0" class="empty">NO DATA</div>
+          <div class="table-wrap" v-else>
+            <table>
+              <thead><tr><th>关系类型</th><th>相关方</th><th>合同</th><th>状态</th></tr></thead>
+              <tbody>
+                <tr v-for="r in relations">
+                  <td><span class="chip chip-primary">{{ r.relation_type }}</span></td>
+                  <td><strong>{{ peerName(r) }}</strong></td>
+                  <td>{{ r.contract_name || '-' }}</td>
+                  <td><span class="chip chip-gray">{{ r.status || '-' }}</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </template>
+  </div>
+</body>
+<script setup>
+  company = null
+  cid = ''
+  tab = 'info'
+  products = []
+  launches = []
+  fundings = []
+  relations = []
+  companyMap = {}
+  successCount = 0
+  rate = 0
+  dateStr = (d) => d ? d.substring(0, 10) : '-'
+  firstUrl = (s) => s ? String(s).split(';')[0].trim() : ''
+  tagList = (tags) => tags ? tags.split(',').map(function(t){ return t.trim() }).filter(function(t){ return t }) : []
+  peerName = (r) => {
+    if (r.target_name) return r.target_name
+    const peerId = r.company_a_id === cid ? r.company_b_id : r.company_a_id
+    return companyMap[peerId] || peerId || '-'
+  }
+
+  apiGet = async (name, params) => {
+    const usp = new URLSearchParams(params || {})
+    const r = await fetch('api/' + name + (usp.toString() ? '?' + usp.toString() : ''))
+    if (!r.ok) throw new Error('api ' + name + ' HTTP ' + r.status)
+    const d = await r.json()
+    return d.rows || []
+  }
+
+  init = async () => {
+    cid = new URLSearchParams(location.search).get('id') || ''
+    company = null
+    products = []
+    launches = []
+    fundings = []
+    relations = []
+    if (!cid) { company = { name: '未找到公司' }; return }
+    try { const rows = await apiGet('company', { id: cid }); company = rows[0] || { name: '未找到公司' } } catch(e) { company = { name: '加载失败' }; return }
+    apiGet('company_names').then(function(rows){ rows.forEach(function(c){ companyMap[c.id] = c.name }) }).catch(function(){})
+    try { products = await apiGet('company_products', { company_id: cid }) } catch(e) {}
+    try {
+      launches = await apiGet('company_launches', { company_id: cid })
+      successCount = launches.filter(function(l){ return l.result === '成功' }).length
+      rate = launches.length ? (successCount / launches.length * 100).toFixed(1) : 0
+    } catch(e) {}
+    try { fundings = await apiGet('company_fundings', { company_id: cid }) } catch(e) {}
+    try { relations = await apiGet('company_relations', { company_id: cid }) } catch(e) {}
+  }
+</script>
+<script>
+  init()
+  // SPA 内同页换 id（路由 query 变化）：平台 vrouter 导航不重建组件，需自行重载
+  if ($router && $router.onChange) $router.onChange(() => init())
+</script>
+</html>

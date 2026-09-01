@@ -1,0 +1,4 @@
+SELECT id, product_id, mission_name, flight_number, launch_at, launch_site, launch_method, orbit_type, payload, payload_count, customer, result, failure_reason, source, notes
+FROM space_launches
+WHERE company_id = :company_id
+ORDER BY launch_at DESC

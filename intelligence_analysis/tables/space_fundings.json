@@ -1,0 +1,22 @@
+{
+  "title": "融资记录表",
+  "description": "商业航天公司融资轮次信息（事件维度；长期持股关系见 space_company_relations 的 investor 类型）",
+  "fields": [
+    { "name": "id", "type": "string", "required": true, "description": "行 ID（写入方生成，32 位十六进制）" },
+    { "name": "user_id", "type": "string", "required": true, "description": "写入者 uid（服务端注入）" },
+    { "name": "created_at", "type": "time", "required": true },
+    { "name": "updated_at", "type": "time", "required": true },
+    { "name": "company_id", "type": "string", "required": true, "description": "公司 ID" },
+    { "name": "round", "type": "string", "description": "轮次：天使轮/Pre-A/A轮/B轮/C轮/D轮/Pre-IPO等" },
+    { "name": "amount", "type": "number", "description": "金额（亿元人民币）" },
+    { "name": "currency", "type": "string", "description": "币种，默认 CNY" },
+    { "name": "announced_at", "type": "time", "description": "公布日期" },
+    { "name": "investors", "type": "text", "description": "投资方列表" },
+    { "name": "valuation", "type": "string", "description": "估值" },
+    { "name": "source", "type": "string", "description": "信息来源" }
+  ],
+  "indexes": [
+    { "fields": ["company_id"] },
+    { "fields": ["round"] }
+  ]
+}

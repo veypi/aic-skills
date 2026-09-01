@@ -1,0 +1,25 @@
+{
+  "title": "公司关系表",
+  "description": "公司间的合同/供应/合作/投资等关系，用于推导产业链上下游",
+  "fields": [
+    { "name": "id", "type": "string", "required": true, "description": "行 ID（写入方生成，32 位十六进制）" },
+    { "name": "user_id", "type": "string", "required": true, "description": "写入者 uid（服务端注入）" },
+    { "name": "created_at", "type": "time", "required": true },
+    { "name": "updated_at", "type": "time", "required": true },
+    { "name": "company_a_id", "type": "string", "required": true, "description": "甲方公司 ID" },
+    { "name": "company_b_id", "type": "string", "required": true, "description": "乙方公司 ID" },
+    { "name": "relation_type", "type": "string", "required": true, "description": "类型：supplier/customer/partner/investor/competitor/joint_venture/other" },
+    { "name": "contract_name", "type": "string", "description": "合同/合作名称" },
+    { "name": "description", "type": "text", "description": "合作描述" },
+    { "name": "signed_at", "type": "time", "description": "签署日期" },
+    { "name": "end_at", "type": "time", "description": "到期日期" },
+    { "name": "status", "type": "string", "description": "active/completed/terminated" },
+    { "name": "source", "type": "string", "description": "信息来源" }
+  ],
+  "indexes": [
+    { "fields": ["company_a_id", "company_b_id", "relation_type"] },
+    { "fields": ["company_a_id"] },
+    { "fields": ["company_b_id"] },
+    { "fields": ["relation_type"] }
+  ]
+}

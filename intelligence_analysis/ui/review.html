@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head><title>审查详情 - 商业航天分析</title></head>
+<style>
+  .page { padding:var(--spacing-lg) var(--spacing-xl); max-width:1080px; margin:0 auto; }
+  .breadcrumb { display:flex; align-items:center; gap:var(--spacing-sm); margin-bottom:var(--spacing-md); font-size:var(--font-size-xs); font-family:var(--font-mono); color:var(--text-color-tertiary); }
+  .breadcrumb a { color:var(--color-primary); text-decoration:none; }
+  .breadcrumb a:hover { text-decoration:underline; }
+
+  .hero { position:relative; background:var(--bg-color-secondary); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:var(--spacing-lg) var(--spacing-xl) var(--spacing-lg) calc(var(--spacing-xl) + 4px); margin-bottom:var(--spacing-lg); overflow:hidden; }
+  .hero::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--color-warning); }
+  .h-kicker { font-family:var(--font-mono); font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--color-warning); font-weight:var(--font-weight-semibold); }
+  .h-title { font-size:var(--font-size-xl); font-weight:var(--font-weight-bold); color:var(--text-color); line-height:1.4; margin-top:6px; }
+  .h-meta { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:var(--spacing-md); }
+
+  .chip { display:inline-flex; align-items:center; font-family:var(--font-mono); font-size:11px; font-weight:var(--font-weight-medium); padding:3px 8px; border-radius:var(--radius-sm); letter-spacing:0.02em; white-space:nowrap; }
+  .chip-primary { background:rgba(67,97,238,0.09); color:var(--color-primary); }
+  .chip-green { background:rgba(34,197,94,0.1); color:var(--color-success); }
+  .chip-yellow { background:rgba(251,191,36,0.14); color:var(--color-warning); }
+  .chip-blue { background:rgba(14,165,233,0.1); color:var(--color-info); }
+  .chip-red { background:rgba(239,68,68,0.1); color:var(--color-danger); }
+  .chip-gray { background:var(--bg-color-tertiary); color:var(--text-color-secondary); }
+
+  .info-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--border-color); border:1px solid var(--border-color); border-radius:var(--radius-md); overflow:hidden; margin-top:var(--spacing-lg); }
+  .info-item { display:flex; flex-direction:column; gap:4px; padding:var(--spacing-md); background:var(--bg-color-secondary); }
+  .info-label { color:var(--text-color-tertiary); font-size:11px; font-family:var(--font-mono); font-weight:var(--font-weight-medium); text-transform:uppercase; letter-spacing:0.08em; }
+  .info-value { color:var(--text-color); font-size:var(--font-size-sm); }
+
+  .actions { display:flex; gap:var(--spacing-sm); margin-bottom:var(--spacing-lg); flex-wrap:wrap; }
+  .btn { padding:8px 16px; border:none; border-radius:var(--radius-md); font-size:var(--font-size-xs); cursor:pointer; font-weight:var(--font-weight-semibold); font-family:var(--font-mono); letter-spacing:0.05em; transition:all var(--transition-fast); }
+  .btn-primary { background:var(--color-primary); color:var(--color-primary-text); }
+  .btn-primary:hover { background:var(--color-primary-hover); }
+  .btn-secondary { background:var(--bg-color-tertiary); color:var(--text-color); border:1px solid var(--border-color); }
+  .btn-sm { padding:5px 12px; font-size:11px; }
+
+  .panel { background:var(--bg-color-secondary); border:1px solid var(--border-color); border-radius:var(--radius-lg); overflow:hidden; margin-bottom:var(--spacing-lg); }
+  .panel-hd { display:flex; justify-content:space-between; align-items:center; padding:11px var(--spacing-lg); border-bottom:1px solid var(--border-color); background:var(--bg-color-tertiary); }
+  .panel-title { font-family:var(--font-mono); font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-color-secondary); font-weight:var(--font-weight-semibold); display:flex; align-items:center; gap:8px; }
+  .panel-title .sq { width:8px; height:8px; border-radius:2px; background:var(--color-warning); }
+  .panel-bd { padding:var(--spacing-lg); font-size:var(--font-size-sm); line-height:1.8; color:var(--text-color); }
+  .panel-bd .cnt { font-variant-numeric:tabular-nums; }
+
+  .table-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; }
+  th { text-align:left; padding:9px 14px; background:var(--bg-color-tertiary); color:var(--text-color-tertiary); font-family:var(--font-mono); font-weight:var(--font-weight-semibold); font-size:11px; text-transform:uppercase; letter-spacing:0.08em; border-bottom:1px solid var(--border-color); white-space:nowrap; }
+  td { padding:10px 14px; border-bottom:1px solid var(--border-color); color:var(--text-color); font-size:var(--font-size-sm); vertical-align:top; }
+  tbody tr { transition:background var(--transition-fast); }
+  tbody tr:hover { background:var(--bg-color-tertiary); }
+  tbody tr:last-child td { border-bottom:none; }
+  .desc-cell { max-width:280px; }
+  .tag { display:inline-flex; font-family:var(--font-mono); font-size:11px; font-weight:var(--font-weight-semibold); padding:2px 8px; border-radius:var(--radius-sm); white-space:nowrap; }
+  .tag-critical { background:rgba(239,68,68,0.12); color:var(--color-danger); }
+  .tag-major { background:rgba(249,115,22,0.12); color:#ea580c; }
+  .tag-minor { background:rgba(251,191,36,0.14); color:var(--color-warning); }
+  .tag-info { background:rgba(14,165,233,0.12); color:var(--color-info); }
+  .tag-resolved { background:rgba(34,197,94,0.12); color:var(--color-success); }
+  .tag-closed { background:var(--bg-color-tertiary); color:var(--text-color-tertiary); }
+  .tag-unresolved { background:rgba(239,68,68,0.12); color:var(--color-danger); }
+  .empty { text-align:center; padding:var(--spacing-2xl); color:var(--text-color-tertiary); font-size:var(--font-size-sm); font-family:var(--font-mono); }
+
+  .modal-overlay { display:none; position:fixed; top:0;left:0;right:0;bottom:0; background:rgba(0,0,0,0.5); z-index:100; justify-content:center; align-items:center; backdrop-filter:blur(4px); }
+  .modal-overlay.show { display:flex; }
+  .modal { background:var(--bg-color-secondary); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:var(--spacing-xl); width:520px; max-width:90%; max-height:85vh; overflow-y:auto; box-shadow:var(--shadow-lg); }
+  .modal-title { font-size:var(--font-size-lg); font-weight:var(--font-weight-semibold); margin-bottom:var(--spacing-lg); color:var(--text-color); font-family:var(--font-mono); }
+  .form-group { margin-bottom:var(--spacing-md); }
+  .form-group label { display:block; font-size:var(--font-size-xs); color:var(--text-color-tertiary); margin-bottom:6px; font-weight:var(--font-weight-medium); font-family:var(--font-mono); text-transform:uppercase; letter-spacing:0.08em; }
+  .form-group input,.form-group select,.form-group textarea { width:100%; padding:9px 12px; border:1px solid var(--border-color); border-radius:var(--radius-md); font-size:var(--font-size-sm); box-sizing:border-box; background:var(--bg-color); color:var(--text-color); transition:all var(--transition-fast); }
+  .form-group input:focus,.form-group select:focus,.form-group textarea:focus { outline:none; border-color:var(--color-primary); box-shadow:0 0 0 3px rgba(67,97,238,0.15); }
+  .form-group textarea { min-height:70px; resize:vertical; }
+  .modal-actions { display:flex; gap:var(--spacing-sm); justify-content:flex-end; margin-top:var(--spacing-lg); }
+  @media (max-width:768px) {
+    .page { padding:var(--spacing-md); }
+    .info-grid { grid-template-columns:1fr; }
+    .desc-cell { max-width:none; }
+  }
+</style>
+<body>
+  <div class="page">
+    <div class="breadcrumb">
+      <a href="index.html">DASHBOARD</a><span>/</span><a href="reviews.html">REVIEWS</a><span>/</span><span>CASE</span>
+    </div>
+
+    <div v-if="c === null" class="empty">LOADING...</div>
+    <template v-else>
+      <div class="hero">
+        <div class="h-kicker">{{ caseTypeLabel(c.case_type) }} Review</div>
+        <div class="h-title">{{ c.title || c.case_type }}</div>
+        <div class="h-meta">
+          <span class="chip chip-primary">{{ caseTypeLabel(c.case_type) }}</span>
+          <span :class="'chip ' + statusChip(c.status)">{{ statusLabel(c.status) }}</span>
+          <span v-if="c.overall_result" :class="'chip ' + resultChip(c.overall_result)">{{ resultLabel(c.overall_result) }}</span>
+        </div>
+        <div class="info-grid">
+          <div class="info-item"><span class="info-label">申请公司</span><span class="info-value">{{ companyName || c.company_id || '-' }}</span></div>
+          <div class="info-item"><span class="info-label">提交日期</span><span class="info-value">{{ dateStr(c.submitted_at) }}</span></div>
+          <div class="info-item"><span class="info-label">审查人</span><span class="info-value">{{ c.reviewed_by || '-' }}</span></div>
+        </div>
+      </div>
+
+      <div class="panel" v-if="c.summary">
+        <div class="panel-hd"><div class="panel-title"><span class="sq"></span>审查总结 / Summary</div></div>
+        <div class="panel-bd">{{ c.summary }}</div>
+      </div>
+
+      <div class="actions" v-if="c.status !== 'completed'">
+        <button class="btn btn-primary" @click="updateCaseStatus('completed')">标记为已完成</button>
+        <button class="btn btn-secondary" @click="updateCaseStatus('in_review')" v-if="c.status === 'pending'">标记为审查中</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel-hd">
+          <div class="panel-title"><span class="sq"></span>审查发现项 <span class="cnt">({{ findings.length }})</span></div>
+          <button class="btn btn-sm btn-secondary" @click="openAdd">+ 添加发现项</button>
+        </div>
+        <div v-if="findings.length === 0" class="empty">NO DATA</div>
+        <div class="table-wrap" v-else>
+          <table>
+            <thead><tr><th>类型</th><th>严重度</th><th>描述</th><th>建议</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr v-for="f in findings">
+                <td><span class="chip chip-gray">{{ findingTypeLabel(f.finding_type) }}</span></td>
+                <td><span :class="'tag tag-' + f.severity" v-if="f.severity">{{ severityLabel(f.severity) }}</span></td>
+                <td class="desc-cell">{{ f.description || '-' }}</td>
+                <td class="desc-cell">{{ f.recommendation || '-' }}</td>
+                <td><span :class="'tag tag-' + (f.resolution_status === 'resolved' ? 'resolved' : f.resolution_status === 'closed' ? 'closed' : 'unresolved')">{{ resStatusLabel(f.resolution_status) }}</span></td>
+                <td>
+                  <button class="btn btn-sm btn-primary" @click="resolveFinding(f)" v-if="f.resolution_status === 'unresolved'">已整改</button>
+                  <button class="btn btn-sm btn-secondary" @click="closeFinding(f)" v-if="f.resolution_status === 'resolved'">关闭</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </template>
+
+    <div :class="'modal-overlay ' + (showAdd ? 'show' : '')" @click="if($event.target.classList.contains('modal-overlay')){ showAdd = false }">
+      <div class="modal">
+        <div class="modal-title">添加发现项</div>
+        <div class="form-group"><label>发现类型</label><select v:value="ff.finding_type"><option value="missing_item">材料缺项</option><option value="rule_conflict">规则冲突</option><option value="risk_point">风险点</option><option value="suggestion">整改建议</option></select></div>
+        <div class="form-group"><label>严重程度</label><select v:value="ff.severity"><option value="critical">Critical 致命</option><option value="major">Major 重要</option><option value="minor">Minor 次要</option><option value="info">Info 提示</option></select></div>
+        <div class="form-group"><label>关联法规ID</label><input v:value="ff.rule_id" placeholder="space_regulations 表的 id（可选）"></div>
+        <div class="form-group"><label>法规条文引用</label><textarea v:value="ff.rule_ref" placeholder="引用的法规原文"></textarea></div>
+        <div class="form-group"><label>问题描述</label><textarea v:value="ff.description" placeholder="具体问题描述"></textarea></div>
+        <div class="form-group"><label>整改建议</label><textarea v:value="ff.recommendation" placeholder="整改建议"></textarea></div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" @click="showAdd = false">取消</button>
+          <button class="btn btn-primary" @click="addFinding">添加</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+<script setup>
+  c = null
+  findings = []
+  rid = ''
+  showAdd = false
+  companyName = ''
+  ff = { finding_type:'missing_item', severity:'major', rule_id:'', rule_ref:'', description:'', recommendation:'' }
+  caseTypeLabel = (t) => ({ launch_application:'发射活动', test_plan:'测控方案', frequency_usage:'频率使用', remote_sensing:'遥感合规', other:'其他' })[t] || t
+  statusLabel = (s) => ({ pending:'待审查', in_review:'审查中', completed:'已完成', returned:'已退回' })[s] || s
+  resultLabel = (r) => ({ pass:'通过', conditional_pass:'有条件通过', fail:'不通过' })[r] || ''
+  statusChip = (s) => ({ pending:'chip-yellow', in_review:'chip-blue', completed:'chip-green', returned:'chip-red' })[s] || 'chip-gray'
+  resultChip = (r) => ({ pass:'chip-green', conditional_pass:'chip-yellow', fail:'chip-red' })[r] || 'chip-gray'
+  findingTypeLabel = (t) => ({ missing_item:'材料缺项', rule_conflict:'规则冲突', risk_point:'风险点', suggestion:'建议' })[t] || t
+  severityLabel = (s) => ({ critical:'致命', major:'重要', minor:'次要', info:'提示' })[s] || s
+  resStatusLabel = (s) => ({ unresolved:'未处理', resolved:'已整改', closed:'已关闭' })[s] || s
+  dateStr = (d) => d ? d.substring(0,10) : '-'
+
+  apiGet = async (name, params) => {
+    const usp = new URLSearchParams(params || {})
+    const r = await fetch('api/' + name + (usp.toString() ? '?' + usp.toString() : ''))
+    if (!r.ok) throw new Error('api ' + name + ' HTTP ' + r.status)
+    const d = await r.json()
+    return d.rows || []
+  }
+  apiPost = async (name, body) => {
+    const r = await fetch('api/' + name, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    if (!r.ok) throw new Error('api ' + name + ' HTTP ' + r.status)
+    return r.json()
+  }
+  newId = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID().replaceAll('-', '') : (String(Date.now()) + Math.random().toString(16).slice(2, 10))
+
+  loadFindings = async () => {
+    try { findings = await apiGet('review_findings', { case_id: rid }) } catch(e) {}
+  }
+
+  openAdd = () => { showAdd = true }
+  addFinding = async () => {
+    if (!ff.description) return
+    try {
+      await apiPost('review_finding', { id: newId(), case_id: rid, finding_type: ff.finding_type, severity: ff.severity, rule_id: ff.rule_id, rule_ref: ff.rule_ref, description: ff.description, recommendation: ff.recommendation })
+      showAdd = false
+      loadFindings()
+    } catch(e) {}
+  }
+
+  resolveFinding = async (f) => {
+    try {
+      await apiPost('review_finding_status', { id: f.id, resolution_status: 'resolved' })
+      loadFindings()
+    } catch(e) {}
+  }
+
+  closeFinding = async (f) => {
+    try {
+      await apiPost('review_finding_status', { id: f.id, resolution_status: 'closed' })
+      loadFindings()
+    } catch(e) {}
+  }
+
+  updateCaseStatus = async (status) => {
+    let overallResult = ''
+    if (status === 'completed' && !c.overall_result) {
+      let hasCritical = findings.some(function(f){ return f.severity === 'critical' })
+      let hasMajor = findings.some(function(f){ return f.severity === 'major' })
+      overallResult = hasCritical ? 'fail' : (hasMajor ? 'conditional_pass' : 'pass')
+    }
+    try {
+      await apiPost('review_case_update', { id: rid, status: status, overall_result: overallResult, summary: '', reviewed_by: '', reviewed_at: new Date().toISOString() })
+      init()
+    } catch(e) {}
+  }
+
+  init = async () => {
+    rid = new URLSearchParams(location.search).get('id') || ''
+    c = null
+    companyName = ''
+    if (!rid) { c = {title:'未找到'}; return }
+    try {
+      const rows = await apiGet('review_case', { id: rid })
+      c = rows[0] || {title:'未找到'}
+    } catch(e) { c = {title:'加载失败'} }
+    if (c && c.company_id) {
+      try { const rc = await apiGet('company', { id: c.company_id }); companyName = (rc[0] && rc[0].name) || '' } catch(e) {}
+    }
+    loadFindings()
+  }
+</script>
+<script>
+  init()
+  if ($router && $router.onChange) $router.onChange(() => init())
+</script>
+</html>

@@ -1,0 +1,2 @@
+INSERT INTO space_review_findings (id, user_id, created_at, updated_at, case_id, finding_type, severity, rule_id, rule_ref, description, recommendation, resolution_status)
+VALUES (:id, :user_id, datetime('now'), datetime('now'), :case_id, :finding_type, :severity, :rule_id, :rule_ref, :description, :recommendation, 'unresolved')

@@ -1,0 +1,4 @@
+SELECT id, title, incident_date, location, accident_type, severity, phase, vehicle, company_name, casualties, investigation_status, description, lat, lng
+FROM space_accidents
+WHERE lat IS NOT NULL AND lng IS NOT NULL
+ORDER BY incident_date DESC

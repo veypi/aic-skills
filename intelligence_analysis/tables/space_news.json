@@ -1,0 +1,22 @@
+{
+  "title": "动态资讯表",
+  "description": "商业航天公司相关新闻资讯",
+  "fields": [
+    { "name": "id", "type": "string", "required": true, "description": "行 ID（写入方生成，32 位十六进制）" },
+    { "name": "user_id", "type": "string", "required": true, "description": "写入者 uid（服务端注入）" },
+    { "name": "created_at", "type": "time", "required": true },
+    { "name": "updated_at", "type": "time", "required": true },
+    { "name": "company_id", "type": "string", "required": true, "description": "关联公司 ID" },
+    { "name": "title", "type": "string", "description": "新闻标题" },
+    { "name": "url", "type": "text", "description": "原文链接" },
+    { "name": "published_at", "type": "time", "description": "发布时间" },
+    { "name": "summary", "type": "text", "description": "摘要" },
+    { "name": "news_type", "type": "string", "description": "类型：发射/融资/合作/技术突破/政策/财报/人事/行业" },
+    { "name": "source", "type": "string", "description": "来源媒体" }
+  ],
+  "indexes": [
+    { "fields": ["company_id"] },
+    { "fields": ["news_type"] },
+    { "fields": ["published_at"] }
+  ]
+}

@@ -1,0 +1,2 @@
+INSERT INTO space_fundings (id, user_id, created_at, updated_at, company_id, round, amount, currency, announced_at, investors, valuation, source)
+VALUES (:id, :user_id, datetime('now'), datetime('now'), :company_id, :round, :amount, :currency, :announced_at, :investors, :valuation, :source)

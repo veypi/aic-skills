@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head><title>事故详情 - 商业航天分析</title></head>
+<style>
+  .page { padding:var(--spacing-lg) var(--spacing-xl); max-width:1080px; margin:0 auto; }
+  .breadcrumb { display:flex; align-items:center; gap:var(--spacing-sm); margin-bottom:var(--spacing-md); font-size:var(--font-size-xs); font-family:var(--font-mono); color:var(--text-color-tertiary); }
+  .breadcrumb a { color:var(--color-primary); text-decoration:none; }
+  .breadcrumb a:hover { text-decoration:underline; }
+
+  .hero { position:relative; background:#fff; border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:var(--spacing-lg) var(--spacing-xl) var(--spacing-lg) calc(var(--spacing-xl) + 4px); margin-bottom:var(--spacing-lg); overflow:hidden; }
+  .hero::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--sev-color,var(--color-danger)); }
+  .h-kicker { font-family:var(--font-mono); font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--color-danger); font-weight:var(--font-weight-semibold); }
+  .h-title { font-size:var(--font-size-xl); font-weight:var(--font-weight-bold); color:var(--text-color); line-height:1.4; margin-top:6px; }
+  .h-meta { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:var(--spacing-md); }
+  .h-meta .txt { font-size:var(--font-size-xs); color:var(--text-color-tertiary); font-family:var(--font-mono); }
+
+  .chip { display:inline-flex; align-items:center; font-family:var(--font-mono); font-size:11px; font-weight:var(--font-weight-medium); padding:3px 8px; border-radius:var(--radius-sm); letter-spacing:0.02em; white-space:nowrap; }
+  .chip-red { background:rgba(239,68,68,0.1); color:#b91c1c; }
+  .chip-yellow { background:rgba(251,191,36,0.14); color:#b45309; }
+  .chip-blue { background:rgba(14,165,233,0.1); color:#0369a1; }
+  .chip-primary { background:rgba(67,97,238,0.09); color:var(--color-primary); }
+  .chip-green { background:rgba(34,197,94,0.1); color:#15803d; }
+  .chip-gray { background:var(--bg-color-tertiary); color:var(--text-color-secondary); }
+
+  .info-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:var(--border-color); border:1px solid var(--border-color); border-radius:var(--radius-md); overflow:hidden; margin-top:var(--spacing-lg); }
+  .info-item { display:flex; flex-direction:column; gap:4px; padding:var(--spacing-md); background:#fff; }
+  .info-label { color:var(--text-color-tertiary); font-size:11px; font-family:var(--font-mono); font-weight:var(--font-weight-medium); text-transform:uppercase; letter-spacing:0.08em; }
+  .info-value { color:var(--text-color); font-size:var(--font-size-sm); }
+
+  .panel { background:#fff; border:1px solid var(--border-color); border-radius:var(--radius-lg); overflow:hidden; margin-bottom:var(--spacing-lg); }
+  .panel-hd { display:flex; align-items:center; gap:8px; padding:11px var(--spacing-lg); border-bottom:1px solid var(--border-color); background:var(--bg-color-secondary); font-family:var(--font-mono); font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-color-secondary); font-weight:var(--font-weight-semibold); }
+  .panel-hd .sq { width:8px; height:8px; border-radius:2px; background:var(--color-primary); }
+  .panel-hd.danger .sq { background:var(--color-danger); }
+  .panel-hd.success .sq { background:var(--color-success); }
+  .panel-hd.warning .sq { background:var(--color-warning); }
+  .panel-bd { padding:var(--spacing-lg); font-size:var(--font-size-sm); line-height:1.8; color:var(--text-color); }
+  .panel-bd .blk { white-space:pre-wrap; }
+  .panel-bd .blk + .blk { margin-top:var(--spacing-md); }
+  .panel-bd strong { color:var(--text-color); font-weight:var(--font-weight-semibold); }
+  .panel-bd .lbl { display:inline-block; font-family:var(--font-mono); font-size:11px; font-weight:var(--font-weight-semibold); letter-spacing:0.06em; color:var(--text-color-tertiary); margin-bottom:4px; text-transform:uppercase; }
+
+  .keywords { display:flex; gap:6px; flex-wrap:wrap; }
+  .kw { font-family:var(--font-mono); font-size:11px; padding:3px 10px; border-radius:var(--radius-sm); background:var(--bg-color-secondary); color:var(--text-color-secondary); border:1px solid var(--border-color); }
+  .link { color:var(--color-primary); text-decoration:none; font-family:var(--font-mono); font-size:var(--font-size-xs); }
+  .link:hover { text-decoration:underline; }
+  .empty { text-align:center; padding:var(--spacing-3xl); color:var(--text-color-tertiary); font-size:var(--font-size-sm); font-family:var(--font-mono); }
+  @media (max-width:768px) {
+    .page { padding:var(--spacing-md); }
+    .info-grid { grid-template-columns:1fr; }
+    .h-title { font-size:var(--font-size-lg); }
+  }
+
+  /* ===== 主题适配层（置末覆盖硬编码颜色，跟随平台主题变量） ===== */
+  .hero, .panel, .info-item { background:var(--bg-color-secondary); }
+  .panel-hd { background:var(--bg-color-tertiary); }
+  .chip-green { color:var(--color-success); }
+  .chip-red { color:var(--color-danger); }
+  .chip-yellow { color:var(--color-warning); }
+  .chip-blue { color:var(--color-info); }
+  .chip-primary { color:var(--color-primary); }
+  .chip-gray { background:var(--bg-color-tertiary); color:var(--text-color-secondary); }
+  .kw { background:var(--bg-color-tertiary); border-color:var(--border-color); }
+</style>
+<body>
+  <div class="page">
+    <div class="breadcrumb">
+      <a href="index.html">DASHBOARD</a><span>/</span><a href="accidents.html">ACCIDENTS</a><span>/</span><span>DETAIL</span>
+    </div>
+
+    <div v-if="item === null" class="empty">LOADING...</div>
+    <template v-else>
+      <div class="hero" :style="sevStyle(item.severity)">
+        <div class="h-kicker">{{ item.accident_type || 'Accident Report' }}</div>
+        <div class="h-title">{{ item.title }}</div>
+        <div class="h-meta">
+          <span :class="'chip ' + typeChip(item.accident_type)">{{ item.accident_type }}</span>
+          <span :class="'chip ' + severityChip(item.severity)" v-if="item.severity">{{ item.severity }}</span>
+          <span :class="'chip ' + statusChip(item.investigation_status)" v-if="item.investigation_status">{{ item.investigation_status }}</span>
+          <span class="txt" v-if="item.company_name">{{ item.company_name }}</span>
+          <span class="txt" v-if="item.vehicle">· {{ item.vehicle }}</span>
+          <span class="txt">· {{ dateStr(item.incident_date) }}</span>
+        </div>
+        <div class="info-grid">
+          <div class="info-item"><span class="info-label">事故发生日期</span><span class="info-value">{{ dateStr(item.incident_date) }}</span></div>
+          <div class="info-item"><span class="info-label">事故地点</span><span class="info-value">{{ item.location || '-' }}</span></div>
+          <div class="info-item"><span class="info-label">涉事公司</span><span class="info-value">{{ item.company_name || '-' }}</span></div>
+          <div class="info-item"><span class="info-label">涉事火箭/飞行器</span><span class="info-value">{{ item.vehicle || '-' }}</span></div>
+          <div class="info-item"><span class="info-label">任务名称</span><span class="info-value">{{ item.mission || '-' }}</span></div>
+          <div class="info-item"><span class="info-label">发生阶段</span><span class="info-value">{{ item.phase || '-' }}</span></div>
+          <div class="info-item"><span class="info-label">人员伤亡</span><span class="info-value">{{ item.casualties || '-' }}</span></div>
+          <div class="info-item"><span class="info-label">财产损失</span><span class="info-value">{{ item.property_damage || '-' }}</span></div>
+        </div>
+        <div class="keywords" v-if="item.keywords" style="margin-top:var(--spacing-md)">
+          <span v-for="k in item.keywords.split(',').map(function(x){ return x.trim() }).filter(function(x){ return x })" class="kw">{{ k }}</span>
+        </div>
+      </div>
+
+      <div class="panel" v-if="item.description">
+        <div class="panel-hd"><span class="sq"></span>事故经过 / Timeline</div>
+        <div class="panel-bd"><div class="blk">{{ item.description }}</div></div>
+      </div>
+
+      <div class="panel" v-if="item.immediate_cause || item.root_cause || item.contributing_factors">
+        <div class="panel-hd danger"><span class="sq"></span>原因分析 / Cause Analysis</div>
+        <div class="panel-bd">
+          <div class="blk" v-if="item.immediate_cause"><span class="lbl">直接原因</span><br>{{ item.immediate_cause }}</div>
+          <div class="blk" v-if="item.root_cause"><span class="lbl">根本原因</span><br>{{ item.root_cause }}</div>
+          <div class="blk" v-if="item.contributing_factors"><span class="lbl">促成因素</span><br>{{ item.contributing_factors }}</div>
+        </div>
+      </div>
+
+      <div class="panel" v-if="item.lessons_learned || item.corrective_actions">
+        <div class="panel-hd success"><span class="sq"></span>经验教训与整改 / Lessons</div>
+        <div class="panel-bd">
+          <div class="blk" v-if="item.lessons_learned"><span class="lbl">经验教训</span><br>{{ item.lessons_learned }}</div>
+          <div class="blk" v-if="item.corrective_actions"><span class="lbl">整改措施</span><br>{{ item.corrective_actions }}</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-hd"><span class="sq"></span>调查信息 / Investigation</div>
+        <div class="panel-bd">
+          <div class="info-grid" style="margin-top:0">
+            <div class="info-item"><span class="info-label">调查机构</span><span class="info-value">{{ item.investigation_body || '-' }}</span></div>
+            <div class="info-item"><span class="info-label">调查状态</span><span class="info-value">{{ item.investigation_status || '-' }}</span></div>
+            <div class="info-item" v-if="item.investigation_report_url"><span class="info-label">调查报告</span><span class="info-value"><a :href="item.investigation_report_url" target="_blank" class="link">查看报告 &#8599;</a></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" v-if="relatedAccidents.length > 0 || item.related_regulation_ids">
+        <div class="panel-hd warning"><span class="sq"></span>关联关系 / Related</div>
+        <div class="panel-bd">
+          <div class="blk" v-if="relatedAccidents.length > 0">
+            <span class="lbl">关联事故</span><br>
+            <span v-for="(ra, i) in relatedAccidents">
+              <a :href="'accident.html?id=' + ra.id" class="link">{{ ra.title }}</a><span v-if="i < relatedAccidents.length - 1"> · </span>
+            </span>
+          </div>
+          <div class="blk" v-if="item.related_regulation_ids"><span class="lbl">关联法规</span><br>{{ item.related_regulation_ids }}</div>
+        </div>
+      </div>
+
+      <div class="panel" v-if="item.source || item.source_url">
+        <div class="panel-hd"><span class="sq"></span>信息来源 / Source</div>
+        <div class="panel-bd">
+          <div class="info-grid" style="margin-top:0">
+            <div class="info-item"><span class="info-label">来源</span><span class="info-value">{{ item.source || '-' }}</span></div>
+            <div class="info-item" v-if="item.source_url"><span class="info-label">原文链接</span><span class="info-value"><a :href="item.source_url" target="_blank" class="link">查看原文 &#8599;</a></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" v-if="item.tags">
+        <div class="panel-hd"><span class="sq"></span>标签 / Tags</div>
+        <div class="panel-bd">
+          <div class="keywords">
+            <span v-for="t in item.tags.split(',').map(function(x){ return x.trim() }).filter(function(x){ return x })" class="kw">{{ t }}</span>
+          </div>
+        </div>
+      </div>
+    </template>
+  </div>
+</body>
+<script setup>
+  item = null
+  relatedAccidents = []
+  aid = ''
+  typeChip = (t) => ({ '飞行事故':'chip-red', '地面测试事故':'chip-yellow', '设施事故':'chip-blue', '发动机测试':'chip-primary' })[t] || 'chip-gray'
+  severityChip = (s) => ({ '致命':'chip-red', '重大':'chip-yellow', '较大':'chip-blue', '一般':'chip-gray' })[s] || 'chip-gray'
+  statusChip = (s) => ({ '调查中':'chip-yellow', '已结案':'chip-green', '报告已发布':'chip-primary' })[s] || 'chip-gray'
+  sevStyle = (s) => ({ '致命':'--sev-color:#dc2626', '重大':'--sev-color:#f97316', '较大':'--sev-color:#eab308', '一般':'--sev-color:#3b82f6' })[s] || '--sev-color:var(--color-danger)'
+  dateStr = (d) => d ? d.substring(0,10) : '-'
+
+  apiGet = async (name, params) => {
+    const usp = new URLSearchParams(params || {})
+    const r = await fetch('api/' + name + (usp.toString() ? '?' + usp.toString() : ''))
+    if (!r.ok) throw new Error('api ' + name + ' HTTP ' + r.status)
+    const d = await r.json()
+    return d.rows || []
+  }
+
+  init = async () => {
+    aid = new URLSearchParams(location.search).get('id') || ''
+    item = null
+    relatedAccidents = []
+    if (!aid) { item = { title:'未找到' }; return }
+    try {
+      const rows = await apiGet('accident', { id: aid })
+      item = rows[0] || { title: '未找到' }
+      if (item && item.related_accident_ids) {
+        const ids = String(item.related_accident_ids).split(',').map(function(x){ return x.trim() }).filter(function(x){ return x })
+        for (let i = 0; i < ids.length; i++) {
+          try {
+            const rr = await apiGet('accident', { id: ids[i] })
+            if (rr && rr[0] && rr[0].id) relatedAccidents.push(rr[0])
+          } catch (e) {}
+        }
+      }
+    } catch(e) { item = { title: '加载失败' } }
+  }
+</script>
+<script>
+  init()
+  if ($router && $router.onChange) $router.onChange(() => init())
+</script>
+</html>

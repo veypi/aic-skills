@@ -1,0 +1,5 @@
+SELECT id, company_id, case_type, title, materials_list, submitted_at, status, overall_result, summary, reviewed_at, reviewed_by
+FROM space_review_cases
+WHERE (:case_type = '' OR case_type = :case_type)
+  AND (:status = '' OR status = :status)
+ORDER BY submitted_at DESC

@@ -1,0 +1,4 @@
+SELECT id, name, product_type, sub_type, description, key_params, status, reusable, first_flight_at, source
+FROM space_products
+WHERE company_id = :company_id
+ORDER BY name
