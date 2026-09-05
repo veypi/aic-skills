@@ -1,14 +1,16 @@
 ---
 name: create_skill
 nickname: 创建 Skill 指南
-description: 教导如何在本平台创建一个动态 skill：分级决策（纯文本/ui/数据/接口）→ 按级实施 → 发布审核流
-keywords: [skill, 创建, 教程, 指南, 动态skill, skill.md, ui, tables, api]
+description: 教导如何在本平台创建一个动态 skill：分级决策（单文件组件/纯文本/ui/数据/接口）→ 按级实施 → 发布审核流
+keywords: [skill, 创建, 教程, 指南, 动态skill, skill.md, ui, tables, api, 单文件组件, html]
 icon: fa-solid fa-wand-magic-sparkles
 ---
 
 # 创建动态 Skill 指南
 
 本 skill 是一份操作手册，教你从零创建一个本平台的 skill。平台 skill 机制的唯一契约源是 `aic/docs/skill.md`，本指南是其面向创作者浓缩版；冲突时以文档与代码为准。
+
+**并非一切都要建 skill**：一次性/私有的前端小组件，直接写一个 .html 文件就能打开使用（见 §2 Q0）；skill 是给「需要 AI 手册、数据通道、打包分享」的能力用的。
 
 ## 1. 概念：一切能力都是 skill
 
@@ -25,9 +27,14 @@ skill = **SKILL.md（必有）** + 可选能力目录叠加。能力按「给谁
 
 ## 2. 分级决策：先定级，再动手
 
-创建 skill 先依次回答四个问题，答案决定启用哪些能力目录：
+先回答 Q0 决定「要不要建 skill」，再依次回答四个问题决定启用哪些能力目录：
 
 ```
+Q0 只是要一个前端页面/组件（无需 AI 手册、无需数据通道、无需发布分享）？
+   └ 是 → L0 单文件组件：不建 skill，直接写一个 .html 进文件空间
+          （见本节末「L0 细则」），此后不必再读本指南
+   └ 否 ↓
+
 Q1 这个 skill 只是教 AI 知识/流程/规范，无交互无数据？
    └ 是 → L1 纯静态：只需 SKILL.md，跳到 §3 写完即完成
    └ 否 ↓
@@ -52,6 +59,7 @@ Q4 页面/AI 需要结构化的数据读写通道（即使是别人的表/纯查
 
 | 级别 | 启用目录 | 典型场景 |
 | --- | --- | --- |
+| L0 | 不建 skill（单个 .html 文件） | 一次性/私有前端小组件、临时页面 |
 | L1 | 仅 SKILL.md | 领域知识包、操作手册、提示词规范 |
 | L2 | + ui/ | 计算器、剪贴板类纯前端工具 |
 | L3+L4 | + tables/ + api/ | 备忘录、收藏库、记账（存数据 + 读写通道） |
@@ -64,7 +72,30 @@ Q4 页面/AI 需要结构化的数据读写通道（即使是别人的表/纯查
 - **api 可无 tables**：接口可以只查不存，或操作别的 skill 声明的表
 - 每加一个目录，发布审核的审查面就多一些（ui 看 JS 越权调 /api、api 看 SQL 注入与 `:user_id` 过滤）
 
-## 3. 共同地基：SKILL.md（所有级别必有）
+### L0 细则：单文件组件（不建 skill）
+
+把组件写成单个 .html 文件即可，放哪由使用周期决定：
+
+| 空间 | 写入路径 | 打开 URL | 适用 |
+| --- | --- | --- | --- |
+| page（浏览器本地 OPFS） | `/{path}.html`（page 端 fs 写入，如 `/demo/x.html`） | `/fs/page/{path}.html` | 临时、一次性、用完即弃 |
+| cloud（你的 UFS） | `/u/{uid}/{path}.html`（cloud 端 fs 写入） | `/fs/cloud/u/{uid}/{path}.html` | 长久使用、跨设备 |
+
+打开方式：`page open` 该 URL（AI：`exec 1host=page` → `open --url /fs/...html`），或在平台内导航过去。文件即页面，无需任何登记；浏览器地址栏直开 cloud 文件 URL 则是服务端 file-first 直出的裸页（无 OS 壳）。
+
+平台按内容自动分流两种渲染形态：
+
+- 含 `<script setup>` → 按 **vhtml 组件**挂载：响应式、scoped 样式、生命周期全语义（写法契约见 vhtml skill）；setup 里声明 `pageDesc = {desc, commands:[{name, desc, help?, handler}]}` 即被平台采集为窗口指令（`{win_id}.{cmd}`，外部 AI 经 `page exec` 调用）——动态变更：整体替换 pageDesc 对象即生效，原地改 commands 数组下次采集自动读到
+- 普通 HTML → **iframe blob** 渲染：独立文档，自带 `<script>` 随意写，与平台运行时隔离（无 pageDesc 通道）
+
+限制（需要任一能力即应升级为 skill L2）：
+
+- **不进 launcher / 搜索**，只能按 URL 打开
+- **vhtml 形态相对路径不锚定文件目录**：组件内 fetch/资源引用写绝对路径（平台 `/api/...` 或 `/fs/cloud/u/{uid}/...` 全形态）
+- **iframe 形态**：cloud 空间自动注入 `<base>`，同目录相对资源可解析；page 空间是 blob 无基址，资源需内联或用绝对 URL
+- 无包级 i18n 与模块 env.js——单文件内联文案即可
+
+## 3. 共同地基：SKILL.md（L1 及以上必有）
 
 在 UFS 空间创建 `/u/{uid}/skills/{name}/`，放入 SKILL.md：
 
@@ -109,10 +140,15 @@ ui:
     desc: 主界面（表单 + 列表）
 ```
 
-- 页面地址：`/skills/local/{name}/index.html`（正式形态 `/skills/public/{id}/index.html`；前端路由 `/skills/:scope/:ref/*path?` 直装，缺省组件 `index.html`）
+- 页面地址：`/skills/local/{name}/index`（正式形态 `/skills/public/{id}/index`）。平台按 `*path` 直路由（skill 只画页面，零路由代码）：`/skills/{scope}/{ref}/{page}` → 装载包 `ui/{page}.html`（缺省 `index`，裸前缀自动规范化到 `/index`）；多页面互链写**干净路径名**（`$router.push('news')` / `<a href="news">`，不带 `.html`）；带参详情页 `{page}?id=...`，同页 query 变化不重建组件，页面经 `$router.onChange(() => init())` 自刷新
 - 模块引导**不需要自携 env.js**：平台固定 env.js（`/skills/{scope}/{ref}/env.js`，embed）自动完成——router_prefix 锚定包前缀、模块本地 `$fetch`、包内 `langs.json` 并入共享 i18n（有 `ui/langs.json` 即生效）
 - 响应自动带 `vhtml-scoped: /skills/{scope}/{ref}` 头——包页面锚定为独立 vhtml 模块，相对 fetch / 组件标签全落在包服务前缀下
-- **页面内不内嵌 AI、URL 零 agent 参数**。外部 AI 操控页面的方式 = 页面 setup 块声明 `pageDesc = {desc, commands:[{name, desc, help?, handler}]}`，平台按 `{win_id}.{cmd}` 自动采集暴露；AI 经 `exec 1host=page` 探测与调用
+- **页面内不内嵌 AI、URL 零 agent 参数**。外部 AI 操控页面的方式 = 页面 setup 块声明 `pageDesc = {desc, commands:[{name, desc, help?, handler}]}`，平台按 `{win_id}.{cmd}` 自动采集暴露；AI 经 `exec 1host=page` 探测与调用。handler 签名 `(argv, ctx)`——`ctx = {sessionId, agentId, ...}` 是执行方身份（服务端注入不可伪造），可作权限凭据（按会话绑定资源/阵营）与定向回推（`$mod.$ai.open({agent_id}).attach(sessionId).send(...)`）
+- **布局响应式 = @container，不是 @media**：页面跑在 OS 窗口里，尺寸由窗口编排决定（平铺/浮窗/全屏），窗口与浏览器视口不等——`@media` 按视口判定会误判。技巧三件套：
+  1. 组件 style 的 `body{}` 即 host 节点，加 `container-type: inline-size` 成为容器上下文；
+  2. 同组件内写 `@container (max-width: 720px) { ... }` 按窗口宽度换布局（vhtml 嵌套规则递归 scoped，原生支持）；
+  3. 画布/棋盘类需精确像素时：容器 `flex:1` 占主体 + `ResizeObserver` 监听 `$node` 用 JS 算 CSS 尺寸（位图分辨率固定，指针坐标按缩放比换算）——参考 play_with_ai 的五子棋棋盘。
+  页面满高布局直接 `body{height:100%}`（平台窗口 frame 已保证满高链路）
 - 纯前端小工具（无数据）到这一级就结束了；需要数据继续 §5/§6
 
 ## 5. L3：启用 tables/
@@ -196,18 +232,18 @@ INSERT INTO customers (user_id, name, email) VALUES (:user_id, :name, :email)
 ## 8. 红线清单
 
 - 名字三重一致：目录名 = frontmatter name = 发布名；`local_` 前缀已废除（寻址混合本地优先，无前缀判别；`temp_` 开头的本地名是审核试用副本保留形态）；UFS 路径单段 ≤64 字符（name ≤32 / version ≤16 连锁约束）
-- 文件永不进 skill 层：DB 只存 `/f/...` 路径字符串；AI 数据通道 = page exec curl 同源
+- 文件永不进 skill 层：DB 只存 `/fs/...` 路径字符串；AI 数据通道 = page exec curl 同源
 - fs 读面：`/skills` 区 L1/L2 拒（不可列不可读），包内文件 L3+ 只读开放，写一律拒
 - 试用副本 = 审核员空间的普通本地条目（`temp_{name}_{v}` 裸名，版本点号转下划线）
 - binds 仅公开条目（skill_id 关联）；本地 skill 无绑定无统计
 
 ## 9. 检查清单（发布前自查）
 
-- [ ] 定级正确：L1 纯文本 / L2 +ui / L3+L4 数据+接口 / 全量组合
+- [ ] 定级正确：L0 单文件组件（不建 skill）/ L1 纯文本 / L2 +ui / L3+L4 数据+接口 / 全量组合
 - [ ] frontmatter 过 yaml 严格解析，无拼错字段（`description` 不是 `desc`）
 - [ ] name 与目录名一致，过 `^[a-z0-9][a-z0-9-_]{0,31}$`
 - [ ] 正文写给 AI：能力清单 + 数据面调用示例 + pageDesc 指令表（如有 ui）
 - [ ] api sqlx 单语句、过首词黑名单、行级过滤用 `:user_id`；tables 声明则 api 齐全
 - [ ] tables 新 required 列带 default、无 `_rowid` 字段
-- [ ] 压缩包 ≤16MB（大二进制素材放用户空间，DB 只存 `/f/...` 路径）
+- [ ] 压缩包 ≤16MB（大二进制素材放用户空间，DB 只存 `/fs/...` 路径）
 - [ ] 不自携 env.js（平台固定出口，作者不可覆盖）；页面所需 $t 文案放 `ui/langs.json`
