@@ -29,7 +29,7 @@ VeriSim = 浏览器里的数字 IC 设计验证工作台：写 Verilog → **真
 
 ## 操作方式
 
-1. 打开页面：`open {url_prefix}/index.html`（`url_prefix` = skill 列表返回的包前缀，
+1. 打开页面：`open {url_prefix}/index`（`url_prefix` = skill 列表返回的包前缀，
    形如 `/skills/local/{name}`（正式条目 `/skills/public/{id}`）；随部署/平台可变，**勿硬编码**）
    （用户亦可从 agent 详情「关联技能」点击开窗）。
 2. 首开先 `exec 1host=page {win_id}.veri_status` 确认 `ready:true`（引擎/脚本异步加载，

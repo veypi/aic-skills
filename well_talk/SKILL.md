@@ -19,7 +19,7 @@ boot 时生成的合成演示数据（井 `F-01`…`F-12` + 侧钻井 `F-03 T2`�
 
 ## 外部 AI 操作方式
 
-1. **打开页面**：`open {url_prefix}/index.html`（`url_prefix` = skill 列表返回的包前缀，形如 `/skills/{skill_id}`；随部署/平台可变，**勿硬编码**）
+1. **打开页面**：`open {url_prefix}/index`（`url_prefix` = skill 列表返回的包前缀，形如 `/skills/{skill_id}`；随部署/平台可变，**勿硬编码**）
    （用户亦可从 agent 详情「关联技能」点击开窗）。
 2. **查看 page 事件**：`exec 1host=page commands` 或 `list` 实时探测——窗口事件为
    `{win_id}.well_*` / `{win_id}.surface_*` 命名空间，指令清单以 pageDesc 声明为准，不要凭记忆调用。

@@ -18,7 +18,7 @@ ui:
 
 ## 操作方式
 
-1. 打开页面：`open {url_prefix}/index.html`（`url_prefix` = skill 列表返回的包前缀，形如 `/skills/local/{name}`（正式条目 `/skills/public/{id}`）；随部署/平台可变，**勿硬编码**）
+1. 打开页面：`open {url_prefix}/index`（`url_prefix` = skill 列表返回的包前缀，形如 `/skills/local/{name}`（正式条目 `/skills/public/{id}`）；随部署/平台可变，**勿硬编码**）
 2. 探测指令：`exec 1host=page {win_id}.list`（返回全部 `ppt_*` 指令清单）
 3. 内容创建/修改：用 **fs 工具（1host=page）** 直接读写 `/ppt/...` 路径（与页面同一本地存储）：
    - 每套 PPT 一个目录，核心文件固定 `index.json`，如 `/ppt/产品发布会/index.json`
