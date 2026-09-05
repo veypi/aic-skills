@@ -2,42 +2,845 @@
 <html>
 <head><title>商业航天情报分析</title></head>
 <style>
-  /* 壳 host = :vsrc 挂载点。子组件 body{} 规则不落在本节点（scope 只属于壳），
-     故满高布局契约由壳承担：column flex，子页面内容（dashboard 的 wrap / 详情页 .page）直接作 flex 子项 */
-  body { display:flex; flex-direction:column; width:100%; height:100%; }
-  .skill-sub { display:flex; flex-direction:column; width:100%; height:100%; min-height:0; }
+  :root {
+    --ink: #05080f;
+    --ink-panel: #0a0f1a;
+    --ink-panel-2: #0d1524;
+    --ink-border: #1c2942;
+    --ink-border-strong: #2a3d5f;
+    --ink-text: #e2e8f0;
+    --ink-text-2: #8b98b8;
+    --ink-text-3: #4d5b7a;
+    --ink-cyan: #22d3ee;
+    --ink-amber: #f59e0b;
+    --ink-red: #ef4444;
+    --ink-blue: #3b82f6;
+    --ink-purple: #a78bfa;
+    --ink-green: #34d399;
+  }
+  /* 布局锚点：vhtml 组件的 body{} 映射 host 节点（平台直路由出口 = 满高容器），
+     直开裸模板时 = 文档 body——两条世界同一声明，满高契约一致 */
+  body { display:flex; flex-direction:column; width:100%; height:100%; background:var(--ink); color:var(--ink-text); font-family:var(--font-mono); overflow:hidden; }
+  .dash { display:flex; flex-direction:column; width:100%; height:100%; }
+
+  /* ===== Top bar ===== */
+  .topbar { height:48px; flex:0 0 auto; display:flex; align-items:center; gap:var(--spacing-md); padding:0 var(--spacing-md); background:var(--ink-panel); border-bottom:1px solid var(--ink-border); }
+  .brand { display:flex; align-items:center; gap:10px; }
+  .brand .logo { width:22px; height:22px; border-radius:var(--radius-full); border:2px solid var(--ink-cyan); position:relative; animation:spin 12s linear infinite; }
+  .brand .logo::after { content:''; position:absolute; top:50%; left:50%; width:6px; height:6px; margin:-3px 0 0 -3px; border-radius:var(--radius-full); background:var(--ink-cyan); box-shadow:0 0 8px var(--ink-cyan); }
+  @keyframes spin { to { transform:rotate(360deg) } }
+  .brand .name { font-size:13px; font-weight:var(--font-weight-bold); letter-spacing:0.18em; color:var(--ink-text); }
+  .brand .name b { color:var(--ink-cyan); }
+  .brand .cn { font-size:11px; color:var(--ink-text-2); letter-spacing:0.1em; }
+
+  .layers { display:flex; gap:6px; margin-left:var(--spacing-md); }
+  .lyr { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border:1px solid var(--ink-border); border-radius:var(--radius-sm); font-size:11px; color:var(--ink-text-2); cursor:pointer; user-select:none; transition:all var(--transition-fast); background:transparent; letter-spacing:0.05em; }
+  .lyr:hover { border-color:var(--ink-border-strong); color:var(--ink-text); }
+  .lyr.on { background:var(--ink-panel-2); color:var(--ink-text); border-color:var(--ink-border-strong); }
+  .lyr .ld { width:7px; height:7px; border-radius:var(--radius-full); background:var(--c,#fff); box-shadow:0 0 6px var(--c,#fff); }
+  .lyr:not(.on) .ld { background:var(--ink-text-3); box-shadow:none; }
+  .lyr .cnt { font-variant-numeric:tabular-nums; color:var(--ink-text-3); }
+  .lyr.on .cnt { color:var(--ink-text-2); }
+
+  /* 任意地点搜索定位（open-meteo 地理编码 → 三维地球飞达） */
+  .geo-search { position:relative; margin-left:var(--spacing-md); }
+  .gs-input { width:220px; padding:5px 10px; background:var(--ink-panel-2); border:1px solid var(--ink-border); border-radius:var(--radius-sm); color:var(--ink-text); font-family:var(--font-mono); font-size:11px; letter-spacing:0.05em; outline:none; transition:border-color var(--transition-fast); }
+  .gs-input:focus { border-color:var(--ink-border-strong); }
+  .gs-input::placeholder { color:var(--ink-text-3); }
+  .gs-drop { position:absolute; top:calc(100% + 6px); left:0; width:360px; max-height:280px; overflow-y:auto; background:rgba(10,15,26,0.97); border:1px solid var(--ink-border-strong); border-radius:var(--radius-md); box-shadow:0 12px 40px rgba(0,0,0,0.5); z-index:30; backdrop-filter:blur(6px); }
+  .gs-item { padding:8px 12px; border-bottom:1px solid var(--ink-border); cursor:pointer; }
+  .gs-item:last-child { border-bottom:none; }
+  .gs-item:hover { background:var(--ink-panel-2); }
+  .gs-name { font-size:12px; color:var(--ink-text); }
+  .gs-full { font-size:10px; color:var(--ink-text-3); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .gs-none { font-size:11px; color:var(--ink-text-3); cursor:default; }
+
+  .top-right { margin-left:auto; display:flex; align-items:center; gap:var(--spacing-md); font-size:11px; color:var(--ink-text-2); }
+  .utc { font-variant-numeric:tabular-nums; letter-spacing:0.08em; }
+  .live { display:inline-flex; align-items:center; gap:6px; color:var(--ink-green); font-weight:var(--font-weight-semibold); letter-spacing:0.1em; }
+  .pulse { width:7px; height:7px; border-radius:var(--radius-full); background:var(--ink-green); box-shadow:0 0 8px var(--ink-green); animation:blink 1.6s infinite; }
+  @keyframes blink { 0%,100% { opacity:1 } 50% { opacity:0.3 } }
+
+  /* ===== Main ===== */
+  .main { flex:1; display:flex; min-height:0; }
+
+  .map-zone { flex:1; position:relative; min-width:0; background:radial-gradient(ellipse at 50% 40%, #081020 0%, var(--ink) 75%); }
+  #map { position:absolute; inset:0; }
+  .map-loading { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--ink-text-3); font-size:12px; letter-spacing:0.2em; z-index:6; pointer-events:none; }
+
+  .corner { position:absolute; width:18px; height:18px; border:1px solid var(--ink-border-strong); pointer-events:none; z-index:5; }
+  .corner.tl { top:10px; left:10px; border-right:none; border-bottom:none; }
+  .corner.tr { top:10px; right:10px; border-left:none; border-bottom:none; }
+  .corner.bl { bottom:10px; left:10px; border-right:none; border-top:none; }
+  .corner.br { bottom:10px; right:10px; border-left:none; border-top:none; }
+
+  /* 暗角收边：贴合情报舱暗色风格，不遮挡中心高清影像 */
+  .vignette { position:absolute; inset:0; pointer-events:none; z-index:4; background:radial-gradient(ellipse at center, transparent 58%, rgba(5,8,15,0.45) 100%); }
+
+  .map-hint { position:absolute; top:14px; left:50%; transform:translateX(-50%); font-size:10px; letter-spacing:0.22em; color:var(--ink-text-3); pointer-events:none; z-index:5; }
+
+  /* ===== Intel card ===== */
+  .card { position:absolute; left:16px; bottom:16px; width:360px; max-width:calc(100% - 32px); background:rgba(10,15,26,0.94); border:1px solid var(--ink-border-strong); border-radius:var(--radius-md); backdrop-filter:blur(6px); z-index:10; transform:translateY(12px); opacity:0; pointer-events:none; transition:all var(--transition-base); box-shadow:0 12px 40px rgba(0,0,0,0.5); }
+  .card.show { transform:translateY(0); opacity:1; pointer-events:auto; }
+  .card-hd { display:flex; align-items:center; gap:8px; padding:10px 14px; border-bottom:1px solid var(--ink-border); font-size:10px; letter-spacing:0.16em; color:var(--ink-text-2); font-weight:var(--font-weight-semibold); }
+  .card-hd .kdot { width:8px; height:8px; border-radius:2px; background:var(--kc,var(--ink-cyan)); box-shadow:0 0 8px var(--kc,var(--ink-cyan)); }
+  .card-close { margin-left:auto; cursor:pointer; color:var(--ink-text-3); font-size:14px; line-height:1; padding:2px 4px; }
+  .card-close:hover { color:var(--ink-text); }
+  .card-bd { padding:12px 14px; max-height:300px; overflow-y:auto; }
+  .card-name { font-size:15px; font-weight:var(--font-weight-bold); color:var(--ink-text); line-height:1.35; }
+  .card-sub { font-size:11px; color:var(--ink-text-2); margin-top:2px; }
+  .card-chips { display:flex; gap:5px; flex-wrap:wrap; margin-top:8px; }
+  .kchip { font-size:10px; padding:2px 7px; border-radius:2px; background:var(--ink-panel-2); border:1px solid var(--ink-border); color:var(--ink-text-2); letter-spacing:0.04em; }
+  .kchip.hl { color:var(--kc,var(--ink-cyan)); border-color:var(--kc,var(--ink-cyan)); }
+  .card-desc { font-size:12px; line-height:1.7; color:var(--ink-text-2); margin-top:10px; font-family:var(--font-body, inherit); }
+  .card-kv { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--ink-border); border:1px solid var(--ink-border); border-radius:var(--radius-sm); overflow:hidden; margin-top:10px; }
+  .card-kv .kv { background:var(--ink-panel); padding:7px 10px; }
+  .kv .k { font-size:9px; letter-spacing:0.14em; color:var(--ink-text-3); text-transform:uppercase; }
+  .kv .v { font-size:12px; color:var(--ink-text); margin-top:2px; font-variant-numeric:tabular-nums; }
+  .card-ft { display:flex; gap:8px; padding:10px 14px; border-top:1px solid var(--ink-border); }
+  .btn-go { flex:1; padding:7px 10px; background:transparent; border:1px solid var(--ink-border-strong); color:var(--ink-text-2); border-radius:var(--radius-sm); font-family:var(--font-mono); font-size:11px; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; }
+  .btn-go:hover { color:var(--ink-text); border-color:var(--ink-text-2); }
+
+  /* ===== Status bar ===== */
+  .statusbar { height:32px; flex:0 0 auto; display:flex; align-items:center; gap:var(--spacing-lg); padding:0 var(--spacing-md); background:var(--ink-panel); border-top:1px solid var(--ink-border); font-size:10px; letter-spacing:0.1em; color:var(--ink-text-3); overflow:hidden; white-space:nowrap; }
+  .statusbar .st { display:inline-flex; align-items:center; gap:6px; }
+  .statusbar .st b { color:var(--ink-text-2); font-variant-numeric:tabular-nums; font-weight:var(--font-weight-semibold); }
+  .statusbar .sep { color:var(--ink-border-strong); }
+
+  @media (max-width:900px) {
+    .brand .cn { display:none; }
+    .card { width:calc(100% - 32px); }
+    .gs-input { width:140px; }
+  }
 </style>
 <body>
-  <div class="skill-sub" :vsrc="subpage" ref="sub" @mounted="syncDesc"></div>
+  <div class="dash">
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <span class="cn">商业航天情报分析</span>
+    </div>
+    <div class="layers">
+      <span :class="'lyr ' + (layers.sites ? 'on' : '')" style="--c:var(--ink-amber)" @click="toggleLayer('sites')"><span class="ld"></span>发射场 <span class="cnt">{{ counts.sites }}</span></span>
+      <span :class="'lyr ' + (layers.companies ? 'on' : '')" style="--c:var(--ink-blue)" @click="toggleLayer('companies')"><span class="ld"></span>公司 <span class="cnt">{{ counts.companies }}</span></span>
+      <span :class="'lyr ' + (layers.accidents ? 'on' : '')" style="--c:var(--ink-red)" @click="toggleLayer('accidents')"><span class="ld"></span>事故 <span class="cnt">{{ counts.accidents }}</span></span>
+    </div>
+    <div class="geo-search" @outerclick="searchOpen = false">
+      <input class="gs-input" v:value="searchQ" placeholder="定位任意地点，回车搜索…" @keyup.enter="doSearch()" />
+      <div class="gs-drop" v-if="searchOpen">
+        <div v-if="searching" class="gs-item gs-none">SEARCHING…</div>
+        <template v-if="!searching">
+          <div v-for="it in searchList" class="gs-item" @click="flyPlace(it)">
+            <div class="gs-name">{{ it.short }}</div>
+            <div class="gs-full">{{ it.name }}</div>
+          </div>
+          <div v-if="!searchList.length" class="gs-item gs-none">无结果</div>
+        </template>
+      </div>
+    </div>
+    <div class="top-right">
+      <span class="utc">{{ utcTime }}</span>
+      <span class="live"><span class="pulse"></span>LIVE</span>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="map-zone">
+      <div id="map"></div>
+      <div class="map-loading" v-if="!mapReady && !mapError">INITIALIZING GLOBAL SCAN...</div>
+      <div class="map-loading" v-if="mapError">MAP ERROR: {{ mapError }}</div>
+      <div class="vignette"></div>
+      <div class="corner tl"></div>
+      <div class="corner tr"></div>
+      <div class="corner bl"></div>
+      <div class="corner br"></div>
+      <div class="map-hint">GLOBAL SPACE SITUATIONAL AWARENESS</div>
+
+      <div :class="'card ' + (card.show ? 'show' : '')" :style="'--kc:' + card.color">
+        <div class="card-hd">
+          <span class="kdot"></span>{{ card.kindLabel }}
+          <span class="card-close" @click="closeCard()">&#10005;</span>
+        </div>
+        <div class="card-bd">
+          <div class="card-name">{{ card.name }}</div>
+          <div class="card-sub" v-if="card.sub">{{ card.sub }}</div>
+          <div class="card-chips">
+            <span v-for="c in card.chips" class="kchip">{{ c }}</span>
+          </div>
+          <div class="card-desc" v-if="card.desc">{{ card.desc }}</div>
+          <div class="card-kv" v-if="card.kvs.length">
+            <div v-for="kv in card.kvs" class="kv">
+              <div class="k">{{ kv.k }}</div>
+              <div class="v">{{ kv.v }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="card-ft">
+          <span class="btn-go" v-if="card.link" @click="openDetail()">详情 &#8599;</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="statusbar">
+    <span class="st">SITES <b>{{ counts.sites }}</b></span><span class="sep">/</span>
+    <span class="st">COMPANIES <b>{{ counts.companies }}</b></span><span class="sep">/</span>
+    <span class="st">ACCIDENTS <b>{{ counts.accidents }}</b></span><span class="sep">/</span>
+    <span class="st">REGULATIONS <b>{{ counts.regulations }}</b></span><span class="sep">/</span>
+    <span class="st">REVIEW CASES <b>{{ counts.reviews }}</b></span><span class="sep">/</span>
+    <span class="st">LAUNCH RECORDS <b>{{ counts.launches }}</b></span>
+  </div>
+  </div>
 </body>
 <script setup>
-  // skill = 单页应用：平台路由 /skills/:scope/:ref/*path? 组件恒为本文件（壳），
-  // 子页面（dashboard/company/accident/...）由本壳按 location 自有路由，:vsrc 直装包内组件。
-  subpage = './dashboard.html'
-  // pageDesc 平台只采集活动路由组件（本壳）的 $data.pageDesc——
-  // 壳不自有指令，转发子组件声明（dashboard 提供地图指令；其余页面为 null）。
-  pageDesc = null
-  syncDesc = () => {
-    const pd = ($refs.sub && $refs.sub.$data) ? $refs.sub.$data.pageDesc : null
-    pageDesc = (pd && typeof pd.desc === 'string' && Array.isArray(pd.commands)) ? pd : null
+  import { store } from './lib/mapstore.js'
+  utcTime = ''
+  mapReady = false
+  mapError = ''
+  layers = { sites: true, companies: true, accidents: true }
+  counts = { sites: 0, companies: 0, accidents: 0, regulations: 0, reviews: 0, launches: 0 }
+  card = { show: false, kind: '', kindLabel: '', color: '#22d3ee', name: '', sub: '', chips: [], desc: '', kvs: [], link: '' }
+
+  sites = []
+  companies = []
+  accidents = []
+
+  // 任意地点搜索（open-meteo 地理编码）UI 状态
+  searchQ = ''
+  searchOpen = false
+  searchList = []
+  searching = false
+
+  const KIND_COLOR = { site: '#f59e0b', company: '#3b82f6', accident: '#ef4444' }
+  // 深度测试豁免仅限近距（80km 内），防贴地 z-fighting；绝不能 Infinity——
+  // 否则地球背面点/标签穿透球体可见，旋转时背面点反向移动（"不跟地球转"假象）
+  const NO_DEPTH = 8e4
+  const SEV_SIZE = { '致命': 16, '重大': 13, '较大': 10, '一般': 8 }
+  const SITE_TYPE_LABEL = { launch_site: '发射场', test_facility: '试车台', landing_zone: '着陆区', tracking_station: '测控站', spaceport: '商业航天港' }
+
+  // ---- 数据通道：同包 api（sqlx 执行器）。$fetch 为包模块 env.js 固定定义
+  //（模块锚定包前缀，主路由/窗口世界免疫 URL 形态；params→query 自带） ----
+  apiGet = async (name, params) => {
+    const d = await $fetch('api/' + name, { params })
+    return d.rows || []
   }
-  syncRoute = () => {
-    const m = location.pathname.match(/\/skills\/[^/]+\/[^/]+\/([^/]+)$/)
-    let p = (m && m[1]) || ''
-    if (p === '' || p === 'index.html') p = 'dashboard.html'
-    if (!/^[a-z0-9][a-z0-9-_]*\.html$/i.test(p)) p = 'dashboard.html'
-    subpage = './' + p
+
+  // ---- 地理编码（多源 + 超时保护）：避免 locate/搜索因单源网络不可达而无限 pending ----
+  // 1) open-meteo（GeoNames 数据，免 key、中文名支持好、当前网络可达）为主源；
+  // 2) photon.komoot.io 为后备（历史源，网络间歇不可达）；
+  // 3) 库内目标（设施/公司/事故名称中英模糊）为最终兜底——外部服务全挂也能定位常见地名。
+  // 每源 8s 超时（AbortController），失败立即切换下一源，全部失败抛明确错误（不再挂起）。
+  const GEO_TIMEOUT = 8000
+  const hasCJK = (s) => /[\u3400-\u9fff]/.test(s)
+  const fetchJSON = (url, ms) => {
+    const ctrl = new AbortController()
+    const t = setTimeout(() => ctrl.abort(), ms || GEO_TIMEOUT)
+    return fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(t))
   }
-  syncRoute()
-</script>
-<script>
-  // SPA 内路由变化（平台 vrouter 拦截 <a>/pushState）；独立直开时无 $router，首次 syncRoute 已就绪
-  if ($router && $router.onChange) {
-    $router.onChange(() => {
-      syncRoute()
-      // 换页间隙清空指令面，@mounted 后 syncDesc 重建（防旧页指令残留）
-      pageDesc = null
+  // open-meteo 原始结果（未评分）
+  const geoFetchMeteo = async (q) => {
+    const url = 'https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(q) + '&count=10&language=zh&format=json'
+    const r = await fetchJSON(url)
+    if (!r.ok) throw new Error('geocode HTTP ' + r.status)
+    const d = await r.json()
+    return d.results || []
+  }
+  // open-meteo 结果打分重排：精确名 > 前缀 > 包含 > 国别/行政级别/人口加权（挡掉‘xian→西班牙Xián’类误配）
+  const scoreMeteo = (results, q) => {
+    const ql = q.trim().toLowerCase().replace(/[\u2018\u2019']/g, '')
+    const seen = new Set()
+    const scored = results.map((it) => {
+      const fc = String(it.feature_code || '')
+      const nm = String(it.name || '').toLowerCase().replace(/[\u2018\u2019']/g, '')
+      let s = 0
+      if (nm === ql) s += 100
+      else if (nm.startsWith(ql)) s += 40
+      else if (nm.indexOf(ql) >= 0) s += 12
+      if (it.country_code === 'CN') s += hasCJK(q) ? 25 : 8
+      if (fc.indexOf('PPLA') === 0) s += 12
+      else if (fc.indexOf('PPL') === 0) s += 4
+      s += Math.min(Math.log10((it.population || 0) + 1) * 8, 36)
+      return { it, s }
+    }).sort((a, b) => b.s - a.s)
+    const out = []
+    for (const { it } of scored) {
+      const key = Number(it.latitude).toFixed(3) + ',' + Number(it.longitude).toFixed(3)
+      if (seen.has(key)) continue
+      seen.add(key)
+      out.push(it)
+      if (out.length >= 10) break
+    }
+    return out.map((it) => {
+      const short = it.name || '目标点'
+      const full = [it.name, it.admin2, it.admin1, it.country].filter(Boolean).join(', ')
+      return { name: full, short, lat: it.latitude, lng: it.longitude }
     })
   }
+  const geoOpenMeteo = async (q) => {
+    const rs = await geoFetchMeteo(q)
+    return scoreMeteo(rs, q)
+  }
+  const geoPhoton = async (q) => {
+    // Photon 的 lang 参数只收白名单值（zh 直接 400）；中文地名在 OSM 数据里自带，不带 lang 即可
+    const url = 'https://photon.komoot.io/api/?limit=6&q=' + encodeURIComponent(q)
+    const r = await fetchJSON(url)
+    if (!r.ok) throw new Error('geocode HTTP ' + r.status)
+    const d = await r.json()
+    return (d.features || []).map((f) => {
+      const p = f.properties || {}
+      const short = (typeof p.name === 'string' && p.name) || p['name:zh'] || p['name:en'] || '目标点'
+      const full = [short, p.city || p.county, p.state, p.country].filter(Boolean).join(', ')
+      return { name: full, short, lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0] }
+    })
+  }
+  // 库内兜底：名称中英模糊匹配（与 focus_* 同一套数据，至少能定位已知目标）
+  const geoLocal = (q) => {
+    const ql = q.trim().toLowerCase()
+    const hit = (arr, getLat, getLng) => arr.filter((it) => {
+      const n = ((it.name || '') + ' ' + (it.name_en || '') + ' ' + (it.short_name || '') + ' ' + (it.title || '')).toLowerCase()
+      return n.indexOf(ql) >= 0
+    }).map((it) => ({ name: it.name || it.title || '目标点', short: it.name || it.title || '目标点', lat: getLat(it), lng: getLng(it) }))
+    return []
+      .concat(hit(sites, (it) => it.lat, (it) => it.lng))
+      .concat(hit(companies, (it) => it.hq_lat, (it) => it.hq_lng))
+      .concat(hit(accidents, (it) => it.lat, (it) => it.lng))
+      .slice(0, 6)
+  }
+  // 主入口：open-meteo → photon → 库内兜底；全败抛明确错误（不无限挂起）
+  geocode = async (q) => {
+    const errs = []
+    for (const src of [geoOpenMeteo, geoPhoton]) {
+      try {
+        const rs = await src(q)
+        if (rs && rs.length) return rs
+      } catch (e) { errs.push(e) }
+    }
+    const local = geoLocal(q)
+    if (local.length) return local
+    throw new Error('地理编码失败（open-meteo/photon 不可达且库内无匹配）: ' + q + (errs.length ? ' [' + errs.map((e) => e.message).join('; ') + ']' : ''))
+  }
+
+  doSearch = async () => {
+    const q = String(searchQ || '').trim()
+    if (!q) { searchOpen = false; searchList = []; return }
+    searching = true
+    searchOpen = true
+    try { searchList = await geocode(q) } catch (e) { searchList = [] }
+    searching = false
+  }
+
+  flyPlace = (it) => {
+    searchOpen = false
+    searchQ = it.short
+    flyToPlace(it.lng, it.lat, it.short)
+  }
+
+  // ---- AI 指令辅助 ----
+  const reply = (obj) => ({ content: JSON.stringify(obj) })
+  const errReply = (e) => ({ ok: false, error: String((e && e.message) || e) })
+  const arg = (argv, key, dft) => {
+    const i = (argv || []).indexOf('--' + key)
+    if (i >= 0 && argv[i + 1] !== undefined) return String(argv[i + 1])
+    const pos = (argv || []).find((a) => typeof a === 'string' && !String(a).startsWith('--'))
+    return pos !== undefined ? pos : dft
+  }
+  const norm = (s) => String(s || '').trim().toLowerCase()
+  // 可选参数显式取值（不带位置 fallback，防止误吃其他 flag 的值）
+  const optArg = (argv, key) => {
+    const a = argv || []
+    const i = a.indexOf('--' + key)
+    return i >= 0 && a[i + 1] !== undefined ? String(a[i + 1]) : ''
+  }
+
+  openDetail = () => { if (card.link) window.open(card.link, '_blank') }
+
+  // 同坐标点环形展开（确定性：按 id 排序分配角度），避免同地点多点完全重叠
+  const spreadOverlaps = (list, getLng, getLat) => {
+    const groups = {}
+    list.forEach(it => {
+      const key = Number(getLng(it)).toFixed(3) + ',' + Number(getLat(it)).toFixed(3)
+      ;(groups[key] || (groups[key] = [])).push(it)
+    })
+    const pos = {}
+    Object.keys(groups).forEach(k => {
+      const g = groups[k].slice().sort((a, b) => String(a.id).localeCompare(String(b.id)))
+      const lng0 = Number(getLng(g[0])), lat0 = Number(getLat(g[0]))
+      if (g.length === 1) { pos[g[0].id] = [lng0, lat0]; return }
+      const n = g.length
+      const r = 0.42 + n * 0.03
+      const cosLat = Math.max(Math.cos(lat0 * Math.PI / 180), 0.3)
+      g.forEach((it, i) => {
+        const ang = (2 * Math.PI * i) / n - Math.PI / 2
+        pos[it.id] = [lng0 + r * Math.cos(ang) / cosLat, lat0 + r * Math.sin(ang)]
+      })
+    })
+    return pos
+  }
+
+  // ---- 地图渲染（Cesium 实体图层；图层开关 = dataSource.show）----
+  renderMap = () => {
+    const v = store.viewer
+    const C = window.Cesium
+    if (!v || !C) return
+    const sitePos = spreadOverlaps(sites, s => s.lng, s => s.lat)
+    const compPos = spreadOverlaps(companies, c => c.hq_lng, c => c.hq_lat)
+    const accPos = spreadOverlaps(accidents, a => a.lng, a => a.lat)
+
+    const AMBER = C.Color.fromCssColorString('#f59e0b')
+    const BLUE = C.Color.fromCssColorString('#3b82f6')
+    const RED = C.Color.fromCssColorString('#ef4444')
+
+    // 发射场：琥珀点 + 扩散脉冲环 + 距离阈值常显标签
+    store.ds.sites.entities.removeAll()
+    sites.forEach((s, i) => {
+      const p = sitePos[s.id]
+      const phase = i * 0.37
+      // 脉冲相位 0→1 循环（JulianDate 免 Date 换算，确定性）；相位错开防同频闪
+      const phaseOf = (t) => { const secs = t.dayNumber * 86400 + t.secondsOfDay; return ((secs + phase) % 2.2) / 2.2 }
+      // 半径/透明度都随相位衰减；material 必须返回 Color——曾误传 number 致放大后整屏白盘
+      const ringR = new C.CallbackProperty((t) => 6000 + phaseOf(t) * 36000, false)
+      const ringMat = new C.ColorMaterialProperty(new C.CallbackProperty((t) => AMBER.withAlpha((1 - phaseOf(t)) * 0.35), false))
+      const ent = store.ds.sites.entities.add({
+        position: C.Cartesian3.fromDegrees(p[0], p[1], 0),
+        point: { pixelSize: 7, color: AMBER, outlineColor: C.Color.WHITE.withAlpha(0.6), outlineWidth: 1, disableDepthTestDistance: NO_DEPTH },
+        ellipse: {
+          semiMajorAxis: ringR, semiMinorAxis: ringR, height: 0,
+          material: ringMat
+        },
+        label: {
+          text: String(s.name), font: '11px monospace', style: C.LabelStyle.FILL,
+          fillColor: C.Color.fromCssColorString('#d9a85c'),
+          pixelOffset: new C.Cartesian2(10, -2),
+          horizontalOrigin: C.HorizontalOrigin.LEFT, verticalOrigin: C.VerticalOrigin.CENTER,
+          distanceDisplayCondition: new C.DistanceDisplayCondition(0.0, 2.4e6),
+          disableDepthTestDistance: NO_DEPTH
+        }
+      })
+      ent.kid = String(s.id); ent.kind = 'site'; ent.nm = String(s.name); ent.klng = p[0]; ent.klat = p[1]
+    })
+
+    // 公司总部：蓝点
+    store.ds.companies.entities.removeAll()
+    companies.forEach(c => {
+      const p = compPos[c.id]
+      const ent = store.ds.companies.entities.add({
+        position: C.Cartesian3.fromDegrees(p[0], p[1], 0),
+        point: { pixelSize: 6.5, color: BLUE, outlineColor: C.Color.WHITE.withAlpha(0.35), outlineWidth: 1, disableDepthTestDistance: NO_DEPTH }
+      })
+      ent.kid = String(c.id); ent.kind = 'company'; ent.nm = String(c.name); ent.klng = p[0]; ent.klat = p[1]
+    })
+
+    // 事故：红点，按严重度定尺寸
+    store.ds.accidents.entities.removeAll()
+    accidents.forEach(a => {
+      const p = accPos[a.id]
+      const ent = store.ds.accidents.entities.add({
+        position: C.Cartesian3.fromDegrees(p[0], p[1], 0),
+        point: { pixelSize: SEV_SIZE[String(a.severity || '')] || 9, color: RED, outlineColor: C.Color.WHITE.withAlpha(0.4), outlineWidth: 1, disableDepthTestDistance: NO_DEPTH }
+      })
+      ent.kid = String(a.id); ent.kind = 'accident'; ent.nm = String(a.title); ent.klng = p[0]; ent.klat = p[1]
+    })
+  }
+
+  // 聚焦：三维地球飞达（pitch -75 俯视，目标区稳居画面中下部）
+  focusOn = (lng, lat, zoom) => {
+    const v = store.viewer
+    const C = window.Cesium
+    if (!v || !C) return
+    const z = zoom || 3.2
+    v.camera.flyTo({
+      destination: C.Cartesian3.fromDegrees(lng, lat, z >= 4 ? 1.2e6 : 3.5e6),
+      orientation: { heading: 0, pitch: C.Math.toRadians(-75), roll: 0 },
+      duration: 1.8
+    })
+  }
+
+  // 搜索定位：低空飞达 + 青色定位钉；先关闭旧情报卡，防"新地点+旧卡片"错位
+  flyToPlace = (lng, lat, name, height) => {
+    const v = store.viewer
+    const C = window.Cesium
+    if (!v || !C) return
+    closeCard()
+    v.camera.flyTo({
+      destination: C.Cartesian3.fromDegrees(lng, lat, height || 22000),
+      orientation: { heading: 0, pitch: C.Math.toRadians(-82), roll: 0 },
+      duration: 2.4
+    })
+    if (store.pin) v.entities.remove(store.pin)
+    store.pin = v.entities.add({
+      position: C.Cartesian3.fromDegrees(lng, lat, 0),
+      point: { pixelSize: 9, color: C.Color.fromCssColorString('#22d3ee'), outlineColor: C.Color.WHITE, outlineWidth: 2, disableDepthTestDistance: NO_DEPTH },
+      label: {
+        text: String(name || ''), font: '11px monospace', style: C.LabelStyle.FILL,
+        fillColor: C.Color.fromCssColorString('#a5f3fc'),
+        pixelOffset: new C.Cartesian2(0, -18), verticalOrigin: C.VerticalOrigin.BOTTOM,
+        disableDepthTestDistance: NO_DEPTH
+      }
+    })
+  }
+
+  toggleLayer = (k) => {
+    layers[k] = !layers[k]
+    if (store.ds[k]) store.ds[k].show = layers[k]
+  }
+
+  // ---- 情报卡 ----
+  openSiteCard = (s) => {
+    card = {
+      show: true, kind: 'site', kindLabel: 'SITE / 航天设施', color: KIND_COLOR.site,
+      name: s.name, sub: s.name_en || '',
+      chips: [SITE_TYPE_LABEL[s.site_type] || s.site_type, s.country || '', s.status === 'active' ? '运行中' : (s.status === 'construction' ? '在建' : '停用')].filter(Boolean),
+      desc: s.description || '',
+      kvs: [
+        { k: '运营方', v: s.operator || '-' },
+        { k: '启用', v: s.established || '-' },
+        { k: '纬度', v: s.lat },
+        { k: '经度', v: s.lng }
+      ],
+      link: ''
+    }
+  }
+  openCompanyCard = (c) => {
+    card = {
+      show: true, kind: 'company', kindLabel: 'COMPANY / 公司情报', color: KIND_COLOR.company,
+      name: c.name, sub: c.name_en || '',
+      chips: [c.sub_sector || '未分类', c.status === 'active' ? '运营中' : (c.status || '')].filter(Boolean),
+      desc: c.description || '',
+      kvs: [
+        { k: '总部', v: c.headquarters || '-' },
+        { k: '成立', v: (c.established_at || '-').substring(0, 10) },
+        { k: '创始人', v: c.founder || '-' },
+        { k: '员工', v: c.employee_count || '-' }
+      ],
+      link: 'company?id=' + c.id
+    }
+  }
+  openAccidentCard = (a) => {
+    card = {
+      show: true, kind: 'accident', kindLabel: 'ACCIDENT / 事故情报', color: KIND_COLOR.accident,
+      name: a.title, sub: (a.incident_date || '').substring(0, 10) + ' · ' + (a.location || ''),
+      chips: [a.accident_type, a.severity, a.investigation_status].filter(Boolean),
+      desc: a.description || '',
+      kvs: [
+        { k: '涉事公司', v: a.company_name || '-' },
+        { k: '飞行器', v: a.vehicle || '-' },
+        { k: '阶段', v: a.phase || '-' },
+        { k: '伤亡', v: a.casualties || '无' }
+      ],
+      link: 'accident?id=' + a.id
+    }
+  }
+  closeCard = () => { card.show = false }
+
+  // ---- 操控面声明：平台 OS/page 通道按 win_id 命名空间自动采集注册（{win_id}.{cmd}）----
+  pageDesc = {
+    desc: 'ORBITALINTEL 商业航天情报舱：三维地球（Cesium 高清卫星影像）标注航天设施/公司总部/事故地点，地名搜索定位任意地点，提供 focus_site/focus_company/open_accident/locate 地图联动与情报卡弹出。',
+    commands: [
+      { name: 'orbital_status', desc: '查询情报舱状态（地图就绪/图层开关/各板块记录数）', help: '无参数；返回 {ready, layers, counts}', handler: async () => reply({ ok: true, ready: mapReady, layers, counts }) },
+      {
+        name: 'focus_site', desc: '聚焦地图到指定发射场/航天设施并打开其情报卡（--name 必填，支持中文名/英文名模糊匹配）',
+        help: '--name <名称>',
+        handler: async (argv) => {
+          try {
+            const q = norm(arg(argv, 'name'))
+            if (!q) throw new Error('--name 必填')
+            const s = sites.find(x => norm(x.name).includes(q) || norm(x.name_en).includes(q))
+            if (!s) throw new Error('未找到设施: ' + q + '，可用 list_targets 查看全部目标')
+            focusOn(s.lng, s.lat, 4)
+            openSiteCard(s)
+            return reply({ ok: true, site: s.name, lat: s.lat, lng: s.lng })
+          } catch (e) { return reply(errReply(e)) }
+        }
+      },
+      {
+        name: 'focus_company', desc: '聚焦地图到指定公司总部并打开公司情报卡（--name 必填，支持模糊匹配）',
+        help: '--name <名称>',
+        handler: async (argv) => {
+          try {
+            const q = norm(arg(argv, 'name'))
+            if (!q) throw new Error('--name 必填')
+            const c = companies.find(x => norm(x.name).includes(q) || norm(x.name_en || '').includes(q))
+            if (!c) throw new Error('未找到公司: ' + q)
+            focusOn(c.hq_lng, c.hq_lat, 4)
+            openCompanyCard(c)
+            return reply({ ok: true, company: c.name })
+          } catch (e) { return reply(errReply(e)) }
+        }
+      },
+      {
+        name: 'open_accident', desc: '聚焦地图到事故地点并打开事故情报卡（--title 模糊匹配或 --id）',
+        help: '--title <模糊标题> 或 --id <行ID>',
+        handler: async (argv) => {
+          try {
+            const id = optArg(argv, 'id')
+            const q = norm(optArg(argv, 'title') || arg(argv, 'q', ''))
+            const a = id ? accidents.find(x => x.id === id) : accidents.find(x => norm(x.title).includes(q))
+            if (!a) throw new Error('未找到事故: ' + (id || q))
+            focusOn(a.lng, a.lat, 4)
+            openAccidentCard(a)
+            return reply({ ok: true, accident: a.title })
+          } catch (e) { return reply(errReply(e)) }
+        }
+      },
+      {
+        name: 'locate', desc: '定位任意地点：地名地理编码（open-meteo 优先，photon/库内兜底）并飞达，图上打青色定位钉',
+        help: '--name <任意地名，如 酒泉 / Jiuquan / Cape Canaveral>',
+        handler: async (argv) => {
+          try {
+            const q = String(arg(argv, 'name')).trim()
+            if (!q) throw new Error('--name 必填')
+            const rs = await geocode(q)
+            if (!rs.length) throw new Error('未找到地点: ' + q)
+            const p = rs[0]
+            flyToPlace(p.lng, p.lat, p.short)
+            return reply({ ok: true, name: p.name, lat: p.lat, lng: p.lng })
+          } catch (e) { return reply(errReply(e)) }
+        }
+      },
+      {
+        name: 'set_layers', desc: '开关地图图层（--sites/--companies/--accidents 取值 on/off，可多个）',
+        help: '--sites on|off --companies on|off --accidents on|off',
+        handler: async (argv) => {
+          try {
+            const a = argv || []
+            const setOne = (key, layer) => {
+              const i = a.indexOf('--' + key)
+              if (i >= 0) layers[layer] = String(a[i + 1]).toLowerCase() !== 'off'
+            }
+            setOne('sites', 'sites'); setOne('companies', 'companies'); setOne('accidents', 'accidents')
+            Object.keys(layers).forEach(k => { if (store.ds[k]) store.ds[k].show = layers[k] })
+            return reply({ ok: true, layers })
+          } catch (e) { return reply(errReply(e)) }
+        }
+      },
+      { name: 'clear_card', desc: '关闭当前打开的情报卡', help: '无参数', handler: async () => { closeCard(); return reply({ ok: true }) } },
+      {
+        name: 'list_targets', desc: '列出地图上全部可聚焦目标：发射场/设施、公司、事故（名称清单）',
+        help: '无参数',
+        handler: async () => reply({
+          ok: true,
+          sites: sites.map(s => s.name),
+          companies: companies.map(c => c.name),
+          accidents: accidents.map(a => a.title)
+        })
+      }
+    ]
+  }
+</script>
+<script>
+  // 共享 store（动态 import 需 $mod.scoped 拼绝对路径；各 script 块作用域隔离，
+  // 跨块状态一律挂 store 单例，禁止块间 let 引用）
+  let storeRef = null
+  const storeReady = (async () => {
+    const m = await import($mod.scoped + '/lib/mapstore.js')
+    storeRef = m.store
+    // 实例重建时复位销毁标记（dispose 置 true 后，下次 mount 重新初始化）
+    storeRef.disposed = false
+  })()
+
+  // UTC 时钟
+  const tick = () => {
+    const d = new Date()
+    utcTime = d.toISOString().substring(0, 19).replace('T', ' ') + ' UTC'
+  }
+  tick()
+  // 定时器句柄挂 store，dispose 块清除（防实例重建后叠加泄漏）
+  const storeReady2 = storeReady.then(() => {
+    storeRef.tickTimer = setInterval(tick, 1000)
+  })
+
+  // 数据加载
+  const loadData = async () => {
+    const [st, co, ac, cn] = await Promise.all([
+      apiGet('map_sites'),
+      apiGet('map_companies'),
+      apiGet('map_accidents'),
+      apiGet('dashboard_counts')
+    ])
+    sites = st
+    companies = co
+    accidents = ac
+    const total = (cn && cn[0]) || {}
+    // 有记录缺坐标时显示 上图数/总数，避免静默丢失
+    counts.sites = total.sites != null ? String(total.sites) : String(st.length)
+    counts.companies = total.companies != null ? String(total.companies) : String(co.length)
+    counts.accidents = total.accidents != null ? String(total.accidents) : String(ac.length)
+    counts.regulations = total.regulations || 0
+    counts.reviews = total.reviews || 0
+    counts.launches = total.launches || 0
+  }
+
+  // Cesium 加载：包内 vendor（ui/lib/cesium，同源最稳）优先，jsDelivr/unpkg 兜底；
+  // 运行时创建 script 需手动拼全路径。单源失败曾导致用户浏览器整图黑屏（MAP ERROR）
+  const CESIUM_VER = '1.125.0'
+  const CESIUM_SOURCES = [
+    { base: $mod.scoped + '/lib/cesium/', js: $mod.scoped + '/lib/cesium/Cesium.js' },
+    { base: 'https://cdn.jsdelivr.net/npm/cesium@' + CESIUM_VER + '/Build/Cesium/', js: 'https://cdn.jsdelivr.net/npm/cesium@' + CESIUM_VER + '/Build/Cesium/Cesium.js' },
+    { base: 'https://unpkg.com/cesium@' + CESIUM_VER + '/Build/Cesium/', js: 'https://unpkg.com/cesium@' + CESIUM_VER + '/Build/Cesium/Cesium.js' }
+  ]
+  const loadCesium = () => {
+    if (window.Cesium) return Promise.resolve()
+    if (storeRef.cesiumPromise) return storeRef.cesiumPromise
+    const trySource = (i) => {
+      if (i >= CESIUM_SOURCES.length) return Promise.reject(new Error('cesium load failed (all sources)'))
+      const src = CESIUM_SOURCES[i]
+      window.CESIUM_BASE_URL = src.base
+      // widgets.css（信用容器等默认组件样式）逐源跟随
+      let link = document.querySelector('link[data-cesium-css]')
+      if (!link) {
+        link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.setAttribute('data-cesium-css', '1')
+        document.head.appendChild(link)
+      }
+      link.href = src.base + 'Widgets/widgets.css'
+      return new Promise((resolve, reject) => {
+        const s = document.createElement('script')
+        s.src = src.js
+        s.onload = () => resolve()
+        s.onerror = () => { s.remove(); trySource(i + 1).then(resolve, reject) }
+        document.head.appendChild(s)
+      })
+    }
+    const p = trySource(0)
+    storeRef.cesiumPromise = p
+    return p
+  }
+
+  // 国界线：沿用包内 world.json（GeoJSON）作装饰描边，异步不阻塞就绪
+  const loadBorders = async (viewer) => {
+    try {
+      const C = window.Cesium
+      const ds = await C.GeoJsonDataSource.load($mod.scoped + '/data/world.json', {
+        stroke: C.Color.fromCssColorString('#22d3ee').withAlpha(0.22),
+        fill: C.Color.TRANSPARENT,
+        strokeWidth: 1.2
+      })
+      await viewer.dataSources.add(ds)
+    } catch (e) { /* 装饰层，失败静默 */ }
+  }
+
+  const initMap = async () => {
+    await loadCesium()
+    if (storeRef.disposed) return
+    const C = window.Cesium
+    // 深度测试豁免仅限近距（同 setup 块 NO_DEPTH 语义，块间作用域隔离故重复声明）
+    const NO_DEPTH = 8e4
+    const viewer = new C.Viewer('map', {
+      // 高清卫星底图：Esri World_Imagery（免费免 token，城市区域约 0.3m/px，maximumLevel 19 防空洞）
+      baseLayer: new C.ImageryLayer(new C.UrlTemplateImageryProvider({
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        credit: 'Esri, Maxar, Earthstar Geographics',
+        maximumLevel: 19
+      })),
+      // 平台 UI 全关（搜索为自绘 ink 风格输入框）：不依赖 Ion token
+      animation: false, timeline: false, baseLayerPicker: false, geocoder: false,
+      homeButton: false, sceneModePicker: false, navigationHelpButton: false,
+      fullscreenButton: false, infoBox: false, selectionIndicator: false
+    })
+    storeRef.viewer = viewer
+
+    // 三个数据图层 = 独立 CustomDataSource，图层开关即 show 切换
+    storeRef.ds.sites = new C.CustomDataSource('sites')
+    storeRef.ds.companies = new C.CustomDataSource('companies')
+    storeRef.ds.accidents = new C.CustomDataSource('accidents')
+    await viewer.dataSources.add(storeRef.ds.sites)
+    await viewer.dataSources.add(storeRef.ds.companies)
+    await viewer.dataSources.add(storeRef.ds.accidents)
+
+    // 悬停标签（公司/事故点 hover 显名）
+    storeRef.hover = viewer.entities.add({
+      position: C.Cartesian3.fromDegrees(0, 0, 0),
+      show: false,
+      label: {
+        font: '11px monospace', style: C.LabelStyle.FILL, fillColor: C.Color.WHITE,
+        outlineColor: C.Color.BLACK.withAlpha(0.6), outlineWidth: 2,
+        pixelOffset: new C.Cartesian2(10, -14),
+        horizontalOrigin: C.HorizontalOrigin.LEFT, verticalOrigin: C.VerticalOrigin.CENTER,
+        disableDepthTestDistance: NO_DEPTH
+      }
+    })
+
+    // 初始视角：欧亚非数据主战区俯视。高度/俯仰几何约束—— pitch -78 俯视目标区；
+    // 高轨道 + 浅俯仰（如 -32）视野指向地平线外太空，只剩星空（"黑屏"假象）
+    viewer.camera.setView({
+      destination: C.Cartesian3.fromDegrees(10, 30, 3.8e6),
+      orientation: { heading: 0, pitch: C.Math.toRadians(-78), roll: 0 }
+    })
+
+    // 点位点击 → 情报卡；悬停 → 名称标签 + 指针
+    const handler = new C.ScreenSpaceEventHandler(viewer.scene.canvas)
+    handler.setInputAction((m) => {
+      const picked = viewer.scene.pick(m.position)
+      const ent = picked && picked.id
+      if (!ent || !ent.kid) return
+      if (ent.kind === 'site') { const r = sites.find(x => String(x.id) === ent.kid); if (r) openSiteCard(r) }
+      else if (ent.kind === 'company') { const r = companies.find(x => String(x.id) === ent.kid); if (r) openCompanyCard(r) }
+      else if (ent.kind === 'accident') { const r = accidents.find(x => String(x.id) === ent.kid); if (r) openAccidentCard(r) }
+    }, C.ScreenSpaceEventType.LEFT_CLICK)
+    handler.setInputAction((m) => {
+      const picked = viewer.scene.pick(m.endPosition)
+      const ent = picked && picked.id
+      if (ent && ent.kid) {
+        storeRef.hover.position = C.Cartesian3.fromDegrees(ent.klng, ent.klat, 0)
+        storeRef.hover.label.text = ent.nm
+        storeRef.hover.show = true
+        viewer.scene.canvas.style.cursor = 'pointer'
+      } else {
+        storeRef.hover.show = false
+        viewer.scene.canvas.style.cursor = 'default'
+      }
+    }, C.ScreenSpaceEventType.MOUSE_MOVE)
+
+    // 高轨道自动回正俯视：拉远后地球圆盘会沉到屏幕底部，pitch 缓回 -90 让球体居中
+    // （类 Google Earth：远=正投影地图，近=倾斜 3D；仅越过高轨道阈值时触发一次，不打扰近距操作）
+    viewer.camera.moveEnd.addEventListener(() => {
+      try {
+        if (storeRef.disposed) return
+        const cam = viewer.camera
+        if (cam.positionCartographic.height > 1.2e7 && Math.abs(cam.pitch + C.Math.PI_OVER_TWO) > 0.05) {
+          cam.flyTo({
+            destination: cam.position.clone(),
+            orientation: { heading: cam.heading, pitch: -C.Math.PI_OVER_TWO, roll: 0 },
+            duration: 0.8
+          })
+        }
+      } catch (e) {}
+    })
+
+    storeRef.onResize = () => { try { viewer.resize() } catch (e) {} }
+    window.addEventListener('resize', storeRef.onResize)
+
+    loadBorders(viewer)
+    mapReady = true
+    renderMap()
+  }
+
+  ;(async () => {
+    try { await storeReady2 } catch (e) {}
+    try { await loadData() } catch (e) {}
+    try { if (storeRef && !storeRef.disposed) await initMap() } catch (e) { mapError = String((e && e.message) || e) }
+  })()
+</script>
+<script active>
+  // 重新可见时校准画布尺寸（各 script 块作用域隔离，经模块单例异步取 viewer）
+  import($mod.scoped + '/lib/mapstore.js').then((m) => {
+    const v = m.store.viewer
+    if (v && !v.isDestroyed()) v.resize()
+  }).catch(() => {})
+</script>
+<script dispose>
+  // 销毁 viewer 防 WebGL 泄漏；置销毁标记，实例重建时由 script 块复位后重初始化
+  import($mod.scoped + '/lib/mapstore.js').then((m) => {
+    const s = m.store
+    s.disposed = true
+    if (typeof s.onResize === 'function') { window.removeEventListener('resize', s.onResize); s.onResize = null }
+    if (s.tickTimer) { clearInterval(s.tickTimer); s.tickTimer = null }
+    if (s.viewer && !s.viewer.isDestroyed()) s.viewer.destroy()
+    s.viewer = null
+    s.ds = {}
+    s.pin = null
+    s.hover = null
+  }).catch(() => {})
 </script>
 </html>

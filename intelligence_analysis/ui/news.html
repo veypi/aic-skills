@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html>
-<head><title>公司列表 - 商业航天分析</title></head>
+<head><title>动态资讯 - 商业航天分析</title></head>
 <style>
   .page { padding:var(--spacing-lg) var(--spacing-xl); max-width:1440px; margin:0 auto; }
 
@@ -11,7 +11,6 @@
   .hd-count b { color:var(--text-color); font-size:var(--font-size-lg); }
   .dot { width:8px; height:8px; border-radius:var(--radius-full); display:inline-block; flex:0 0 auto; }
   .dot-green { background:var(--color-success); box-shadow:0 0 0 3px rgba(34,197,94,0.18); animation:pulse 2s infinite; }
-  .dot-gray { background:var(--text-color-disabled); }
   @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.45 } }
 
   .toolbar { display:flex; gap:var(--spacing-sm); margin-bottom:var(--spacing-md); flex-wrap:wrap; align-items:center; }
@@ -25,20 +24,20 @@
   table { width:100%; border-collapse:collapse; }
   th { text-align:left; padding:10px 14px; background:var(--bg-color-secondary); color:var(--text-color-tertiary); font-family:var(--font-mono); font-weight:var(--font-weight-semibold); font-size:11px; text-transform:uppercase; letter-spacing:0.08em; border-bottom:1px solid var(--border-color); white-space:nowrap; }
   td { padding:11px 14px; border-bottom:1px solid var(--border-color); vertical-align:middle; }
-  tbody tr { cursor:pointer; transition:background var(--transition-fast); }
+  tbody tr { transition:background var(--transition-fast); }
   tbody tr:hover { background:var(--bg-color-secondary); }
   tbody tr:last-child td { border-bottom:none; }
 
-  .c-name { font-size:var(--font-size-sm); font-weight:var(--font-weight-semibold); color:var(--text-color); }
-  .c-sub { font-size:var(--font-size-xs); color:var(--text-color-tertiary); font-family:var(--font-mono); margin-top:1px; }
-  .c-desc { font-size:var(--font-size-xs); color:var(--text-color-secondary); line-height:1.5; max-width:340px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .n-title { font-size:var(--font-size-sm); font-weight:var(--font-weight-semibold); color:#e11d48; text-decoration:none; }
+  a.n-title:hover { color:#9f1239; text-decoration:underline; }
+  .n-sum { font-size:var(--font-size-xs); color:var(--text-color-secondary); line-height:1.5; max-width:420px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-top:2px; }
   .mono { font-family:var(--font-mono); font-size:var(--font-size-xs); color:var(--text-color-secondary); font-variant-numeric:tabular-nums; white-space:nowrap; }
-  .status-cell { display:inline-flex; align-items:center; gap:6px; font-size:var(--font-size-xs); color:var(--text-color-secondary); white-space:nowrap; }
+  .c-link { font-size:var(--font-size-xs); font-weight:var(--font-weight-semibold); color:var(--color-primary); cursor:pointer; text-decoration:none; }
+  .c-link:hover { text-decoration:underline; }
 
   .chip { display:inline-flex; align-items:center; font-family:var(--font-mono); font-size:11px; font-weight:var(--font-weight-medium); padding:2px 8px; border-radius:var(--radius-sm); letter-spacing:0.02em; white-space:nowrap; }
   .chip-primary { background:rgba(67,97,238,0.09); color:var(--color-primary); }
   .chip-gray { background:var(--bg-color-tertiary); color:var(--text-color-secondary); }
-  .chips { display:flex; gap:4px; flex-wrap:wrap; }
 
   .pagination { display:flex; justify-content:space-between; align-items:center; margin-top:var(--spacing-md); }
   .pg-info { font-family:var(--font-mono); font-size:var(--font-size-xs); color:var(--text-color-tertiary); font-variant-numeric:tabular-nums; }
@@ -54,7 +53,7 @@
     .page { padding:var(--spacing-md); }
     .toolbar { flex-direction:column; align-items:stretch; }
     .search { min-width:auto; }
-    .c-desc { display:none; }
+    .n-sum { display:none; }
   }
 
   /* ===== 主题适配层 ===== */
@@ -67,26 +66,21 @@
 <body>
   <div class="page">
     <div class="breadcrumb">
-      <a href="index">DASHBOARD</a><span>/</span><span>COMPANIES</span>
+      <a href="index">DASHBOARD</a><span>/</span><span>NEWS</span>
     </div>
     <div class="hd">
       <div class="hd-left">
-        <div class="kicker"><span class="dot dot-green"></span>Industry Chain Database</div>
-        <h1>公司分析</h1>
+        <div class="kicker"><span class="dot dot-green"></span>Industry Intelligence Feed</div>
+        <h1>动态资讯</h1>
       </div>
-      <div class="hd-count"><b>{{ total }}</b> 家公司</div>
+      <div class="hd-count"><b>{{ total }}</b> 条动态</div>
     </div>
 
     <div class="toolbar">
-      <input class="search" v:value="keyword" @input="search" placeholder="搜索公司名称...">
-      <select v:value="filterSector" @change="search">
-        <option value="">全部分类</option>
-        <option v-for="s in sectors" :value="s">{{ s }}</option>
-      </select>
-      <select v:value="filterStatus" @change="search">
-        <option value="">全部状态</option>
-        <option value="active">运营中</option>
-        <option value="inactive">已停运</option>
+      <input class="search" v:value="keyword" @input="search" placeholder="搜索新闻标题 / 摘要...">
+      <select v:value="filterType" @change="search">
+        <option value="">全部类型</option>
+        <option v-for="t in types" :value="t">{{ t }}</option>
       </select>
     </div>
 
@@ -94,21 +88,21 @@
       <div v-if="items.length === 0" class="empty">NO DATA</div>
       <div class="table-wrap" v-else>
         <table>
-          <thead><tr><th>公司</th><th>简介</th><th>分类</th><th>总部</th><th>状态</th><th>标签</th></tr></thead>
+          <thead><tr><th>日期</th><th>公司</th><th>类型</th><th>标题 / 摘要</th><th>来源</th></tr></thead>
           <tbody>
-            <tr v-for="c in items" @click="nav('company?id=' + c.id)">
+            <tr v-for="n in items">
+              <td><span class="mono">{{ dateOnly(n.published_at) }}</span></td>
               <td>
-                <div class="c-name">{{ c.name }}</div>
-                <div class="c-sub" v-if="c.name_en">{{ c.name_en }}</div>
+                <a class="c-link" v-if="companyName(n.company_id)" @click="nav('company?id=' + n.company_id)">{{ companyName(n.company_id) }}</a>
+                <span class="mono" v-else>-</span>
               </td>
-              <td><div class="c-desc" v-if="c.description">{{ c.description }}</div><span class="mono" v-else>-</span></td>
-              <td><span class="chip chip-primary">{{ c.sub_sector || '未分类' }}</span></td>
-              <td><span class="mono">{{ c.headquarters || '-' }}</span></td>
+              <td><span class="chip chip-primary">{{ n.news_type || '其他' }}</span></td>
               <td>
-                <span class="status-cell" v-if="c.status === 'active'"><span class="dot dot-green"></span>运营中</span>
-                <span class="status-cell" v-else><span class="dot dot-gray"></span>{{ c.status === 'inactive' ? '已停运' : (c.status || '-') }}</span>
+                <a class="n-title" v-if="n.url" :href="n.url" target="_blank">{{ n.title }}</a>
+                <span class="n-title" v-else>{{ n.title }}</span>
+                <div class="n-sum" v-if="n.summary">{{ n.summary }}</div>
               </td>
-              <td><div class="chips"><span v-for="t in tagList(c.tags)" class="chip chip-gray">{{ t }}</span></div></td>
+              <td><span class="mono">{{ n.source || '-' }}</span></td>
             </tr>
           </tbody>
         </table>
@@ -126,15 +120,16 @@
 </body>
 <script setup>
   keyword = ''
-  filterSector = ''
-  filterStatus = ''
-  sectors = ['火箭制造','发动机','卫星制造','发射服务','卫星运营','遥感服务','航天材料','地面设备','测控','航天电子','太空旅游']
+  filterType = ''
+  types = ['发射','融资','技术突破','合作','事故','合同','并购','人事','行业','战略','政策','财报']
   rows = []
   items = []
   page = 1
   size = 20
   total = 0
-  tagList = (tags) => tags ? tags.split(',').map(function(t){ return t.trim() }).filter(function(t){ return t }).slice(0, 3) : []
+  companyMap = {}
+  dateOnly = (t) => t ? String(t).slice(0, 10) : '-'
+  companyName = (id) => companyMap[id] || ''
 
   // SPA 内经平台 vrouter 导航（子路径由壳组件路由）；独立直开时为真实浏览器跳转
   nav = (url) => { try { if ($router) { $router.push(url); return } } catch (e) {} location.href = url }
@@ -151,7 +146,10 @@
   }
   load = async () => {
     try {
-      rows = await apiGet('companies', { q: keyword, sub_sector: filterSector, status: filterStatus })
+      const names = await apiGet('company_names', {})
+      companyMap = {}
+      names.forEach(function(c){ companyMap[c.id] = c.name })
+      rows = await apiGet('news', { company_id: '', news_type: filterType, q: keyword })
       total = rows.length
       applyPage()
     } catch(e) {}

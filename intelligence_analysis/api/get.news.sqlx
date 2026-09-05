@@ -1,0 +1,6 @@
+SELECT id, company_id, title, url, published_at, summary, news_type, source
+FROM space_news
+WHERE (:company_id = '' OR company_id = :company_id)
+  AND (:news_type = '' OR news_type = :news_type)
+  AND (:q = '' OR title LIKE '%' || :q || '%' OR summary LIKE '%' || :q || '%')
+ORDER BY published_at DESC

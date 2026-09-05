@@ -62,7 +62,7 @@
 <body>
   <div class="page">
     <div class="breadcrumb">
-      <a href="index.html">DASHBOARD</a><span>/</span><a href="regulations.html">REGULATIONS</a><span>/</span><span>DOCUMENT</span>
+      <a href="index">DASHBOARD</a><span>/</span><a href="regulations">REGULATIONS</a><span>/</span><span>DOCUMENT</span>
     </div>
 
     <div v-if="item === null" class="empty">LOADING...</div>
@@ -81,8 +81,8 @@
           <div class="info-item"><span class="info-label">生效日期</span><span class="info-value">{{ dateStr(item.effective_at) }}</span></div>
           <div class="info-item"><span class="info-label">版本</span><span class="info-value">{{ item.version || '-' }}</span></div>
           <div class="info-item" v-if="item.source_url"><span class="info-label">原文链接</span><span class="info-value"><a :href="item.source_url" target="_blank" class="version-link">查看原文 &#8599;</a></span></div>
-          <div class="info-item" v-if="item.replaces_id"><span class="info-label">替代文档</span><span class="info-value"><a :href="'regulation.html?id=' + item.replaces_id" class="version-link">查看被替代版本 &#8594;</a></span></div>
-          <div class="info-item" v-if="prevVersion !== null"><span class="info-label">被替代为</span><span class="info-value"><a :href="'regulation.html?id=' + prevVersion.id" class="version-link">查看新版本 &#8594;</a></span></div>
+          <div class="info-item" v-if="item.replaces_id"><span class="info-label">替代文档</span><span class="info-value"><a :href="'regulation?id=' + item.replaces_id" class="version-link">查看被替代版本 &#8594;</a></span></div>
+          <div class="info-item" v-if="prevVersion !== null"><span class="info-label">被替代为</span><span class="info-value"><a :href="'regulation?id=' + prevVersion.id" class="version-link">查看新版本 &#8594;</a></span></div>
         </div>
         <div class="keywords" v-if="item.keywords" style="margin-top:var(--spacing-md)">
           <span v-for="k in item.keywords.split(',').map(function(x){ return x.trim() }).filter(function(x){ return x })" class="kw">{{ k }}</span>
@@ -117,10 +117,7 @@
   dateStr = (d) => d ? d.substring(0,10) : '-'
 
   apiGet = async (name, params) => {
-    const usp = new URLSearchParams(params || {})
-    const r = await fetch('api/' + name + (usp.toString() ? '?' + usp.toString() : ''))
-    if (!r.ok) throw new Error('api ' + name + ' HTTP ' + r.status)
-    const d = await r.json()
+    const d = await $fetch('api/' + name, { params })
     return d.rows || []
   }
 

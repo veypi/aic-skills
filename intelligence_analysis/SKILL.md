@@ -6,13 +6,13 @@ keywords: [航天, 商业航天, 公司分析, 事故案例, 监管法规, 合�
 icon: fa-solid fa-satellite
 ui:
   - path: index.html
-    desc: 情报舱入口（SPA 壳，按路径路由子页面；根路径与 index.html 均默认加载 dashboard.html）
-  - path: dashboard.html
-    desc: ORBITALINTEL 情报舱主页面（Cesium 三维地球高清卫星影像 + 航天设施/公司/事故图层 + 任意地点搜索定位 + 情报卡，AI 地图联动指令面）
+    desc: ORBITALINTEL 情报舱主页面/默认首页（Cesium 三维地球高清卫星影像 + 航天设施/公司/事故图层 + 任意地点搜索定位 + 情报卡，AI 地图联动指令面）
   - path: companies.html
     desc: 公司列表（搜索/筛选/分页）
   - path: company.html
     desc: 公司详情页（?id= 必填：基本信息 + 产品/发射/融资/关系网络）
+  - path: news.html
+    desc: 动态资讯列表（关键词搜索 + 类型筛选 + 分页，标题链原文、公司链详情）
   - path: accidents.html
     desc: 事故案例库列表（类型/严重度/调查状态筛选）
   - path: accident.html
@@ -31,7 +31,7 @@ ui:
 
 专业的商业航天（Commercial Aerospace / New Space）行业分析 skill，四大板块 + 设施情报：
 
-- **板块一：公司分析** —— 全产业链公司、产品、发射、融资、关系网络
+- **板块一：公司分析** —— 全产业链公司、产品、发射、融资、关系网络、动态资讯
 - **板块二：事故案例库** —— 发射事故/地面测试事故/设施事故/发动机测试，追溯根因与经验教训
 - **板块三：监管知识库** —— 法律法规、政策文件、标准规范、审批规则、技术指南、监管经验
 - **板块四：AI 合规审查** —— 对申报材料智能初审：缺项、冲突、风险、整改建议
@@ -40,27 +40,29 @@ ui:
 数据存于本 skill 私有 sqlite（11 张表），经 `api/` 声明式接口读写。页面零内嵌 AI——
 操控面 = `pageDesc` 指令 + 同源 api，全部由外部 AI 驱动。
 
-## 页面结构（SPA）
+## 页面结构（平台直路由）
 
-- `index.html` 是**壳组件**：按 `location.pathname` 自动路由到同目录子页面
-  （`/skills/{scope}/{ref}/{page}.html` → 装载 `./{page}.html`），根路径或 `index.html`
-  均默认装载 `dashboard.html`。
-- **唯一带地图指令的页面是 `dashboard.html`**（即 `index.html` / 根路径）；
-  其余页面（公司/事故/法规/审查的列表与详情）`pageDesc` 为 null，纯数据展示。
-- 详情页直开需带 `?id=`：`open {url_prefix}/company.html?id=<记录id>`；
-  同理 `accident.html` `regulation.html` `review.html`。打开后页面自行调 api 取数渲染。
+- skill 只画页面，**路由由平台负责**：`/skills/{scope}/{ref}/{page}` → 装载包
+  `ui/{page}.html`（缺省 `index`）；裸前缀 `/skills/{scope}/{ref}` 自动规范化到
+  `/index`。页内导航写**干净路径名**（`$router.push('news')` / `<a href="news">`，
+  不带 `.html`）；详情页带 `?id=`：`open {url_prefix}/company?id=<记录id>`。
+- **唯一带地图指令的页面是 `index.html`**（情报舱主页面）；其余页面（公司/事故/
+  法规/审查/新闻的列表与详情）不声明 `pageDesc`，纯数据展示。
+- 页面数据走 `$fetch('api/{name}', { params })`（包 env.js 固定定义，模块锚定包前缀）；
+  同页 query 变化（如 `regulation?id=A` → `?id=B`）不重建组件，页面经
+  `$router.onChange(() => init())` 自刷新。
 - 平台 `page list` 可看到窗口与 `{win_id}.*` 事件；换页后指令面会重建，需重新 `list`
   确认事件名（`{win_id}` 可能变化）。
 
 ## 外部 AI 操作方式
 
-1. **打开页面**：`open {url_prefix}/index.html`（`url_prefix` 由 skills 工具返回，形如
+1. **打开页面**：`open {url_prefix}/index`（`url_prefix` 由 skills 工具返回，形如
    `/skills/local/intelligence_analysis` 或 `/skills/public/{id}`，**勿硬编码**）。
    用户亦可从 skill 列表/关联技能点击开窗。
 2. **窗口复用（默认做法）**：情报舱开好后，列表/详情页一律在同一窗口内打开，**不要另开新窗口**：
-   - 列表页：`open {url_prefix}/companies.html --win <win_id>`（同理 accidents/regulations/reviews）
-   - 详情页：`open {url_prefix}/company.html?id=<记录id> --win <win_id>`（同理 accident/regulation/review）
-   - 列表/详情页**无地图指令面**，看完记得导航回 `open {url_prefix}/index.html --win <win_id>`
+   - 列表页：`open {url_prefix}/companies --win <win_id>`（同理 accidents/regulations/reviews/news）
+   - 详情页：`open {url_prefix}/company?id=<记录id> --win <win_id>`（同理 accident/regulation/review）
+   - 列表/详情页**无地图指令面**，看完记得导航回 `open {url_prefix}/index --win <win_id>`
      恢复地图指令；全程只保留一个情报窗口，避免窗口越开越多。
 3. **数据读写与地图指令都依赖窗口存在**：页面未打开时 `exec 1host=page` 无响应——
    先 `open`，再 `exec 1host=page list` 确认窗口与 `{win_id}.*` 事件。
@@ -101,7 +103,7 @@ ui:
 
 | 端点 name | 参数 | 用途 |
 |---|---|---|
-| `dashboard_counts` | — | 六板块记录数（单行；数值为字符串类型） |
+| `dashboard_counts` | — | 七板块记录数（单行；数值为字符串类型） |
 | `map_sites` / `map_companies` / `map_accidents` | — | 情报舱地图点位（只要带坐标的行） |
 | `companies` | `q` `sub_sector` `status` | 公司列表（名称/英文名/简称模糊） |
 | `company` | `id` | 公司详情 |
@@ -112,6 +114,7 @@ ui:
 | `regulations` | `q` `doc_type` `issuing_authority` `status` | 法规列表 |
 | `regulation` | `id` | 法规详情（含全文 content） |
 | `regulation_successor` | `id` | 版本链：谁替代了本文档 |
+| `news` | `company_id` `news_type` `q` | 动态资讯列表（标题/摘要模糊；company_id/news_type 空串 = 不限） |
 | `review_cases` | `case_type` `status` | 审查案件列表 |
 | `review_case` / `review_findings` | `id` / `case_id` | 案件详情 / 发现项 |
 
@@ -133,7 +136,8 @@ ui:
 `recommendation`；resolution_status 恒 unresolved）、`review_finding_status`
 （`id` `resolution_status`：unresolved→resolved→closed）、`review_case_update`
 （`id` `status` `overall_result` `summary` `reviewed_by` `reviewed_at`；
-**空串 = 不改**，只传要更新的字段）。
+**空串 = 不改**，只传要更新的字段）。`review_finding_status` 与 `review_case_update`
+均按 `id + user_id` 双重过滤——只能更新**自己的**记录。
 
 ### 删除（POST `{url_prefix}/api/delete_{表名}`，JSON body：`{"id":"…"}`）
 
@@ -163,7 +167,7 @@ ui:
 
 返回统一 `{content: "<JSON 字符串>"}`，反序列化后 `{ok:true, …}` 或
 `{ok:false, error}`（可原样转述用户）。找不到目标时先 `list_targets` 再重试。
-以上指令**仅 `dashboard.html`（主页面）提供**；列表/详情页无地图指令面。
+以上指令**仅 `index.html`（情报舱主页面）提供**；列表/详情页无地图指令面。
 讲解地点/公司/事故时**必须同步调用对应指令**让地图聚焦（"边讲边指"）；
 讲到一个地名（非库内目标）时用 `locate` 定位。
 
@@ -203,7 +207,7 @@ competitor/joint_venture/other）`contract_name` `description` `signed_at` `end_
 
 ### `space_news` 动态资讯
 `company_id*` `title` `url` `published_at` `summary` `news_type`（发射/融资/合作/
-技术突破/政策/财报/人事/行业）`source`
+技术突破/政策/财报/人事/行业/事故/合同/并购/战略）`source`
 
 ### `space_accidents` 事故案例
 `title*` `incident_date` `location` `company_name` `company_id` `vehicle` `mission`
@@ -241,9 +245,9 @@ spaceport）`country` `region` `lat*` `lng*` `operator` `status`（active/inacti
 ## 工作流
 
 ### 公司调研（"搜索/调研某公司"）
-1. `companies?q=` 先查库；已有则补充最新动态，无则采集
+1. `companies?q=` 先查库；已有则 `news?company_id=` 查该司既有动态判断是否需补充，无则采集
 2. `web_search`/`web_fetch` 采集 → `company` post 端点（新）或补充写入
-   products/launches/fundings/relations/news
+   products/launches/fundings/relations/news（**先查后写**，避免重复入库）
 3. 产业链展示：`company_relations?company_id=` + `company_names` 解析对端名称，
    按 supplier/customer/partner/investor 分类列出上下游
 4. 返回时标注数据来源（数据库记录 id vs 网络来源 URL）
@@ -288,7 +292,7 @@ suggestion 为 info）→ 5. `review_case_update` 汇总结论：
 
 | 现象 | 处理 |
 |---|---|
-| `exec 1host=page` 无响应 | 页面未打开：先 `open {url_prefix}/index.html`，再 `page list` 确认窗口 |
+| `exec 1host=page` 无响应 | 页面未打开：先 `open {url_prefix}/index`，再 `page list` 确认窗口 |
 | 指令调用返回 HTTP 404 | 误用 curl 调指令：pageDesc 指令是 `exec` action（`{win_id}.{event}`），不是 URL；curl 只能访问 `{url_prefix}/api/*` |
 | `orbital_status.ready=false` | Cesium 引擎/瓦片异步加载中，稍候重试 |
 | 指令报 `{ok:false, error:"not found"}` | 先 `list_targets` 取准确名称（支持中英模糊），或另用 `locate` 定位相近地名 |

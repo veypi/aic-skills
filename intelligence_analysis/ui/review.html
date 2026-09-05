@@ -77,7 +77,7 @@
 <body>
   <div class="page">
     <div class="breadcrumb">
-      <a href="index.html">DASHBOARD</a><span>/</span><a href="reviews.html">REVIEWS</a><span>/</span><span>CASE</span>
+      <a href="index">DASHBOARD</a><span>/</span><a href="reviews">REVIEWS</a><span>/</span><span>CASE</span>
     </div>
 
     <div v-if="c === null" class="empty">LOADING...</div>
@@ -169,10 +169,7 @@
   dateStr = (d) => d ? d.substring(0,10) : '-'
 
   apiGet = async (name, params) => {
-    const usp = new URLSearchParams(params || {})
-    const r = await fetch('api/' + name + (usp.toString() ? '?' + usp.toString() : ''))
-    if (!r.ok) throw new Error('api ' + name + ' HTTP ' + r.status)
-    const d = await r.json()
+    const d = await $fetch('api/' + name, { params })
     return d.rows || []
   }
   apiPost = async (name, body) => {

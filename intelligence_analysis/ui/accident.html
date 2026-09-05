@@ -64,7 +64,7 @@
 <body>
   <div class="page">
     <div class="breadcrumb">
-      <a href="index.html">DASHBOARD</a><span>/</span><a href="accidents.html">ACCIDENTS</a><span>/</span><span>DETAIL</span>
+      <a href="index">DASHBOARD</a><span>/</span><a href="accidents">ACCIDENTS</a><span>/</span><span>DETAIL</span>
     </div>
 
     <div v-if="item === null" class="empty">LOADING...</div>
@@ -134,7 +134,7 @@
           <div class="blk" v-if="relatedAccidents.length > 0">
             <span class="lbl">关联事故</span><br>
             <span v-for="(ra, i) in relatedAccidents">
-              <a :href="'accident.html?id=' + ra.id" class="link">{{ ra.title }}</a><span v-if="i < relatedAccidents.length - 1"> · </span>
+              <a :href="'accident?id=' + ra.id" class="link">{{ ra.title }}</a><span v-if="i < relatedAccidents.length - 1"> · </span>
             </span>
           </div>
           <div class="blk" v-if="item.related_regulation_ids"><span class="lbl">关联法规</span><br>{{ item.related_regulation_ids }}</div>
@@ -173,10 +173,7 @@
   dateStr = (d) => d ? d.substring(0,10) : '-'
 
   apiGet = async (name, params) => {
-    const usp = new URLSearchParams(params || {})
-    const r = await fetch('api/' + name + (usp.toString() ? '?' + usp.toString() : ''))
-    if (!r.ok) throw new Error('api ' + name + ' HTTP ' + r.status)
-    const d = await r.json()
+    const d = await $fetch('api/' + name, { params })
     return d.rows || []
   }
 

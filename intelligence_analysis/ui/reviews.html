@@ -69,7 +69,7 @@
 <body>
   <div class="page">
     <div class="breadcrumb">
-      <a href="index.html">DASHBOARD</a><span>/</span><span>REVIEWS</span>
+      <a href="index">DASHBOARD</a><span>/</span><span>REVIEWS</span>
     </div>
     <div class="hd">
       <div class="hd-left">
@@ -102,7 +102,7 @@
     <div class="panel">
       <div v-if="items.length === 0" class="empty">NO DATA</div>
       <div class="rows" v-else>
-        <div v-for="c in items" class="r-item" @click="nav('review.html?id=' + c.id)">
+        <div v-for="c in items" class="r-item" @click="nav('review?id=' + c.id)">
           <div class="r-main">
             <div class="r-title">{{ c.title || c.case_type }}</div>
             <div class="r-meta">
@@ -160,10 +160,7 @@
   nav = (url) => { try { if ($router) { $router.push(url); return } } catch (e) {} location.href = url }
 
   apiGet = async (name, params) => {
-    const usp = new URLSearchParams(params || {})
-    const r = await fetch('api/' + name + (usp.toString() ? '?' + usp.toString() : ''))
-    if (!r.ok) throw new Error('api ' + name + ' HTTP ' + r.status)
-    const d = await r.json()
+    const d = await $fetch('api/' + name, { params })
     return d.rows || []
   }
   apiPost = async (name, body) => {
