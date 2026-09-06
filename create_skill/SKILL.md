@@ -85,7 +85,7 @@ Q4 页面/AI 需要结构化的数据读写通道（即使是别人的表/纯查
 
 平台按内容自动分流两种渲染形态：
 
-- 含 `<script setup>` → 按 **vhtml 组件**挂载：响应式、scoped 样式、生命周期全语义（写法契约见 vhtml skill）；setup 里声明 `pageDesc = {desc, commands:[{name, desc, help?, handler}]}` 即被平台采集为窗口指令（`{win_id}.{cmd}`，外部 AI 经 `page exec` 调用）——动态变更：整体替换 pageDesc 对象即生效，原地改 commands 数组下次采集自动读到
+- 含 `<script setup>` → 按 **vhtml 组件**挂载：响应式、scoped 样式、生命周期全语义（写法契约见 vhtml skill，先 `skills load vhtml` 再写）；setup 里声明 `pageDesc = {desc, commands:[{name, desc, help?, handler}]}` 即被平台采集为窗口指令（`{win_id}.{cmd}`，外部 AI 经 `page exec` 调用）——动态变更：整体替换 pageDesc 对象即生效，原地改 commands 数组下次采集自动读到
 - 普通 HTML → **iframe blob** 渲染：独立文档，自带 `<script>` 随意写，与平台运行时隔离（无 pageDesc 通道）
 
 限制（需要任一能力即应升级为 skill L2）：
@@ -133,6 +133,8 @@ frontmatter 之后的正文 = **AI load 的入口内容**（skills 工具 `load`
 ## 4. L2：启用 ui/
 
 `ui/` 下放任意 HTML 页面（vhtml 组件或原生均可），frontmatter 的 `ui` 清单登记入口：
+
+**写 vhtml 组件前先加载 vhtml 技能**（`skills load vhtml`）：组件语法（文件骨架、`script setup`、绑定、scoped 样式、生命周期）的唯一契约源是 vhtml skill，本指南不重复。易踩坑：组件必须是完整 HTML 文档（`<!DOCTYPE html>` + `head`/`body`），裸 `<template>` 开头的 fragment 会让 setup 静默不执行。
 
 ```yaml
 ui:
