@@ -1,3 +1,15 @@
+/*
+!well-console/
+!well_talk/
+!create_skill/
+!vhtml/
+!intelligence_analysis/
+!ppt_studio/
+!verisim/
+!play_with_ai/
+!code_review/
+!git_commit/
+
 *.sqlite
 *.zip
 temp_*
