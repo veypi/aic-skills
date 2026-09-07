@@ -182,8 +182,11 @@ ui:
 - 字段类型：`string`(VARCHAR 255) / `text` / `json` / `int` / `number` / `bool` / `time`
 - 迁移语义 = **additive**：只加列，不删不改型；`required` 新列必须带 `default`（否则显式报错——sqlite ADD COLUMN 语义限制）
 - `_rowid` 是保留字段名（owner 记录层的行句柄别名），声明即契约非法
-- 运行库 sqlite 在**包目录外**：本地 `/u/{uid}/skills/{name}.sqlite`、正式 `/skills/{id}.sqlite`——发布打包天然不含数据
-- owner 数据管理走 `/api/skills/{ref}/tables/{table}[/{rowid}]`（仅正式条目 owner；ref 单段 = 注册表 uuid）
+- 运行库 sqlite 在**包目录外**：本地 `/u/{uid}/skills/{name}.sqlite`、正式 `/skills/{id}.sqlite`——发布打包天然不含数据（发布后正式库从空开始，本地数据留在本地）
+- **owner 数据管理面** `/api/skills/{ref}/...`（owner-only：本地 ref = 目录名，解析天然限定你自己的 UFS；正式 ref = 注册表 uuid，校验注册表 owner，非 owner 403）：
+  - 行 CRUD：`GET/POST /api/skills/{ref}/tables/{table}`、`GET/PUT/DELETE .../{table}/{_rowid}`（分页 `page/size`、排序 `sort=-field`、其余 query 键作等值过滤）——适合单行精确操作
+  - 原始 SQL：`POST /api/skills/{ref}/tables_sqlx`，适合批量/复杂条件操作。body 二选一：`{"sql": "...", "args": [...]}`（`?` 位置绑定）或 `{"sql": "...:name...", "params": {...}}`（命名绑定，`:name`/`@name`）。**白名单单语句**：`SELECT/WITH/EXPLAIN` 走只读连接（1000 行上限截断，响应 `{"rows":[...],"truncated":bool}`）；`INSERT/UPDATE/DELETE/REPLACE` 走写连接（响应 `{"affected":n,"last_insert_id":n}`）；DDL、PRAGMA/ATTACH、事务类一律 400；多语句 400。示例：
+    `curl -X POST /api/skills/{ref}/tables_sqlx -d '{"sql":"UPDATE customers SET level=? WHERE region=?","args":["gold","cn"]}'`
 
 ## 6. L4：启用 api/
 
@@ -213,6 +216,11 @@ INSERT INTO customers (user_id, name, email) VALUES (:user_id, :name, :email)
 - 参数合并 query < form < json（multipart 一律拒绝）；响应 `get → {"rows":[...],"truncated":bool}`（恒数组）、`post → {"rows":[],"affected":n,"last_insert_id":n}`
 
 **AI 数据通道**：AI 不经过 skills 工具调数据——由外部 AI（chat 壳 page 通道）发 `page exec curl` **同源**调 `{url_prefix}/api/{name}`。页面代码同样用同源 fetch。skills 工具只负责 search（发现，列表直接下发 url_prefix 列）与 load（读手册正文 + 能力清单 + url_prefix）。
+
+**AI 选通道**（两条通道操作同一运行库，但权限与职责不同）：
+
+- **业务读写** → 包内 sqlx 接口 `{url_prefix}/api/{name}`：`:user_id` 服务端注入、行级隔离，任何用户可调用，页面与 AI 都走这里
+- **owner 数据管理**（跨用户排查、批量修数、种子数据）→ `/api/skills/{ref}/` 管理面（§5 末的行 CRUD 与 tables_sqlx）：owner-only，**无自动 `:user_id` 过滤，WHERE 条件由你自己写全**；拿不准影响面时先 `SELECT` 同名条件确认行数再执行写
 
 ## 7. 发布到广场
 
