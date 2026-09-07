@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html>
+  <head><title>Video Stage</title></head>
+  <style>
+    .vd-wrap { display: flex; flex-direction: column; width: 100%; height: 100%; min-height: 0; }
+    .vd-host {
+      position: relative; flex: 1; min-height: 0; display: flex; overflow: hidden;
+      background:
+        radial-gradient(1200px 600px at 50% -10%, rgba(67, 97, 238, 0.14), transparent 60%),
+        #0a0e16;
+    }
+    .vd-box {
+      position: relative; margin: auto; flex: none;
+      box-shadow: 0 10px 50px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.06);
+      border-radius: 4px;
+    }
+    .vd-clip {
+      position: absolute; left: 0; top: 0; overflow: hidden; border-radius: 4px;
+      transform-origin: 0 0;
+    }
+    .vd-empty {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 10px;
+      color: #4b5563; font-size: 15px;
+    }
+    .vd-empty b { color: #9ca3af; font-size: 17px; font-weight: 600; }
+
+    /* ---- 选中框与八向手柄 ---- */
+    .vd-sel { position: absolute; border: 1.5px solid #4f6ef7; pointer-events: none; z-index: 10; }
+    .vd-sel-one { position: absolute; border: 1px dashed rgba(79, 110, 247, 0.9); pointer-events: none; z-index: 10; }
+    .vd-guide { position: absolute; pointer-events: none; z-index: 11; background: #f472b6; }
+    .vd-guide.v { top: 0; bottom: 0; width: 1px; }
+    .vd-guide.h { left: 0; right: 0; height: 1px; }
+    .vd-rubber { position: absolute; border: 1px solid #4f6ef7; background: rgba(79, 110, 247, 0.12); z-index: 12; pointer-events: none; }
+    .vd-rot {
+      position: absolute; width: 11px; height: 11px; border-radius: 50%;
+      background: #fff; border: 1.5px solid #4f6ef7; cursor: grab; pointer-events: auto; z-index: 11;
+    }
+    .vd-ctx {
+      position: absolute; z-index: 30; display: flex; flex-direction: column; min-width: 108px;
+      background: #1a2233; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 9px;
+      padding: 4px; box-shadow: 0 10px 32px rgba(0, 0, 0, 0.5);
+    }
+    .vd-ctx button {
+      border: none; background: transparent; color: #cbd5e1; font-size: 12px;
+      text-align: left; padding: 6px 10px; border-radius: 6px; cursor: pointer;
+    }
+    .vd-ctx button:hover { background: rgba(67, 97, 238, 0.25); color: #fff; }
+    .vd-ctx button.danger:hover { background: rgba(239, 68, 68, 0.25); color: #fca5a5; }
+    .vd-sel .nm {
+      position: absolute; top: -20px; left: -1.5px; font-size: 11px; line-height: 16px;
+      color: #e0e7ff; background: rgba(79, 110, 247, 0.92); padding: 0 7px;
+      border-radius: 4px 4px 4px 0; white-space: nowrap;
+    }
+    .vd-handle {
+      position: absolute; width: 9px; height: 9px; background: #fff;
+      border: 1.5px solid #4f6ef7; border-radius: 2px; pointer-events: auto;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+    }
+    .vh-nw { left: -5px; top: -5px; cursor: nwse-resize; }
+    .vh-n  { left: calc(50% - 5px); top: -5px; cursor: ns-resize; }
+    .vh-ne { right: -5px; top: -5px; cursor: nesw-resize; }
+    .vh-e  { right: -5px; top: calc(50% - 5px); cursor: ew-resize; }
+    .vh-se { right: -5px; bottom: -5px; cursor: nwse-resize; }
+    .vh-s  { left: calc(50% - 5px); bottom: -5px; cursor: ns-resize; }
+    .vh-sw { left: -5px; bottom: -5px; cursor: nesw-resize; }
+    .vh-w  { left: -5px; top: calc(50% - 5px); cursor: ew-resize; }
+
+    /* ---- 文本编辑浮层 ---- */
+    .vd-textedit { position: absolute; z-index: 12; display: flex; flex-direction: column; gap: 4px; }
+    .vd-textedit textarea {
+      flex: 1; min-height: 48px; resize: both; background: rgba(15, 23, 42, 0.94);
+      color: #e5e7eb; border: 1.5px solid #4f6ef7; border-radius: 6px;
+      padding: 6px 8px; font-size: 14px; line-height: 1.4; outline: none;
+      font-family: inherit;
+    }
+    .vd-textedit .te-bar { display: flex; gap: 6px; justify-content: flex-end; }
+    .vd-textedit .te-bar button {
+      border: none; border-radius: 6px; padding: 3px 12px; font-size: 12px; cursor: pointer;
+      background: rgba(255, 255, 255, 0.1); color: #cbd5e1;
+    }
+    .vd-textedit .te-bar button.ok { background: #4361ee; color: #fff; }
+
+    /* ---- 控制条 ---- */
+    .vd-controls {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 14px; background: rgba(15, 20, 32, 0.92);
+      border-top: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .vd-btn {
+      border: none; background: rgba(67, 97, 238, 0.16); color: #c7d2fe;
+      width: 34px; height: 34px; border-radius: 9px; cursor: pointer;
+      font-size: 15px; display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s; flex: none;
+    }
+    .vd-btn:hover { background: rgba(67, 97, 238, 0.32); color: #fff; }
+    .vd-btn.primary { background: #4361ee; color: #fff; width: 40px; height: 40px; }
+    .vd-btn.primary:hover { background: #2563eb; }
+    .vd-seek { flex: 1; height: 5px; -webkit-appearance: none; appearance: none; background: rgba(255, 255, 255, 0.12); border-radius: 99px; outline: none; cursor: pointer; }
+    .vd-seek::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 13px; height: 13px; border-radius: 50%;
+      background: #4361ee; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    }
+    .vd-time { color: #9ca3af; font-size: 12.5px; font-variant-numeric: tabular-nums; min-width: 130px; text-align: center; }
+    .vd-rate {
+      background: rgba(255, 255, 255, 0.07); color: #c7d2fe; border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 7px; font-size: 12px; padding: 4px 3px; outline: none; flex: none;
+    }
+    .vd-btn.on { background: rgba(67, 97, 238, 0.55); color: #fff; }
+    .vd-vol { width: 64px; flex: none; accent-color: #4361ee; cursor: pointer; }
+
+    .vd-exporting {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 12px;
+      background: rgba(10, 14, 22, 0.88); color: #c7d2fe; font-size: 14px;
+      z-index: 20; backdrop-filter: blur(2px);
+    }
+    .vd-export-bar { width: 260px; height: 6px; background: rgba(255, 255, 255, 0.12); border-radius: 99px; overflow: hidden; }
+    .vd-export-fill { height: 100%; background: linear-gradient(90deg, #4361ee, #7c3aed); border-radius: 99px; transition: width 0.2s; }
+  </style>
+  <body>
+    <div class="vd-wrap">
+      <div class="vd-host" ref="host">
+        <div v-if="!doc" class="vd-empty">
+          <b>暂无视频文档</b>
+          <span>点击上方「样例」查看演示，或「新建」创建项目</span>
+        </div>
+        <div class="vd-box" v-show="doc" ref="box"
+             :style="{ width: boxW + 'px', height: boxH + 'px' }"
+             @mousedown="onBoxMouseDown" @dblclick="onBoxDblClick" @contextmenu="onBoxContextMenu"
+             @dragover="onDragOverAsset" @drop="onDropAsset">
+          <div class="vd-clip" ref="clip" :style="clipStyle()"></div>
+          <div class="vd-sel" v-if="selBox()" :style="selStyle()">
+            <div class="nm">{{ selBox().id }}</div>
+            <div v-for="h in handles" class="vd-handle" :class="'vh-' + h" :data-vd-handle="h"></div>
+            <div class="vd-rot" :style="rotStyle()" data-vd-handle="rot" title="拖拽旋转（Shift=15°吸附）"></div>
+          </div>
+          <div v-for="b in multiBoxes()" class="vd-sel-one" :style="b"></div>
+          <div v-for="(g, gi) in guidesV" class="vd-guide v" :style="{ left: (g * scale) + 'px' }"></div>
+          <div v-for="(g, gi) in guidesH" class="vd-guide h" :style="{ top: (g * scale) + 'px' }"></div>
+          <div class="vd-rubber" v-if="rubber" :style="rubberStyle()"></div>
+          <div class="vd-ctx" v-if="ctxMenu" :style="{ left: ctxMenu.x + 'px', top: ctxMenu.y + 'px' }">
+            <button @click="ctxAct('front')">置顶</button>
+            <button @click="ctxAct('back')">置底</button>
+            <button @click="ctxAct('fwd')">上移一层</button>
+            <button @click="ctxAct('back1')">下移一层</button>
+            <button @click="ctxAct('dup')">复制</button>
+            <button class="danger" @click="ctxAct('del')">删除</button>
+          </div>
+          <div class="vd-textedit" v-if="editing" :style="teStyle()">
+            <textarea ref="te" v:value="editHtml" @keydown.esc="cancelText()"></textarea>
+            <div class="te-bar">
+              <button @click="cancelText()">取消</button>
+              <button class="ok" @click="commitText()">完成</button>
+            </div>
+          </div>
+        </div>
+        <div class="vd-exporting" v-if="exporting">
+          <div>正在导出视频…</div>
+          <div class="vd-export-bar"><div class="vd-export-fill" :style="{ width: exportPct + '%' }"></div></div>
+          <div>{{ exportText }}</div>
+        </div>
+      </div>
+      <div class="vd-controls" v-if="doc">
+        <button class="vd-btn" title="上一帧（←，Shift=10帧）" @click="stepFrame(-1)">‹</button>
+        <button class="vd-btn primary" @click="togglePlay()">{{ playing ? '❚❚' : '▶' }}</button>
+        <button class="vd-btn" title="下一帧（→，Shift=10帧）" @click="stepFrame(1)">›</button>
+        <input class="vd-seek" type="range" min="0" :max="totalFrames" v:value="frameVal" @input="seekFromSlider()" />
+        <div class="vd-time">{{ timeText() }} / {{ durText() }} · {{ frameVal }}/{{ totalFrames }}f</div>
+        <select class="vd-rate" title="播放倍速（J/L 穿梭）" :value="rateLabel()" @change="setRate(+$event.target.value)">
+          <option v-for="r in rateOpts" :value="r" :selected="rateLabel() === String(r)">{{ r }}x</option>
+        </select>
+        <button class="vd-btn" :class="{ on: loop }" title="循环播放" @click="toggleLoop()">🔁</button>
+        <button class="vd-btn" title="静音" @click="toggleMute()">{{ muted ? '🔇' : '🔊' }}</button>
+        <input class="vd-vol" type="range" min="0" max="1" step="0.05" v:value="volume" @input="setVolume(+volume)" title="音量" />
+      </div>
+    </div>
+  </body>
+  <script setup>
+    import { Video, uid, mediaTimeAt, frameToScene, elDurOf } from './engine.js'
+
+    doc = null          // video/1 文档对象（父页面传入，proxy 引用，可编辑）
+    assets = {}         // assetMap（父页面传入）
+    editable = false    // prop：是否可编辑（样例只读时为 false）
+    selid = ''          // prop：当前选中元素 id
+    playing = false
+    muted = false
+    frameVal = 0
+    totalFrames = 0
+    scenes = []
+    curScene = 0
+    exporting = false
+    exportPct = 0
+    exportText = ''
+    boxW = 640
+    boxH = 360
+    scale = 1
+    docW = 1280
+    docH = 720
+    editing = false
+    editingId = ''
+    editHtml = ''
+    handles = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']
+    selids = []         // 选中元素 id 数组（末位为主选；父级 selid prop 为主选镜像）
+    guidesV = []        // 拖拽吸附参考线（doc 坐标）
+    guidesH = []
+    rubber = null       // 框选矩形 {x0,y0,x1,y1}（box CSS px）
+    ctxMenu = null      // 右键菜单 {x, y}
+    playRate = 1        // 播放速率（负值 = 倒放，J/L 穿梭设置）
+    loop = true         // 循环播放
+    volume = 1          // 主音量（作用于 music/voice 预览）
+    rateOpts = [0.25, 0.5, 1, 1.5, 2, 4]
+
+    // 私有
+    engine = null        // 注册到 $data（父组件需要访问 frame / export）
+    let rafId = 0
+    let lastT = 0
+    let playT = 0        // 播放时间累积（秒）
+    audioEls = {}        // kind → HTMLAudioElement（挂 $data 便于调试与父级访问）
+    let drag = null      // 拖拽状态
+    let rafPending = false
+
+    engine = new Video()
+
+    /* ---------------------------------------------------------- 文档装载 */
+    setDoc = (d, assetMap) => {
+      doc = d
+      assets = assetMap || {}
+      engine.assets = assets
+      removeMediaOverlay()
+      const f = engine.frame || 0
+      engine.load(doc)
+      const st = engine.getState()
+      totalFrames = st.totalFrames
+      scenes = st.scenes
+      engine.seek(Math.min(f, Math.max(0, totalFrames - 1)))
+      frameVal = engine.frame
+      syncScene()
+      stopAudio()
+      setupAudio()
+      fit()
+      renderFrame()
+      // 懒加载 three 渲染器（若文档含 3D 元素），就绪后重绘当前帧
+      engine.prepare().then((ok) => { if (ok && doc) renderFrame() })
+    }
+
+    // doc 被外部修改后调用：保持帧号重载 + 重渲染
+    refreshFrame = () => {
+      if (!doc || !engine) return
+      const f = engine.frame
+      engine.load(doc)
+      const st = engine.getState()
+      totalFrames = st.totalFrames
+      scenes = st.scenes
+      engine.seek(Math.min(f, Math.max(0, totalFrames - 1)))
+      frameVal = engine.frame
+      syncScene()
+      renderFrame()
+    }
+
+    fit = () => {
+      const host = $refs.host
+      if (!host || !doc) return
+      const pad = 28
+      const aw = Math.max(80, host.clientWidth - pad * 2)
+      const ah = Math.max(80, host.clientHeight - pad * 2)
+      scale = Math.min(aw / doc.size.width, ah / doc.size.height)
+      docW = doc.size.width
+      docH = doc.size.height
+      boxW = Math.round(docW * scale)
+      boxH = Math.round(docH * scale)
+    }
+
+    clipStyle = () => ({
+      width: docW + 'px',
+      height: docH + 'px',
+      transform: 'scale(' + scale + ')',
+    })
+
+    renderFrame = () => {
+      const clip = $refs.clip
+      if (!clip || !engine.doc) return
+      const node = engine.buildFrame()
+      clip.replaceChildren(node)
+    }
+
+    /* ------------------------------------------------------ 素材拖拽插入 */
+    // 素材面板拖入：HTML5 DnD，dataTransfer 携带素材相对引用；落点换算为 doc 坐标（box rect ÷ scale）
+    onDragOverAsset = (e) => {
+      if (!editable) return
+      e.preventDefault()
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'
+    }
+    onDropAsset = (e) => {
+      if (!editable || !doc) return
+      e.preventDefault()
+      e.stopPropagation()
+      const ref = e.dataTransfer && e.dataTransfer.getData('application/x-video-asset')
+      if (!ref) return
+      const rect = $refs.box.getBoundingClientRect()
+      const x = Math.round((e.clientX - rect.left) / scale)
+      const y = Math.round((e.clientY - rect.top) / scale)
+      $emit('dropasset', {ref, x, y})
+    }
+
+    /* ---------------------------------------------------------- 播放 */
+    tick = (t) => {
+      if (!playing) return
+      const dt = lastT ? Math.min(Math.max((t - lastT) / 1000, 0), 0.25) : 0
+      lastT = t
+      const fps = engine.getState().fps || 30
+      const dur = totalFrames / fps
+      playT += dt * playRate
+      if (playT >= dur) {
+        if (loop) playT = 0
+        else { playT = 0; engine.seek(totalFrames - 1); frameVal = engine.frame; syncScene(); renderFrame(); togglePlay(); return }
+      } else if (playT < 0) {
+        if (loop) playT = Math.max(0, dur - 1 / fps)
+        else { playT = 0; engine.seek(0); frameVal = 0; syncScene(); renderFrame(); togglePlay(); return }
+      }
+      try {
+        engine.seek(playT * fps)
+      } catch (e) { console.error('[vd tick] seek', e) }
+      frameVal = engine.frame
+      syncScene()
+      syncAudioTick()
+      try {
+        renderFrame()
+      } catch (e) { console.error('[vd tick] render', e) }
+      // media 元素真实播放（仅 1x 正放）：引擎帧渲染会重建 DOM 导致 video 永远播不起来
+      if (playRate === 1) {
+        syncMediaOverlay()
+        tickMediaOverlay()
+      } else removeMediaOverlay()
+      rafId = requestAnimationFrame(tick)
+    }
+
+    // J/K/L 穿梭：J 倒放 / K 暂停 / L 正放；同方向连按 1→2→4→1 循环加速
+    shuttle = (dir) => {
+      if (!doc) return
+      if (dir === 0) { if (playing) togglePlay(); return }
+      if (!playing) { playRate = dir; togglePlay(); return }
+      const sameDir = (playRate < 0) === (dir < 0)
+      const m = Math.abs(playRate)
+      playRate = sameDir ? dir * (m >= 4 ? 1 : m * 2) : dir
+    }
+
+    stepFrame = (n) => {
+      if (!doc) return
+      seekFrame(engine.frame + n)
+    }
+
+    setRate = (r) => {
+      playRate = Math.abs(r) || 1
+    }
+    rateLabel = () => String(Math.abs(playRate))
+    toggleLoop = () => { loop = !loop }
+    setVolume = (v) => {
+      volume = Math.max(0, Math.min(1, v))
+      Object.values(audioEls).forEach((a) => { if (a) a.volume = (a._base != null ? a._base : 1) * volume })
+      mediaOv.forEach((o) => { o.node.volume = Math.max(0, Math.min(1, (o.el.volume != null ? +o.el.volume : 1) * volume)) })
+    }
+
+    togglePlay = () => {
+      if (!doc) return
+      playing = !playing
+      if (playing) {
+        if (playRate >= 0 && engine.frame >= totalFrames - 1) { playT = 0; engine.seek(0) }
+        else if (playRate < 0 && engine.frame <= 0) { engine.seek(totalFrames - 1) }
+        playT = engine.frame / (engine.getState().fps || 30)
+        lastT = 0
+        rafId = requestAnimationFrame(tick)
+        startAudio()
+      } else {
+        cancelAnimationFrame(rafId)
+        pauseAudio()
+        removeMediaOverlay()
+      }
+    }
+
+    seekFrame = (f) => {
+      if (!doc) return
+      removeMediaOverlay()
+      engine.seek(f)
+      playT = engine.frame / (engine.getState().fps || 30)
+      frameVal = engine.frame
+      syncScene()
+      renderFrame()
+    }
+
+    seekFromSlider = () => {
+      seekFrame(frameVal)
+      syncAudioSeek()
+    }
+
+    toggleMute = () => {
+      muted = !muted
+      Object.values(audioEls).forEach((a) => { if (a) a.muted = muted })
+      mediaOv.forEach((o) => { o.node.muted = !!o.el.muted || muted })
+    }
+
+    /* -------------------------------------------------- media 播放 overlay */
+    // 引擎帧渲染每帧重建 DOM（video 元素刚加载就被替换），播放永远卡在第一帧——
+    // 播放时（1x 正放）为当前场景 media 元素挂真实 video/audio 节点跟随播放头，
+    // 暂停/seek/变速时移除回到确定性帧渲染。
+    // overlay 严格遵守裁剪窗口：start 前与 trimEnd 后不播（钉在边界帧与确定性渲染一致）；
+    // pointer-events:none 不拦截舞台编辑；声音遵循 el.muted/el.volume 与全局静音/音量。
+    mediaOv = []        // [{id, el, node}]
+    removeMediaOverlay = () => {
+      for (const o of mediaOv) {
+        try {o.node.pause()} catch (e) { }
+        o.node.remove()
+      }
+      mediaOv = []
+    }
+    mediaWin = (e) => {
+      const sc = doc.scenes[curScene]
+      const sceneDur = sc ? (+sc.duration || 1) : 1
+      const start = Math.max(0, +e.start || 0)
+      const ts = Math.max(0, +e.trimStart || 0)
+      const te = e.trimEnd >= 0 ? +e.trimEnd : Infinity
+      return {start, ts, te, dur: elDurOf(e, sceneDur)}
+    }
+    // 窗口内外状态：窗外 pause + 钉边界帧；窗内按目标时间纠正漂移并保持播放
+    applyMediaWin = (o, t) => {
+      const w = mediaWin(o.el)
+      const lt = t - w.start
+      if (lt < -0.05 || (w.dur !== Infinity && lt > w.dur + 0.05)) {
+        if (!o.node.paused) o.node.pause()
+        const pin = mediaTimeAt(o.el, t)
+        if (o.node.readyState >= 1 && Math.abs((o.node.currentTime || 0) - pin) > 0.3) o.node.currentTime = pin
+        return
+      }
+      const target = mediaTimeAt(o.el, t)
+      // 跑偏 >0.35s 才纠正，避免频繁 seek 卡顿
+      if (o.node.readyState >= 1 && Math.abs((o.node.currentTime || 0) - target) > 0.35) o.node.currentTime = target
+      if (o.node.paused && !o.node.ended) {
+        const p = o.node.play()
+        if (p && p.catch) p.catch(() => {})
+      }
+    }
+    syncMediaOverlay = () => {
+      const sc = doc.scenes[curScene]
+      const want = ((sc && sc.elements) || []).filter((e) => e.type === 'media' && e.src && !e.hidden)
+      // 关键：节点身份 = 场景+元素 id。dupScene 会原样拷贝元素 id——若只按 id 去重，
+      // 跨场景时旧节点被「仍然需要」而保留，随后被新场景的 localT≈0 校正拽回入点
+      // 从头重播（听起来就是「上一场景的配音在循环播放」）。同 id 在不同场景是
+      // 文档里两个独立对象，跨场景必须销毁重建。
+      const keys = want.map((e) => curScene + ':' + e.id)
+      for (const o of mediaOv) if (keys.indexOf(o.key) < 0) {
+        try {o.node.pause()} catch (e) { }
+        o.node.remove()
+      }
+      mediaOv = mediaOv.filter((o) => keys.indexOf(o.key) >= 0)
+      const f = frameToScene(engine.doc, engine.frame)
+      const t = f ? f.localT : 0
+      for (const e of want) {
+        const key = curScene + ':' + e.id
+        let o = mediaOv.find((x) => x.key === key)
+        if (!o) {
+          const tag = e.kind === 'audio' ? 'audio' : 'video'
+          const node = document.createElement(tag)
+          node.src = engine.assets[e.src] || e.src
+          node.loop = false // 循环由窗口逻辑控制（loop 媒体重复入窗由 mediaTimeAt 保证帧正确即可）
+          node.preload = 'auto'
+          if (tag === 'video') node.playsInline = true
+          $refs.box.appendChild(node)
+          o = {key, id: e.id, el: e, node}
+          mediaOv.push(o)
+        }
+        o.node.muted = !!e.muted || muted
+        o.node.volume = Math.max(0, Math.min(1, (e.volume != null ? +e.volume : 1) * volume))
+        o.node.style.cssText = `position:absolute;left:${(e.x * scale)}px;top:${(e.y * scale)}px;` +
+          `width:${(e.w * scale)}px;height:${(e.h * scale)}px;object-fit:${e.fit || 'contain'};z-index:8;pointer-events:none;`
+        applyMediaWin(o, t)
+      }
+    }
+    tickMediaOverlay = () => {
+      const f = frameToScene(engine.doc, engine.frame)
+      const t = f ? f.localT : 0
+      for (const o of mediaOv) applyMediaWin(o, t)
+    }
+
+    /* ---------------------------------------------------------- 音频预览 */
+    // 音轨循环语义：music 默认循环（loop!==false），voice 默认不循环（loop===true 才循环）。
+    // 关键 bug 史：旧代码用 track.loop!==false 判断，voice 无 loop 字段被当成循环轨——
+    // 配音播完 (paused) 后每 tick 又被 play() 从头重播，听起来「场景过了配音还在循环」。
+    trackLoop = (key, track) => key === 'music' ? track.loop !== false : !!track.loop
+    setupAudio = () => {
+      stopAudio()
+      audioEls = {}
+      if (!doc) return
+      const make = (key, track) => {
+        if (!track || !track.src) return
+        const a = new Audio()
+        a.src = (engine.assets[track.src] || track.src)
+        a.loop = trackLoop(key, track)
+        a._base = track.volume != null ? track.volume : 1
+        a.volume = a._base * volume
+        a.muted = muted
+        a.preload = 'auto'
+        audioEls[key] = a
+      }
+      make('music', doc.music)
+      make('voice', doc.voice)
+    }
+    // 音轨对齐：循环轨 offset 后持续循环（对齐 lt%dur 防漂移）；非循环轨只在
+    // [offset, offset+duration) 窗口内播，窗口外保持暂停（配音播完即停，不重播）
+    alignTrack = (key, t) => {
+      const a = audioEls[key]
+      const track = doc && doc[key]
+      if (!a || !track || !track.src) return
+      const off = track.offset || 0
+      const lt = t - off
+      const dur = a.duration || 0
+      if (trackLoop(key, track)) {
+        if (lt < 0) { if (!a.paused) a.pause(); return }
+        if (a.paused) {
+          if (dur) a.currentTime = lt % dur
+          a.play().catch(() => {})
+        } else if (dur && Math.abs(a.currentTime - (lt % dur)) > 1.2) {
+          a.currentTime = lt % dur
+        }
+        return
+      }
+      if (lt >= 0 && (dur === 0 || lt < dur - 0.1)) {
+        if (a.paused) {
+          if (dur === 0 || Math.abs(a.currentTime - lt) > 0.6) a.currentTime = lt
+          a.play().catch(() => {})
+        } else if (dur > 0 && Math.abs(a.currentTime - lt) > 1.2) {
+          a.currentTime = lt // 明显跑偏才纠正，避免频繁 seek 卡顿
+        }
+      } else if (!a.paused) {
+        a.pause()
+      }
+    }
+    startAudio = () => {
+      const t = engine.frame / (engine.getState().fps || 30)
+      alignTrack('music', t)
+      alignTrack('voice', t)
+    }
+    pauseAudio = () => { Object.values(audioEls).forEach((a) => { if (a) a.pause() }) }
+    stopAudio = () => { pauseAudio(); audioEls = {} }
+    syncAudioSeek = () => {
+      // seek 后若正在播放，音乐重新对齐
+      if (playing) startAudio()
+    }
+
+    // 播放中每 tick 对齐音轨（倒放/变速时音轨不对齐，直接静音）
+    syncAudioTick = () => {
+      if (!doc || !playing) return
+      if (playRate < 0 || Math.abs(playRate) !== 1) { pauseAudio(); return }
+      const t = engine.frame / (engine.getState().fps || 30)
+      alignTrack('music', t)
+      alignTrack('voice', t)
+    }
+
+    syncScene = () => {
+      for (let i = 0; i < scenes.length; i++) {
+        if (engine.frame >= scenes[i].start && engine.frame < scenes[i].start + scenes[i].frames) {
+          curScene = i
+          return
+        }
+      }
+      curScene = Math.max(0, scenes.length - 1)
+    }
+
+    /* ---------------------------------------------------------- 选中与拖拽 */
+    const findEl = (id) => {
+      if (!doc) return null
+      const sc = doc.scenes[curScene]
+      if (!sc) return null
+      return (sc.elements || []).find((e) => e.id === id) || null
+    }
+
+    selEls = () => {
+      if (!doc) return []
+      const sc = doc.scenes[curScene]
+      if (!sc) return []
+      return (sc.elements || []).filter((e) => selids.indexOf(e.id) >= 0)
+    }
+
+    emitSel = () => {
+      const primary = selids.length ? selids[selids.length - 1] : ''
+      $emit('select', primary ? { kind: 'element', sceneIndex: curScene, id: primary, ids: selids.slice() } : null)
+    }
+
+    selBox = () => {
+      if (!editable || !doc || editing) return null
+      if (selids.length !== 1) return null
+      const el = findEl(selids[0])
+      if (!el) return null
+      return {
+        x: (+el.x || 0) * scale,
+        y: (+el.y || 0) * scale,
+        w: (+el.w || 0) * scale,
+        h: (+el.h || 0) * scale,
+        rot: +el.rotation || 0,
+        id: el.id,
+      }
+    }
+
+    multiBoxes = () => {
+      if (selids.length < 2) return []
+      return selEls().map((el) => ({
+        id: el.id,
+        left: (+el.x || 0) * scale + 'px',
+        top: (+el.y || 0) * scale + 'px',
+        width: Math.max(0, (+el.w || 0) * scale) + 'px',
+        height: Math.max(0, (+el.h || 0) * scale) + 'px',
+        transform: (+el.rotation || 0) ? 'rotate(' + el.rotation + 'deg)' : '',
+      }))
+    }
+
+    selStyle = () => {
+      const b = selBox()
+      return {
+        left: b.x + 'px',
+        top: b.y + 'px',
+        width: Math.max(0, b.w) + 'px',
+        height: Math.max(0, b.h) + 'px',
+        transform: b.rot ? 'rotate(' + b.rot + 'deg)' : '',
+      }
+    }
+
+    rotStyle = () => {
+      const b = selBox()
+      if (!b) return {}
+      const cx = b.x + b.w / 2,
+        cy = b.y + b.h / 2
+      const r = b.h / 2 + 22
+      const rad = ((b.rot || 0) * Math.PI) / 180
+      return { left: cx + r * Math.sin(rad) - 5.5 + 'px', top: cy - r * Math.cos(rad) - 5.5 + 'px' }
+    }
+
+    /* 吸附：以拖拽盒的边缘/中线对齐画布中线/边缘与其他元素边缘 */
+    snapMove = (ox, oy, ow, oh, dx, dy, ids) => {
+      const W = doc.size.width,
+        H = doc.size.height
+      const th = 6 / scale
+      const xs = [0, W / 2, W],
+        ys = [0, H / 2, H]
+      const sc = doc.scenes[curScene]
+      for (const el of (sc.elements || [])) {
+        if (ids.indexOf(el.id) >= 0) continue
+        const ex = +el.x || 0,
+          ey = +el.y || 0,
+          ew = +el.w || 0,
+          eh = +el.h || 0
+        xs.push(ex, ex + ew / 2, ex + ew)
+        ys.push(ey, ey + eh / 2, ey + eh)
+      }
+      const exs = [ox + dx, ox + ow / 2 + dx, ox + ow + dx]
+      const eys = [oy + dy, oy + oh / 2 + dy, oy + oh + dy]
+      let bx = null,
+        by = null
+      for (const c of xs)
+        for (const v of exs) {
+          const d = Math.abs(c - v)
+          if (d < th && (!bx || d < bx.d)) bx = { d, adj: c - v, line: c }
+        }
+      for (const c of ys)
+        for (const v of eys) {
+          const d = Math.abs(c - v)
+          if (d < th && (!by || d < by.d)) by = { d, adj: c - v, line: c }
+        }
+      guidesV = bx ? [bx.line] : []
+      guidesH = by ? [by.line] : []
+      return { dx: dx + (bx ? bx.adj : 0), dy: dy + (by ? by.adj : 0) }
+    }
+
+    onBoxMouseDown = (e) => {
+      if (!editable || !doc || exporting || editing) return
+      if (e.button !== 0) return
+      ctxMenu = null
+      const h = e.target.closest ? e.target.closest('[data-vd-handle]') : null
+      if (h && selids.length === 1) {
+        const hm = h.getAttribute('data-vd-handle')
+        startDrag(e, selids[0], hm === 'rot' ? 'rotate' : hm)
+        return
+      }
+      const elNode = e.target.closest ? e.target.closest('[data-el-id]') : null
+      if (elNode) {
+        const id = elNode.getAttribute('data-el-id')
+        if (e.shiftKey) {
+          // Shift 加选/减选
+          selids = selids.indexOf(id) >= 0 ? selids.filter((x) => x !== id) : selids.concat([id])
+          emitSel()
+          return
+        }
+        if (selids.indexOf(id) < 0) selids = [id]
+        emitSel()
+        if (e.altKey) {
+          // Alt 拖拽 = 复制后拖走
+          dupLocal(selids)
+        }
+        startDragMulti(e, selids)
+      } else {
+        startRubber(e)
+      }
+    }
+
+    /* Alt 拖拽复制：本地复制（新 id，+24 偏移），返回新选中 */
+    dupLocal = (ids) => {
+      const sc = doc.scenes[curScene]
+      if (!sc) return
+      const arr = (sc.elements || []).slice()
+      const news = []
+      for (const id of ids) {
+        const src = arr.find((e) => e.id === id)
+        if (!src) continue
+        const c = JSON.parse(JSON.stringify(src))
+        c.id = (c.type || 'el') + '-' + uid()
+        c.x = (+c.x || 0) + 24
+        c.y = (+c.y || 0) + 24
+        news.push(c)
+      }
+      if (!news.length) return
+      sc.elements = arr.concat(news)
+      selids = news.map((c) => c.id)
+      emitSel()
+      refreshFrame()
+      $emit('mutate')
+    }
+
+    startDrag = (e, id, mode) => {
+      const el = findEl(id)
+      if (!el) return
+      if (playing) togglePlay()
+      const rect = $refs.box.getBoundingClientRect()
+      const cx = rect.left + ((+el.x || 0) + (+el.w || 10) / 2) * scale
+      const cy = rect.top + ((+el.y || 0) + (+el.h || 10) / 2) * scale
+      drag = {
+        id, mode,
+        sx: e.clientX, sy: e.clientY,
+        ox: +el.x || 0, oy: +el.y || 0, ow: +el.w || 10, oh: +el.h || 10,
+        orot: +el.rotation || 0,
+        cx, cy,
+        ang0: Math.atan2(e.clientY - cy, e.clientX - cx),
+        items: [{ el, x: +el.x || 0, y: +el.y || 0, kfs: el.keyframes ? JSON.parse(JSON.stringify(el.keyframes)) : null }],
+        ids: [id],
+      }
+      e.preventDefault()
+      bindDragListeners()
+    }
+
+    startDragMulti = (e, ids) => {
+      const sc = doc.scenes[curScene]
+      const items = ((sc && sc.elements) || [])
+        .filter((el) => ids.indexOf(el.id) >= 0)
+        .map((el) => ({ el, x: +el.x || 0, y: +el.y || 0, kfs: el.keyframes ? JSON.parse(JSON.stringify(el.keyframes)) : null }))
+      if (!items.length) return
+      if (playing) togglePlay()
+      const first = items[0]
+      drag = {
+        id: items[items.length - 1].el.id,
+        mode: 'move',
+        sx: e.clientX, sy: e.clientY,
+        ox: +first.el.x || 0, oy: +first.el.y || 0,
+        ow: +first.el.w || 10, oh: +first.el.h || 10,
+        orot: 0, cx: 0, cy: 0, ang0: 0,
+        items,
+        ids: ids.slice(),
+      }
+      e.preventDefault()
+      bindDragListeners()
+    }
+
+    bindDragListeners = () => {
+      const mv = (ev) => onDragMove(ev)
+      const up = () => {
+        window.removeEventListener('mousemove', mv)
+        window.removeEventListener('mouseup', up)
+        drag = null
+        guidesV = []
+        guidesH = []
+        $emit('mutate')
+      }
+      window.addEventListener('mousemove', mv)
+      window.addEventListener('mouseup', up)
+    }
+
+    scheduleRender = () => {
+      if (rafPending) return
+      rafPending = true
+      requestAnimationFrame(() => { rafPending = false; refreshFrame() })
+    }
+
+    onDragMove = (ev) => {
+      if (!drag) return
+      const dx = (ev.clientX - drag.sx) / scale
+      const dy = (ev.clientY - drag.sy) / scale
+      const r1 = (v) => Math.round(v * 10) / 10
+      if (drag.mode === 'rotate') {
+        const el = findEl(drag.id)
+        if (!el) return
+        const a = Math.atan2(ev.clientY - drag.cy, ev.clientX - drag.cx)
+        let deg = drag.orot + ((a - drag.ang0) * 180) / Math.PI
+        if (ev.shiftKey) deg = Math.round(deg / 15) * 15
+        el.rotation = r1(((deg % 360) + 360) % 360)
+        scheduleRender()
+        return
+      }
+      if (drag.mode === 'move') {
+        const adj = snapMove(drag.ox, drag.oy, drag.ow, drag.oh, dx, dy, drag.ids)
+        for (const it of drag.items) {
+          // x/y 关键帧轨道驱动位置的元素：整体平移轨道而不是改 el.x/y
+          if (it.kfs && it.kfs.some((k) => k.x != null || k.y != null)) {
+            const nk = it.kfs.map((k) => {
+              const c = Object.assign({}, k)
+              if (c.x != null) c.x = r1(c.x + adj.dx)
+              if (c.y != null) c.y = r1(c.y + adj.dy)
+              return c
+            })
+            it.el.keyframes = nk
+          } else {
+            it.el.x = r1(it.x + adj.dx)
+            it.el.y = r1(it.y + adj.dy)
+          }
+        }
+        scheduleRender()
+        return
+      }
+      // 八向缩放（单选）
+      const el = findEl(drag.id)
+      if (!el) return
+      const m = drag.mode
+      let x = drag.ox, y = drag.oy, w = drag.ow, h = drag.oh
+      if (m.indexOf('e') >= 0) w = Math.max(8, drag.ow + dx)
+      if (m.indexOf('s') >= 0) h = Math.max(8, drag.oh + dy)
+      if (m.indexOf('w') >= 0) { w = Math.max(8, drag.ow - dx); x = drag.ox + (drag.ow - w) }
+      if (m.indexOf('n') >= 0) { h = Math.max(8, drag.oh - dy); y = drag.oy + (drag.oh - h) }
+      el.x = r1(x); el.y = r1(y); el.w = r1(w); el.h = r1(h)
+      scheduleRender()
+    }
+
+    /* 空白处框选 */
+    startRubber = (e) => {
+      const rect = $refs.box.getBoundingClientRect()
+      rubber = { x0: e.clientX - rect.left, y0: e.clientY - rect.top, x1: e.clientX - rect.left, y1: e.clientY - rect.top }
+      e.preventDefault()
+      const mv = (ev) => {
+        rubber = { x0: rubber.x0, y0: rubber.y0, x1: ev.clientX - rect.left, y1: ev.clientY - rect.top }
+        const rr = rubberDocRect()
+        const sc = doc.scenes[curScene]
+        const ids = []
+        for (const el of ((sc && sc.elements) || [])) {
+          const ex = +el.x || 0, ey = +el.y || 0, ew = +el.w || 0, eh = +el.h || 0
+          if (ex < rr.x + rr.w && ex + ew > rr.x && ey < rr.y + rr.h && ey + eh > rr.y) ids.push(el.id)
+        }
+        selids = ids
+      }
+      const up = () => {
+        window.removeEventListener('mousemove', mv)
+        window.removeEventListener('mouseup', up)
+        rubber = null
+        emitSel()
+      }
+      window.addEventListener('mousemove', mv)
+      window.addEventListener('mouseup', up)
+    }
+
+    rubberDocRect = () => ({
+      x: Math.min(rubber.x0, rubber.x1) / scale,
+      y: Math.min(rubber.y0, rubber.y1) / scale,
+      w: Math.abs(rubber.x1 - rubber.x0) / scale,
+      h: Math.abs(rubber.y1 - rubber.y0) / scale,
+    })
+    rubberStyle = () => ({
+      left: Math.min(rubber.x0, rubber.x1) + 'px',
+      top: Math.min(rubber.y0, rubber.y1) + 'px',
+      width: Math.abs(rubber.x1 - rubber.x0) + 'px',
+      height: Math.abs(rubber.y1 - rubber.y0) + 'px',
+    })
+
+    /* 右键菜单 */
+    onBoxContextMenu = (e) => {
+      if (!editable || !doc || exporting || editing) return
+      const elNode = e.target.closest ? e.target.closest('[data-el-id]') : null
+      if (!elNode) return
+      e.preventDefault()
+      const id = elNode.getAttribute('data-el-id')
+      if (selids.indexOf(id) < 0) { selids = [id]; emitSel() }
+      const rect = $refs.box.getBoundingClientRect()
+      ctxMenu = {
+        x: Math.max(0, Math.min(e.clientX - rect.left, rect.width - 120)),
+        y: Math.max(0, Math.min(e.clientY - rect.top, rect.height - 160)),
+      }
+    }
+
+    ctxAct = (a) => {
+      ctxMenu = null
+      const sc = doc.scenes[curScene]
+      if (!sc || !selids.length) return
+      const ids = selids.slice()
+      if (a === 'del') { $emit('ctxdel', ids); return }
+      if (a === 'dup') { dupLocal(ids); return }
+      const arr = (sc.elements || []).slice()
+      const picked = arr.filter((e) => ids.indexOf(e.id) >= 0)
+      const rest = arr.filter((e) => ids.indexOf(e.id) < 0)
+      let next = null
+      if (a === 'front') next = rest.concat(picked)
+      else if (a === 'back') next = picked.concat(rest)
+      else if (a === 'fwd' || a === 'back1') {
+        next = arr.slice()
+        const sorted = a === 'fwd' ? ids.slice().reverse() : ids
+        for (const id of sorted) {
+          const i = next.findIndex((e) => e.id === id)
+          const j = i + (a === 'fwd' ? 1 : -1)
+          if (i >= 0 && j >= 0 && j < next.length) {
+            const t = next[i]
+            next[i] = next[j]
+            next[j] = t
+          }
+        }
+      }
+      if (next) { sc.elements = next; refreshFrame(); $emit('mutate') }
+    }
+
+    /* ---------------------------------------------------------- 文本编辑 */
+    onBoxDblClick = (e) => {
+      if (!editable || !doc || exporting) return
+      const elNode = e.target.closest ? e.target.closest('[data-el-id]') : null
+      if (!elNode) return
+      const id = elNode.getAttribute('data-el-id')
+      const el = findEl(id)
+      if (!el || el.type !== 'text') return
+      if (selids.length !== 1 || selids[0] !== id) { selids = [id]; emitSel() }
+      editing = true
+      editingId = id
+      editHtml = el.html || ''
+      setTimeout(() => { if ($refs.te) { $refs.te.focus(); $refs.te.select() } }, 50)
+    }
+
+    teStyle = () => {
+      const el = findEl(editingId)
+      if (!el) return {}
+      return {
+        left: (+el.x || 0) * scale + 'px',
+        top: (+el.y || 0) * scale + 'px',
+        width: Math.max(120, (+el.w || 0) * scale) + 'px',
+      }
+    }
+
+    commitText = () => {
+      const el = findEl(editingId)
+      if (el) el.html = editHtml
+      editing = false
+      editingId = ''
+      refreshFrame()
+      $emit('mutate')
+    }
+    cancelText = () => { editing = false; editingId = '' }
+
+    /* ---------------------------------------------------------- 显示辅助 */
+    timeText = () => fmt((frameVal || 0) / (engine.getState() ? engine.getState().fps : 30))
+    durText = () => fmt((totalFrames || 0) / (engine.getState() ? engine.getState().fps : 30))
+    fmt = (s) => {
+      s = Math.max(0, s || 0)
+      const m = Math.floor(s / 60)
+      const r = Math.floor(s % 60)
+      const d = Math.floor((s % 1) * 10)
+      return m + ':' + String(r).padStart(2, '0') + '.' + d
+    }
+
+    // 导出进度（父页面调用）
+    setExporting = (on, pct, text) => {
+      exporting = on
+      exportPct = pct || 0
+      exportText = text || ''
+    }
+  </script>
+  <script>
+    // DOM 就绪后：宿主尺寸变化 → 重新适配缩放
+    const ro = new ResizeObserver(() => { fit() })
+    ro.observe($refs.host)
+
+    // 外部（时间轴/inspector/撤销）改变主选时重置多选；舞台自身 emit 的不重置
+    $watch(() => selid, (v) => {
+      const primary = selids.length ? selids[selids.length - 1] : ''
+      if ((v || '') !== primary) selids = v ? [v] : []
+    })
+
+    // 点击右键菜单外任意处关闭菜单
+    window.addEventListener('mousedown', (e) => {
+      if (ctxMenu && !(e.target.closest && e.target.closest('.vd-ctx'))) ctxMenu = null
+    })
+  </script>
+</html>

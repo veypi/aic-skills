@@ -1,0 +1,325 @@
+{
+  "format": "video/1",
+  "version": 1,
+  "title": "Showreel · 引擎能力巡礼",
+  "size": {
+    "width": 1920,
+    "height": 1080
+  },
+  "fps": 30,
+  "theme": {
+    "background": "#0E1A24",
+    "color": "#F5F1E8",
+    "accent": "#4ECDC4",
+    "fontFamily": "system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif",
+    "captionStyle": {
+      "fontSize": 30,
+      "color": "#ffffff",
+      "stroke": "#000000",
+      "strokeWidth": 3,
+      "background": "rgba(0,0,0,0.5)",
+      "bottom": 120
+    }
+  },
+  "music": {
+    "src": "assets/music.wav",
+    "volume": 0.85,
+    "loop": false,
+    "offset": 21
+  },
+  "overlay": [
+    {
+      "id": "hud-cb36-36-h",
+      "type": "shape",
+      "shape": "rect",
+      "x": 36,
+      "y": 36,
+      "w": 28,
+      "h": 2,
+      "fill": "#F5F1E84D"
+    },
+    {
+      "id": "hud-cb36-36-v",
+      "type": "shape",
+      "shape": "rect",
+      "x": 36,
+      "y": 36,
+      "w": 2,
+      "h": 28,
+      "fill": "#F5F1E84D"
+    },
+    {
+      "id": "hud-cb1856-36-h",
+      "type": "shape",
+      "shape": "rect",
+      "x": 1856,
+      "y": 36,
+      "w": 28,
+      "h": 2,
+      "fill": "#F5F1E84D"
+    },
+    {
+      "id": "hud-cb1856-36-v",
+      "type": "shape",
+      "shape": "rect",
+      "x": 1856,
+      "y": 36,
+      "w": 2,
+      "h": 28,
+      "fill": "#F5F1E84D"
+    },
+    {
+      "id": "hud-cb36-1016-h",
+      "type": "shape",
+      "shape": "rect",
+      "x": 36,
+      "y": 1016,
+      "w": 28,
+      "h": 2,
+      "fill": "#F5F1E84D"
+    },
+    {
+      "id": "hud-cb36-1016-v",
+      "type": "shape",
+      "shape": "rect",
+      "x": 36,
+      "y": 1016,
+      "w": 2,
+      "h": 28,
+      "fill": "#F5F1E84D"
+    },
+    {
+      "id": "hud-cb1856-1016-h",
+      "type": "shape",
+      "shape": "rect",
+      "x": 1856,
+      "y": 1016,
+      "w": 28,
+      "h": 2,
+      "fill": "#F5F1E84D"
+    },
+    {
+      "id": "hud-cb1856-1016-v",
+      "type": "shape",
+      "shape": "rect",
+      "x": 1856,
+      "y": 1016,
+      "w": 2,
+      "h": 28,
+      "fill": "#F5F1E84D"
+    },
+    {
+      "id": "hud-title",
+      "type": "text",
+      "x": 88,
+      "y": 64,
+      "w": 560,
+      "h": 30,
+      "html": "CAPABILITY SHOWREEL — 2026",
+      "fontSize": 22,
+      "color": "#F5F1E8A6",
+      "fontWeight": 400,
+      "align": "left",
+      "valign": "top",
+      "lineHeight": 1.0,
+      "fontFamily": "ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace",
+      "letterSpacing": 6,
+      "fx": {
+        "enter": "fade",
+        "enterDur": 0.47,
+        "delay": 0.2
+      }
+    },
+    {
+      "id": "hud-rec-dot",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 1634,
+      "y": 71,
+      "w": 14,
+      "h": 14,
+      "fill": "#FF6B57",
+      "fx": {
+        "enter": "fade",
+        "enterDur": 0.47,
+        "delay": 0.2
+      },
+      "keyframes": [
+        {
+          "t": 0,
+          "opacity": 1
+        },
+        {
+          "t": 0.6,
+          "opacity": 1
+        },
+        {
+          "t": 0.65,
+          "opacity": 0.15
+        },
+        {
+          "t": 1,
+          "opacity": 0.15
+        }
+      ],
+      "kfLoop": true
+    },
+    {
+      "id": "hud-rec",
+      "type": "text",
+      "x": 1662,
+      "y": 60,
+      "w": 70,
+      "h": 36,
+      "html": "REC",
+      "fontSize": 24,
+      "color": "#FF6B57",
+      "fontWeight": 400,
+      "align": "left",
+      "valign": "middle",
+      "lineHeight": 1.0,
+      "fontFamily": "ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace",
+      "letterSpacing": 4,
+      "fx": {
+        "enter": "fade",
+        "enterDur": 0.47,
+        "delay": 0.2
+      }
+    },
+    {
+      "id": "hud-frame",
+      "type": "text",
+      "x": 1738,
+      "y": 60,
+      "w": 180,
+      "h": 36,
+      "html": "F {{frame:4}}",
+      "fontSize": 24,
+      "color": "#F5F1E8CC",
+      "fontWeight": 400,
+      "align": "left",
+      "valign": "middle",
+      "lineHeight": 1.0,
+      "fontFamily": "ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace",
+      "letterSpacing": 2,
+      "fx": {
+        "enter": "fade",
+        "enterDur": 0.47,
+        "delay": 0.2
+      }
+    },
+    {
+      "id": "hud-format",
+      "type": "text",
+      "x": 1472,
+      "y": 988,
+      "w": 360,
+      "h": 30,
+      "html": "1920 × 1080 · 30 FPS",
+      "fontSize": 22,
+      "color": "#F5F1E880",
+      "fontWeight": 400,
+      "align": "right",
+      "valign": "top",
+      "lineHeight": 1.0,
+      "fontFamily": "ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace",
+      "letterSpacing": 4
+    },
+    {
+      "id": "hud-time",
+      "type": "text",
+      "x": 88,
+      "y": 982,
+      "w": 170,
+      "h": 32,
+      "html": "T+{{time:2}}s",
+      "fontSize": 22,
+      "color": "#F5F1E880",
+      "fontWeight": 400,
+      "align": "left",
+      "valign": "middle",
+      "lineHeight": 1.0,
+      "fontFamily": "ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace",
+      "letterSpacing": 3
+    },
+    {
+      "id": "hud-prog-bg",
+      "type": "shape",
+      "shape": "rect",
+      "x": 266,
+      "y": 997,
+      "w": 320,
+      "h": 3,
+      "fill": "#F5F1E81F"
+    },
+    {
+      "id": "hud-prog",
+      "type": "shape",
+      "shape": "rect",
+      "x": 266,
+      "y": 997,
+      "w": 320,
+      "h": 3,
+      "fill": "#4ECDC4",
+      "keyframes": [
+        {
+          "t": 0,
+          "scale": 0
+        },
+        {
+          "t": 36,
+          "scale": 1,
+          "easing": "linear"
+        }
+      ],
+      "origin": "left"
+    },
+    {
+      "id": "hud-pct",
+      "type": "text",
+      "x": 602,
+      "y": 982,
+      "w": 90,
+      "h": 32,
+      "html": "{{progress}}%",
+      "fontSize": 22,
+      "color": "#FFC24B",
+      "fontWeight": 400,
+      "align": "left",
+      "valign": "middle",
+      "lineHeight": 1.0,
+      "fontFamily": "ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace",
+      "letterSpacing": 2
+    },
+    {
+      "id": "hud-fadein",
+      "type": "shape",
+      "shape": "rect",
+      "x": 0,
+      "y": 0,
+      "w": 1920,
+      "h": 1080,
+      "fill": "#000000",
+      "keyframes": [
+        {
+          "t": 0,
+          "opacity": 0.35
+        },
+        {
+          "t": 0.34,
+          "opacity": 0
+        }
+      ],
+      "z": 999
+    }
+  ],
+  "scenes": [
+    "scenes/scene_1.json",
+    "scenes/scene_2.json",
+    "scenes/scene_3.json",
+    "scenes/scene_4.json",
+    "scenes/scene_5.json",
+    "scenes/scene_6.json",
+    "scenes/scene_7.json"
+  ]
+}

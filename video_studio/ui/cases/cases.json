@@ -1,0 +1,16 @@
+[
+  {
+    "id": "showreel",
+    "title": "Showreel · 引擎能力巡礼",
+    "desc": "高保真复刻 Remotion Showreel：全局 HUD（帧计数/进度条）/ 逐字 spring / 贝塞尔 draw / 弹簧柱图 / 64 段频谱 / glitch / 粒子爆发，36 秒 7 场景",
+    "scenes": 7,
+    "duration": 36
+  },
+  {
+    "id": "product-pitch",
+    "title": "产品宣传片",
+    "desc": "标题入场 + 增长图表 + 关键帧动画 + 片尾，覆盖核心元素与动画能力",
+    "scenes": 4,
+    "duration": 16.5
+  }
+]

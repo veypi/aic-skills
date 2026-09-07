@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+  <head><title>Video Assets</title></head>
+  <style>
+    body { display: flex; flex-direction: column; height: 100%; min-height: 0; background: rgba(13, 17, 28, 0.55); }
+    .as-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 12px 9px; border-bottom: 1px solid rgba(255, 255, 255, 0.07); flex: none;
+    }
+    .as-title { font-size: 13px; color: #94a3b8; font-weight: 600; letter-spacing: 0.5px; }
+    .as-title b { color: #e2e8f0; margin-left: 4px; }
+    .as-add {
+      border: 1px solid rgba(67, 97, 238, 0.45); background: rgba(67, 97, 238, 0.15);
+      color: #c7d2fe; font-size: 12px; padding: 4px 10px; border-radius: 7px; cursor: pointer;
+    }
+    .as-add:hover { background: rgba(67, 97, 238, 0.3); color: #fff; }
+    .as-add:disabled { opacity: 0.4; cursor: not-allowed; }
+    .as-list { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 6px; position: relative; }
+    .as-list.drop { outline: 2px dashed rgba(67, 97, 238, 0.65); outline-offset: -3px; background: rgba(67, 97, 238, 0.06); }
+    .as-drop-hint {
+      position: absolute; inset: 10px; z-index: 5; pointer-events: none;
+      display: flex; align-items: center; justify-content: center;
+      border: 2px dashed rgba(67, 97, 238, 0.7); border-radius: 10px;
+      background: rgba(10, 14, 22, 0.82); color: #a5b4fc; font-size: 13px; letter-spacing: 1px;
+    }
+    .as-empty { padding: 22px 10px; text-align: center; color: #4b5563; font-size: 12.5px; line-height: 1.7; }
+    .as-card {
+      display: flex; gap: 9px; align-items: center;
+      padding: 7px 9px; border-radius: 9px; cursor: pointer;
+      border: 1px solid transparent; transition: all 0.12s;
+    }
+    .as-card:hover { background: rgba(255, 255, 255, 0.05); }
+    .as-card.drag { opacity: 0.5; }
+    .as-card[draggable="true"] { cursor: grab; }
+    .as-ico {
+      flex: none; width: 34px; height: 26px; border-radius: 5px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .as-ico.image { color: #7dd3fc; background: rgba(14, 165, 233, 0.15); }
+    .as-ico.audio { color: #86efac; background: rgba(34, 197, 94, 0.15); }
+    .as-ico.video { color: #fca5a5; background: rgba(239, 68, 68, 0.15); }
+    .as-ico.font { color: #fcd34d; background: rgba(245, 158, 11, 0.15); }
+    .as-ico.other { color: #94a3b8; background: rgba(100, 116, 139, 0.15); }
+    .as-info { flex: 1; min-width: 0; }
+    .as-n { font-size: 12.5px; color: #e2e8f0; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .as-d { font-size: 11px; color: #64748b; margin-top: 1px; }
+    .as-del {
+      display: none; flex: none; border: none; background: rgba(255, 255, 255, 0.08); color: #94a3b8;
+      width: 20px; height: 20px; font-size: 11px; line-height: 1; border-radius: 4px; cursor: pointer; padding: 0;
+    }
+    .as-card:hover .as-del { display: block; }
+    .as-del:hover { background: rgba(239, 68, 68, 0.35); color: #fca5a5; }
+    input[type=file] { display: none; }
+  </style>
+  <body>
+    <div class="as-head">
+      <span class="as-title">素材<b>{{ files.length }}</b></span>
+      <button class="as-add" @click="pickFiles()" :disabled="readonly">+ 上传</button>
+      <input ref="file" type="file" multiple @change="onChange" />
+    </div>
+    <div class="as-list" :class="{ drop: dropOver }"
+      @dragover.prevent="onDragFileOver" @dragleave="onDragFileLeave" @drop.prevent="onDropFiles">
+      <div v-if="dropOver" class="as-drop-hint">松开导入素材文件</div>
+      <div v-if="!files.length" class="as-empty">{{ readonly ? '打开项目后可上传/管理素材' : '暂无素材' }}<br v-if="!readonly" />{{ readonly ? '' : '点「+ 上传」或直接拖入文件添加图片/音频/视频' }}</div>
+      <div v-for="f in files" class="as-card" draggable="true" :class="{ drag: dragRef === f.ref }"
+        :title="'拖到舞台/时间轴插入，双击插入场景中心，单击复制引用：' + f.ref"
+        @click="emitPick(f.ref)" @dblclick="emitInsert(f.ref)" @dragstart="onDragStart(f, $event)" @dragend="dragRef = ''">
+        <div class="as-ico" :class="f.kind">{{ typeLabel(f.kind) }}</div>
+        <div class="as-info">
+          <div class="as-n">{{ f.name }}</div>
+          <div class="as-d">{{ f.size ? fmtSize(f.size) : '' }}</div>
+        </div>
+        <button class="as-del" v-if="!readonly" title="删除" @click.stop="emitDel(f.ref)">×</button>
+      </div>
+    </div>
+  </body>
+  <script setup>
+    files = []        // prop：素材列表 [{name, ref, size, kind}]
+    readonly = false  // prop：样例只读
+    dragRef = ''      // 正在拖拽的素材 ref（视觉反馈）
+    dropOver = false  // 外部文件拖入中（视觉反馈）
+
+    typeLabel = (k) => ({image: 'IMG', audio: 'AUD', video: 'VID', font: 'FNT'}[k] || 'FILE')
+    fmtSize = (n) => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : n >= 1024 ? Math.round(n / 1024) + ' KB' : n + ' B'
+    pickFiles = () => {
+      const el = $refs.file
+      if (el) {el.value = ''; el.click()}
+    }
+    onChange = (e) => {
+      const list = Array.from(e.target.files || [])
+      if (list.length) $emit('upload', list)
+    }
+    // 文件拖拽导入：系统文件管理器拖文件进面板 → 复用上传通道（与「+ 上传」同一链路）
+    // 内部素材卡片拖拽（application/x-video-asset，无 Files）不触发
+    onDragFileOver = (e) => {
+      const types = Array.from((e.dataTransfer && e.dataTransfer.types) || [])
+      if (types.indexOf('Files') < 0 || readonly) return
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'
+      dropOver = true
+    }
+    onDragFileLeave = (e) => {
+      if (!e.currentTarget.contains(e.relatedTarget)) dropOver = false
+    }
+    onDropFiles = (e) => {
+      dropOver = false
+      if (readonly) return
+      const list = Array.from((e.dataTransfer && e.dataTransfer.files) || [])
+      if (list.length) $emit('upload', list)
+    }
+    // HTML5 拖拽：素材 ref 经 dataTransfer 传递，舞台/时间轴 drop 后插入元素
+    onDragStart = (f, e) => {
+      dragRef = f.ref
+      e.dataTransfer.setData('application/x-video-asset', f.ref)
+      e.dataTransfer.effectAllowed = 'copy'
+    }
+    emitPick = (ref) => $emit('pick', ref)
+    emitInsert = (ref) => $emit('insert', ref)
+    emitDel = (ref) => $emit('del', ref)
+  </script>
+</html>

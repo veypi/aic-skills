@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+  <head><title>Video Scenes</title></head>
+  <style>
+    body { display: flex; flex-direction: column; height: 100%; min-height: 0; background: rgba(13, 17, 28, 0.55); }
+    .sc-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 12px 9px; border-bottom: 1px solid rgba(255, 255, 255, 0.07); flex: none;
+    }
+    .sc-title { font-size: 13px; color: #94a3b8; font-weight: 600; letter-spacing: 0.5px; }
+    .sc-title b { color: #e2e8f0; margin-left: 4px; }
+    .sc-add {
+      border: 1px solid rgba(67, 97, 238, 0.45); background: rgba(67, 97, 238, 0.15);
+      color: #c7d2fe; font-size: 12px; padding: 4px 10px; border-radius: 7px; cursor: pointer;
+    }
+    .sc-add:hover { background: rgba(67, 97, 238, 0.3); color: #fff; }
+    .sc-add:disabled { opacity: 0.4; cursor: not-allowed; }
+    .sc-list { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 7px; }
+    .sc-empty { padding: 22px 10px; text-align: center; color: #4b5563; font-size: 12.5px; }
+    .sc-card {
+      position: relative; display: flex; gap: 9px; align-items: center;
+      padding: 8px 9px; border-radius: 9px; cursor: pointer;
+      border: 1px solid transparent; transition: all 0.12s;
+    }
+    .sc-card:hover { background: rgba(255, 255, 255, 0.05); }
+    .sc-card.active { background: rgba(67, 97, 238, 0.14); border-color: rgba(67, 97, 238, 0.5); }
+    .sc-bg {
+      flex: none; width: 34px; height: 26px; border-radius: 5px;
+      border: 1px solid rgba(255, 255, 255, 0.14); background: #0f1420;
+    }
+    .sc-info { flex: 1; min-width: 0; }
+    .sc-t { font-size: 13px; color: #e2e8f0; font-weight: 600; display: flex; align-items: baseline; gap: 7px; }
+    .sc-dur { font-size: 11px; color: #64748b; font-weight: 400; font-variant-numeric: tabular-nums; }
+    .sc-d { font-size: 11px; color: #64748b; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sc-ops { display: none; flex-direction: column; gap: 2px; flex: none; }
+    .sc-card:hover .sc-ops { display: flex; }
+    .sc-ops button {
+      border: none; background: rgba(255, 255, 255, 0.08); color: #94a3b8;
+      width: 20px; height: 15px; font-size: 10px; line-height: 1; border-radius: 4px; cursor: pointer;
+      padding: 0;
+    }
+    .sc-ops button:hover { background: rgba(67, 97, 238, 0.35); color: #fff; }
+    .sc-ops button.del:hover { background: rgba(239, 68, 68, 0.35); color: #fca5a5; }
+    .sc-ops button:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+  <body>
+    <div class="sc-head">
+      <span class="sc-title">场景<b>{{ scenes.length }}</b></span>
+      <button class="sc-add" @click="emitAdd()" :disabled="readonly">+ 添加</button>
+    </div>
+    <div class="sc-list">
+      <div v-if="!scenes.length" class="sc-empty">暂无场景</div>
+      <div v-for="(s, i) in scenes" class="sc-card" :class="{ active: i === cur }" @click="emitPick(i)">
+        <div class="sc-bg" :style="{ background: s.background || '#0f1420' }"></div>
+        <div class="sc-info">
+          <div class="sc-t">场景 {{ i + 1 }}<span class="sc-dur">{{ s.duration }}s</span></div>
+          <div class="sc-d">{{ transLabel(s, i) }} · {{ (s.elements || []).length }} 元素</div>
+        </div>
+        <div class="sc-ops" v-if="!readonly">
+          <button title="上移" @click.stop="emitMove(i, -1)" :disabled="i === 0">↑</button>
+          <button title="下移" @click.stop="emitMove(i, 1)" :disabled="i === scenes.length - 1">↓</button>
+          <button title="复制" @click.stop="emitDup(i)">⧉</button>
+          <button title="删除" class="del" @click.stop="emitDel(i)" :disabled="scenes.length <= 1">×</button>
+        </div>
+      </div>
+    </div>
+  </body>
+  <script setup>
+    scenes = []        // prop：doc.scenes（proxy 数组）
+    cur = -1           // prop：当前场景下标
+    readonly = false   // prop
+    ver = 0            // prop：结构版本号（父级在增删/移动后递增，强制重渲染列表）
+
+    transLabel = (s, i) => {
+      if (i === 0) return '首个场景'
+      const t = s.transition || 'fade'
+      return t === 'none' ? '无转场' : t
+    }
+    emitPick = (i) => $emit('pick', i)
+    emitAdd = () => $emit('add')
+    emitDup = (i) => $emit('dup', i)
+    emitDel = (i) => $emit('del', i)
+    emitMove = (i, d) => $emit('move', { i, d })
+  </script>
+</html>

@@ -1,0 +1,79 @@
+{
+  "format": "video/1",
+  "version": 1,
+  "title": "产品宣传片（样例）",
+  "size": { "width": 1280, "height": 720 },
+  "fps": 30,
+  "theme": {
+    "background": "#0f1420",
+    "color": "#f5f7fa",
+    "accent": "#3a6ff7",
+    "fontFamily": "system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif",
+    "captionStyle": { "fontSize": 38, "color": "#ffffff", "stroke": "#000000", "strokeWidth": 3, "background": "rgba(0,0,0,0.5)", "bottom": 60 }
+  },
+  "scenes": [
+    {
+      "id": "s1",
+      "duration": 4,
+      "transition": "none",
+      "transitionIn": 0.6,
+      "background": "linear-gradient(160deg, #0b1020 0%, #14203f 55%, #1a2a5e 100%)",
+      "captions": [
+        { "start": 0.8, "end": 3.4, "text": "欢迎观看 Nova 产品宣传片" }
+      ],
+      "elements": [
+        { "id": "logo", "type": "shape", "shape": "rect", "x": 570, "y": 120, "w": 140, "h": 140, "radius": 32, "fill": "#3a6ff7", "fx": { "enter": "zoom", "enterDur": 0.7, "delay": 0.2 } },
+        { "id": "title", "type": "text", "x": 140, "y": 300, "w": 1000, "h": 130, "html": "Nova 智能助手", "fontSize": 76, "fontWeight": 700, "color": "#ffffff", "align": "center", "valign": "middle", "fx": { "enter": "fade-up", "enterDur": 0.8, "delay": 0.5 } },
+        { "id": "sub", "type": "text", "x": 240, "y": 440, "w": 800, "h": 60, "html": "让创意以视频呈现", "fontSize": 30, "color": "#9fb4ff", "align": "center", "valign": "middle", "fx": { "enter": "fade-up", "enterDur": 0.8, "delay": 0.9 } },
+        { "id": "deco1", "type": "shape", "shape": "ellipse", "x": -80, "y": 560, "w": 320, "h": 320, "fill": "rgba(58,111,247,0.16)" },
+        { "id": "deco2", "type": "shape", "shape": "ellipse", "x": 1080, "y": -60, "w": 260, "h": 260, "fill": "rgba(124,58,237,0.14)" }
+      ]
+    },
+    {
+      "id": "s2",
+      "duration": 4.5,
+      "transition": "slide-left",
+      "transitionIn": 0.7,
+      "captions": [
+        { "start": 0.6, "end": 3.8, "text": "过去一年，我们的用户增长了 3 倍" }
+      ],
+      "elements": [
+        { "id": "h2", "type": "text", "x": 80, "y": 70, "w": 600, "h": 70, "html": "增长数据", "fontSize": 44, "fontWeight": 700, "color": "#ffffff", "fx": { "enter": "slide-right", "enterDur": 0.6, "delay": 0.3 } },
+        { "id": "chart1", "type": "chart", "x": 110, "y": 190, "w": 760, "h": 420, "option": { "xAxis": { "data": ["Q1", "Q2", "Q3", "Q4"] }, "series": [{ "type": "bar", "data": [120, 210, 340, 520] }], "color": ["#3a6ff7"] }, "fx": { "enter": "fade-up", "enterDur": 0.8, "delay": 0.6 } },
+        { "id": "stat", "type": "text", "x": 920, "y": 240, "w": 280, "h": 140, "html": "3.2x", "fontSize": 92, "fontWeight": 700, "color": "#6ee7b7", "align": "center", "valign": "middle", "fx": { "enter": "zoom", "enterDur": 0.7, "delay": 1.0, "countUp": false } },
+        { "id": "stat2", "type": "text", "x": 920, "y": 400, "w": 280, "h": 80, "html": "用户增长倍数", "fontSize": 22, "color": "#9ca3af", "align": "center", "valign": "middle", "fx": { "enter": "fade", "enterDur": 0.6, "delay": 1.4 } }
+      ]
+    },
+    {
+      "id": "s3",
+      "duration": 4.5,
+      "transition": "fade",
+      "transitionIn": 0.7,
+      "captions": [
+        { "start": 0.8, "end": 3.9, "text": "多场景编排，关键帧动画，一气呵成" }
+      ],
+      "elements": [
+        { "id": "h3", "type": "text", "x": 80, "y": 70, "w": 900, "h": 70, "html": "强大的创作能力", "fontSize": 44, "fontWeight": 700, "color": "#ffffff", "fx": { "enter": "fade-up", "enterDur": 0.6, "delay": 0.3 } },
+        { "id": "box1", "type": "shape", "shape": "rect", "x": 120, "y": 220, "w": 220, "h": 220, "radius": 18, "fill": "#3a6ff7", "keyframes": [ { "t": 0, "x": 120, "y": 220, "opacity": 0 }, { "t": 0.5, "x": 120, "y": 220, "opacity": 1 }, { "t": 1.8, "x": 420, "y": 220 }, { "t": 3.2, "x": 720, "y": 220 }, { "t": 4.0, "x": 720, "y": 220, "opacity": 0 } ] },
+        { "id": "box2", "type": "shape", "shape": "rect", "x": 120, "y": 480, "w": 220, "h": 80, "radius": 12, "fill": "rgba(58,111,247,0.35)", "keyframes": [ { "t": 0, "x": 120, "opacity": 0 }, { "t": 0.5, "x": 120, "opacity": 1 }, { "t": 1.8, "x": 420 }, { "t": 3.2, "x": 720 }, { "t": 4.0, "opacity": 0 } ] },
+        { "id": "tag1", "type": "text", "x": 160, "y": 250, "w": 140, "h": 50, "html": "时间轴", "fontSize": 26, "fontWeight": 600, "color": "#ffffff", "align": "center", "valign": "middle", "keyframes": [ { "t": 0.5, "opacity": 0 }, { "t": 0.9, "opacity": 1 }, { "t": 4.0, "opacity": 0 } ] },
+        { "id": "tag2", "type": "text", "x": 460, "y": 250, "w": 140, "h": 50, "html": "关键帧", "fontSize": 26, "fontWeight": 600, "color": "#ffffff", "align": "center", "valign": "middle", "keyframes": [ { "t": 1.8, "opacity": 0 }, { "t": 2.2, "opacity": 1 }, { "t": 4.0, "opacity": 0 } ] },
+        { "id": "tag3", "type": "text", "x": 760, "y": 250, "w": 140, "h": 50, "html": "动画", "fontSize": 26, "fontWeight": 600, "color": "#ffffff", "align": "center", "valign": "middle", "keyframes": [ { "t": 3.2, "opacity": 0 }, { "t": 3.6, "opacity": 1 }, { "t": 4.0, "opacity": 0 } ] }
+      ]
+    },
+    {
+      "id": "s4",
+      "duration": 3.5,
+      "transition": "zoom",
+      "transitionIn": 0.7,
+      "background": "linear-gradient(160deg, #1a2a5e 0%, #0b1020 100%)",
+      "captions": [
+        { "start": 0.7, "end": 3.0, "text": "现在就开始创作" }
+      ],
+      "elements": [
+        { "id": "end", "type": "text", "x": 140, "y": 260, "w": 1000, "h": 130, "html": "谢谢观看", "fontSize": 80, "fontWeight": 700, "color": "#ffffff", "align": "center", "valign": "middle", "fx": { "enter": "fade-up", "enterDur": 0.8, "delay": 0.4 } },
+        { "id": "end2", "type": "text", "x": 240, "y": 420, "w": 800, "h": 60, "html": "video_studio 制作", "fontSize": 28, "color": "#9fb4ff", "align": "center", "valign": "middle", "fx": { "enter": "fade", "enterDur": 0.6, "delay": 1.1 } }
+      ]
+    }
+  ]
+}

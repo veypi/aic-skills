@@ -1,0 +1,1903 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta name="description" content="Video Studio — 浏览器端视频工作台：场景编排 + 时间轴编辑 + 舞台预览 + 浏览器导出 MP4（WebCodecs 硬编）" />
+  <title>Video Studio</title>
+</head>
+<style>
+  body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    background: #0a0e16;
+  }
+
+  .topbar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(15, 20, 32, 0.95);
+    position: relative;
+    z-index: 20;
+  }
+
+  .brand {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    color: #4361ee;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .brand .logo {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #4361ee, #7c3aed);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 11px;
+  }
+
+  .doc-title {
+    font-size: var(--font-size-md);
+    color: var(--text-color);
+    max-width: 240px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-left: var(--spacing-sm);
+    cursor: pointer;
+  }
+
+  .doc-title.empty {
+    color: var(--text-color-disabled);
+    cursor: default;
+  }
+
+  .doc-title:hover {
+    color: #c7d2fe;
+  }
+
+  .save-state {
+    font-size: 11px;
+    color: #64748b;
+    white-space: nowrap;
+  }
+
+  .save-state.dirty {
+    color: #fbbf24;
+  }
+
+  .save-state.fail {
+    color: #f87171;
+  }
+
+  .spacer {
+    flex: 1;
+  }
+
+  .tbtn {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    color: #cbd5e1;
+    padding: 6px 14px;
+    border-radius: 9px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .tbtn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+  }
+
+  .tbtn.primary {
+    background: linear-gradient(135deg, #4361ee, #5b46f0);
+    border: none;
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .tbtn.primary:hover {
+    filter: brightness(1.12);
+  }
+
+  .tbtn.primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .tbtn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  /* ---- 工作区三栏 ---- */
+  .ws {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+  }
+
+  .left {
+    flex: none;
+    width: 196px;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  .left .ltabs {
+    flex: none;
+    display: flex;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  }
+  .left .ltabs button {
+    flex: 1;
+    padding: 9px 0;
+    font-size: 13px;
+    color: #94a3b8;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+  }
+  .left .ltabs button:hover { color: #e2e8f0; }
+  .left .ltabs button.on { color: #e2e8f0; border-bottom-color: #4361ee; }
+
+  .left video-scenes,
+  .left video-assets {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+  }
+
+  .center {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+  }
+
+  .center video-stage {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+  }
+
+  .right {
+    flex: none;
+    width: 322px;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(13, 17, 28, 0.9);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  .rbody {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+  }
+
+  .rbody video-inspector {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+  }
+
+  .bottom {
+    flex: none;
+    height: 188px;
+    display: flex;
+  }
+
+  .bottom video-timeline {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+  }
+
+  /* ---- 面板拖拽分割条 ---- */
+  .pd { flex: none; position: relative; background: transparent; z-index: 5; }
+  .pd.v { width: 5px; cursor: col-resize; }
+  .pd.h { height: 5px; cursor: row-resize; }
+  .pd::after { content: ''; position: absolute; background: transparent; transition: background 0.12s; }
+  .pd.v::after { left: 2px; top: 0; bottom: 0; width: 1px; }
+  .pd.h::after { top: 2px; left: 0; right: 0; height: 1px; }
+  .pd:hover::after, .pd.dragging::after { background: #4361ee; }
+
+  .popover {
+    position: absolute;
+    top: 48px;
+    right: 8px;
+    width: 300px;
+    max-height: 60vh;
+    overflow: auto;
+    background: #121826;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+    z-index: 40;
+    padding: 8px;
+  }
+
+  .pop-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 9px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #cbd5e1;
+    position: relative;
+  }
+
+  .pop-item:hover {
+    background: rgba(67, 97, 238, 0.16);
+  }
+
+  .pop-item .t {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #e2e8f0;
+  }
+
+  .pop-item .d {
+    font-size: 11.5px;
+    color: #64748b;
+  }
+
+  .pop-item .del {
+    position: absolute;
+    right: 8px;
+    top: 9px;
+    color: #94a3b8;
+    font-size: 12px;
+    padding: 2px 6px;
+    border-radius: 6px;
+  }
+
+  .pop-item .del:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+  }
+
+  /* ---- 导出设置弹层 ---- */
+  .exf-t { font-size: 13px; font-weight: 600; color: #e2e8f0; padding: 4px 6px 8px; }
+  .exf-r { display: flex; align-items: center; gap: 8px; padding: 4px 6px; }
+  .exf-r label { flex: none; width: 52px; font-size: 12px; color: #64748b; }
+  .exf-r .hint { font-size: 11px; color: #475569; line-height: 1.6; }
+  .exf-sel, .exf-in {
+    flex: 1; min-width: 0; background: rgba(255, 255, 255, 0.06); color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 7px;
+    font-size: 12px; padding: 5px 7px; outline: none;
+  }
+  .exf-in { flex: none; width: 72px; }
+  .exf-b { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 6px 4px; }
+
+  .pop-title {
+    padding: 6px 8px 4px;
+    font-size: 11px;
+    color: #64748b;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .pop-title .pop-link {
+    color: #818cf8;
+    text-decoration: none;
+    font-size: 10.5px;
+    letter-spacing: 0;
+    border: 1px solid rgba(99, 102, 241, 0.35);
+    border-radius: 5px;
+    padding: 1px 7px;
+  }
+  .pop-title .pop-link:hover {
+    background: rgba(99, 102, 241, 0.2);
+    color: #c7d2fe;
+  }
+
+  .toast {
+    position: fixed;
+    top: 56px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 8px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    z-index: 100;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+</style>
+
+<body>
+  <div class="topbar">
+    <div class="brand"><span class="logo">▶</span> Video Studio</div>
+    <div class="doc-title" :class="{ empty: !curName && !curTitle }" @click="selNone()" title="点击查看项目设置">{{ curTitle ||
+      curName || '未打开项目' }}</div>
+    <span class="save-state" :class="{ dirty: saveState === '未保存', fail: saveState === '保存失败' }">{{ saveState }}</span>
+    <div class="spacer"></div>
+    <button class="tbtn" @click="showCases = !showCases; showProjects = false">样例</button>
+    <button class="tbtn" @click="showProjects = !showProjects; showCases = false; refreshProjects()">项目</button>
+    <button class="tbtn" @click="newProject()">新建</button>
+    <button class="tbtn" @click="undoEdit()" :disabled="!undoStack.length" title="撤销（Cmd/Ctrl+Z）">撤销</button>
+    <button class="tbtn" @click="redoEdit()" :disabled="!redoStack.length" title="重做（Cmd/Ctrl+Shift+Z）">重做</button>
+    <button class="tbtn primary" @click="showExport = !showExport; showCases = false; showProjects = false" :disabled="exporting || !doc">导出</button>
+  </div>
+
+  <div class="popover" v-if="showExport" style="width: 330px" @mousedown.stop>
+    <div class="exf-t">导出设置</div>
+    <div class="exf-r">
+      <label>格式</label>
+      <select class="exf-sel" :value="exFormat" @change="exFormat = $event.target.value">
+        <option value="mp4" :selected="exFormat === 'mp4'">MP4 · H.264 + AAC</option>
+        <option value="webm" :selected="exFormat === 'webm'">WebM · VP9 + Opus</option>
+        <option value="webm-vp8" :selected="exFormat === 'webm-vp8'">WebM · VP8 + Opus</option>
+        <option value="wav" :selected="exFormat === 'wav'">WAV · 仅音频（48kHz 立体声）</option>
+      </select>
+    </div>
+    <template v-if="exFormat !== 'wav'">
+      <div class="exf-r">
+        <label>分辨率</label>
+        <select class="exf-sel" :value="exRes" @change="exRes = $event.target.value">
+          <option value="orig" :selected="exRes === 'orig'">原始（{{ doc ? doc.size.width : 0 }}×{{ doc ? doc.size.height : 0 }}）</option>
+          <option value="1080" :selected="exRes === '1080'">1080p 全高清</option>
+          <option value="720" :selected="exRes === '720'">720p 高清</option>
+          <option value="480" :selected="exRes === '480'">480p 标清</option>
+          <option value="custom" :selected="exRes === 'custom'">自定义…</option>
+        </select>
+      </div>
+      <div class="exf-r" v-if="exRes === 'custom'">
+        <label>尺寸</label>
+        <input class="exf-in" type="number" min="16" step="2" v:value="exW" /> ×
+        <input class="exf-in" type="number" min="16" step="2" v:value="exH" />
+      </div>
+      <div class="exf-r">
+        <label>帧率</label>
+        <select class="exf-sel" :value="exFps" @change="exFps = $event.target.value">
+          <option value="orig" :selected="exFps === 'orig'">原始（{{ doc ? doc.fps : 30 }} fps）</option>
+          <option value="24" :selected="exFps === '24'">24 fps</option>
+          <option value="25" :selected="exFps === '25'">25 fps</option>
+          <option value="30" :selected="exFps === '30'">30 fps</option>
+          <option value="60" :selected="exFps === '60'">60 fps</option>
+        </select>
+      </div>
+      <div class="exf-r">
+        <label>质量</label>
+        <select class="exf-sel" :value="exQuality" @change="exQuality = $event.target.value">
+          <option value="low" :selected="exQuality === 'low'">低（文件更小）</option>
+          <option value="medium" :selected="exQuality === 'medium'">中（推荐）</option>
+          <option value="high" :selected="exQuality === 'high'">高（更清晰）</option>
+        </select>
+      </div>
+      <div class="exf-r"><span class="hint">{{ exSummary() }}</span></div>
+    </template>
+    <div class="exf-r" v-else><span class="hint">仅导出混音音轨（音乐 / 配音 / 未静音媒体），PCM 无压缩。</span></div>
+    <div class="exf-b">
+      <button class="tbtn" @click="showExport = false">取消</button>
+      <button class="tbtn primary" @click="startExport()" :disabled="exporting">{{ exporting ? '导出中…' : '开始导出' }}</button>
+    </div>
+  </div>
+
+  <div class="popover" v-if="showCases">
+    <div class="pop-title">内置样例（只读，点击加载）</div>
+    <div v-for="c in cases" class="pop-item" @click="openCase(c.id)">
+      <div class="t">{{ c.title }}</div>
+      <div class="d">{{ c.desc }}</div>
+    </div>
+  </div>
+
+  <div class="popover" v-if="showProjects">
+    <div class="pop-title">我的项目（浏览器本地存储）<a class="pop-link" href="@/fs/page" target="_blank" @click.stop>本地存储管理</a></div>
+    <div v-if="!projects.length" class="pop-item">
+      <div class="d">暂无项目，点击「新建」开始创作</div>
+    </div>
+    <div v-for="p in projects" class="pop-item" @click="openProject(p.name)">
+      <div class="t">{{ p.title }} <span style="color:#64748b;font-weight:400">· {{ p.duration }}s · {{ p.scenes }}
+          场景</span></div>
+      <div class="d">{{ p.name }}</div>
+      <span class="del" @click.stop="deleteProject(p.name)">删除</span>
+    </div>
+  </div>
+
+  <div class="ws">
+    <div class="left" :style="{ width: leftW + 'px' }">
+      <div class="ltabs">
+        <button :class="{ on: ltab === 'scenes' }" @click="ltab = 'scenes'">场景</button>
+        <button :class="{ on: ltab === 'assets' }" @click="ltab = 'assets'">素材</button>
+      </div>
+      <video-scenes v-show="ltab === 'scenes'" :scenes="doc ? doc.scenes : []" :cur="activeSceneIdx()" :readonly="!curName" :ver="sceneVer"
+        @pick="onPickScene" @add="addScene" @dup="dupScene" @del="delScene" @move="moveScene"></video-scenes>
+      <video-assets v-show="ltab === 'assets'" :files="assetFiles" :readonly="!curName"
+        @upload="onUploadAssets" @del="onDelAsset" @pick="onPickAsset" @insert="onInsertAsset"></video-assets>
+    </div>
+    <div class="pd v" :class="{ dragging: resizing === 'left' }" @mousedown="startResize('left', $event)" title="拖拽调整左侧宽度"></div>
+    <div class="center">
+      <video-stage ref="stage" :editable="!!curName && !exporting" :selid="sel.kind === 'element' ? sel.elId : ''"
+        @select="onStageSelect" @mutate="onStageChange" @ctxdel="delElements" @dropasset="onDropAsset"></video-stage>
+    </div>
+    <div class="pd v" :class="{ dragging: resizing === 'right' }" @mousedown="startResize('right', $event)" title="拖拽调整右侧宽度"></div>
+    <div class="right" :style="{ width: rightW + 'px' }">
+      <div class="rbody">
+        <video-inspector :doc="doc" :sel="sel" :frame="curFrame" :readonly="!curName"
+          :uploadasset="uploadAsset" @mutate="onDocChange" @saveas="saveAsProject" @pickel="onPickEl"
+          @delel="delElement" @dupel="dupElement"></video-inspector>
+      </div>
+    </div>
+  </div>
+
+  <div class="pd h" :class="{ dragging: resizing === 'bottom' }" @mousedown="startResize('bottom', $event)" title="拖拽调整时间轴高度"></div>
+  <div class="bottom" :style="{ height: bottomH + 'px' }">
+    <video-timeline :doc="doc" :frame="curFrame" :sel="sel" :readonly="!curName" :ver="sceneVer" @seek="onSeek"
+      @pickscene="onPickScene" @pickel="onPickEl" @addel="onAddEl" @docchange="onDocChange"
+      @movescene="moveSceneTo" @dropasset="onDropAsset"></video-timeline>
+  </div>
+
+  <div class="toast" v-if="toast">{{ toast }}</div>
+</body>
+
+<script setup>
+  import {starterDoc, defaultTheme, uid, waitMediaSeek, waitMediaReady, prepareMedia, easing, easingOf, springPhysics, bezierEasing, interpolate} from './video/engine.js'
+  document.body.setAttribute('theme', 'dark')
+
+  // ---- 状态 ----
+  doc = null            // 当前 video/1 文档对象（真身，proxy）
+  curName = ''          // 当前项目名（'' = 样例只读）
+  curTitle = ''
+  assets = {}           // ref → dataURL（预览/导出共用）
+  sel = {kind: 'none', sceneIndex: 0, elId: ''}   // 选中态
+  curFrame = 0          // 当前帧（rAF 同步自 stage）
+  cases = []
+  projects = []
+  showCases = false
+  showProjects = false
+  // ---- 导出配置（对话框）----
+  showExport = false
+  exFormat = 'mp4'    // mp4 | webm | webm-vp8 | wav
+  exRes = 'orig'      // orig | 1080 | 720 | 480 | custom
+  exW = 1280
+  exH = 720
+  exFps = 'orig'      // orig | 24 | 25 | 30 | 60
+  exQuality = 'medium' // low | medium | high
+  exporting = false
+  toast = ''
+  saveState = ''
+  sceneVer = 0        // 场景结构版本号（增删/移动后递增，强制子组件重建列表）
+  ltab = 'scenes'     // 左侧 tab：scenes | assets
+  assetFiles = []     // 素材列表 [{name, ref, size, mtime, kind}]（assets/ 目录）
+  cur_refs = {}       // 拆分文档：sceneId → 相对引用（如 scenes/scene_1.json）
+  cur_split = false   // 当前文档 scenes 是否含字符串引用（决定保存按拆分写回还是整体单写）
+  saved_scene_snap = {}   // 拆分保存快照：引用 → 已落盘场景序列化（增量跳过未变化文件）
+  saved_index_snap = ''   // index.json 已落盘内容（引用数组版）
+  // ---- 面板尺寸（分割条拖拽，localStorage 记忆）----
+  leftW = 196
+  rightW = 322
+  bottomH = 188
+  resizing = ''       // 正在拖拽的分割条：left | right | bottom
+  try {
+    const p = JSON.parse(localStorage.getItem('video_studio_panels') || '{}')
+    if (p.left) leftW = Math.max(140, Math.min(480, +p.left))
+    if (p.right) rightW = Math.max(240, Math.min(560, +p.right))
+    if (p.bottom) bottomH = Math.max(120, Math.min(520, +p.bottom))
+  } catch (e) { }
+  const clampP = (v, min, max) => Math.max(min, Math.min(max, v))
+  // 拖拽分割条：实时更新面板尺寸 + stage fit 适配（scale 变化经响应式自动重排），松手记忆
+  startResize = (axis, e) => {
+    e.preventDefault()
+    resizing = axis
+    const x0 = e.clientX, y0 = e.clientY
+    const l0 = leftW, r0 = rightW, b0 = bottomH
+    const onMove = (ev) => {
+      if (axis === 'left') leftW = clampP(l0 + (ev.clientX - x0), 140, 480)
+      else if (axis === 'right') rightW = clampP(r0 - (ev.clientX - x0), 240, 560)
+      // 底部分割线是时间轴顶部边界：往上拖（clientY 减小）→ 高度增大
+      else bottomH = clampP(b0 - (ev.clientY - y0), 120, 520)
+      const st = $refs.stage && $refs.stage.$data
+      if (st && st.fit) st.fit()
+    }
+    const onUp = () => {
+      resizing = ''
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+      try {localStorage.setItem('video_studio_panels', JSON.stringify({left: leftW, right: rightW, bottom: bottomH}))} catch (err) { }
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }
+
+  // ---- AI 操控面（pageDesc，平台自动采集为 {win_id}.{cmd}）----
+  // 存储走 $fs 本地单根，不依赖事件通道
+  let toastTimer = 0
+  let saveTimer = 0
+
+  const projRoot = () => '/video'
+  const projDir = (name) => projRoot() + '/' + name
+  const projIndex = (name) => projDir(name) + '/index.json'
+  const normName = (n) => String(n || '').trim().replace(/[\\/:\*\?"<>\|#%\s]+/g, '-').replace(/^-+|-+$/g, '') || 'video-' + Date.now().toString(36)
+  const showToast = (msg) => {
+    toast = msg
+    clearTimeout(toastTimer)
+    toastTimer = setTimeout(() => {toast = ''}, 2600)
+  }
+  const ensureTheme = (d) => {
+    d.theme = Object.assign(defaultTheme(), d.theme || {})
+    d.theme.captionStyle = Object.assign(defaultTheme().captionStyle, d.theme.captionStyle || {})
+    return d
+  }
+
+  // ---- 场景拆分加载：scenes 元素为字符串时，按相对 index.json 的路径逐个拉取场景 json；对象则原样使用 ----
+  // 返回 { refs, split }：refs 为 sceneId → 引用路径；split 表示文档是否含引用场景。doc.scenes 原地解析为对象数组
+  const resolveSceneRefs = async (doc, loadText) => {
+    const refs = {}
+    let split = false
+    if (doc && Array.isArray(doc.scenes)) {
+      doc.scenes = await Promise.all(doc.scenes.map(async (s, i) => {
+        if (typeof s !== 'string') return s
+        split = true
+        try {
+          const sc = JSON.parse(await loadText(s))
+          if (!sc || !Array.isArray(sc.elements)) throw new Error('场景缺少 elements 数组: ' + s)
+          if (sc.id) refs[sc.id] = s
+          return sc
+        } catch (e) {
+          // 单场景失败不拖垮整片：占位错误场景（可删除），引用保留供保存回写
+          return {id: 'broken-' + i, broken: true, brokenRef: s, brokenError: String((e && e.message) || e), elements: [], duration: 3, transition: 'fade', transitionIn: 0.6}
+        }
+      }))
+    }
+    return {refs, split}
+  }
+
+  // 打开/重载文档后初始化保存快照：拆分结构记录已落盘场景内容与引用版 index，之后自动保存只写真正变化的文件
+  const snapProjectOpen = (name) => {
+    saved_scene_snap = {}
+    saved_index_snap = ''
+    if (!cur_split) return
+    const dir = projDir(name) + '/'
+    doc.scenes.forEach((s) => {
+      const ref = s && s.id ? cur_refs[s.id] : null
+      if (ref) saved_scene_snap[ref] = JSON.stringify(s, null, 2)
+    })
+    const idx = JSON.parse(JSON.stringify(doc))
+    idx.scenes = doc.scenes.map((s) => (s && s.broken && s.brokenRef) ? s.brokenRef : (s && s.id ? cur_refs[s.id] : null)).filter(Boolean)
+    saved_index_snap = JSON.stringify(idx, null, 2)
+  }
+
+  // ---- 本地存储（$mod.$fs 树路径 '/page' 前缀 → 浏览器 OPFS 本地 /video/，纯本地）----
+  storageReady = () => !!$mod.$fs
+  const fsGet = (path) => $mod.$fs.get('/page' + path)         // {ok, content(string|Blob), mime, size}
+  const fsText = async (path) => {
+    const r = await fsGet(path)
+    return typeof r.content === 'string' ? r.content : await r.content.text()
+  }
+  const fsPut = (path, content) => $mod.$fs.put('/page' + path, content)   // string | Blob
+  const fsLs = async (path) => {
+    try {return await $mod.$fs.get('/page' + path)} catch (e) {return {ok: false, items: []}}
+  }
+  const fsRm = (path) => $mod.$fs.rm('/page' + path)
+  // 目录删除：先试整删，失败则递归逐文件
+  const rmDir = async (dir) => {
+    try {await fsRm(dir); return } catch (e) { }
+    const walk = async (d) => {
+      const l = await fsLs(d + '/')
+      for (const it of (l.items || [])) {
+        if (it.dir) await walk(d + '/' + it.name)
+        else {try {await fsRm(d + '/' + it.name)} catch (e) { } }
+      }
+      try {await fsRm(d)} catch (e) { }
+    }
+    await walk(dir)
+  }
+
+  // ---- 初始化 ----
+  initPage = async () => {
+    await loadCases()
+    // 恢复上次打开的项目（本地存储，纯本地）
+    const last = localStorage.getItem('video_studio_last') || ''
+    if (last) {try {await openProject(last)} catch (e) { } }
+  }
+
+  // pageDesc：平台操控面声明。外部 AI 经 exec 1host=page {win_id}.{cmd} 调用；
+  // 项目文件读写由 AI 直接用 fs 工具（1host=page）操作 /video/... 完成（与页面同一 OPFS 存储），
+  // 页面指令只管项目生命周期、播放控制、TTS 配音、截图与沙箱计算
+  pageDesc = {
+    desc: 'Video Studio 浏览器端视频工作台：本地 /video/ JSON 项目（video/1 格式）驱动，页面负责可视化编辑、预览播放与浏览器内导出 MP4/WebM/WAV',
+    commands: [
+      {
+        name: 'list_video', desc: '列出本地存储的视频项目与内置样例',
+        handler: async () => {
+          try {
+            const list = await listProjects()
+            return reply({
+              ok: true, current: curName, current_title: curTitle,
+              files: list.map((p) => ({name: p.name, title: p.title, duration: p.duration, scenes: p.scenes})),
+              cases: cases.map((c) => ({id: c.id, title: c.title, desc: c.desc}))
+            })
+          } catch (e) {return reply(errReply(e))}
+        }
+      },
+
+      {
+        name: 'new_video', desc: '新建视频项目（--name 必填，--title 可选，--width/--height 可选）',
+        handler: async (argv) => {
+          try {
+            const name = normName(arg(argv, 'name'))
+            if (!name) throw new Error('--name 必填')
+            const title = arg(argv, 'title') || name
+            const d = starterDoc()
+            d.title = title
+            const w = parseInt(arg(argv, 'width') || '0', 10), h = parseInt(arg(argv, 'height') || '0', 10)
+            if (w >= 240 && h >= 240) d.size = {width: w, height: h}
+            await fsPut(projIndex(name), JSON.stringify(d, null, 2))
+            await openProject(name)
+            return reply({ok: true, name, path: projIndex(name), scenes: d.scenes.length, duration: Math.round(d.scenes.reduce((a, s) => a + s.duration, 0))})
+          } catch (e) {return reply(errReply(e))}
+        }
+      },
+
+      {
+        name: 'open_video', desc: '打开项目（--name 必填）',
+        handler: async (argv) => {
+          try {
+            await openProject(arg(argv, 'name'))
+            return reply({ok: true, name: curName, title: curTitle, duration: Math.round((doc.totalFrames || 0) / (doc.fps || 30))})
+          } catch (e) {return reply(errReply(e))}
+        }
+      },
+
+      {
+        name: 'run_video', desc: '预览播放当前项目（--name 可选，指定则先打开）',
+        handler: async (argv) => {
+          try {
+            const n = arg(argv, 'name')
+            if (n && n !== curName) await openProject(n)
+            if (!doc) throw new Error('没有已打开的项目')
+            $refs.stage.$data.togglePlay()
+            return reply({ok: true, playing: $refs.stage.$data.playing, title: curTitle})
+          } catch (e) {return reply(errReply(e))}
+        }
+      },
+
+      {
+        name: 'stop_video', desc: '停止预览播放',
+        handler: async () => {
+          try {
+            const st = $refs.stage.$data
+            if (st.playing) st.togglePlay()
+            return reply({ok: true, playing: false})
+          } catch (e) {return reply(errReply(e))}
+        }
+      },
+
+      {
+        name: 'reload_video', desc: '重新加载当前项目（AI 用 fs 工具写完 index.json/素材后调用，页面刷新画面并保持当前帧）',
+        handler: async () => {
+          try {
+            if (!curName) throw new Error('没有已打开的项目')
+            await reloadProject()
+            return reply({ok: true, name: curName, title: curTitle})
+          } catch (e) {return reply(errReply(e))}
+        }
+      },
+
+      {
+        name: 'gen_voice', desc: '文本转语音生成配音素材（--text 必填；--name 可选文件名；--set voice|music 可选：生成后自动配置到对应音轨）。TTS 限流约 3s/个',
+        handler: async (argv) => {
+          try {
+            if (!curName) throw new Error('请先打开项目（new_video 或 open_video）')
+            const text = String(arg(argv, 'text', '') || '').trim()
+            if (!text) throw new Error('--text 必填')
+            if (text.length > 5000) throw new Error('文本超长（最多 5000 字）')
+            // 平台包级 TTS（skills 面保留端点 POST {scoped}/api/speech，与 ppt_studio 同款）：POST {text} → 音频 blob（按文本 hash 缓存）
+            const resp = await fetch('@' + $mod.scoped + '/api/speech', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({text}),
+            })
+            if (!resp.ok) throw new Error('TTS 合成失败 HTTP ' + resp.status)
+            const blob = await resp.blob()
+            if (!blob.size) throw new Error('TTS 返回空音频')
+            // 文件名：--name 或自动（voice-时间戳）；可选参数显式取值（不 fallback 位置参数）；
+            // 截断防长文本；扩展名按响应 mime（mpeg→mp3）；assets/ 内重名自动加 -N
+            let mimeExt = String((blob.type || '').split('/')[1] || 'mp3').toLowerCase()
+            if (mimeExt === 'mpeg') mimeExt = 'mp3'
+            const rawName = cleanName(optArg(argv, 'name'), 60)
+            const dot = rawName.lastIndexOf('.')
+            const base = dot > 0 ? rawName.slice(0, dot) : (rawName || 'voice-' + Date.now().toString(36))
+            const l = await fsLs(projDir(curName) + '/assets/')
+            const names = new Set((l.items || []).map((i) => i.name))
+            let name = base + '.' + mimeExt
+            let n = 1
+            while (names.has(name)) name = base + '-' + (n++) + '.' + mimeExt
+            const ref = 'assets/' + name
+            await fsPut(projDir(curName) + '/' + ref, blob)
+            // 预热 dataURL 并同步舞台（立即可用于预览/导出）
+            const dataUrl = await blobToDataURL(blob)
+            assets[ref] = dataUrl
+            const st = $refs.stage && $refs.stage.$data
+            if (st) {if (st.engine) st.engine.assets = assets; if (st.refreshFrame) st.refreshFrame()}
+            // 可选：配置到 voice/music 音轨
+            const track = String(arg(argv, 'set', '') || '')
+            if (track === 'voice' || track === 'music') {
+              doc[track] = {src: ref, volume: 1, offset: 0}
+              if (track === 'music') doc[track].loop = true
+              onDocChange()
+            }
+            const duration = await audioDuration(blob)
+            await refreshAssets()
+            return reply({ok: true, ref, name, size: blob.size, duration, track, hint: '素材引用：' + ref + '（时长 ' + duration + 's）'})
+          } catch (e) {return reply(errReply(e))}
+        }
+      },
+
+      {
+        name: 'shot_video', desc: '截图当前画面为 PNG（--frame 可选指定帧号，--name 可选文件名，--scale 可选 0.25~2 分辨率倍率）。返回图片路径，用 fs.read（1host=page，路径 /video/screenshots/...）查看画面',
+        handler: async (argv) => {
+          try {
+            if (!doc || !curName) throw new Error('请先打开项目')
+            const st = $refs.stage && $refs.stage.$data
+            const engine = st && st.engine
+            if (!engine) throw new Error('引擎未就绪')
+            // 关键：totalFrames 只在引擎规范化后的 doc 上（页面 proxy doc 是原始 JSON，没有该字段）——
+            // 用 doc.totalFrames 会得到 undefined → total=1 → 任何 --frame 都被钳到第 0 帧
+            const total = (engine.doc && engine.doc.totalFrames) || st.totalFrames || 1
+            const fr = parseInt(optArg(argv, 'frame'), 10)
+            const f = isNaN(fr) ? engine.frame : Math.max(0, Math.min(fr, total - 1))
+            // 复用导出管线：确定性 DOM → SVG foreignObject → canvas（不动播放头）
+            if (engine.prepare) await engine.prepare()   // three 元素懒加载就绪
+            // 预热并等待媒体就绪：窗口外 video 首次出现在截图帧时可能未加载（黑帧）
+            prepareMedia(engine.doc, engine.assets)
+            await waitMediaReady()
+            const {drawFrameToCanvas} = await import('./video/render.js')
+            // forExport：与导出画面一致（audio 元素不画 chip；media 合成真帧）
+            const node = engine.buildFrame(f, {forExport: true})
+            await waitMediaSeek(node)
+            const scale = Math.max(0.25, Math.min(2, parseFloat(optArg(argv, 'scale') || '1') || 1))
+            const W = Math.round(doc.size.width * scale)
+            const H = Math.round(doc.size.height * scale)
+            const canvas = document.createElement('canvas')
+            canvas.width = W
+            canvas.height = H
+            const ctx = canvas.getContext('2d', {alpha: false})
+            ctx.fillStyle = '#000'
+            ctx.fillRect(0, 0, W, H)
+            await drawFrameToCanvas(node, canvas, ctx, W, H)
+            const blob = await new Promise((res, rej) => canvas.toBlob((b) => (b ? res(b) : rej(new Error('toBlob failed'))), 'image/png'))
+            const rawName = cleanName(optArg(argv, 'name'), 60)
+            const name = (rawName || safeTitle() + '-f' + f) + '.png'
+            const out = await fsPut(projRoot() + '/screenshots/' + name, blob)
+            return reply({ok: true, path: '/video/screenshots/' + name, frame: f, total, width: W, height: H, size: blob.size, hint: 'fs.read {"1host":"page","path":"/video/screenshots/' + name + '"}'})
+          } catch (e) {return reply(errReply(e))}
+        }
+      },
+
+      {
+        name: 'run_js', desc: '纯数值/曲线/3D 建模计算 JS（软沙箱：仅 Math + M 数学包 + T three.js 核心数学几何 + console/copy，无 DOM/网络/存储/定时器/构造器）。--code 必填（表达式/IIFE，或语句体自己 return）。M 包：TAU, lerp, clamp, smoothstep, map, deg, rad, round(v,n), range(n,a,b), rand(seed)→fn, easing, easingOf, bezier(x1..)→fn, spring(d,s,m)→fn, interpolate。T 包（three r170 纯计算类，无渲染器）：Vector2/3/4, Matrix3/4, Quaternion, Euler, Color, Spherical, CatmullRomCurve3, SplineCurve, CurvePath, Path, Shape, BufferGeometry 及 Box/Sphere/TorusKnot/Tube/Lathe/Extrude/Shape 等 Geometry 类, MathUtils。console.log 收进 logs；copy(v) 写剪贴板。返回 {ok, result, result_type, logs, copied}。适合先算好路径/顶点/曲线参数再 fs.write 写入文档或素材',
+        handler: async (argv) => {
+          try {
+            const code = optArg(argv, 'code') || String((argv || [])[0] || '')
+            if (!code.trim()) throw new Error('--code 必填')
+            const T = await runJsThreeKit()
+            return reply(runJsSandbox(code, T))
+          } catch (e) {return reply({ok: false, error: String((e && e.message) || e)})}
+        }
+      },
+
+      {
+        name: 'get_video', desc: '当前打开项目的信息',
+        handler: async () => {
+          try {
+            if (!doc) return reply({ok: true, open: false})
+            const st = $refs.stage.$data.engine ? $refs.stage.$data.engine.getState() : null
+            return reply({
+              ok: true, open: true, name: curName, title: curTitle,
+              duration: st ? Math.round(st.duration) : 0, fps: st ? st.fps : 0,
+              size: st ? st.size : null, scenes: st ? st.scenes.length : 0
+            })
+          } catch (e) {return reply(errReply(e))}
+        }
+      },
+    ]}
+
+  const errReply = (e) => ({ok: false, error: String((e && e.message) || e)})
+  const reply = (obj) => ({content: JSON.stringify(obj)})
+  const arg = (argv, key, dft) => {
+    const i = (argv || []).indexOf('--' + key)
+    if (i >= 0 && argv[i + 1] !== undefined) return String(argv[i + 1])
+    const pos = (argv || []).find((a) => typeof a === 'string' && !String(a).startsWith('--'))
+    return pos !== undefined ? pos : dft
+  }
+  // 可选参数显式取值：不带位置参数 fallback（否则多 flag 场景会误取其它 flag 的值，如 --text 长文本被当成 --name）
+  const optArg = (argv, key) => {
+    const a = argv || []
+    const i = a.indexOf('--' + key)
+    return i >= 0 && a[i + 1] !== undefined ? String(a[i + 1]) : ''
+  }
+  // 文件名清洗 + 截断（防长文本/超长文件名）
+  const cleanName = (s, max) => {
+    s = String(s || '').replace(/[\\/:*?"<>|#%\s]+/g, '-').replace(/^-+|-+$/g, '')
+    if (max && s.length > max) s = s.slice(0, max)
+    return s
+  }
+  // 音频时长（秒，两位小数）：加载元数据获取，失败返回 0
+  const audioDuration = (blob) => new Promise((res) => {
+    const u = URL.createObjectURL(blob)
+    const a = new Audio()
+    const done = (v) => {URL.revokeObjectURL(u); res(v)}
+    a.onloadedmetadata = () => done(Math.round(a.duration * 100) / 100)
+    a.onerror = () => done(0)
+    a.src = u
+  })
+
+  // ---- run_js 数值计算软沙箱 ----
+  // 仅暴露 Math + M 数学包 + console/copy；DOM/网络/存储/定时器/构造器用参数遮蔽为 undefined，
+  // "use strict" 防 this 逃逸。（用途是 AI 算曲线/数值，非防恶意代码的安全边界）
+  const JS_SHADOW = [
+    'window', 'document', 'globalThis', 'self', 'top', 'parent', 'frames', 'opener',
+    'fetch', 'XMLHttpRequest', 'WebSocket', 'EventSource', 'Worker', 'SharedWorker',
+    'localStorage', 'sessionStorage', 'indexedDB', 'caches', 'cookieStore',
+    'navigator', 'location', 'history', 'open', 'alert', 'confirm', 'prompt', 'print',
+    'setTimeout', 'setInterval', 'setImmediate', 'queueMicrotask', 'requestAnimationFrame',
+    'Function', 'AsyncFunction', 'GeneratorFunction', 'importScripts', 'require',
+    'process', 'Buffer', 'postMessage', 'BroadcastChannel', 'MessageChannel', 'Notification',
+    // 注意：不能放 'eval'/'arguments'——strict 模式下它们是非法参数名，会直接 SyntaxError
+  ]
+  const runJsMathKit = () => ({
+    TAU: Math.PI * 2,
+    lerp: (a, b, t) => a + (b - a) * t,
+    clamp: (v, a, b) => Math.max(a, Math.min(b, v)),
+    smoothstep: (a, b, v) => { const t = Math.max(0, Math.min(1, (v - a) / (b - a))); return t * t * (3 - 2 * t) },
+    map: (v, a, b, c, d) => c + (d - c) * ((v - a) / (b - a)),
+    deg: (r) => (r * 180) / Math.PI,
+    rad: (d) => (d * Math.PI) / 180,
+    round: (v, n) => { const p = Math.pow(10, n == null ? 2 : n); return Math.round(v * p) / p },
+    range: (n, a, b) => Array.from({length: Math.max(0, n | 0)}, (_, i) => a == null ? i : a + (b - a) * (n <= 1 ? 0 : i / (n - 1))),
+    // mulberry32 种子随机（可复现）
+    rand: (seed) => { let s = (seed >>> 0) || 1; return () => { s = (s + 0x6d2b79f5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296 } },
+    easing, easingOf, bezier: bezierEasing, spring: springPhysics, interpolate,
+  })
+  // three.js 核心纯数学/几何类（无 WebGL 依赖），首次 run_js 用时才懒加载（691KB 不进首屏）
+  // 注意：vhtml 编译后动态 import 的相对路径基准是 /vhtml/（非组件目录）——
+  // 必须用 $mod.scoped 拼绝对路径（静态 import 才会按组件路径重写）
+  let threeCoreP = null
+  const runJsThreeKit = async () => {
+    const m = await (threeCoreP || (threeCoreP = import($mod.scoped + '/video/vendor/three.module.js')))
+    const keys = ['Vector2', 'Vector3', 'Vector4', 'Matrix3', 'Matrix4', 'Quaternion', 'Euler', 'Color',
+      'Spherical', 'Cylindrical', 'Plane', 'Ray', 'Triangle', 'Line3', 'Box2', 'Box3', 'Sphere',
+      'Curve', 'CurvePath', 'Path', 'Shape',
+      'CatmullRomCurve3', 'CubicBezierCurve', 'CubicBezierCurve3', 'QuadraticBezierCurve', 'QuadraticBezierCurve3',
+      'LineCurve', 'LineCurve3', 'EllipseCurve', 'ArcCurve', 'SplineCurve',
+      'BufferGeometry', 'BufferAttribute', 'Float32BufferAttribute', 'Uint16BufferAttribute', 'Uint32BufferAttribute',
+      'BoxGeometry', 'CapsuleGeometry', 'CircleGeometry', 'ConeGeometry', 'CylinderGeometry',
+      'DodecahedronGeometry', 'ExtrudeGeometry', 'IcosahedronGeometry', 'LatheGeometry', 'OctahedronGeometry',
+      'PlaneGeometry', 'RingGeometry', 'ShapeGeometry', 'SphereGeometry', 'TetrahedronGeometry',
+      'TorusGeometry', 'TorusKnotGeometry', 'TubeGeometry', 'WireframeGeometry', 'EdgesGeometry', 'MathUtils']
+    const T = {}
+    keys.forEach((k) => { if (m[k]) T[k] = m[k] })
+    // 建模辅助：几何体 → geo json（引擎 three geo 元素格式；法线由引擎 computeVertexNormals 补齐）
+    T.geoPack = (g) => {
+      const out = { positions: Array.from(g.attributes.position.array) }
+      if (g.attributes.uv) out.uvs = Array.from(g.attributes.uv.array)
+      if (g.index) out.index = Array.from(g.index.array)
+      return out
+    }
+    // 参数曲面采样（克莱因瓶等）：fn(u,v)→[x,y,z]；ur=[u0,u1,segU]，vr=[v0,v1,segV]
+    T.surfaceMesh = (fn, ur, vr) => {
+      const u0 = ur[0], u1 = ur[1], nu = Math.max(1, (ur[2] || 48) | 0)
+      const v0 = vr[0], v1 = vr[1], nv = Math.max(1, (vr[2] || 24) | 0)
+      const positions = [], index = []
+      for (let j = 0; j <= nv; j++)
+        for (let i = 0; i <= nu; i++) {
+          const p = fn(u0 + (u1 - u0) * (i / nu), v0 + (v1 - v0) * (j / nv))
+          positions.push(p[0], p[1], p[2])
+        }
+      for (let j = 0; j < nv; j++)
+        for (let i = 0; i < nu; i++) {
+          const a = j * (nu + 1) + i, b = a + 1, c = a + nu + 1, d = c + 1
+          index.push(a, b, d, b, c, d)
+        }
+      return { positions, index }
+    }
+    return T
+  }
+  const runJsSandbox = (code, T) => {
+    const logs = []
+    let copied = false
+    const fmtVal = (v) => {
+      if (typeof v === 'string') return v
+      if (v === undefined) return 'undefined'
+      try { return JSON.stringify(v) } catch (e) { return String(v) }
+    }
+    const fakeConsole = {}
+    ;['log', 'info', 'warn', 'error', 'debug'].forEach((k) => { fakeConsole[k] = (...a) => logs.push('[' + k + '] ' + a.map(fmtVal).join(' ')) })
+    const copy = (v) => {
+      copied = true
+      const text = typeof v === 'string' ? v : fmtVal(v)
+      copyText(text).catch(() => {}) // 写系统剪贴板（尽力而为，无手势可能失败，但返回值不受影响）
+    }
+    let fn
+    try {
+      // 首选：表达式 / IIFE（如 (() => {...})()）
+      fn = new Function('Math', 'M', 'T', 'console', 'copy', ...JS_SHADOW, '"use strict";\nreturn (\n' + code + '\n);')
+    } catch (e1) {
+      // 次选：语句体（需自己 return）
+      fn = new Function('Math', 'M', 'T', 'console', 'copy', ...JS_SHADOW, '"use strict";\n' + code)
+    }
+    const result = fn(Math, runJsMathKit(), T || {}, fakeConsole, copy, ...JS_SHADOW.map(() => undefined))
+    let out
+    if (result === undefined) out = null
+    else if (typeof result === 'string') out = result.length > 200000 ? result.slice(0, 200000) + '…[截断]' : result
+    else {
+      try { out = JSON.parse(JSON.stringify(result)) } catch (e) { out = String(result) }
+    }
+    return {ok: true, result: out, result_type: typeof result, logs, copied}
+  }
+
+  // ---- 项目读写 ----
+  listProjects = async () => {
+    const l = await fsLs(projRoot() + '/')
+    const out = []
+    for (const it of (l.items || [])) {
+      if (!it.dir) continue
+      try {
+        const d = JSON.parse(await fsText(projDir(it.name) + '/index.json'))
+        const scs = d.scenes || []
+        // 拆分项目：scenes 为引用数组，逐个子 json 读 duration 求和
+        let dur = 0
+        for (const s of scs) {
+          if (typeof s === 'string') {
+            try {dur += (+JSON.parse(await fsText(projDir(it.name) + '/' + s)).duration || 0)} catch (e) { }
+          } else dur += (+s.duration || 0)
+        }
+        out.push({name: it.name, title: d.title || it.name, duration: Math.round(dur * 10) / 10, scenes: scs.length})
+      } catch (e) {
+        // 无合法 index.json 的目录（exports/ screenshots/ 及其它杂物）不是项目，跳过
+      }
+    }
+    out.sort((a, b) => a.name.localeCompare(b.name))
+    projects = out
+    return out
+  }
+
+  loadAssets = async (d) => {
+    assets = {}
+    const stageEngine = $refs.stage?.$data?.engine
+    const refs = stageEngine ? stageEngine.assetRefs() : []
+    for (const ref of refs) {
+      try {
+        const r = await fsGet(projDir(curName) + '/' + ref)
+        // 文本文件（.json/.svg 等 OPFS 返回 string）也要转 dataURL——
+        // resolveAssetUrl 只认 data:/http/blob，裸文本会被当 URL fetch 而失败
+        if (r.content instanceof Blob) assets[ref] = await blobToDataURL(r.content)
+        else if (typeof r.content === 'string') assets[ref] = await blobToDataURL(new Blob([r.content], {type: r.mime || 'application/octet-stream'}))
+      } catch (e) {console.warn('asset missing:', ref, e)}
+    }
+  }
+
+  blobToDataURL = (blob) => new Promise((res, rej) => {
+    const fr = new FileReader()
+    fr.onload = () => res(fr.result)
+    fr.onerror = () => rej(fr.error || new Error('read blob failed'))
+    fr.readAsDataURL(blob)
+  })
+
+  openProject = async (name) => {
+    name = normName(name)
+    // 先解析场景引用（scenes 字符串 → 对象），再设 doc：拆分结构由此还原为内存对象数组
+    const raw = JSON.parse(await fsText(projIndex(name)))
+    const sr = await resolveSceneRefs(raw, (s) => fsText(projDir(name) + '/' + s))
+    const d = ensureTheme(raw)
+    curName = name
+    curTitle = d.title || name
+    doc = d
+    cur_split = sr.split
+    cur_refs = sr.refs
+    sel = {kind: 'none', sceneIndex: 0, elId: ''}
+    sceneVer++        // 换文档必须递增：时间轴/场景列表 keyed 行全部重建
+    saveState = '已保存'
+    try {localStorage.setItem('video_studio_last', name)} catch (e) { }
+    // 先装载以收集相对素材引用（openCase 同款顺序），再从本地加载为 dataURL（预览/导出共用）
+    // 关键：传 sandbox 读出的 doc 代理（而非裸 d）——vhtml copyBind 保证同一
+    // 代理对象贯穿后续赋值，stage 与父组件由此共享同一响应式图，
+    // 舞台拖拽写入才能被 inspector 感知、被 doSave 持久化。
+    $refs.stage.$data.setDoc(doc, {})
+    await loadAssets(d)
+    if (Object.keys(assets).length) $refs.stage.$data.setDoc(doc, assets)
+    snapProjectOpen(name)
+    setBaseline()
+    undoStack = []
+    redoStack = []
+    await refreshAssets()
+    showToast('已打开：' + curTitle)
+    return d
+  }
+
+  reloadProject = async () => {
+    if (!curName) return
+    const raw = JSON.parse(await fsText(projIndex(curName)))
+    const sr = await resolveSceneRefs(raw, (s) => fsText(projDir(curName) + '/' + s))
+    const d = ensureTheme(raw)
+    doc = d
+    cur_split = sr.split
+    cur_refs = sr.refs
+    curTitle = d.title || curName
+    // 选中态校验：元素/场景可能已被外部（AI）删除
+    if (sel.kind === 'element') {
+      const sc = d.scenes[sel.sceneIndex]
+      if (!sc || !(sc.elements || []).some((e) => e.id === sel.elId)) sel = {kind: 'none', sceneIndex: 0, elId: ''}
+    } else if (sel.kind === 'scene' && sel.sceneIndex >= d.scenes.length) {
+      sel = {kind: 'none', sceneIndex: 0, elId: ''}
+    }
+    sceneVer++        // 外部（AI）改过的文档结构未知，强制时间轴/场景列表重建
+    // 先装载收集素材引用，再加载 dataURL 后重挂（修复导出黑屏：素材必须 data: URL）
+    $refs.stage.$data.setDoc(doc, {})
+    await loadAssets(d)
+    if (Object.keys(assets).length) $refs.stage.$data.setDoc(doc, assets)
+    snapProjectOpen(curName)
+    setBaseline()
+    await refreshAssets()
+  }
+
+  newProject = async () => {
+    if (!storageReady()) {showToast('本地存储不可用，无法保存项目'); return }
+    const name = 'video-' + Date.now().toString(36)
+    const d = starterDoc()
+    d.title = '未命名视频'
+    await fsPut(projIndex(name), JSON.stringify(d, null, 2))
+    await openProject(name)
+    showToast('已新建：' + name)
+  }
+
+  openCase = async (id) => {
+    try {
+      const r = await fetch('cases/' + id + '/index.json')
+      if (!r.ok) throw new Error('样例不存在: ' + id)
+      const raw = await r.json()
+      // 样例可能为拆分结构（index.json + scenes/scene_N.json）：按引用逐个拉取
+      const sr = await resolveSceneRefs(raw, async (s) => {
+        const ar = await fetch('cases/' + id + '/' + s)
+        if (!ar.ok) throw new Error('HTTP ' + ar.status)
+        return await ar.text()
+      })
+      const d = ensureTheme(raw)
+      curName = ''
+      curTitle = d.title || id
+      doc = d
+      cur_split = sr.split
+      cur_refs = sr.refs
+      saved_scene_snap = {}
+      saved_index_snap = ''
+      sel = {kind: 'none', sceneIndex: 0, elId: ''}
+      sceneVer++        // 换文档必须递增：时间轴/场景列表 keyed 行全部重建
+      saveState = ''
+      assets = {}
+      assetFiles = []
+      // 先装载以收集相对素材引用，再从样例目录预载为 dataURL（预览/导出共用）
+      $refs.stage.$data.setDoc(doc, assets)
+      const refs = $refs.stage.$data.engine ? $refs.stage.$data.engine.assetRefs() : []
+      for (const ref of refs) {
+        try {
+          const ar = await fetch('cases/' + id + '/' + ref)
+          if (ar.ok) assets[ref] = await blobToDataURL(await ar.blob())
+        } catch (e) {console.warn('case asset missing:', ref, e)}
+      }
+      if (refs.length) $refs.stage.$data.setDoc(doc, assets)
+      setBaseline()
+      showCases = false
+      showToast('已加载样例：' + curTitle + '（只读，右侧可另存为项目）')
+    } catch (e) {showToast('加载样例失败：' + e.message)}
+  }
+
+  loadCases = async () => {
+    try {
+      const r = await fetch('cases/cases.json')
+      const list = await r.json()
+      cases = Array.isArray(list) ? list : (list.cases || [])
+    } catch (e) {cases = []}
+  }
+
+  saveAsProject = async () => {
+    if (!doc || curName) return
+    if (!storageReady()) {showToast('本地存储不可用，无法保存'); return }
+    const name = 'video-' + Date.now().toString(36)
+    // 样例若为拆分结构（scenes 含引用）则保留拆分写盘，否则内联单文件；新项目快照置空全量写
+    saved_scene_snap = {}
+    saved_index_snap = ''
+    await writeProject(name, doc)
+    await openProject(name)
+    showToast('已另存为项目：' + name + '，现在可以编辑了')
+  }
+
+  deleteProject = async (name) => {
+    // 删除前确认：项目目录（含素材/导出/截图）整删不可恢复
+    let ok = false
+    try { ok = await $message.confirm('确定删除项目「' + name + '」？项目文件与素材将一并删除，不可恢复。') } catch (e) { }
+    if (!ok) return
+    await rmDir(projDir(name))
+    if (curName === name) {doc = null; curName = ''; curTitle = ''; saveState = ''}
+    showToast('已删除：' + name)
+    await refreshProjects()
+  }
+
+  refreshProjects = async () => {
+    try {await listProjects()} catch (e) { }
+  }
+
+  safeTitle = () => String(curTitle || curName || 'video').replace(/[\\/:*?"<>|#%\s]+/g, '-').slice(0, 60)
+
+  downloadBlob = (blob, filename) => {
+    const u = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = u
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    setTimeout(() => URL.revokeObjectURL(u), 10000)
+  }
+
+  // ---- 编辑历史（undo/redo）与剪贴板 ----
+  undoStack = []        // 公开数组（vhtml 响应式，驱动按钮态）；写入走「拷贝→改→赋回」
+  redoStack = []
+  let lastJson = ''     // 上一次变更后的 doc 序列化（快照基准）
+  let clipboard = ''    // 元素 JSON（应用内剪贴板）
+
+  setBaseline = () => {lastJson = doc ? JSON.stringify(doc) : ''}
+
+  // 任何 doc 变更后调用：把「变更前」快照入 undo 栈
+  // tag 相同的连续变更（如方向键微调）在 1s 窗口内合并为一条历史
+  let lastTag = ''
+  let lastPushT = 0
+  pushHistory = (tag) => {
+    if (!doc) {lastJson = ''; return }
+    if (!curName) {setBaseline(); return }   // 样例只读，不入栈
+    const j = JSON.stringify(doc)
+    if (j === lastJson) return
+    const now = Date.now()
+    if (lastJson) {
+      const coalesce = tag && tag === lastTag && now - lastPushT < 1000
+      if (!coalesce) {
+        undoStack = undoStack.concat([lastJson]).slice(-100)
+        redoStack = []
+      }
+    }
+    lastJson = j
+    lastTag = tag || ''
+    lastPushT = now
+  }
+
+  applyJson = (j) => {
+    const d = ensureTheme(JSON.parse(j))
+    doc = d
+    curTitle = d.title || curName
+    sel = {kind: 'none', sceneIndex: 0, elId: ''}
+    sceneVer++
+    $refs.stage.$data.setDoc(doc, assets)
+    scheduleSave()
+  }
+
+  undoEdit = () => {
+    if (!undoStack.length || !curName) return
+    redoStack = redoStack.concat([lastJson])
+    lastJson = undoStack[undoStack.length - 1]
+    undoStack = undoStack.slice(0, -1)
+    applyJson(lastJson)
+  }
+
+  redoEdit = () => {
+    if (!redoStack.length || !curName) return
+    undoStack = undoStack.concat([lastJson])
+    lastJson = redoStack[redoStack.length - 1]
+    redoStack = redoStack.slice(0, -1)
+    applyJson(lastJson)
+  }
+
+  copyElement = () => {
+    if (sel.kind !== 'element' || !curName) return
+    const sc = doc.scenes[sel.sceneIndex]
+    if (!sc) return
+    const ids = sel.elIds && sel.elIds.length ? sel.elIds : [sel.elId]
+    const els = (sc.elements || []).filter((e) => ids.indexOf(e.id) >= 0)
+    if (!els.length) return
+    clipboard = JSON.stringify(els.length === 1 ? els[0] : els)
+    showToast('已复制 ' + els.length + ' 个元素')
+  }
+
+  pasteElement = () => {
+    if (!clipboard || !canEdit()) return
+    const parsed = JSON.parse(clipboard)
+    const list = Array.isArray(parsed) ? parsed : [parsed]
+    const i = activeSceneIdx()
+    const news = []
+    spliceEls(doc.scenes[i], (a) => {
+      for (const src of list) {
+        const el = JSON.parse(JSON.stringify(src))
+        el.id = (el.type || 'el') + '-' + uid()
+        el.x = (+el.x || 0) + 24
+        el.y = (+el.y || 0) + 24
+        a.push(el)
+        news.push(el.id)
+      }
+    })
+    if (!news.length) return
+    sel = {kind: 'element', sceneIndex: i, elId: news[news.length - 1], elIds: news}
+    onDocChange()
+    showToast('已粘贴 ' + news.length + ' 个元素')
+  }
+
+  // 方向键微调选中元素（1px，Shift=10px；连续微调合并为一条历史）
+  nudgeSelected = (dx, dy) => {
+    const sc = doc.scenes[sel.sceneIndex]
+    if (!sc) return
+    const r1 = (v) => Math.round(v * 10) / 10
+    let hit = false
+    for (const el of (sc.elements || [])) {
+      if (sel.elIds.indexOf(el.id) < 0) continue
+      // x/y 关键帧轨道驱动位置的元素：平移轨道
+      if (Array.isArray(el.keyframes) && el.keyframes.some((k) => k.x != null || k.y != null)) {
+        el.keyframes = el.keyframes.map((k) => {
+          const c = Object.assign({}, k)
+          if (c.x != null) c.x = r1(c.x + dx)
+          if (c.y != null) c.y = r1(c.y + dy)
+          return c
+        })
+      } else {
+        el.x = r1((+el.x || 0) + dx)
+        el.y = r1((+el.y || 0) + dy)
+      }
+      hit = true
+    }
+    if (!hit) return
+    $refs.stage.$data.refreshFrame()
+    pushHistory('nudge')
+    scheduleSave()
+  }
+
+  // 场景跳转：d=-1 上一场景起点，d=1 下一场景起点
+  jumpScene = (d) => {
+    const st = $refs.stage && $refs.stage.$data
+    if (!st || !st.doc || !st.scenes || !st.scenes.length) return
+    const fr = st.engine.frame
+    if (d > 0) {
+      const nx = st.scenes.find((s) => s.start > fr)
+      st.seekFrame(nx ? nx.start : st.totalFrames - 1)
+    } else {
+      let at = st.scenes[0]
+      for (const s of st.scenes) {if (s.start < fr) at = s; else break}
+      st.seekFrame(at.start)
+    }
+  }
+
+  // ---- 保存 ----
+  scheduleSave = () => {
+    if (!curName || !storageReady()) return
+    saveState = '未保存'
+    clearTimeout(saveTimer)
+    saveTimer = setTimeout(doSave, 600)
+  }
+  // 写盘（对齐 ppt_studio 分页拆分）：拆分结构（cur_split）按引用逐场景写回，
+  // index.json 保持引用数组；编辑器新增/复制的场景自动分配 scenes/scene_N.json；
+  // 不再被引用的旧分场景文件同步清理。非拆分结构整体单写。doc 先深拷贝再处理，不污染 vhtml 代理。
+  writeProject = async (name, doc) => {
+    const out = JSON.parse(JSON.stringify(doc))
+    if (!cur_split) {
+      const text = JSON.stringify(out, null, 2)
+      if (text !== saved_index_snap) {
+        await fsPut(projIndex(name), text)
+        saved_index_snap = text
+      }
+      return
+    }
+    const dir = projDir(name) + '/'
+    const idCount = {}
+    out.scenes.forEach((s) => {if (s && s.id) idCount[s.id] = (idCount[s.id] || 0) + 1})
+    const used = new Set()
+    const nextRefs = {}
+    const refs = []
+    for (let i = 0; i < out.scenes.length; i++) {
+      const s = out.scenes[i]
+      // 加载失败的占位场景：不写文件，原引用字符串回写（补写文件后重新打开即可恢复）
+      if (s && s.broken && s.brokenRef) {
+        used.add(s.brokenRef)
+        refs.push(s.brokenRef)
+        continue
+      }
+      // 同 id 被复制出多份时不写引用（避免互相覆盖），该场景内联
+      let ref = s && s.id && idCount[s.id] === 1 ? cur_refs[s.id] : null
+      if (ref && used.has(ref)) ref = null
+      if (!ref) ref = 'scenes/scene_' + (i + 1) + '.json'
+      if (used.has(ref)) {refs.push(s); continue}
+      used.add(ref)
+      // 增量保存：序列化内容没变的场景跳过写文件
+      const text = JSON.stringify(s, null, 2)
+      if (saved_scene_snap[ref] !== text) {
+        await fsPut(dir + ref, text)
+        saved_scene_snap[ref] = text
+      }
+      if (s && s.id) nextRefs[s.id] = ref
+      refs.push(ref)
+    }
+    out.scenes = refs
+    cur_refs = nextRefs
+    const indexText = JSON.stringify(out, null, 2)
+    const indexChanged = indexText !== saved_index_snap
+    if (indexChanged) {
+      await fsPut(projIndex(name), indexText)
+      saved_index_snap = indexText
+    }
+    // 结构有变化才清理：删除不再被引用的旧分场景文件 + 过期快照
+    if (indexChanged) {
+      Object.keys(saved_scene_snap).forEach((k) => {if (!used.has(k)) delete saved_scene_snap[k]})
+      try {
+        const node = await fsLs(dir + 'scenes/')
+        if (node && node.ok && Array.isArray(node.items)) {
+          for (const it of node.items) {
+            if (!it.dir && /\.json$/i.test(it.name) && !used.has('scenes/' + it.name)) {
+              try {await fsRm(dir + 'scenes/' + it.name)} catch (e) { }
+            }
+          }
+        }
+      } catch (e) { }
+    }
+  }
+  doSave = async () => {
+    if (!curName || !storageReady()) return
+    saveState = '保存中…'
+    try {
+      await writeProject(curName, doc)
+      saveState = '已保存'
+    } catch (e) {
+      console.error('save failed', e)
+      saveState = '保存失败'
+    }
+  }
+
+  // ---- 编辑数据流（§2.3）----
+  canEdit = () => {
+    if (!doc) return false
+    if (!curName) {
+      showToast('样例为只读：请先在右侧「另存为项目」')
+      return false
+    }
+    return true
+  }
+
+  onDocChange = () => {
+    curTitle = (doc && doc.title) || curName
+    pushHistory()
+    $refs.stage.$data.refreshFrame()
+    scheduleSave()
+  }
+  onStageChange = () => {
+    pushHistory()
+    scheduleSave()
+  }
+
+  // ---- 选中模型 ----
+  activeSceneIdx = () => {
+    if (!doc) return 0
+    let acc = 0
+    for (let i = 0; i < doc.scenes.length; i++) {
+      const fr = Math.max(1, Math.round((+doc.scenes[i].duration || 1) * doc.fps))
+      if (curFrame < acc + fr) return i
+      acc += fr
+    }
+    return Math.max(0, doc.scenes.length - 1)
+  }
+
+  sceneStartFrame = (i) => {
+    let acc = 0
+    for (let k = 0; k < i; k++) acc += Math.max(1, Math.round((+doc.scenes[k].duration || 1) * doc.fps))
+    return acc
+  }
+
+  onPickScene = (i) => {
+    if (!doc) return
+    i = Math.max(0, Math.min(i, doc.scenes.length - 1))
+    sel = {kind: 'scene', sceneIndex: i, elId: ''}
+    $refs.stage.$data.seekFrame(sceneStartFrame(i))
+  }
+  onStageSelect = (s) => {
+    if (s && s.kind === 'element') {
+      sel = {kind: 'element', sceneIndex: s.sceneIndex, elId: s.id, elIds: s.ids || [s.id]}
+    } else {
+      sel = {kind: 'scene', sceneIndex: activeSceneIdx(), elId: '', elIds: []}
+    }
+  }
+  onPickEl = (p) => {
+    // 时间轴多轨道后可跨场景选中：payload 可为 {id, scene} 或裸 id
+    const id = typeof p === 'string' ? p : p && p.id
+    if (!id) return
+    const si = (p && p.scene != null) ? Math.max(0, Math.min(p.scene, doc.scenes.length - 1)) : activeSceneIdx()
+    sel = {kind: 'element', sceneIndex: si, elId: id, elIds: [id]}
+  }
+  onSeek = (f) => {
+    $refs.stage.$data.seekFrame(f)
+  }
+  selNone = () => {
+    if (!doc) return
+    sel = {kind: 'none', sceneIndex: activeSceneIdx(), elId: ''}
+  }
+
+  // ---- 场景操作 ----
+  // 注意：vhtml Wrap 代理数组上直接 splice 会复制插入项（已踩坑）——
+  // 统一走「拷贝 → 改 → 赋回」模式（赋值经 copyBind 数组合并，安全可靠）
+  const spliceScenes = (fn) => {
+    const arr = doc.scenes.slice()
+    fn(arr)
+    doc.scenes = arr
+  }
+  const spliceEls = (sc, fn) => {
+    const arr = (sc.elements || []).slice()
+    fn(arr)
+    sc.elements = arr
+  }
+  addScene = () => {
+    if (!canEdit()) return
+    const i = sel.sceneIndex != null ? sel.sceneIndex : doc.scenes.length - 1
+    const at = Math.min(i, doc.scenes.length - 1) + 1
+    spliceScenes((a) => a.splice(at, 0, {
+      id: 's' + uid(), duration: 3, transition: 'fade', transitionIn: 0.6,
+      elements: [],
+    }))
+    sceneVer++
+    onPickScene(at)
+    onDocChange()
+  }
+  dupScene = (i) => {
+    if (!canEdit()) return
+    const c = JSON.parse(JSON.stringify(doc.scenes[i]))
+    c.id = 's' + uid()
+    spliceScenes((a) => a.splice(i + 1, 0, c))
+    sceneVer++
+    onPickScene(i + 1)
+    onDocChange()
+  }
+  delScene = (i) => {
+    if (!canEdit() || doc.scenes.length <= 1) return
+    spliceScenes((a) => a.splice(i, 1))
+    sceneVer++
+    const ni = Math.max(0, Math.min(i, doc.scenes.length - 1))
+    onPickScene(ni)
+    onDocChange()
+  }
+  moveScene = ({i, d}) => {
+    if (!canEdit()) return
+    const j = i + d
+    if (j < 0 || j >= doc.scenes.length) return
+    spliceScenes((a) => {
+      const t = a[i]
+      a.splice(i, 1)
+      a.splice(j, 0, t)
+    })
+    sceneVer++
+    onPickScene(j)
+    onDocChange()
+  }
+
+  // ---- 元素操作 ----
+  makeElement = (type, sub) => {
+    const W = doc.size.width, H = doc.size.height
+    const id = (type === 'shape' ? sub : type) + '-' + uid()
+    const base = {id, type, x: Math.round(W / 2 - 160), y: Math.round(H / 2 - 45), w: 320, h: 90}
+    if (type === 'text') return Object.assign(base, {
+      html: '双击编辑文本', fontSize: 42, fontWeight: 600, color: doc.theme.color,
+      align: 'center', valign: 'middle', fx: {enter: 'fade-up', enterDur: 0.6, delay: 0.2},
+    })
+    if (type === 'shape') {
+      const o = Object.assign(base, {shape: sub || 'rect', fill: doc.theme.accent, w: 240, h: 170})
+      if (sub === 'rect') o.radius = 14
+      if (sub === 'arrow') {o.direction = 'right'; o.h = 90}
+      if (sub === 'triangle') {o.w = 200; o.h = 180}
+      return o
+    }
+    if (type === 'image') return Object.assign(base, {w: 360, h: 220, src: '', fit: 'contain'})
+    if (type === 'chart') return Object.assign(base, {
+      w: 560, h: 340, x: Math.round(W / 2 - 280), y: Math.round(H / 2 - 170),
+      option: {xAxis: {data: ['Q1', 'Q2', 'Q3', 'Q4']}, series: [{type: 'bar', data: [120, 210, 340, 520]}]},
+    })
+    if (type === 'table') return Object.assign(base, {
+      w: 480, h: 220, x: Math.round(W / 2 - 240), y: Math.round(H / 2 - 110),
+      columns: [{w: 0.6}, {w: 0.4}],
+      rows: [
+        {cells: [{html: '名称', bold: true}, {html: '数值', bold: true}]},
+        {cells: [{html: '项目 A'}, {html: '12'}]},
+        {cells: [{html: '项目 B'}, {html: '34'}]},
+      ],
+      header: true,
+      style: {fontSize: 16, color: '#e2e8f0', headerBg: doc.theme.accent, borderColor: 'rgba(255,255,255,0.15)'},
+    })
+    return base
+  }
+
+  onAddEl = ({type, sub}) => {
+    if (!canEdit() || !doc) return
+    const i = activeSceneIdx()
+    const sc = doc.scenes[i]
+    if (!sc) return
+    const el = makeElement(type, sub)
+    spliceEls(sc, (a) => a.push(el))
+    sel = {kind: 'element', sceneIndex: i, elId: el.id}
+    onDocChange()
+    showToast('已添加元素：' + el.id)
+  }
+
+  delElement = (id) => delElements([id])
+
+  delElements = (ids) => {
+    if (!canEdit() || !ids || !ids.length) return
+    const sc = doc.scenes[sel.sceneIndex]
+    if (!sc) return
+    spliceEls(sc, (a) => {
+      for (const id of ids) {
+        const i = a.findIndex((e) => e.id === id)
+        if (i >= 0) a.splice(i, 1)
+      }
+    })
+    sel = {kind: 'scene', sceneIndex: sel.sceneIndex, elId: '', elIds: []}
+    onDocChange()
+  }
+
+  dupElement = (id) => dupElements([id])
+
+  dupElements = (ids) => {
+    if (!canEdit() || !ids || !ids.length) return
+    const sc = doc.scenes[sel.sceneIndex]
+    if (!sc) return
+    const news = []
+    spliceEls(sc, (a) => {
+      for (const id of ids) {
+        const el = a.find((e) => e.id === id)
+        if (!el) continue
+        const c = JSON.parse(JSON.stringify(el))
+        c.id = (c.type || 'el') + '-' + uid()
+        c.x = (+c.x || 0) + 24
+        c.y = (+c.y || 0) + 24
+        a.push(c)
+        news.push(c.id)
+      }
+    })
+    if (!news.length) return
+    sel = {kind: 'element', sceneIndex: sel.sceneIndex, elId: news[news.length - 1], elIds: news}
+    onDocChange()
+  }
+
+  // 场景拖拽排序：from → to（移除后的插入下标）
+  moveSceneTo = ({from, to}) => {
+    if (!canEdit()) return
+    to = Math.max(0, Math.min(to, doc.scenes.length - 1))
+    if (from === to) return
+    spliceScenes((a) => {
+      const t = a[from]
+      a.splice(from, 1)
+      a.splice(to, 0, t)
+    })
+    sceneVer++
+    onPickScene(to)
+    onDocChange()
+  }
+
+  // ---- 素材上传 ----
+  // 批量上传到 assets/：保留原始文件名（清洗非法字符），重名自动加 -1/-2 后缀；
+  // 写入后预热 dataURL（预览/导出共用）。返回相对引用数组。
+  uploadAssets = async (files) => {
+    if (!curName || !storageReady()) throw new Error('请先新建或另存为项目')
+    const list = Array.from(files || [])
+    if (!list.length) return []
+    // 一次列目录建名字集合，去重分配
+    const l = await fsLs(projDir(curName) + '/assets/')
+    const names = new Set((l.items || []).map((i) => i.name))
+    const refs = []
+    for (const file of list) {
+      const raw = String(file.name || '').replace(/[\\/:*?"<>|#%\s]+/g, '-').replace(/^-+|-+$/g, '')
+      const dot = raw.lastIndexOf('.')
+      let base = dot > 0 ? raw.slice(0, dot) : raw
+      let ext = dot > 0 ? raw.slice(dot + 1).toLowerCase().replace(/[^a-z0-9]/g, '') : ''
+      if (!ext) {
+        const m = /[a-z0-9.+-]+\/([a-z0-9.+-]+)/i.exec(file.type || '')
+        if (m) ext = m[1].toLowerCase().replace('jpeg', 'jpg')
+      }
+      base = base || 'asset'
+      ext = ext || 'bin'
+      let name = base + '.' + ext
+      let n = 1
+      while (names.has(name)) name = base + '-' + (n++) + '.' + ext
+      names.add(name)
+      const ref = 'assets/' + name
+      await fsPut(projDir(curName) + '/' + ref, file)
+      const dataUrl = await blobToDataURL(file)
+      assets[ref] = dataUrl
+      refs.push(ref)
+    }
+    // 上传后同步舞台素材映射（stage/engine 持有的 assets 引用可能还是旧空对象）
+    const st = $refs.stage && $refs.stage.$data
+    if (st) {
+      if (st.engine) st.engine.assets = assets
+      if (st.refreshFrame) st.refreshFrame()
+    }
+    return refs
+  }
+  uploadAsset = async (file) => {
+    const refs = await uploadAssets([file])
+    refreshAssets()
+    return refs[0]
+  }
+
+  // ---- 素材管理（左侧素材 tab）----
+  const assetKind = (name) => {
+    const ext = String(name.split('.').pop() || '').toLowerCase()
+    if (/^(png|jpe?g|gif|webp|svg|avif|bmp|ico)$/.test(ext)) return 'image'
+    if (/^(mp3|wav|ogg|m4a|flac|aac)$/.test(ext)) return 'audio'
+    if (/^(mp4|webm|mov|m4v|avi)$/.test(ext)) return 'video'
+    if (/^(ttf|otf|woff2?)$/.test(ext)) return 'font'
+    return 'other'
+  }
+  refreshAssets = async () => {
+    if (!curName) {assetFiles = []; return }
+    const l = await fsLs(projDir(curName) + '/assets/')
+    assetFiles = (l.items || []).filter((i) => !i.dir).map((i) => ({
+      name: i.name, ref: 'assets/' + i.name, size: i.size || 0, mtime: i.mtime || 0, kind: assetKind(i.name),
+    }))
+  }
+  onUploadAssets = async (files) => {
+    try {
+      const refs = await uploadAssets(files)
+      await refreshAssets()
+      showToast('已上传 ' + refs.length + ' 个素材')
+    } catch (e) {showToast('上传失败：' + ((e && e.message) || e))}
+  }
+  onDelAsset = async (ref) => {
+    // 删除前确认：素材文件从项目目录移除，不可恢复
+    let ok = false
+    try { ok = await $message.confirm('确定删除素材「' + String(ref).replace(/^assets\//, '') + '」？素材文件将被移除，不可恢复。') } catch (e) { }
+    if (!ok) return
+    try {
+      await fsRm(projDir(curName) + '/' + ref)
+      delete assets[ref]
+      await refreshAssets()
+      showToast('已删除：' + ref)
+    } catch (e) {showToast('删除失败：' + ((e && e.message) || e))}
+  }
+  onPickAsset = (ref) => {
+    copyText(ref)
+    showToast('已复制引用：' + ref)
+  }
+
+  // ---- 素材插入（拖到舞台/时间轴 或 双击素材）----
+  // 确保素材 dataURL 在 assets map（上传已预热；AI 下载/外部引用的补加载），返回是否可用
+  ensureAssetLoaded = async (ref) => {
+    if (assets[ref]) return true
+    try {
+      const r = await fsGet(projDir(curName) + '/' + ref)
+      if (r.content instanceof Blob) assets[ref] = await blobToDataURL(r.content)
+      else if (typeof r.content === 'string') assets[ref] = await blobToDataURL(new Blob([r.content], {type: r.mime || 'application/octet-stream'}))
+      else return false
+    } catch (e) {return false}
+    const st = $refs.stage && $refs.stage.$data
+    if (st) {if (st.engine) st.engine.assets = assets}
+    return true
+  }
+  // 按素材类型创建元素：image → image；video → media video；audio → media audio。
+  // 不带原生 controls（确定性帧渲染 + overlay 接管播放）；默认不静音（导出混音带原声）
+  assetToElement = (ref, kind) => {
+    if (kind !== 'video' && kind !== 'audio') kind = 'image'
+    const el = makeElement('image')
+    el.id = kind + '-' + uid()
+    el.src = ref
+    if (kind === 'video') Object.assign(el, {type: 'media', kind: 'video', w: 480, h: 270, muted: false, fit: 'contain', start: 0, trimStart: 0, trimEnd: -1})
+    else if (kind === 'audio') Object.assign(el, {type: 'media', kind: 'audio', w: 320, h: 56, muted: false, start: 0, trimStart: 0, trimEnd: -1})
+    return el
+  }
+  onDropAsset = async ({ref, x, y, scene, start}) => {
+    if (!canEdit() || !doc || !ref) return
+    const i = scene != null ? Math.max(0, Math.min(scene, doc.scenes.length - 1)) : activeSceneIdx()
+    const sc = doc.scenes[i]
+    if (!sc) return
+    const meta = assetFiles.find((f) => f.ref === ref)
+    const kind = meta ? meta.kind : assetKind(ref)
+    if (kind !== 'image' && kind !== 'video' && kind !== 'audio') {showToast('暂不支持插入该类型素材：' + kind); return }
+    const ok = await ensureAssetLoaded(ref)
+    if (!ok) {showToast('素材缺失：' + ref); return }
+    const el = assetToElement(ref, kind)
+    if (start != null && isFinite(+start)) el.start = Math.max(0, +start)
+    if (x == null || y == null) {
+      // 拖到时间轴/双击：场景中心
+      el.x = Math.round(doc.size.width / 2 - el.w / 2)
+      el.y = Math.round(doc.size.height / 2 - el.h / 2)
+    } else {
+      el.x = Math.round(x - el.w / 2)
+      el.y = Math.round(y - el.h / 2)
+    }
+    el.x = Math.max(0, Math.min(el.x, doc.size.width - el.w))
+    el.y = Math.max(0, Math.min(el.y, doc.size.height - el.h))
+    spliceEls(sc, (a) => a.push(el))
+    sel = {kind: 'element', sceneIndex: i, elId: el.id, elIds: [el.id]}
+    onDocChange()
+    showToast('已插入素材：' + ref)
+  }
+  onInsertAsset = (ref) => onDropAsset({ref})
+  const copyText = async (t) => {
+    try {await navigator.clipboard.writeText(t)} catch (e) {
+      const ta = document.createElement('textarea')
+      ta.value = t
+      document.body.appendChild(ta)
+      ta.select()
+      try {document.execCommand('copy')} catch (e2) { }
+      ta.remove()
+    }
+  }
+
+  // ---- 导出 ----
+  const even2 = (v) => Math.max(16, Math.round((+v || 16) / 2) * 2)
+  // 目标分辨率：orig=文档原始；1080/720/480=按文档宽高比缩放（偶数对齐 H.264）；custom=自定义
+  exSize = () => {
+    const dw = doc ? doc.size.width : 1280, dh = doc ? doc.size.height : 720
+    if (exRes === 'custom') return {w: even2(exW || dw), h: even2(exH || dh)}
+    if (exRes === 'orig') return {w: even2(dw), h: even2(dh)}
+    const h = even2(exRes)
+    return {w: even2((dw / dh) * h), h}
+  }
+  exFpsOf = () => (exFps === 'orig' ? (doc ? doc.fps : 30) : +exFps || 30)
+  // 与 render.js estimateBitrate 同式（码率 bps）
+  const exBitrateEst = (w, h, fps, q) => {
+    const bpp = {low: 0.06, medium: 0.12, high: 0.22}[q] || 0.12
+    return Math.max(500000, Math.min(40000000, Math.round(w * h * fps * bpp)))
+  }
+  exSummary = () => {
+    const st = $refs.stage && $refs.stage.$data
+    const total = st && st.totalFrames ? st.totalFrames : 0
+    const fps = exFpsOf()
+    const {w, h} = exSize()
+    // 时长按文档 fps 恒定；帧数按导出 fps 重算（60fps 导出 = 文档时长 × 60）
+    const docFps = st && st.engine ? st.engine.doc.fps : fps
+    const dur = total / docFps
+    const outF = Math.max(1, Math.round(dur * fps))
+    const mb = (exBitrateEst(w, h, fps, exQuality) * dur + 128000 * dur) / 8 / 1048576
+    return '时长 ' + dur.toFixed(1) + 's · ' + outF + 'f · ' + w + '×' + h + '@' + fps + ' · 约 ' + mb.toFixed(1) + ' MB'
+  }
+  doExport = async (opts) => {
+    const {exportVideo} = await import('./video/render.js')
+    exporting = true
+    showCases = false
+    showProjects = false
+    showExport = false
+    try {
+      const engine = $refs.stage.$data.engine
+      const blob = await exportVideo(engine, {
+        format: opts.format || 'mp4',
+        width: opts.width || 0,
+        height: opts.height || 0,
+        fps: opts.fps || 0,
+        quality: opts.quality || 'medium',
+        bitrate: opts.bitrate,
+        onProgress: (p) => {
+          $refs.stage.$data.setExporting(true, p.pct, p.phase === 'audio' ? '混音与封装…' : '渲染帧 ' + p.frame + '/' + p.total)
+        },
+      })
+      return blob
+    } finally {
+      exporting = false
+      $refs.stage.$data.setExporting(false)
+    }
+  }
+
+  // 导出文件扩展名（与格式对应）
+  const exExt = (format) => format === 'wav' ? 'wav' : format === 'mp4' ? 'mp4' : 'webm'
+  // 对话框「开始导出」：按当前配置导出 + 本地产物存档 + 触发下载
+  startExport = async () => {
+    if (!doc || exporting) return
+    const {w, h} = exSize()
+    const format = exFormat
+    try {
+      showToast('开始导出…')
+      const blob = await doExport({format, width: w, height: h, fps: exFpsOf(), quality: exQuality})
+      const fname = safeTitle() + '.' + exExt(format)
+      downloadBlob(blob, fname)
+      if (storageReady()) {
+        try {
+          await fsPut(projRoot() + '/exports/' + fname, blob)
+        } catch (e) {console.warn('export saved to local fs failed:', e)}
+      }
+      showToast('导出完成：' + fname)
+    } catch (e) {
+      console.error(e)
+      showToast('导出失败：' + (e && e.message ? e.message : e))
+    }
+  }
+
+  initPage()
+</script>
+<script>
+  // rAF 循环：同步舞台当前帧 → 顶层标量 curFrame（驱动时间轴 playhead 与属性面板）
+  const frameLoop = () => {
+    const st = $refs.stage
+    curFrame = (st && st.$data.engine && st.$data.engine.frame) || 0
+    requestAnimationFrame(frameLoop)
+  }
+  requestAnimationFrame(frameLoop)
+
+  // 快捷键（焦点在输入控件时不生效；Cmd/Ctrl 组合键除外）
+  window.addEventListener('keydown', (e) => {
+    const t = e.target
+    const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)
+    const meta = e.metaKey || e.ctrlKey
+    const k = e.key
+
+    // ---- Cmd/Ctrl 组合：undo/redo + 剪贴板 ----
+    if (meta && !typing) {
+      const lk = k.toLowerCase()
+      if (lk === 'z') {e.preventDefault(); e.shiftKey ? redoEdit() : undoEdit(); return }
+      if (lk === 'y') {e.preventDefault(); redoEdit(); return }
+      if (lk === 'c') {copyElement(); return }
+      if (lk === 'v') {pasteElement(); return }
+      if (lk === 'd') {e.preventDefault(); if (sel.kind === 'element') dupElement(sel.elId); return }
+    }
+    if (typing) return
+
+    const st = $refs.stage
+    if (e.code === 'Space') {
+      e.preventDefault()
+      if (st && st.$data.doc) st.$data.togglePlay()
+      return
+    }
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      if (!doc || !curName) return
+      e.preventDefault()
+      if (sel.kind === 'element') delElements(sel.elIds && sel.elIds.length ? sel.elIds : [sel.elId])
+      else if (sel.kind === 'scene') delScene(sel.sceneIndex)
+      return
+    }
+    if (e.key === 'Escape') {selNone(); return }
+
+    // ---- 选中元素时方向键 = 微调（1px，Shift=10px）----
+    if (sel.kind === 'element' && sel.elIds && sel.elIds.length && curName &&
+      (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+      e.preventDefault()
+      const d = e.shiftKey ? 10 : 1
+      nudgeSelected(
+        e.key === 'ArrowLeft' ? -d : e.key === 'ArrowRight' ? d : 0,
+        e.key === 'ArrowUp' ? -d : e.key === 'ArrowDown' ? d : 0,
+      )
+      return
+    }
+
+    // ---- 走带控制（Remotion 风格）----
+    if (!st || !st.$data.doc || exporting) return
+    const S = st.$data
+    if (e.key === 'ArrowLeft') {e.preventDefault(); S.stepFrame(e.shiftKey ? -10 : -1)}
+    else if (e.key === 'ArrowRight') {e.preventDefault(); S.stepFrame(e.shiftKey ? 10 : 1)}
+    else if (e.key === 'Home') {e.preventDefault(); S.seekFrame(0)}
+    else if (e.key === 'End') {e.preventDefault(); S.seekFrame(S.totalFrames - 1)}
+    else if (e.key === 'ArrowUp') {e.preventDefault(); jumpScene(-1)}
+    else if (e.key === 'ArrowDown') {e.preventDefault(); jumpScene(1)}
+    else if (k === 'j' || k === 'J') {S.shuttle(-1)}
+    else if (k === 'k' || k === 'K') {S.shuttle(0)}
+    else if (k === 'l' || k === 'L') {S.shuttle(1)}
+  })
+</script>
+
+</html>
