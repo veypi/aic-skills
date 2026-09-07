@@ -10,6 +10,7 @@
 !code_review/
 !git_commit/
 !video_studio/
+!3d_maker/
 
 *.sqlite
 *.zip

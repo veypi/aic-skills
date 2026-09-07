@@ -1,0 +1,1503 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Maker</title>
+  <style>
+    /* 布局：canvas 全铺满底；header / footer / 右侧面板绝对定位浮于其上，
+       全部透明背景 + 空白处 pointer-events 穿透，不遮挡、不影响底层模型交互。 */
+    body {
+      position: relative;
+      height: 100%;
+      width: 100%;
+      min-height: 480px;
+      padding: 0 !important;
+      /* 覆盖宿主默认留白，让画布充满内容区 */
+      overflow: hidden;
+    }
+
+    /* 核心内容：3D 画布，全局占满并在后方显示模型 */
+    #gl {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      outline: none;
+    }
+
+    .panel {
+      position: absolute;
+      z-index: 10;
+      background: transparent;
+      pointer-events: none;
+      /* 面板空白区域不拦截画布的轨道操作 */
+      color: var(--text-color);
+      font-size: var(--font-size-sm);
+    }
+
+    .panel :is(button, select, input, a, .bar, .pop, section, .st) {
+      pointer-events: auto;
+    }
+
+    .p-top {
+      top: var(--spacing-sm);
+      left: var(--spacing-sm);
+      right: var(--spacing-sm);
+      z-index: 30;
+      /* 让弹出面板的层叠高于左右侧面板 */
+    }
+
+    .p-bottom {
+      bottom: var(--spacing-sm);
+      left: var(--spacing-sm);
+      right: var(--spacing-sm);
+    }
+
+    .p-right {
+      right: var(--spacing-sm);
+      top: calc(var(--hh, 44px) + 14px);
+      bottom: 52px;
+      width: 250px;
+      overflow-y: auto;
+    }
+
+    /* ---------- 手机模式：右侧面板全宽 ---------- */
+    @media (max-width: 760px) {
+
+      .p-right {
+        left: var(--spacing-sm);
+        right: var(--spacing-sm);
+        width: auto;
+      }
+    }
+
+    /* 面板背景全透明：融入底层画布；仅弹出对话框保留半透明底以保证可读 */
+    .bar,
+    .p-right section,
+    .st {
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-lg);
+      box-shadow: none;
+    }
+
+    .pop {
+      background: color-mix(in srgb, var(--bg-color) 62%, transparent);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* ---------- 顶部工具栏 ---------- */
+    .bar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 5px 8px;
+    }
+
+    .grp {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .sep {
+      width: 1px;
+      height: 18px;
+      background: var(--border-color);
+      margin: 0 4px;
+    }
+
+    .sp {
+      flex: 1;
+    }
+
+    .bar button,
+    .bar select,
+    .pop select {
+      font: inherit;
+      color: var(--text-color);
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: var(--radius-md);
+      padding: 4px 8px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .bar button:hover,
+    .btns button:hover {
+      background: color-mix(in srgb, var(--text-color) 8%, transparent);
+    }
+
+    .bar button.on {
+      color: var(--color-primary);
+      border-color: var(--color-primary);
+      background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    }
+
+    .bar select,
+    .pop select {
+      border-color: var(--border-color);
+    }
+
+    /* ---------- 内核加载进度条（header 中间） ---------- */
+    .kload {
+      flex: 1 1 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-width: 0;
+      padding: 0 10px;
+    }
+
+    .kload .ktext {
+      color: var(--text-color-tertiary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .kload .kbar {
+      flex: 0 1 200px;
+      width: 200px;
+      height: 4px;
+      background: color-mix(in srgb, var(--text-color) 14%, transparent);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .kload .kbar i {
+      display: block;
+      height: 100%;
+      width: 0;
+      background: var(--color-primary);
+      border-radius: 2px;
+      transition: width var(--transition-base);
+    }
+
+    .kload .kpct {
+      flex: 0 0 34px;
+      text-align: right;
+      font-family: var(--font-mono);
+      font-size: var(--font-size-xs);
+      color: var(--text-color-tertiary);
+    }
+
+    /* ---------- 弹出面板（剖切 / 设置，挂在 header 内） ---------- */
+    .pop {
+      position: absolute;
+      top: calc(100% + 6px);
+      z-index: 20;
+      min-width: 230px;
+      padding: 10px 12px;
+    }
+
+    .pop.left {
+      left: 0;
+    }
+
+    .pop.right {
+      right: 0;
+    }
+
+    .pop h4,
+    .p-right h4 {
+      margin: 0 0 8px;
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-semibold);
+      color: var(--text-color-secondary);
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 3px 0;
+    }
+
+    .row label {
+      flex: 0 0 auto;
+      max-width: 92px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text-color-tertiary);
+    }
+
+    .row input[type="range"] {
+      flex: 1 1 auto;
+      min-width: 40px;
+      accent-color: var(--color-primary);
+    }
+
+    .row input[type="number"] {
+      flex: 0 0 60px;
+      width: 60px;
+      padding: 2px 4px;
+      font-size: var(--font-size-xs);
+      color: var(--text-color);
+      background: color-mix(in srgb, var(--text-color) 6%, transparent);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+    }
+
+    .row input[type="color"] {
+      width: 40px;
+      height: 24px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .row .val {
+      flex: 0 0 48px;
+      text-align: right;
+      font-family: var(--font-mono);
+      font-size: var(--font-size-xs);
+    }
+
+    .chk {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      color: var(--text-color-secondary);
+    }
+
+    /* ---------- 会话文件弹出列表 ---------- */
+    .fhead {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .fhead h4 {
+      margin: 0;
+    }
+
+    .fhead button,
+    .fhead a {
+      font: inherit;
+      color: var(--text-color-tertiary);
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: var(--radius-md);
+      padding: 2px 8px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: color var(--transition-fast), background var(--transition-fast);
+    }
+
+    .fhead button:hover,
+    .fhead a:hover {
+      color: var(--color-primary);
+      background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    }
+
+    .flist {
+      max-height: 280px;
+      overflow-y: auto;
+      margin-top: 8px;
+    }
+
+    .fitem {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 5px 8px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: background var(--transition-fast), transform var(--transition-fast);
+    }
+
+    .fitem:hover {
+      background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    }
+
+    .fitem:active {
+      transform: scale(0.98);
+    }
+
+    .fitem .fname {
+      flex: 1 1 auto;
+      min-width: 0;
+      font-family: var(--font-mono);
+      font-size: var(--font-size-xs);
+      color: var(--text-color);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .fitem .fmeta {
+      flex: 0 0 auto;
+      display: flex;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-color-tertiary);
+    }
+
+    .fempty {
+      padding: 8px;
+      font-size: var(--font-size-xs);
+      color: var(--text-color-tertiary);
+    }
+
+    /* ---------- 部件树 ---------- */
+    .pfilter {
+      width: 100%;
+      box-sizing: border-box;
+      margin: 4px 0;
+      padding: 4px 8px;
+      font-size: var(--font-size-xs);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--text-color);
+    }
+    .tree {
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    .titem {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 6px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: background var(--transition-fast);
+    }
+
+    .titem:hover {
+      background: color-mix(in srgb, var(--text-color) 8%, transparent);
+    }
+
+    .titem.sel {
+      background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+    }
+
+    .titem .eye {
+      flex: 0 0 auto;
+      width: 20px;
+      text-align: center;
+      color: var(--text-color-tertiary);
+      border-radius: var(--radius-sm);
+    }
+
+    .titem .eye:hover {
+      color: var(--color-primary);
+    }
+
+    .titem .tname {
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .titem .tvol {
+      flex: 0 0 auto;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-color-tertiary);
+    }
+
+    /* ---------- 切片分析 ---------- */
+    .slicecv {
+      width: 100%;
+      margin-top: 6px;
+      background: color-mix(in srgb, var(--text-color) 4%, transparent);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+    }
+
+    /* ---------- 设计步骤树 ---------- */
+    .steps {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .ghead {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 6px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      user-select: none;
+      color: var(--text-color-secondary);
+    }
+
+    .ghead:hover {
+      background: color-mix(in srgb, var(--text-color) 8%, transparent);
+    }
+
+    .ghead .gname {
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: var(--font-weight-medium);
+    }
+
+    .ghead .gcount {
+      flex: 0 0 auto;
+      font-size: 11px;
+      color: var(--text-color-tertiary);
+    }
+
+    .step {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      padding: 2px 6px 2px 18px;
+      font-size: var(--font-size-xs);
+    }
+
+    .step .sno {
+      flex: 0 0 22px;
+      text-align: right;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-color-disabled);
+    }
+
+    .step .stext {
+      flex: 1 1 auto;
+      min-width: 0;
+      color: var(--text-color);
+    }
+
+    .step.minor .stext {
+      color: var(--text-color-disabled);
+    }
+
+    /* ---------- 右侧面板标签页（吸顶，滚动不丢失） ---------- */
+    .tabs {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: flex;
+      gap: 4px;
+      padding: 3px;
+      margin-bottom: 8px;
+      background: color-mix(in srgb, var(--bg-color) 62%, transparent);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+    }
+
+    .tabs button {
+      flex: 1;
+      font: inherit;
+      font-size: var(--font-size-xs);
+      color: var(--text-color-tertiary);
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: var(--radius-md);
+      padding: 4px 0;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .tabs button:hover {
+      background: color-mix(in srgb, var(--text-color) 8%, transparent);
+    }
+
+    .tabs button.on {
+      color: var(--color-primary);
+      border-color: var(--color-primary);
+      background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    }
+
+    /* ---------- 右侧属性面板 ---------- */
+    .p-right section {
+      padding: 8px 12px;
+      margin-bottom: 8px;
+    }
+
+    .kv {
+      display: flex;
+      justify-content: space-between;
+      padding: 2px 0;
+      color: var(--text-color-tertiary);
+    }
+
+    .kv>span:last-child {
+      color: var(--text-color);
+      font-family: var(--font-mono);
+      font-size: var(--font-size-xs);
+    }
+
+    .btns {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .btns button {
+      font: inherit;
+      color: var(--text-color);
+      background: transparent;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 4px 8px;
+      cursor: pointer;
+    }
+
+    /* ---------- 底部状态栏 ---------- */
+    .p-bottom {
+      display: flex;
+    }
+
+    .st {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex: 1;
+      padding: 4px 12px;
+      font-family: var(--font-mono);
+      font-size: var(--font-size-xs);
+      color: var(--text-color-tertiary);
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .st .ok {
+      color: var(--color-success);
+    }
+
+    .st .busy {
+      color: var(--color-warning);
+    }
+
+    .st .error {
+      color: var(--color-danger);
+    }
+
+    .st .ms {
+      color: var(--color-primary);
+    }
+
+    .spin {
+      display: inline-block;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      border: 2px solid var(--border-color);
+      border-top-color: var(--color-primary);
+      animation: bv-spin 0.9s linear infinite;
+      vertical-align: -2px;
+      margin-right: 5px;
+    }
+
+    @keyframes bv-spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- 核心内容：3D 画布，全局占满并在后方显示模型 -->
+  <canvas id="gl" ref="gl" tabindex="0"></canvas>
+
+  <!-- 面板 1：顶部工具栏（header） -->
+  <header class="panel p-top" ref="topbar">
+    <div class="bar">
+      <div class="grp">
+        <button v-for="m in viewModes" :class="{ on: viewMode === m[0] }" @click="setMode(m[0])">{{ m[1]
+          }}</button>
+      </div>
+      <div class="sep"></div>
+      <div class="grp">
+        <button :class="{ on: measureOn }" @click="toggleMeasure()" title="距离测量 (M)">📐 测量</button>
+        <button @click="fit()" title="适应视图 (F)">🔍 适应</button>
+        <button :class="{ on: projection === 'orthographic' }" @click="toggleProj()" title="透视/正交">{{ projection ===
+          'orthographic' ? '🎥 透视' : '🎥 正交' }}</button>
+        <button :class="{ on: showSettings }" @click="toggleSettings()" title="显示设置">⚙</button>
+        <button :class="{ on: kernelName === 'occt' }" @click="toggleKernel()" :disabled="kernelLoading"
+          :title="kernelName === 'occt' ? '当前：高性能内核（OCCT）——点击切回内置内核' : '当前：内置内核——点击加载高性能内核（OCCT）'">{{
+          kernelLoading ? '⏳ 加载中' : (kernelName === 'occt' ? '⚡ OCCT' : '🧮 内置') }}</button>
+      </div>
+      <div class="sep"></div>
+      <div class="grp" title="选择模式：拾取零件 / 面 / 边 / 点">
+        <button v-for="m in pickModes" :class="{ on: pickMode === m[0] }" @click="setPick(m[0])" :title="m[2]">{{ m[1]
+          }}</button>
+      </div>
+      <!-- OCCT 高性能解析器加载进度（加载完成前使用内置 JS 解析器） -->
+      <div class="kload" v-if="kernelLoading">
+        <span class="ktext">{{ kernelLoadText }}</span>
+        <div class="kbar"><i :style="{ width: kernelProgress + '%' }"></i></div>
+        <span class="kpct">{{ kernelProgress }}%</span>
+      </div>
+      <div class="sp"></div>
+      <div class="grp">
+        <select ref="exSel" @change="pickExample()" title="加载内置案例模型">
+          <option value="">📦 案例…</option>
+          <option v-for="e in examples" :value="e[0]">{{ e[1] }}</option>
+        </select>
+        <button :class="{ on: showFiles }" @click="toggleFiles()" title="浏览并加载本地 /3d/ 目录下的模型文件">📂 文件</button>
+        <select ref="fmtSel" title="导出格式">
+          <option v-for="f in exportFormats" :value="f[0]">{{ f[1] }}</option>
+        </select>
+        <button @click="doDownload()" title="下载模型">⬇ 下载</button>
+        <button :class="{ on: isMobile ? mobileShowSide : showSide }" @click="togglePanel()" title="属性面板">☰</button>
+      </div>
+    </div>
+
+    <!-- 剖切平面设置（弹出） -->
+    <div class="pop left" v-if="viewMode === 'section'">
+      <h4>✂️ 剖切平面</h4>
+      <div class="row">
+        <label>平面</label>
+        <select ref="secAxis" :value="section.axis" @change="onSecAxis()" style="flex:1">
+          <option value="XY">XY（水平剖）</option>
+          <option value="XZ">XZ（垂直剖 Y）</option>
+          <option value="YZ">YZ（垂直剖 X）</option>
+        </select>
+      </div>
+      <div class="row">
+        <label>偏移</label>
+        <input ref="secOff" type="range" :min="section.min" :max="section.max" step="0.5" :value="section.offset"
+          @input="onSecOff()">
+        <span class="val">{{ fmtOff(section.offset) }}</span>
+      </div>
+      <div class="row">
+        <label class="chk"><input type="checkbox" :checked="section.invert" @click="toggleInvert()"> 翻转方向</label>
+      </div>
+    </div>
+
+    <!-- 显示设置（弹出） -->
+    <div class="pop right" v-if="showSettings">
+      <h4>⚙ 显示设置</h4>
+      <div class="row"><label class="chk"><input type="checkbox" :checked="settings.grid" @click="toggleSet('grid')">
+          网格</label></div>
+      <div class="row"><label class="chk"><input type="checkbox" :checked="settings.axes" @click="toggleSet('axes')">
+          坐标轴</label></div>
+      <div class="row"><label class="chk"><input type="checkbox" :checked="settings.ground"
+            @click="toggleSet('ground')"> 地面</label></div>
+      <div class="row"><label class="chk"><input type="checkbox" :checked="settings.shadows"
+            @click="toggleSet('shadows')"> 阴影</label></div>
+      <div class="row">
+        <label>透明度</label>
+        <input ref="setT" type="range" min="0.05" max="0.95" step="0.05" :value="settings.transparency"
+          @input="onSetT()">
+        <span class="val">{{ settings.transparency }}</span>
+      </div>
+    </div>
+
+    <!-- 本地模型文件（弹出）：浏览本地 /3d/ 下的 .js 模型文件，点击加载渲染 -->
+    <div class="pop right" v-if="showFiles" style="min-width: 300px">
+      <div class="fhead">
+        <h4>📂 模型文件</h4>
+        <div style="display:flex;align-items:center;gap:6px">
+          <a href="@/fs/page/3d" title="浏览本地文件">🗂 打开文件</a>
+          <button @click="refreshSessFiles()" :disabled="sessLoading" title="刷新文件列表">⟳ 刷新</button>
+        </div>
+      </div>
+      <div class="flist">
+        <div v-if="sessLoading" class="fempty"><i class="spin"></i>正在列出文件…</div>
+        <div v-else-if="!sessFiles.length" class="fempty">本地 /3d/ 还没有 .js 模型文件<br>可以让 AI 生成模型并保存</div>
+        <div class="fitem" v-for="f in sessFiles" :title="' 点击加载：' + f.path" @click="loadSessFile(f.path)">
+          <span class="fname">{{ f.path }}</span>
+          <span class="fmeta"><span>{{ fmtAgo(f.mod_time) }}</span><span>{{ fmtSize(f.size) }}</span></span>
+        </div>
+        <div v-if="scanInfo" class="fempty"
+          style="border-top: 1px dashed var(--border-color); margin-top: 6px; padding-top: 6px">{{ scanInfo }}</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 面板 2：右侧面板（属性 / 分析 / 详情 三标签页；拾取或选中部件自动切到详情） -->
+  <aside class="panel p-right" v-show="isMobile ? mobileShowSide : showSide">
+    <nav class="tabs">
+      <button v-for="t in sideTabs" :class="{ on: sideTab === t[0] }" @click="sideTab = t[0]">{{ t[1] }}</button>
+    </nav>
+    <div v-show="sideTab === 'info'">
+      <section v-if="params.length">
+        <h4>🎛 参数面板</h4>
+        <div class="row" v-for="p in params">
+          <label :title="p.name">{{ p.label }}</label>
+          <input type="range" :min="p.min" :max="p.max" :step="p.step" v:value="p.value" @input="onParam(p)">
+          <input type="number" :min="p.min" :max="p.max" :step="p.step" v:value="p.value" @change="onParam(p)">
+        </div>
+      </section>
+      <section>
+        <h4>📦 模型属性</h4>
+        <div class="kv"><span>体积</span><span>{{ stats ? fmtVol(stats.volume) : '-' }}</span></div>
+        <div class="kv"><span>表面积</span><span>{{ stats ? fmtArea(stats.area) : '-' }}</span></div>
+        <div class="kv"><span>包围盒 X</span><span>{{ stats ? fmtLen(stats.boundingBox.size[0]) : '-' }}</span></div>
+        <div class="kv"><span>包围盒 Y</span><span>{{ stats ? fmtLen(stats.boundingBox.size[1]) : '-' }}</span></div>
+        <div class="kv"><span>包围盒 Z</span><span>{{ stats ? fmtLen(stats.boundingBox.size[2]) : '-' }}</span></div>
+      </section>
+      <section>
+        <h4>📊 几何统计</h4>
+        <div class="kv"><span>顶点</span><span>{{ stats ? fmtInt(stats.mesh.vertices) : '-' }}</span></div>
+        <div class="kv"><span>三角面</span><span>{{ stats ? fmtInt(stats.mesh.triangles) : '-' }}</span></div>
+        <div class="kv"><span>边</span><span>{{ stats ? fmtInt(stats.mesh.edges) : '-' }}</span></div>
+        <div class="kv"><span>部件</span><span>{{ stats ? stats.partCount : '-' }}</span></div>
+        <div class="kv" v-if="stats && stats.interferenceCount > 0" style="color: var(--color-danger)"><span>⚠
+            位置冲突</span><span>{{ stats.interferenceCount }} 处</span></div>
+      </section>
+      <section>
+        <h4>🎨 材质</h4>
+        <div class="row">
+          <label>颜色</label>
+          <input ref="matC" type="color" :value="material.color" @input="onMat()">
+        </div>
+        <div class="row">
+          <label>金属度</label>
+          <input ref="matM" type="range" min="0" max="1" step="0.05" :value="material.metalness" @input="onMat()">
+          <span class="val">{{ material.metalness }}</span>
+        </div>
+        <div class="row">
+          <label>粗糙度</label>
+          <input ref="matR" type="range" min="0" max="1" step="0.05" :value="material.roughness" @input="onMat()">
+          <span class="val">{{ material.roughness }}</span>
+        </div>
+      </section>
+    </div>
+    <div v-show="sideTab === 'analysis'">
+      <section v-if="printInfo">
+        <h4>🖨 打印检查</h4>
+        <template v-if="!printInfo.skipped">
+          <div class="kv"><span>水密（可打印）</span><span
+              :style="{ color: printInfo.watertight ? 'var(--color-success)' : 'var(--color-danger)' }">{{
+              printInfo.watertight ? '✓ 通过' : '✗ 未通过' }}</span></div>
+          <div class="kv" v-if="!printInfo.watertight"><span>开放边</span><span>{{ printInfo.openEdges }}（{{
+              printInfo.openLoops
+              }} 环）</span></div>
+          <div class="kv" v-if="printInfo.nonManifoldEdges"><span>非流形边</span><span>{{ printInfo.nonManifoldEdges
+              }}</span></div>
+          <div class="kv"><span>悬空面(>{{ printInfo.overhangDeg }}°)</span><span>{{ fmtArea(printInfo.overhangArea) }}（{{
+              fmtPct(printInfo.overhangRatio) }}）</span></div>
+          <div class="kv"><span>完整面 / 特征边</span><span>{{ printInfo.regions }} / {{ printInfo.featureEdges }}</span>
+          </div>
+          <div class="btns">
+            <button :class="{ on: showOpenEdges }" @click="toggleOpenEdges()">开放边高亮</button>
+            <button :class="{ on: showOverhang }" @click="toggleOverhang()">悬空面高亮</button>
+          </div>
+        </template>
+        <div class="fempty" v-else>{{ printInfo.reason }}</div>
+      </section>
+      <section>
+        <h4>🔪 切片分析</h4>
+        <div class="row"><label class="chk"><input type="checkbox" :checked="slicing" @click="toggleSlicing()">
+            启用切片预览</label></div>
+        <template v-if="slicing">
+          <div class="row">
+            <label>层高</label>
+            <select ref="layerHSel" @change="onSliceUI()">
+              <option value="0.1">0.1 mm</option>
+              <option value="0.15">0.15 mm</option>
+              <option value="0.2" selected>0.2 mm</option>
+              <option value="0.3">0.3 mm</option>
+            </select>
+            <span class="val">{{ layerCount() }} 层</span>
+          </div>
+          <div class="row">
+            <label>Z 位置</label>
+            <input type="range" :min="sliceRange[0]" :max="sliceRange[1]" step="0.05" v:value="sliceZ"
+              @input="onSliceZ()">
+            <span class="val">{{ Number(sliceZ).toFixed(2) }}</span>
+          </div>
+          <canvas ref="sliceCv" class="slicecv" width="230" height="170"></canvas>
+          <div class="kv"><span>截面环数</span><span>{{ sliceLoops }}（{{ sliceSegs }} 段）</span></div>
+        </template>
+      </section>
+      <section v-if="stepGroups.length">
+        <h4>🌳 设计步骤<span v-if="stepGroups.length > 200" class="gcount">（仅显示前 200 组 / 共 {{ stepGroups.length }} 组）</span></h4>
+        <div class="steps">
+          <div class="sgroup" v-for="g in stepGroups.slice(0, 200)">
+            <div class="ghead" @click="g.open = !g.open">
+              <span class="gcar">{{ g.open ? '▾' : '▸' }}</span>
+              <span class="gname">{{ g.name }}</span>
+              <span class="gcount">{{ g.steps.length }} 步</span>
+            </div>
+            <div v-if="g.open">
+              <div class="step" v-for="s in g.steps" :class="{ minor: s.minor }" :title="s.src">
+                <span class="sno">{{ s.seq }}</span>
+                <span class="stext">{{ s.text }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div v-show="sideTab === 'detail'">
+      <section v-if="pick">
+        <h4>🎯 拾取信息（{{ pickModeLabel() }}）</h4>
+        <div class="kv"><span>所属部件</span><span>{{ pick.partName }}</span></div>
+        <div class="kv" v-if="pick.none"><span>提示</span><span>{{ pick.message }}</span></div>
+        <template v-if="pick.mode === 'vertex'">
+          <div class="kv"><span>X / Y / Z</span><span>{{ fmtPt(pick.point) }}</span></div>
+        </template>
+        <template v-if="pick.mode === 'edge' && !pick.none">
+          <div class="kv"><span>类型</span><span>{{ pick.closed ? '闭合环' : '开放边' }}</span></div>
+          <div class="kv"><span>长度</span><span>{{ fmtLen(pick.length) }}</span></div>
+          <div class="kv"><span>段数</span><span>{{ pick.segments }}</span></div>
+          <div class="kv" v-if="!pick.closed"><span>端点 A</span><span>{{ fmtPt(pick.a) }}</span></div>
+          <div class="kv" v-if="!pick.closed"><span>端点 B</span><span>{{ fmtPt(pick.b) }}</span></div>
+        </template>
+        <template v-if="pick.mode === 'face' && !pick.none">
+          <div class="kv"><span>类型</span><span>{{ pick.kind }}</span></div>
+          <div class="kv"><span>面积</span><span>{{ fmtArea(pick.area) }}</span></div>
+          <div class="kv" v-if="pick.normal"><span>法线</span><span>{{ fmtVec(pick.normal) }}</span></div>
+          <div class="kv"><span>三角面数</span><span>{{ pick.triangles }}</span></div>
+          <div class="kv"><span>拾取点</span><span>{{ fmtPt(pick.point) }}</span></div>
+        </template>
+      </section>
+      <section v-if="selection.length">
+        <h4>🖱 选中部件</h4>
+        <div class="kv" v-for="s in selection"><span>{{ s.name }}</span><span>{{ fmtVol(s.volume) }}</span>
+        </div>
+        <div class="btns">
+          <button @click="isolate()">👁 隔离显示</button>
+          <button @click="hideSel()">🚫 隐藏</button>
+          <button @click="showAll()">↩ 全部显示</button>
+        </div>
+      </section>
+      <section v-if="parts.length > 1">
+        <h4>🌳 部件树<span v-if="parts.length > 200" class="gcount">（仅显示前 200 / 共 {{ parts.length }} 件）</span></h4>
+        <input class="pfilter" placeholder="过滤部件名…" v:value="partQuery" @input="onPartQuery()">
+        <div class="tree">
+          <div class="titem" v-for="t in partRows" :class="{ sel: selIdx.includes(t.index) }"
+            @click="treeSelect(t, $event)">
+            <span class="eye" @click.stop="treeToggle(t)">{{ t.visible ? '👁' : '－' }}</span>
+            <span class="tname">{{ t.name }}</span>
+            <span class="tvol">{{ fmtVol(t.volume) }}</span>
+          </div>
+        </div>
+      </section>
+      <section v-if="parts.length > 1">
+        <h4>🧩 爆炸视图</h4>
+        <div class="row">
+          <label>程度</label>
+          <input type="range" min="0" max="1" step="0.01" v:value="explodeVal" @input="onExplode()">
+          <span class="val">{{ Math.round(explodeVal * 100) }}%</span>
+        </div>
+      </section>
+      <div class="fempty" v-if="!pick && !selection.length && parts.length <= 1">点击画布中的部件、面、边或点<br>在此查看详情</div>
+    </div>
+  </aside>
+
+  <!-- 面板 4：底部状态栏（footer） -->
+  <footer class="panel p-bottom">
+    <div class="st">
+      <span :class="{ ok: statusType === 'ok', busy: statusType === 'busy', error: statusType === 'error' }"><i
+          v-if="statusType === 'busy'" class="spin"></i>{{ statusText }}</span>
+      <span>顶点: {{ stats ? fmtInt(stats.mesh.vertices) : '-' }}</span>
+      <span>三角面: {{ stats ? fmtInt(stats.mesh.triangles) : '-' }}</span>
+      <span>体积: {{ stats ? fmtVol(stats.volume) : '-' }}</span>
+      <span>面积: {{ stats ? fmtArea(stats.area) : '-' }}</span>
+      <span>耗时: {{ lastTime }}</span>
+      <span class="ms">{{ measureText }}</span>
+    </div>
+  </footer>
+
+  <script setup>
+    import Viewer from './viewer.js';
+    import { createOCCTClient } from './occt-client.js';
+
+    // 供模板使用的格式化函数（挂到 $data；工具以静态属性挂在 Viewer 上）
+    fmtInt = Viewer.fmtInt;
+    fmtVol = Viewer.fmtVol;
+    fmtArea = Viewer.fmtArea;
+    fmtLen = Viewer.fmtLen;
+    fmtOff = (v) => Number(v).toFixed(1);
+
+    // ---------- 引擎实例（窗口级，避免响应式包装） ----------
+    bv = null
+
+    // ---------- 界面状态 ----------
+    viewModes = [
+      ['solid', '实体'], ['wireframe', '线框'], ['hidden', '隐藏线'],
+      ['transparent', '透明'], ['xray', 'X光'], ['section', '剖面'],
+    ];
+    exportFormats = [
+      ['stl', 'STL (二进制)'], ['stl-ascii', 'STL (文本)'], ['obj', 'OBJ'],
+      ['glb', 'GLTF (.glb)'], ['3mf', '3MF (.3mf)'], ['json', 'JSON (模型)'],
+    ];
+    examples = [
+      ['lego-brick', '乐高积木'], ['gear', '直齿轮'], ['robot', '科幻机器人'],
+      ['pipe-joint', '三通接头'], ['flanged-bracket', 'L 型支架'],
+      ['gear-reducer', '两级齿轮减速器'], ['porsche-911', '保时捷 911'],
+      ['organic-vase', '有机花瓶（loft+displace）'],
+    ];
+    viewMode = 'solid';
+    projection = 'perspective';
+    measureOn = false;
+    measureText = '';
+    showSettings = false;
+    showSide = true;
+    // 手机模式：右侧面板全宽
+    isMobile = false;
+    mobileShowSide = false;
+    statusType = 'ok';
+    statusText = '初始化…';
+    stats = null;
+    lastTime = '-';
+    params = [];
+    selection = [];
+    // ---------- 部件树 / 爆炸视图 ----------
+    parts = [];
+    selIdx = [];
+    explodeVal = 0;
+    onExplode = () => {explodeVal = Number(explodeVal); bv?.setExplode(explodeVal);};
+    treeToggle = (t) => bv?.setPartVisible(t.index, !t.visible);
+    treeSelect = (t, e) => bv?.selectPart(t.index, !!(e && e.shiftKey));
+    // ---------- 拾取模式（零件 / 面 / 边 / 点） ----------
+    pickModes = [
+      ['part', '零件', '选择整个部件（Shift 加选）'],
+      ['face', '面', '选择三角面：显示法线 / 面积 / 拾取点坐标'],
+      ['edge', '边', '选择网格边：显示端点坐标与长度'],
+      ['vertex', '点', '选择顶点：显示坐标'],
+    ];
+    pickMode = 'part';
+    pick = null;
+    setPick = (m) => bv?.setPickMode(m);
+    pickModeLabel = () => ({part: '零件', face: '面', edge: '边', vertex: '点'})[pickMode] || pickMode;
+    fmtPt = (p) => p ? `(${p.map((v) => Number(v).toFixed(2)).join(', ')})` : '-';
+    fmtVec = (n) => n ? `(${n.map((v) => Number(v).toFixed(3)).join(', ')})` : '-';
+    // ---------- 部件树（窗口化：partRows 派生自 parts，最多 200 行） ----------
+    partRows = [];
+    partQuery = '';
+    onPartQuery = () => {
+      const q = (partQuery || '').trim().toLowerCase();
+      partRows = q ? parts.filter((t) => t.name.toLowerCase().includes(q)).slice(0, 200) : parts.slice(0, 200);
+    };
+
+    // ---------- 设计步骤树 ----------
+    stepGroups = [];
+    // ---------- 打印检查 / 切片分析 ----------
+    printInfo = null;
+    showOpenEdges = false;
+    showOverhang = false;
+    toggleOpenEdges = () => {showOpenEdges = !showOpenEdges; bv?.setShowOpenEdges(showOpenEdges);};
+    toggleOverhang = () => {showOverhang = !showOverhang; bv?.setShowOverhang(showOverhang);};
+    fmtPct = (r) => (r * 100).toFixed(1) + '%';
+    slicing = false;
+    sliceZ = 0;
+    sliceRange = [0, 0];
+    sliceSegs = 0;
+    sliceLoops = 0;
+    layerH = 0.2;
+    layerCount = () => (sliceRange[1] > sliceRange[0] ? Math.ceil((sliceRange[1] - sliceRange[0]) / layerH) : 0);
+    toggleSlicing = () => {slicing = !slicing; bv?.setSlicing(slicing);};
+    onSliceZ = () => {sliceZ = Number(sliceZ); bv?.setSliceZ(sliceZ);};
+    onSliceUI = () => {layerH = Number($refs.layerHSel.value);};
+    // 切片 2D 预览：截面环按模型 XY 包围盒自适应绘制（Y 轴向上）
+    drawSlice = (r) => {
+      const cv = $refs.sliceCv;
+      if (!cv) return;
+      const ctx = cv.getContext('2d');
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      if (!r || !r.loops.length || !stats) return;
+      const b = stats.boundingBox;
+      const w = Math.max(b.max[0] - b.min[0], 1e-6), h = Math.max(b.max[1] - b.min[1], 1e-6);
+      const sc = Math.min((cv.width - 16) / w, (cv.height - 16) / h);
+      const ox = (cv.width - w * sc) / 2, oy = (cv.height - h * sc) / 2;
+      const X = (x) => ox + (x - b.min[0]) * sc;
+      const Y = (y) => cv.height - (oy + (y - b.min[1]) * sc);
+      ctx.strokeStyle = '#3b82f6';
+      ctx.lineWidth = 1.2;
+      for (const loop of r.loops) {
+        ctx.beginPath();
+        loop.points.forEach((p, i) => {i === 0 ? ctx.moveTo(X(p[0]), Y(p[1])) : ctx.lineTo(X(p[0]), Y(p[1]));});
+        if (loop.closed) ctx.closePath();
+        ctx.stroke();
+      }
+    };
+    section = {axis: 'XY', offset: 0, invert: false, min: -100, max: 100};
+    settings = {grid: true, axes: true, ground: true, shadows: true, transparency: 0.5};
+    material = {color: '#8fa3bf', metalness: 0.1, roughness: 0.6};
+
+    // ---------- 右侧标签页（属性 / 分析 / 详情；拾取或选中部件自动切到详情） ----------
+    sideTab = 'info';
+    sideTabs = [['info', '🗂 属性'], ['analysis', '📊 分析'], ['detail', '🎯 详情']];
+
+    // ---------- 会话文件弹出面板 ----------
+    showFiles = false;
+    sessFiles = [];
+    sessLoading = false;
+    fmtSize = (n) => n >= 1024 ? (n / 1024).toFixed(1) + ' KB' : n + ' B';
+    fmtAgo = (ts) => {
+      // 本地文件无修改时间（mod_time 为 0）时显示 '-'，避免算出 2 万天前的荒谬时间
+      if (!ts || ts <= 0) return '-';
+      const d = Date.now() / 1000 - ts;
+      if (d < 0) return '-';
+      if (d < 60) return '刚刚';
+      if (d < 3600) return Math.floor(d / 60) + ' 分钟前';
+      if (d < 86400) return Math.floor(d / 3600) + ' 小时前';
+      return Math.floor(d / 86400) + ' 天前';
+    };
+
+    // ---------- OCCT 高性能解析器：默认内核（后台加载，就绪前用内置兜底） ----------
+    kernelLoading = false;
+    kernelProgress = 0;
+    kernelLoadText = '正在加载高性能解析器…';
+    kernelName = 'builtin';
+    loadOCCT = async () => {
+      const v = bv;
+      if (!v) return;
+      kernelLoading = true;
+      kernelProgress = 0;
+      try {
+        const kernel = await createOCCTClient((pct, text) => {
+          kernelProgress = pct;
+          if (text) kernelLoadText = text;
+        });
+        const r = await bv.setKernel(kernel, {name: 'occt'});
+        if (r && r.success) {
+          if (r.kernelFallback) $message.info('OCCT 已加载，但当前模型超出其重建限额（2 万三角面），已自动用内置内核渲染；重跑小模型后 OCCT 自动生效');
+          else $message.success('高性能解析器已启用');
+        }
+        else $message.info('高性能解析器与当前模型不兼容，继续使用内置解析器');
+      } catch (e) {
+        console.warn('[OCCT] 加载失败，继续使用内置解析器:', (e && e.message) || e);
+        $message.info('高性能解析器暂不可用，使用内置解析器');
+      } finally {
+        kernelLoading = false;
+      }
+    };
+    // 内核切换：默认内置；OCCT 仅在手动选择时加载（首次需下载编译，之后命中本地缓存秒切）；可来回切换
+    toggleKernel = () => {
+      if (kernelLoading) return; // 加载中不重复触发
+      if (kernelName === 'occt') {
+        bv?.setKernel(null, {name: 'builtin'}); // setKernel(null) 自动回退内置 KERNEL_API
+      } else {
+        loadOCCT(); // 加载完成后自动 setKernel 切到 OCCT
+      }
+    };
+
+    // ---------- 工具栏动作：全部转发给 viewer 引擎（引擎实例放 window，避免响应式包装） ----------
+    setMode = (m) => {showSettings = false; showFiles = false; bv?.setViewMode(m);}
+    toggleMeasure = () => bv?.enableMeasurement(!measureOn);
+    fit = () => bv?.fitToView();
+    toggleProj = () => bv?.toggleProjection();
+    applySettings = () => bv?.setDisplay({
+      grid: settings.grid,
+      axes: settings.axes,
+      ground: settings.ground,
+      shadows: settings.shadows,
+      transparency: Number(settings.transparency),
+    });
+    applyMaterial = () => bv?.setMaterial({
+      color: material.color,
+      metalness: Number(material.metalness),
+      roughness: Number(material.roughness),
+    });
+    applySection = () => {
+      const v = bv;
+      if (!v) return;
+      bv.setSectionPlane(section.axis, Number(section.offset), section.invert);
+      const r = bv.getSectionRange();
+      if (r) {section.min = r.min; section.max = r.max;}
+    };
+    toggleSet = (k) => {settings[k] = !settings[k]; applySettings();};
+    toggleInvert = () => {section.invert = !section.invert; applySection();};
+    onSetT = () => {settings.transparency = Number($refs.setT.value); applySettings();};
+    onSecAxis = () => {section.axis = $refs.secAxis.value; applySection();};
+    onSecOff = () => {section.offset = Number($refs.secOff.value); applySection();};
+    onMat = () => {
+      material.color = $refs.matC.value;
+      material.metalness = Number($refs.matM.value);
+      material.roughness = Number($refs.matR.value);
+      applyMaterial();
+    };
+    // 面板切换：开关右侧面板（手机端全宽）
+    togglePanel = () => {
+      if (isMobile) mobileShowSide = !mobileShowSide;
+      else showSide = !showSide;
+    };
+    isolate = () => bv?.isolateSelected();
+    hideSel = () => bv?.hideSelected();
+    showAll = () => bv?.showAllParts();
+    doDownload = async () => {
+      try {
+        const r = await bv?.download($refs.fmtSel.value);
+        $message.success(`已导出 ${r.filename}`);
+      } catch (e) {
+        $message.error('导出失败：' + (e?.message || e));
+      }
+    };
+
+    // ---------- 弹出面板互斥打开 ----------
+    toggleSettings = () => {showSettings = !showSettings; showFiles = false;};
+    toggleFiles = () => {
+      showFiles = !showFiles;
+      showSettings = false;
+      if (showFiles) refreshSessFiles();
+    };
+    // ---------- 本地模型目录（OPFS /3d/，与 AI fs 工具 1host=page 同一存储） ----------
+    const modelsDir = () => '/3d/';
+    // 递归列出本地模型目录下的 .js 模型文件（按修改时间倒序，支持任意层级子目录）。
+    // 逐目录错误隔离：单个目录读取失败不会拖垮整体列表；结果总是回写并附扫描摘要便于诊断。
+    scanInfo = '';
+    refreshSessFiles = async () => {
+      if (!$mod.$fs) {sessFiles = []; scanInfo = '环境缺少 $mod.$fs，无法列出文件'; return;}
+      sessLoading = true;
+      const out = [];
+      let dirs = 0, errs = 0;
+      const walk = async (dir, prefix) => {
+        dirs++;
+        let node;
+        try {
+          node = await $mod.$fs.ls(dir);
+        } catch (e) {
+          errs++;
+          console.warn('[Files] 目录读取失败:', dir, (e && e.message) || e);
+          return;
+        }
+        if (!node || !node.ok || !Array.isArray(node.items)) {
+          errs++;
+          console.warn('[Files] 目录响应异常:', dir, node);
+          return;
+        }
+        for (const it of node.items) {
+          const rel = prefix ? prefix + '/' + it.name : it.name;
+          if (it.dir) await walk(dir + it.name + '/', rel);
+          else if (/\.js$/i.test(it.name)) out.push({path: rel, size: it.size || 0, mod_time: it.mod_time || 0});
+        }
+      };
+      await walk('/page' + modelsDir(), '');
+      out.sort((a, b) => b.mod_time - a.mod_time);
+      sessFiles = out;
+      scanInfo = `已扫 ${dirs} 个目录 · ${out.length} 个 js 文件` + (errs ? ` · ${errs} 处异常` : '');
+      console.log('[Files]', scanInfo, out);
+      sessLoading = false;
+    };
+    // 加载选中的本地模型文件并在查看器中运行
+    loadSessFile = async (rel) => {
+      showFiles = false;
+      try {
+        const r = await $mod.$fs.get('/page' + modelsDir() + rel);
+        if (!r.ok) throw new Error((r.message || '文件不存在') + ': ' + rel);
+        const code = typeof r.content === 'string' ? r.content : await r.content.text();
+        await bv?.run(code);
+      } catch (e) {
+        $message.error('文件加载失败：' + (e?.message || e));
+      }
+    };
+
+    // ---------- 参数面板：防抖回写引擎 ----------
+    let _paramTimer = null;
+    onParam = (p) => {
+      p.value = Number(p.value);
+      clearTimeout(_paramTimer);
+      _paramTimer = setTimeout(() => bv?.setParam(p.name, p.value), 350);
+    };
+
+    // ---------- 内置案例：点击时从 skill 包内 ui/examples/ 下载代码直接执行（bv.run 即 run_code） ----------
+    loadExample = async (name) => {
+      try {
+        const resp = await fetch('/examples/' + name + '.js');
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const code = await resp.text();
+        return await bv?.run(code);
+      } catch (e) {
+        console.warn('[案例] 加载失败:', (e && e.message) || e);
+        $message.error('案例加载失败：' + ((e && e.message) || e));
+        return {success: false, message: String((e && e.message) || e)};
+      }
+    };
+    pickExample = () => {
+      const v = $refs.exSel.value;
+      $refs.exSel.value = '';
+      if (v) loadExample(v);
+    };
+
+    // ---------- 模型代码缓存：单键保存最近成功运行的代码，刷新后自动恢复模型 ----------
+    CODE_CACHE_KEY = '3dmaker_last_code';
+    readLastCode = () => {
+      try {return localStorage.getItem(CODE_CACHE_KEY);} catch (_) {return null;}
+    };
+    saveLastCode = (code) => {
+      if (!code) return;
+      try {localStorage.setItem(CODE_CACHE_KEY, code);} catch (_) { }
+    };
+    clearLastCode = () => {
+      try {localStorage.removeItem(CODE_CACHE_KEY);} catch (_) { }
+    };
+
+    // ---------- pageDesc：平台 OS/page 通道自动采集注册（{win_id}.{cmd} 命名空间） ----------
+    // handler 统一返回 {content: JSON.stringify(result)}：调用方收到后 JSON.parse 看 success/stats
+    // 指令不要并行调用，一轮一个（计算密集）。
+    pageDesc = {
+      desc: '3D Maker 建模工作台：浏览器内参数化 CAD 建模、装配、打印就绪检测与导出（内置 JS 内核 / OCCT 高性能内核）。本地文件根 /3d/（与 AI fs 工具 1host=page 同一存储）。',
+      commands: [
+        {
+          // run_code：直接执行代码字符串
+          name: 'run_code',
+          desc: '执行一段 3D 建模代码（3D 沙盒），返回模型统计 JSON',
+          help: '--code <源码>；代码末尾 return 几何体/几何体数组；返回 {success, stats, parts, warnings, executionTime, interference?, printability?}',
+          handler: async (argv) => {
+            const i = argv.indexOf('--code');
+            const code = i >= 0 ? argv[i + 1] : argv[0];
+            if (!code) {
+              return {content: JSON.stringify({success: false, code: 'NO_CODE', message: 'run_code 需要 --code 参数（或 argv[0]）'})};
+            }
+            const r = await bv?.run(code);
+            return {content: JSON.stringify(r || {success: false, message: '页面引擎未就绪'})};
+          },
+        },
+        {
+          // run_file：执行本地 /3d/ 中的建模代码文件（--path 如 /3d/models/x.js 或 models/x.js）
+          name: 'run_file',
+          desc: '运行本地 /3d/ 建模代码文件（页面经 $mod.$fs 读取，与 AI fs 工具 1host=page 同一存储）',
+          help: '--path <路径>（如 /3d/models/bracket.js 或 models/bracket.js）；返回同 run_code',
+          handler: async (argv) => {
+            try {
+              const i = argv.indexOf('--path');
+              const raw = String(i >= 0 ? argv[i + 1] : (argv[0] || '')).replace(/^\/+/, '');
+              if (!raw || raw.includes('..')) {
+                return {content: JSON.stringify({success: false, code: 'INVALID_PATH', message: 'run_file 需要合法的本地路径（如 /3d/models/x.js）'})};
+              }
+              const rel = raw.replace(/^3d\//, '');
+              const r = await $mod.$fs.get('/page/3d/' + rel);
+              if (!r.ok) throw new Error('fs get: /3d/' + rel + ': ' + (r.message || 'not found'));
+              const code = typeof r.content === 'string' ? r.content : await r.content.text();
+              const res = await bv?.run(code);
+              return {content: JSON.stringify(res || {success: false, message: '页面引擎未就绪'})};
+            } catch (e) {
+              return {content: JSON.stringify({success: false, code: 'RUN_FILE_ERROR', message: String((e && e.message) || e)})};
+            }
+          },
+        },
+        {
+          // set_theme：切换观感主题（dark=深色影棚背景，展示模型观感更佳）
+          name: 'set_theme',
+          desc: '切换观感主题（dark=深色影棚背景 / light=浅色 / auto=跟随系统）',
+          help: '--theme dark|light|auto；返回 {success, theme}',
+          handler: async (argv) => {
+            const i = argv.indexOf('--theme');
+            const t = String(i >= 0 ? argv[i + 1] : (argv[0] || 'light')).toLowerCase();
+            if (t !== 'dark' && t !== 'light' && t !== 'auto') {
+              return {content: JSON.stringify({success: false, message: 'set_theme 需要 --theme dark|light|auto'})};
+            }
+            bv?.setTheme(t);
+            return {content: JSON.stringify({success: true, theme: t})};
+          },
+        },
+        {
+          // set_kernel：切换几何内核（builtin=内置 JS / occt=高性能）。OCCT 对开放网格 B-Rep 重建限 2 万三角面，
+          // 超限模型切换后自动回退内置渲染（结果带 kernelFallback 标记）；小模型重跑后自动走 OCCT。
+          name: 'set_kernel',
+          desc: '切换几何内核（builtin=内置 JS / occt=高性能）',
+          help: '--kernel builtin|occt；返回 {success, kernel, message?}；切 OCCT 为尽力切换：当前模型超限（>2万三角面）时自动回退内置渲染，重跑小模型后 OCCT 生效',
+          handler: async (argv) => {
+            const i = argv.indexOf('--kernel');
+            const k = String(i >= 0 ? argv[i + 1] : (argv[0] || '')).toLowerCase();
+            if (k !== 'builtin' && k !== 'occt') {
+              return {content: JSON.stringify({success: false, message: 'set_kernel 需要 --kernel builtin|occt'})};
+            }
+            if (kernelLoading) {
+              return {content: JSON.stringify({success: false, kernel: kernelName, message: '内核正在切换中，稍后重试'})};
+            }
+            if (k === 'occt' && kernelName !== 'occt') {
+              loadOCCT();
+              return {content: JSON.stringify({success: true, kernel: 'occt', loading: true, message: 'OCCT 加载中（就绪前仍用内置内核，可稍后 status 确认）'})};
+            }
+            if (k === 'builtin' && kernelName !== 'builtin') {
+              bv?.setKernel(null, {name: 'builtin'});
+              return {content: JSON.stringify({success: true, kernel: 'builtin'})};
+            }
+            return {content: JSON.stringify({success: true, kernel: k, message: '已是目标内核'})};
+          },
+        },
+        {
+          // status：查询页面状态（就绪/内核/忙/模型统计）
+          name: 'status',
+          desc: '查询页面状态（就绪/内核/忙/模型统计）',
+          help: '无参数；返回 {ok, ready, busy, kernel, kernelLoading, stats, fileCount}',
+          handler: async () => {
+            return {content: JSON.stringify({ok: true, ready: !!bv, busy: bv?.running || false, kernel: kernelName, kernelLoading, stats: stats || null, fileCount: (sessFiles || []).length})};
+          },
+        },
+        {
+          // shot：截取当前 3D 视图保存为本地图片（/3d/），AI 随后 fs.read 1host=page 读回看图。
+          // 平台图片投递收敛：只有 fs.read 能把图片带进消息——所以本指令只负责截图落盘，
+          // 不直接返回图片；AI 两步走（shot → fs.read /3d/xxx.png）。
+          name: 'shot',
+          desc: '截取当前 3D 视图保存为图片（本地 /3d/），AI 用 fs.read 1host=page 读回看图',
+          help: '--path <保存路径>（默认 /3d/shot.png）；返回 {ok, path, width, height, bytes}',
+          handler: async (argv) => {
+            try {
+              const i = argv.indexOf('--path');
+              const raw = String(i >= 0 ? argv[i + 1] : (argv[0] || 'shot.png')).replace(/^\/+/, '');
+              if (!raw || raw.includes('..')) {
+                return {content: JSON.stringify({success: false, code: 'INVALID_PATH', message: 'shot 需要合法的本地路径（如 /3d/shot.png）'})};
+              }
+              const rel = raw.replace(/^3d\//, '');
+              if (!bv) return {content: JSON.stringify({success: false, message: '页面引擎未就绪'})};
+              const img = await bv.shot();
+              const r = await $mod.$fs.put('/page/3d/' + rel, img.blob);
+              return {content: JSON.stringify({ok: true, path: '/3d/' + rel, width: img.width, height: img.height, bytes: r.bytes || 0})};
+            } catch (e) {
+              return {content: JSON.stringify({success: false, code: 'SHOT_ERROR', message: String((e && e.message) || e)})};
+            }
+          },
+        },
+        {
+          // parts_audit：逐部件打印问题清单（水密/非流形/悬空/薄壁/干涉），辅助 AI 修模
+          name: 'parts_audit',
+          desc: '逐部件打印问题清单（水密/非流形/悬空/薄壁/干涉），辅助修模定位',
+          help: '--min-wall <最小壁厚 mm>（默认 1.2）；返回 {summary, parts:[{index,name,watertight,openEdges,openLoops,nonManifoldEdges,overhangDeg,overhangArea,overhangRatio,minWall,minWallSamples,volume,area,conflicts,issues:[{level,type,detail}]}]}',
+          handler: async (argv) => {
+            try {
+              const i = argv.indexOf('--min-wall');
+              const minWall = i >= 0 ? Number(argv[i + 1]) : 1.2;
+              if (!bv) return {content: JSON.stringify({success: false, message: '页面引擎未就绪'})};
+              const r = bv.audit({ minWall: Number.isFinite(minWall) ? minWall : 1.2 });
+              return {content: JSON.stringify(r)};
+            } catch (e) {
+              return {content: JSON.stringify({success: false, code: 'AUDIT_ERROR', message: String((e && e.message) || e)})};
+            }
+          },
+        },
+      ]
+    };
+  </script>
+
+  <script>
+    // 创建引擎：接收 canvas 作为参数；JS 不做任何界面工作
+    bv = new Viewer($refs.gl, {
+      theme: 'light',
+      shadows: true,
+      grid: true,
+      axes: true,
+      groundPlane: true,
+      onReady: () => console.log('[3D] 就绪'),
+    });
+
+    // 引擎事件 → 界面响应式状态
+    bv.on('status', (s) => {statusType = s.type; statusText = s.text;});
+    bv.on('shapeLoaded', (r) => {
+      stats = r.stats;
+      lastTime = r.executionTime + ' ms';
+      params = bv.extractParams();
+      printInfo = r.stats.printability || null;
+      // 设计步骤树（默认折叠：大模型部件数=DOM 数×几十倍，全部展开会撑爆；点击组头才展开）
+      const sg = (r.steps && r.steps.groups) || [];
+      sg.forEach((g) => {g.open = false;});
+      stepGroups = sg;
+      // 部件树：由结果摘要生成（可见性由 visibilityChange 事件回同步）；只渲染前 200 行（超限提示）
+      parts = (r.parts || []).map((p, i) => ({index: i, name: p.name, color: p.color, visible: true, volume: p.volume}));
+      selIdx = [];
+      partRows = parts;
+      partQuery = '';
+      // 持久化最近成功运行的模型代码（刷新后自动恢复）
+      saveLastCode(bv.getCode());
+      console.log(`[3D] 模型更新：${r.stats.mesh.triangles} 三角面, ${r.stats.partCount} 部件, ${r.stats.mesh.complexity} 复杂度`);
+    });
+    bv.on('error', (r) => {$message.error(r.message || '运行错误');});
+    bv.on('warnings', (ws) => {if (ws.length) $message.info('⚠️ ' + ws[0]);});
+    bv.on('viewModeChange', (m) => {viewMode = m;});
+    bv.on('projectionChange', (m) => {projection = m;});
+    bv.on('measureModeChange', (on) => {measureOn = on;});
+    bv.on('measure', (m) => {measureText = m ? `📐 ${m.text}` : '';});
+    // 点中部件（零件模式）自动切到详情页；清空选择（点空白/Esc）不切换
+    bv.on('selectionChange', (list) => {selection = list; selIdx = list.map((s) => s.index); if (list.length) sideTab = 'detail';});
+    bv.on('pickModeChange', (m) => {pickMode = m; pick = null;});
+    // 拾取到面/边/点自动切到详情页（Esc/点空清除不切换）
+    bv.on('pick', (p) => {pick = p; if (p) sideTab = 'detail';});
+    bv.on('explodeChange', (f) => {explodeVal = f;});
+    bv.on('sliceChange', (r) => {
+      if (!r) {slicing = false; sliceSegs = 0; sliceLoops = 0; drawSlice(null); return;}
+      sliceZ = r.z;
+      sliceRange = [r.min, r.max];
+      sliceSegs = r.segments;
+      sliceLoops = r.loops.length;
+      drawSlice(r);
+    });
+    bv.on('visibilityChange', (list) => {
+      const map = new Map(list.map((p) => [p.index, p.visible]));
+      parts.forEach((t) => {if (map.has(t.index)) t.visible = map.get(t.index);});
+    });
+    bv.on('sectionRange', (r) => {
+      section.axis = r.axis;
+      section.min = r.min;
+      section.max = r.max;
+      section.offset = r.value;
+      if (viewMode === 'section') applySection();
+    });
+    bv.on('reset', () => {
+      stats = null;
+      lastTime = '-';
+      params = [];
+      selection = [];
+      parts = [];
+      partRows = [];
+      partQuery = '';
+      selIdx = [];
+      explodeVal = 0;
+      pick = null;
+      printInfo = null;
+      stepGroups = [];
+      measureText = '';
+      clearLastCode(); // 场景已清空，清除缓存的模型代码
+    });
+
+    // 恢复最近运行的模型（无缓存则加载默认乐高积木案例）
+    bv.on('kernelChange', (k) => {kernelName = k.name;});
+
+    const lastCode = readLastCode();
+    if (lastCode) bv.run(lastCode);
+    else loadExample('lego-brick'); // 默认案例：从包内 examples/ 下载代码直接执行
+
+    // 高性能解析器（OCCT）：页面打开即后台自动加载并设为默认内核——
+    // 打印导出的正确性依赖 B-Rep 精确布尔（内置 BSP 对旋转薄刀/薄壁切割可能产生裂缝网格）。
+    // 首次需下载 ~49MB WASM（进度条显示），编译产物写入浏览器本地缓存，之后秒级完成；
+    // 加载期间先用内置内核渲染，就绪后 setKernel 自动重跑当前模型；用户仍可点按钮切回内置。
+    loadOCCT();
+
+    // header 高度自适应：换行（如手机窄屏）时同步调整左右面板顶部偏移
+    $data.bvCleanups = [];
+    const topbar = $refs.topbar;
+    if (topbar) {
+      const rootEl = topbar.parentNode;
+      const syncTop = () => rootEl.style.setProperty('--hh', topbar.offsetHeight + 'px');
+      syncTop();
+      const topRO = new ResizeObserver(syncTop);
+      topRO.observe(topbar);
+      $data.bvCleanups.push(() => topRO.disconnect());
+    }
+
+    // 手机模式媒体查询
+    const mq = window.matchMedia('(max-width: 760px)');
+    const syncMq = () => {isMobile = mq.matches;};
+    syncMq();
+    mq.addEventListener('change', syncMq);
+    $data.bvCleanups.push(() => mq.removeEventListener('change', syncMq));
+  </script>
+
+  <script dispose>
+    ($data.bvCleanups || []).forEach((f) => {try {f();} catch (_) { } });
+    $data.bvCleanups = [];
+    bv?.dispose();
+    bv = null;
+  </script>
+</body>
+
+</html>
