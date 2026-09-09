@@ -49,6 +49,8 @@ Component file shape:
 </html>
 ```
 
+A component file must be a **complete HTML document** (`<!DOCTYPE html>` + `html/head/body`, with `<script setup>` inside or after `<body>`). A bare fragment starting with `<template>` / `<style>` / `<script>` is parsed by DOMParser rules that strand those tags in `<head>`: setup never runs and the component renders blank — and the loader then reports a misleading `Failed to load external script: <module-dir>/` 404. That error pointing at a package directory URL is the telltale sign of this mistake.
+
 ### Styles
 
 Component styles are automatically scoped to the component's DOM subtree; `@keyframes` names are isolated per component.
@@ -77,6 +79,12 @@ Attributes on a component tag map to the child's `$data` keys (auto camelCase �
 | `:age="userAge"` | one-way binding from parent |
 | `v:score="score"` | two-way binding |
 | `disabled` (bare) | boolean `true` when the key exists in child `$data` |
+
+`v:` two-way bindings support nested paths (`v:value="user.nickname"`, `v:value="settings['app.name']"`).
+The binding resolves as a **lazy path chain**: every read/write walks the path from the root
+data, so after an intermediate object is replaced wholesale (e.g. `user = await fetch()`) the
+binding follows the new object. Complex expressions (variable keys, function calls, operators)
+fall back to evaluation-time reference semantics (legacy behavior).
 
 ### `$data` Declaration Rules (`<script setup>`)
 
@@ -158,7 +166,7 @@ Relative URLs inside a component (template and scripts) are auto-prefixed with `
 | Script `fetch('/abs/x.json')` | **also prefixed** — never prepend `$mod.scoped` yourself (double prefix → 404) |
 | Template `<img src="x.png">`, `:src` binding | auto-prefixed |
 | **Runtime-created elements** (`document.createElement('img')`, third-party library / engine DOM) | **NOT prefixed** — use full path: `$mod.scoped + '/x.png'` or full URL |
-| `http://`, `https://`, `//`, `@/` | passthrough, no prefix |
+| `http://`, `https://`, `//`, `@/`, `blob:`, `data:` | passthrough, no prefix — `data:` is an inline non-network resource (img src, `fetch(dataURL)`); prefixing would turn it into a package-relative 404 request |
 
 Rules:
 
@@ -215,25 +223,44 @@ Static imports are supported; relative paths resolve against the component's own
 
 - Text interpolation: function values are auto-invoked, object values are auto-`JSON.stringify`-ed.
 - Event modifiers: `.stop`, `.prevent`, `.self`, `.delay[500ms|1s]`; key aliases: `space`, `esc`, `up`, `down`, `left`, `right`, `del`, `ins` (e.g. `@keyup.esc="close()"`).
-- Special events: `@mounted` (node inserted into DOM), `@outerclick` (click outside the element).
+- Special events: `@outerclick` (click outside the element).
 - `v-for` and `v-if` can coexist on the same node: `v-for` clones first, then `v-if` filters each clone.
+- All `v-if` / `v-else-if` / `v-else` branches are compiled up front: binding expressions inside an **inactive** branch still evaluate within the same flush. Never let an inner expression dereference state that switches between `null` and a value across branches (`!x.length` throws when `x` is `null`, and the interrupted flush can leave the branch half-mounted) — keep cross-branch state at a constant type (boolean flag + always-an-array), not a null/value switch.
 - `v-for` has **no `:key` attribute** — item identity is tracked automatically (objects by reference, primitives by position). A `:key` on a v-for node compiles as a plain inert attribute; delete it.
 - Always initialize list variables in `<script setup>`: `items = []`.
 
 ## Script Types
 
-| type | when it runs |
-| ------ | ------------- |
-| `<script setup>` | once at instance creation, before DOM compilation |
-| `<script>` | once after DOM compilation, before first activation |
-| `<script active>` | on entering live-in-page state: mount, cached route re-entry, browser tab visible again. Handler receives `$reason`: `'mount' \| 'route' \| 'visibility'` |
-| `<script deactive>` | on leaving live-in-page state but staying alive: route cached, tab hidden; also fired before `dispose` when disposed while active (`$reason: 'dispose'`) |
-| `<script dispose>` | when the instance is destroyed (`v-if` removal, page unload) |
+Lifecycle contract (v0.11): every hook's guarantee is **context-independent** — identical whether the component is a routed page (built in detached staging, committed atomically) or dynamically inserted (`v-if`/`v-for`, built in place).
+
+Instance state machine: `setup → building → mounted → disposed`, with an `active` boolean layered on `mounted`:
+
+```
+active ⟺ mounted ∧ connected ∧ route-branch current ∧ document visible
+```
+
+| type | when it runs | guarantees | forbidden |
+| ------ | ------------- | ---------- | --------- |
+| `<script setup>` | once at instance creation, before DOM compilation | `$data` ready; target route params snapshot readable | accessing DOM structure / `$refs` / connection state |
+| `<script>` | once at the mounted transition: own subtree compiled AND host connected to the document | `$node.isConnected === true`; own template compiled | assuming activation (use `active` for that) |
+| `<script active>` | on every activation: first mount, cached route re-entry, tab visible again | connected + current route + visible; `$reason`: `'mount' \| 'route' \| 'visibility'` | — |
+| `<script deactive>` | on leaving the active state: route cached, tab hidden; also fired before `dispose` when disposed while active (`$reason: 'dispose'`) | paired with every active period | — |
+| `<script dispose>` | when the instance is destroyed (`v-if` removal, page unload) | watchers/timers/cleanups are being collected | — |
+
+Rules of the contract:
+
+- **No cross-instance ordering guarantee.** Child components mount asynchronously (`parseRef` is not awaited); hooks of different instances fire in each instance's own readiness order. Within one instance, `<script>` always runs before the first `active`.
+- **Call order, not completion.** `<script>` → `active` guarantees invocation order only; an `await` inside a script does not block the tree.
+- **Aborted navigation = zero script side effects.** During route staging, pages/layouts build detached; scripts never run on the detached tree. If the navigation is aborted, the build product is discarded with no plain/active script ever having executed (setup already ran — its *external* side effects like fetches are not rolled back; framework-managed resources like watchers are collected via dispose).
+- **`$refs` is a weak guarantee.** A slow async child may not be mounted when the parent's `<script>` runs; guard `$refs.x` access.
+- Any state can transition straight to `disposed`; `dispose` is idempotent and reentrant-safe; a throwing cleanup is logged to the error registry without blocking the rest; `addCleanup` on a disposed scope runs immediately.
 
 Helpers available in all script types:
 
 - `$node` — the current host DOM element.
 - `$watch(() => expr, (val) => { ... })` — reactive watcher, auto-cleaned on dispose. In `<script setup>` the first evaluation runs after props are bound, so it already sees the incoming prop values; in other script types it starts immediately.
+
+**Scope isolation:** each script block is its own scope — `const` / `let` / `function` declared in one block are **not** visible in any other block of the same file. Cross-block state must go through `$data` (bare assignment in setup) or a module singleton (`$mod.define` or an imported JS module).
 
 ### Disposal Contract
 
@@ -309,7 +336,7 @@ templateLoader.clear()                              // drop everything (login / 
 - Not purged, by design: `compile.js` / `source-cache.js` entries (content-addressed — a changed file naturally misses and recompiles) and head `<script>`/`<link>` nodes (URL-addressed; the browser already caches them by URL).
 - In-flight fetches started before the clear are guarded by a cache epoch: their results are discarded instead of being written back into the purged cache.
 - Template fetches are sent with `cache: 'no-cache'`: they revalidate against the server (etag/Last-Modified) instead of being served by the browser's HTTP cache. Without this, a cleared descriptor rebuilds from a stale HTTP-cached body — the HTTP cache is a second layer under the descriptor cache, and clearing only the top layer leaves reloads serving old files. `no-cache` revalidates; the etag turns unchanged files into cheap 304s.
-- ES module imports (script-setup static `import`, dynamic `await import()`, `env.js`, `routes.js`) ride the browser's native module map, which caches by full URL and exposes no eviction API. `clearScoped`/`clear` therefore also bump an import epoch: afterwards, same-origin import URLs gain a `?__ve={epoch}` query, so they re-enter the module map as fresh entries and re-fetch from the server. External http(s) (CDN) and `blob:`/`data:` URLs are never busted. Across epochs the same file coexists as two module instances (live old pages keep the old one) — consistent with invalidation semantics, not HMR. Note the fix level of your running tab: a tab that loaded the framework before this feature existed needs one full page refresh to pick it up.
+- ES module imports (script-setup static `import`, dynamic `await import()`, `env.js`, `routes.js`) ride the browser's native module map, which caches by full URL and exposes no eviction API. `clearScoped`/`clear` therefore also bump an import epoch: afterwards, same-origin import URLs gain a `?__ve={epoch}` query, so they re-enter the module map as fresh entries and re-fetch from the server. External http(s) (CDN) and `blob:`/`data:` URLs are never busted. Across epochs the same file coexists as two module instances (live old pages keep the old one) — consistent with invalidation semantics, not HMR. Note the fix level of your running tab: a tab that loaded the framework before this feature existed needs one full page refresh to pick it up. Coverage boundary: busting applies only at the framework's four import points — transitive native imports inside a busted module (e.g. `import './fsops.js'` within a re-fetched `page_fs.js?__ve=2`) resolve to a clean URL because relative resolution drops the base URL's query, so already-loaded dependency modules stay stale in the module map; changing such a transitive dependency still requires a full page refresh.
 
 Do NOT use `env.js` for route guards, per-page state, or component-local data.
 
@@ -363,7 +390,7 @@ Route record fields:
 | `component` | required. HTML path or `(path, params) => url`; `params` includes fixed `:params` values plus matched route params |
 | `layout` | layout name → `/layout/{name}.html`; layouts should expose a default `<vslot>` for the page outlet |
 | `redirect` | string, `{ path, params, query, hash }`, or `(matchedRoute) => target` |
-| `error_redirect` | fallback when the component fails to load（未配置时：应用内导航失败保留当前页 + 错误登记；首 mount 失败降级为可见错误盒页 commit，不白屏杀应用） |
+| `error_redirect` | fallback when the component fails to load (when unset: an in-app navigation failure keeps the current page and records the error; an initial-mount failure commits a visible error-box page instead of white-screening the app) |
 | `meta` | arbitrary metadata, exposed on `$router.current.meta` |
 | `children` | nested routes; child paths relative to parent; children inherit parent layout/meta |
 | `cacheKey` | `false` (no cache) · string (shared instance) · `(matchedRoute) => key` · default: path-based, query/hash excluded (query changes update router state, page DOM kept) |
@@ -446,6 +473,8 @@ vhtml i18n add -json '{"zh-CN":{"k":"v"},"en-US":{"k":"v"}}'
 
 Keys starting with `_` (`_err.40100`, `_theme.dark`) are maintained manually in langs.json: scan skips them for missing/unused checks, `--autoremove` never deletes them. Use for dynamic keys referenced via concatenation, variables, or function args (not exact string literals).
 
+Caution: `scan` detects references by static `$t('key')` literal matching — keys used via concatenation or variables look unused. Treat the unreferenced report as a lead only: before any `--autoremove` deletion, text-search the sources for dynamic references (or keep such keys under the `_` prefix, which autoremove never touches).
+
 ## Web Components: No Interop
 
 vhtml does **not** special-case native Web Components. A tag containing `-` is always an internal vhtml component, loaded and compiled by vhtml.
@@ -501,6 +530,7 @@ Structural edits (insert / remove / reorder): either in-place mutators (`splice`
 3. Writes from within a reactive evaluation (watchers, binding expressions) do not notify — mutate state from event handlers, timers, or rAF callbacks instead.
 4. A runaway feedback loop (a callback writing its own dependency every round) aborts after 10 rounds in one refresh, throwing an error — check `window.__vhtml_dev.cascadeErrors` for the effect chain.
 5. Errors are exposed, never silent: template compilation failures throw; a component that fails to mount renders a visible red `[vhtml] ... failed` placeholder instead of blank space; every compile/expression/mount error is recorded in `window.__vhtml_dev.errors` (newest last) with code preview and component location. Undefined identifiers read inside sandboxed code warn once per name (spelling check). Router page-load failure: in-app navigation keeps the current page and records the error; initial mount (no current page) commits a visible `[Load Error]` box page instead of rejecting the whole mount (white screen = visual silence) — route-level `error_redirect` overrides both.
+6. Only plain objects and arrays are proxied — `Node` / `Date` / `RegExp` / `Event` and class instances are already excluded. To keep a plain object raw (a large static structure, an object handed to a third-party library, or one compared by identity), set `__noproxy: true` on it and the reactive system returns it unproxied.
 
 #### Compile stats (`__vhtml_dev.compileStats`)
 
