@@ -174,17 +174,37 @@
   }
   const firstPos = (argv) => (argv || []).find((x) => !String(x).startsWith('--'))
 
-  // ===== 引擎样式（相对页面 URL 解析，fetch 后内联注入）=====
-  try {
-    fetch(new URL('./vendor/univer-excel.css', location.href).href)
-      .then((r) => r.text())
-      .then((t) => {
-        const s = document.createElement('style')
-        s.textContent = t
-        document.head.appendChild(s)
-      })
-      .catch(() => { /* 样式失败不阻断 */ })
-  } catch (e) { /* 样式失败不阻断 */ }
+  // ===== 引擎资源：本地包内优先，缺失时回退 jsDelivr 加速源 =====
+  // （轻量安装的 skill 不含 vendor/ 时自动走 CDN；本地存在则直读，开发改动即时生效）
+  const CDN_VENDOR = 'https://cdn.jsdelivr.net/gh/veypi/aic-skills@main/office_studio/ui/vendor/'
+  const loadEngineModule = async () => {
+    try {
+      return await import('./vendor/univer-excel.bundle.js')
+    } catch (e) {
+      return await import('https://cdn.jsdelivr.net/gh/veypi/aic-skills@main/office_studio/ui/vendor/univer-excel.bundle.js')
+    }
+  }
+
+  // ===== 引擎样式（本地优先 → CDN 回退，fetch 后内联注入；失败不阻断）=====
+  const loadEngineCss = async () => {
+    let text = ''
+    try {
+      const r = await fetch(new URL('./vendor/univer-excel.css', location.href).href)
+      if (r.ok) text = await r.text()
+    } catch (e) { /* 本地不可用则走 CDN */ }
+    if (!text) {
+      try {
+        const r2 = await fetch(CDN_VENDOR + 'univer-excel.css')
+        if (r2.ok) text = await r2.text()
+      } catch (e) { /* 样式失败不阻断 */ }
+    }
+    if (text) {
+      const s = document.createElement('style')
+      s.textContent = text
+      document.head.appendChild(s)
+    }
+  }
+  loadEngineCss()
 
   // ===== 最近文件（localStorage）=====
   try {
@@ -207,7 +227,7 @@
     if (!modRef) {
       boot_err = ''
       try {
-        modRef = await import('./vendor/univer-excel.bundle.js')
+        modRef = await loadEngineModule()
       } catch (e) {
         boot_err = String((e && e.message) || e)
         status_text = '引擎加载失败'
@@ -227,7 +247,7 @@
   // 后台预热（只取模块，不创建编辑器）
   const prefetch = async () => {
     if (modRef) return
-    try { modRef = await import('./vendor/univer-excel.bundle.js') } catch (e) { /* ensureEngine 时再报 */ }
+    try { modRef = await loadEngineModule() } catch (e) { /* ensureEngine 时再报 */ }
   }
   prefetch()
 
