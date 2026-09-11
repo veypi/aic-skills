@@ -1,0 +1,17 @@
+{
+  "title": "待办事项",
+  "description": "todo_min 示例表：每行一条待办，按 user_id 行级隔离",
+  "fields": [
+    {"name": "id", "type": "string", "required": true, "default": "", "description": "业务主键（应用层生成）"},
+    {"name": "user_id", "type": "string", "required": true, "default": "", "description": "归属用户（服务端注入）"},
+    {"name": "title", "type": "string", "required": true, "default": ""},
+    {"name": "done", "type": "bool", "default": false},
+    {"name": "priority", "type": "int", "default": 0},
+    {"name": "note", "type": "text"},
+    {"name": "created_at", "type": "time"}
+  ],
+  "indexes": [
+    {"fields": ["user_id"]},
+    {"fields": ["id"], "unique": true}
+  ]
+}

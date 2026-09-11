@@ -1,0 +1,2 @@
+-- POST {url_prefix}/api/todo_remove —— 删除
+DELETE FROM todos WHERE user_id = :user_id AND id = :id

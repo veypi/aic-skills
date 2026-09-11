@@ -1,0 +1,6 @@
+-- GET {url_prefix}/api/todos —— 当前用户全部待办（行级隔离）
+SELECT id, title, done, priority, note, created_at
+FROM todos
+WHERE user_id = :user_id
+ORDER BY done ASC, priority DESC, created_at DESC
+LIMIT 200

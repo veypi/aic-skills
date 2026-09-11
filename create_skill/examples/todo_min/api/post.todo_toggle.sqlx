@@ -1,0 +1,3 @@
+-- POST {url_prefix}/api/todo_toggle —— 设完成状态
+UPDATE todos SET done = CAST(:done AS INTEGER)
+WHERE user_id = :user_id AND id = :id

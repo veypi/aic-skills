@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>待办清单</title>
+  <style>
+    body { height: 100%; margin: 0; display: flex; flex-direction: column; font: 14px/1.5 system-ui, 'PingFang SC', sans-serif; background: #0f1115; color: #e8eaed; container-type: inline-size; }
+    .bar { display: flex; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #2a2f3a; }
+    .bar input, .bar select { padding: 6px 10px; border-radius: 8px; border: 1px solid #3a4150; background: #1a1f29; color: inherit; }
+    .bar input { flex: 1; min-width: 0; }
+    .bar select { flex: 0 0 84px; }
+    .bar button, .foot button { padding: 6px 14px; border-radius: 8px; border: 1px solid #3a4150; background: #263043; color: inherit; cursor: pointer; }
+    .list { flex: 1; overflow: auto; padding: 10px 12px; }
+    .item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid #232833; border-radius: 10px; margin-bottom: 8px; }
+    .item.done .title { text-decoration: line-through; opacity: .45; }
+    .title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pri { font-size: 12px; padding: 1px 8px; border-radius: 99px; background: #2a3142; white-space: nowrap; }
+    .del { border: 0; background: none; color: #8a93a6; cursor: pointer; }
+    .empty { text-align: center; opacity: .5; padding: 36px 0; }
+    .foot { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-top: 1px solid #2a2f3a; font-size: 12px; opacity: .85; }
+    /* 窗口变窄时收起次要元素（@container = 按窗口宽度；不要用 @media） */
+    @container (max-width: 560px) {
+      .bar select { display: none; }
+      .pri { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <input v:value="draft" @keyup.enter="add()" placeholder="要做什么？（回车添加）" />
+    <select v:value="priority">
+      <option value="0">普通</option>
+      <option value="1">重要</option>
+      <option value="2">紧急</option>
+    </select>
+    <button @click="add()">添加</button>
+  </div>
+  <div class="list">
+    <div v-if="!items.length" class="empty">暂无待办</div>
+    <div v-for="item in items" class="item" :class="{ done: item.done }">
+      <input type="checkbox" :checked="item.done" @change="toggle(item)" />
+      <span class="title">{{ item.title }}</span>
+      <span v-if="item.priority > 0" class="pri">{{ priorityLabel(item.priority) }}</span>
+      <button class="del" @click="remove(item)">删除</button>
+    </div>
+  </div>
+  <div class="foot">
+    <span>{{ doneCount() }} / {{ items.length }} 已完成</span>
+    <button @click="clearDone()">清除已完成</button>
+  </div>
+
+  <script setup>
+    // ===== $data =====
+    items = []
+    draft = ''
+    priority = '0'
+
+    // 指令助手
+    reply = (obj) => ({ content: JSON.stringify(obj) })
+    errReply = (msg) => ({ content: JSON.stringify({ ok: false, error: String(msg) }) })
+    argsGet = (argv, flag) => { const i = argv.indexOf(flag); return i >= 0 ? argv[i + 1] : null }
+    priorityLabel = (p) => ['普通', '重要', '紧急'][Number(p)] || '普通'
+    doneCount = () => items.filter((it) => it.done).length
+    genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
+
+    // ===== 数据读写（$mod.$fetch：相对路径自动加包前缀） =====
+    load = async () => {
+      const r = await $mod.$fetch('api/todos')
+      items = r.rows || []
+    }
+
+    add = async (title, pri) => {
+      const t = (title == null ? draft : String(title)).trim()
+      if (!t) return null
+      const id = genId()
+      await $mod.$fetch('api/todo_add', {
+        method: 'POST',
+        body: {
+          id: id, title: t,
+          priority: String(pri == null ? priority : pri),
+          note: '', created_at: new Date().toISOString(),
+        },
+      })
+      if (title == null) draft = ''
+      await load()
+      return id
+    }
+
+    toggle = async (item, done) => {
+      const v = done == null ? (item.done ? 0 : 1) : Number(done)
+      await $mod.$fetch('api/todo_toggle', { method: 'POST', body: { id: item.id, done: v } })
+      await load()
+    }
+
+    remove = async (item) => {
+      await $mod.$fetch('api/todo_remove', { method: 'POST', body: { id: item.id } })
+      await load()
+    }
+
+    clearDone = async () => {
+      await $mod.$fetch('api/todo_clear_done', { method: 'POST', body: {} })
+      await load()
+    }
+
+    // ===== pageDesc：窗口指令（外部 AI 经 {win_id}.{cmd} 调用） =====
+    pageDesc = {
+      desc: '待办清单页面（todo_min 示例）',
+      commands: [
+        {
+          name: 'todo_status', desc: '待办统计', help: '无参数。返回 {"ok","total","done"}',
+          handler: async () => { await load(); return reply({ ok: true, total: items.length, done: doneCount() }) },
+        },
+        {
+          name: 'todo_add', desc: '新增待办', help: '--title <标题>（必填）[--priority <0-2>]',
+          handler: async (argv) => {
+            const t = argsGet(argv, '--title')
+            if (!t) return errReply('--title is required')
+            const id = await add(t, argsGet(argv, '--priority'))
+            return id ? reply({ ok: true, id: id }) : errReply('empty title')
+          },
+        },
+        {
+          name: 'todo_toggle', desc: '切换/设置完成状态', help: '--id <id> [--done <0/1>]（缺省翻转）',
+          handler: async (argv) => {
+            const id = argsGet(argv, '--id')
+            const item = items.find((it) => it.id === id)
+            if (!item) return errReply('not found: ' + id)
+            await toggle(item, argsGet(argv, '--done'))
+            return reply({ ok: true })
+          },
+        },
+        {
+          name: 'todo_remove', desc: '删除待办', help: '--id <id>',
+          handler: async (argv) => {
+            const id = argsGet(argv, '--id')
+            const item = items.find((it) => it.id === id)
+            if (!item) return errReply('not found: ' + id)
+            await remove(item)
+            return reply({ ok: true })
+          },
+        },
+        {
+          name: 'todo_clear_done', desc: '清除全部已完成', help: '无参数',
+          handler: async () => { await clearDone(); return reply({ ok: true, total: items.length }) },
+        },
+      ],
+    }
+  </script>
+
+  <script>
+    // 挂载完成后加载数据（跨块共享走 $data：load 是 setup 里的裸赋值）
+    load()
+  </script>
+</body>
+</html>

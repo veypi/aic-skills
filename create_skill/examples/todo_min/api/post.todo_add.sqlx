@@ -1,0 +1,5 @@
+-- POST {url_prefix}/api/todo_add —— 新增（priority 空串兜底 0）
+INSERT INTO todos (user_id, id, title, done, priority, note, created_at)
+VALUES (:user_id, :id, :title, 0,
+        CASE WHEN :priority = '' THEN 0 ELSE CAST(:priority AS INTEGER) END,
+        :note, :created_at)

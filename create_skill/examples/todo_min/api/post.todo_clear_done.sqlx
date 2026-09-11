@@ -1,0 +1,2 @@
+-- POST {url_prefix}/api/todo_clear_done —— 删除当前用户全部已完成
+DELETE FROM todos WHERE user_id = :user_id AND done = 1

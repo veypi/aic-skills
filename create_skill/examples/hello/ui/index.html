@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Hello</title>
+  <style>
+    body { height: 100%; margin: 0; container-type: inline-size; display: flex; align-items: center; justify-content: center; font: 14px/1.6 system-ui, 'PingFang SC', sans-serif; background: #0f1115; color: #e8eaed; }
+    .card { text-align: center; padding: 28px 32px; border: 1px solid #2a2f3a; border-radius: 14px; background: #141821; }
+    .count { font-size: 56px; font-weight: 700; margin: 6px 0 14px; font-variant-numeric: tabular-nums; }
+    button { padding: 6px 14px; margin: 0 4px; border-radius: 8px; border: 1px solid #3a4150; background: #1a1f29; color: inherit; cursor: pointer; }
+    button:hover { border-color: #5a6377; }
+    /* 窗口变窄换小号：页面跑在 OS 窗口里，用 @container（按容器宽度）；不要用 @media（按视口，会误判） */
+    @container (max-width: 420px) {
+      .count { font-size: 36px; }
+      .card { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div>Hello, skill!</div>
+    <div class="count">{{ count }}</div>
+    <button @click="inc(1)">+1</button>
+    <button @click="inc(5)">+5</button>
+    <button @click="reset()">归零</button>
+  </div>
+
+  <script setup>
+    // ===== $data：裸赋值即注册（模板可直接访问；const/let 是私有局部，模板看不到） =====
+    count = 0
+    inc = (by) => { count += Number(by) || 0 }
+    reset = () => { count = 0 }
+
+    // 指令返回助手：{content} 是外部 AI 看到的工具结果
+    reply = (obj) => ({ content: JSON.stringify(obj) })
+    errReply = (msg) => ({ content: JSON.stringify({ ok: false, error: String(msg) }) })
+
+    // ===== pageDesc：平台采集为窗口指令 {win_id}.{cmd} =====
+    // 形状硬校验：desc 必须 string、commands 数组、每条 {name 非空, handler 函数}——不满足会被平台整体忽略
+    pageDesc = {
+      desc: 'Hello 计数器示例页面',
+      commands: [
+        {
+          name: 'hello_status',
+          desc: '读取计数状态',
+          help: '无参数。返回 {"ok":true,"count":<数字>}',
+          handler: () => reply({ ok: true, count: count }),
+        },
+        {
+          name: 'hello_inc',
+          desc: '增加计数',
+          help: '--by <数字>（缺省 1）',
+          handler: (argv) => {
+            const i = argv.indexOf('--by')
+            const by = i >= 0 ? Number(argv[i + 1]) : 1
+            if (!Number.isFinite(by)) return errReply('--by must be a number')
+            inc(by)
+            return reply({ ok: true, count: count })
+          },
+        },
+        {
+          name: 'hello_reset',
+          desc: '计数归零',
+          help: '无参数。返回 {"ok":true,"count":0}',
+          handler: () => { reset(); return reply({ ok: true, count: count }) },
+        },
+      ],
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>笔记</title>
+  <style>
+    body { height: 100%; margin: 0; display: flex; font: 14px/1.5 system-ui, 'PingFang SC', sans-serif; background: #0f1115; color: #e8eaed; container-type: inline-size; }
+    .side { width: 220px; min-width: 160px; border-right: 1px solid #2a2f3a; display: flex; flex-direction: column; }
+    .acts { display: flex; gap: 6px; padding: 8px; border-bottom: 1px solid #20242e; }
+    .acts button { flex: 1; padding: 5px 8px; border-radius: 8px; border: 1px solid #3a4150; background: #1a1f29; color: inherit; cursor: pointer; font-size: 13px; }
+    .files { flex: 1; overflow: auto; padding: 6px 6px 10px; }
+    .file { padding: 6px 10px; cursor: pointer; border-radius: 7px; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+    .file:hover { background: #1a1f29; }
+    .file.active { background: #263043; }
+    .empty { text-align: center; opacity: .5; padding: 24px 0; font-size: 12px; }
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid #2a2f3a; }
+    .path { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; opacity: .72; }
+    .toolbar button { padding: 5px 14px; border-radius: 8px; border: 1px solid #3a4150; background: #263043; color: inherit; cursor: pointer; }
+    textarea { flex: 1; width: 100%; box-sizing: border-box; border: 0; outline: 0; resize: none; padding: 14px 16px; background: transparent; color: inherit; font: 13px/1.7 ui-monospace, 'SF Mono', Consolas, monospace; }
+    /* 窗口变窄：侧栏改顶部条（@container = 按窗口宽度；不要用 @media） */
+    @container (max-width: 620px) {
+      body { flex-direction: column; }
+      .side { width: auto; max-height: 38%; border-right: 0; border-bottom: 1px solid #2a2f3a; }
+    }
+  </style>
+</head>
+<body>
+  <div class="side">
+    <div class="acts">
+      <button @click="openPicker()">打开…</button>
+      <button @click="newNote()">新建</button>
+    </div>
+    <div class="files">
+      <div v-if="!files.length" class="empty">目录为空</div>
+      <div v-for="f in files" class="file" :class="{ active: f.path === current }"
+           :title="f.path" @click="openFile(f.path)">{{ f.name }}</div>
+    </div>
+  </div>
+  <div class="main">
+    <div class="toolbar">
+      <span class="path">{{ current || (dir + '（未打开文件）') }}</span>
+      <button @click="save()">保存</button>
+      <button @click="saveAs()">另存为</button>
+    </div>
+    <textarea v:value="text" placeholder="打开或新建一个文件开始写…（AI 也可以直接写文件，再用 notes_open 展示）"></textarea>
+  </div>
+
+  <script setup>
+    // ===== $data =====
+    ready = false
+    dir = ''
+    current = ''
+    text = ''
+    files = []
+
+    // 路径归一化：/u/... → /cloud/u/...；裸文件名 → 当前目录下
+    norm = (p) => {
+      let s = String(p || '').trim()
+      if (!s) return s
+      if (s.startsWith('/u/')) return '/cloud' + s
+      if (!s.startsWith('/')) return dir.replace(/\/+$/, '') + '/' + s
+      return s
+    }
+    basename = (p) => String(p || '').split('/').pop()
+
+    reply = (obj) => ({ content: JSON.stringify(obj) })
+    errReply = (msg) => ({ content: JSON.stringify({ ok: false, error: String(msg) }) })
+    argsGet = (argv, flag) => { const i = argv.indexOf(flag); return i >= 0 ? argv[i + 1] : null }
+
+    // ===== 文件操作（$mod.$fs） =====
+    ensureDir = async () => {
+      try { await $mod.$fs.ls(dir) } catch (e) { await $mod.$fs.mkdir(dir) }
+    }
+
+    refresh = async () => {
+      try {
+        const r = await $mod.$fs.ls(dir)
+        files = (r.items || []).filter((it) => !it.dir).map((it) => ({ name: it.name, path: it.path }))
+      } catch (e) { files = [] }
+    }
+
+    openFile = async (p) => {
+      const path = norm(p)
+      const f = await $mod.$fs.get(path)
+      if (f.dir) throw new Error('is a directory: ' + path)
+      current = path
+      text = typeof f.content === 'string' ? f.content : ''
+      return current
+    }
+
+    save = async (p) => {
+      const path = p ? norm(p) : current
+      if (!path) throw new Error('no target path: open a file or use save as')
+      await $mod.$fs.put(path, text)
+      current = path
+      await refresh()
+      return current
+    }
+
+    saveAs = async () => {
+      const t = await $mod.$fs.save_as({ name: current ? basename(current) : '未命名.md', ext: 'md', start: dir })
+      if (!t) return null
+      await save(t.path)
+      return t.path
+    }
+
+    openPicker = async () => {
+      const pick = await $mod.$fs.open({ accept: ['.md', '.txt'], start: dir })
+      if (!pick) return null
+      await openFile(pick.path)
+      return pick.path
+    }
+
+    newNote = async (name) => {
+      const raw = name || ('新笔记-' + new Date().toTimeString().slice(0, 8).replace(/:/g, ''))
+      const nm = String(raw).replace(/[\\/]/g, '')
+      const path = dir.replace(/\/+$/, '') + '/' + (nm.endsWith('.md') ? nm : nm + '.md')
+      await $mod.$fs.put(path, '')
+      await refresh()
+      await openFile(path)
+      return path
+    }
+
+    setDir = async (d) => {
+      dir = norm(d)
+      await ensureDir()
+      await refresh()
+      return dir
+    }
+
+    init = async () => {
+      const home = await $mod.$fs.home('/cloud')
+      dir = home + '/notes'
+      await ensureDir()
+      await refresh()
+      ready = true
+    }
+
+    // ===== pageDesc：窗口指令 =====
+    pageDesc = {
+      desc: '笔记（文件驱动示例）：浏览/编辑 .md 文件',
+      commands: [
+        {
+          name: 'notes_status', desc: '页面状态', help: '无参数。返回 {ok, ready, dir, current, files}',
+          handler: () => reply({ ok: true, ready: ready, dir: dir, current: current, files: files.length }),
+        },
+        {
+          name: 'notes_list', desc: '列出目录文件', help: '[--dir <路径>]（传了先切换目录）',
+          handler: async (argv) => {
+            const d = argsGet(argv, '--dir')
+            if (d) await setDir(d)
+            await refresh()
+            return reply({ ok: true, dir: dir, files: files.map((f) => f.name) })
+          },
+        },
+        {
+          name: 'notes_open', desc: '打开文件到编辑区', help: '--path <路径>（/cloud/u/...、/u/... 或目录内文件名）',
+          handler: async (argv) => {
+            const p = argsGet(argv, '--path')
+            if (!p) return errReply('--path is required')
+            await openFile(p)
+            return reply({ ok: true, path: current })
+          },
+        },
+        {
+          name: 'notes_save', desc: '保存编辑区内容', help: '[--path <路径>]（缺省保存到当前文件）',
+          handler: async (argv) => {
+            const p = argsGet(argv, '--path')
+            if (!current && !p) return errReply('no current file: pass --path')
+            await save(p)
+            return reply({ ok: true, path: current })
+          },
+        },
+        {
+          name: 'notes_new', desc: '新建空笔记并打开', help: '[--name <文件名>]（自动补 .md）',
+          handler: async (argv) => {
+            await newNote(argsGet(argv, '--name'))
+            return reply({ ok: true, path: current })
+          },
+        },
+        {
+          name: 'notes_set_dir', desc: '切换工作目录', help: '--dir <路径>',
+          handler: async (argv) => {
+            const d = argsGet(argv, '--dir')
+            if (!d) return errReply('--dir is required')
+            await setDir(d)
+            return reply({ ok: true, dir: dir })
+          },
+        },
+      ],
+    }
+  </script>
+
+  <script>
+    // 挂载完成：初始化默认目录并列出文件
+    init()
+  </script>
+</body>
+</html>
