@@ -174,30 +174,21 @@
   }
   const firstPos = (argv) => (argv || []).find((x) => !String(x).startsWith('--'))
 
-  // ===== 引擎资源：本地包内优先，缺失时回退 jsDelivr 加速源 =====
-  // （轻量安装的 skill 不含 vendor/ 时自动走 CDN；本地存在则直读，开发改动即时生效）
+  // ===== 引擎资源：统一走 jsDelivr 加速源（不引本地，平台只服务页面本体）=====
+  // 更新流程：构建产物提交到 aic-skills 后 purge 缓存即时生效——
+  // https://purge.jsdelivr.net/gh/veypi/aic-skills@main/office_studio/ui/vendor/univer-excel.bundle.js
   const CDN_VENDOR = 'https://cdn.jsdelivr.net/gh/veypi/aic-skills@main/office_studio/ui/vendor/'
   const loadEngineModule = async () => {
-    try {
-      return await import('./vendor/univer-excel.bundle.js')
-    } catch (e) {
-      return await import('https://cdn.jsdelivr.net/gh/veypi/aic-skills@main/office_studio/ui/vendor/univer-excel.bundle.js')
-    }
+    return await import('https://cdn.jsdelivr.net/gh/veypi/aic-skills@main/office_studio/ui/vendor/univer-excel.bundle.js')
   }
 
-  // ===== 引擎样式（本地优先 → CDN 回退，fetch 后内联注入；失败不阻断）=====
+  // ===== 引擎样式（CDN 源，fetch 后内联注入；失败不阻断）=====
   const loadEngineCss = async () => {
     let text = ''
     try {
-      const r = await fetch(new URL('./vendor/univer-excel.css', location.href).href)
+      const r = await fetch(CDN_VENDOR + 'univer-excel.css')
       if (r.ok) text = await r.text()
-    } catch (e) { /* 本地不可用则走 CDN */ }
-    if (!text) {
-      try {
-        const r2 = await fetch(CDN_VENDOR + 'univer-excel.css')
-        if (r2.ok) text = await r2.text()
-      } catch (e) { /* 样式失败不阻断 */ }
-    }
+    } catch (e) { /* 样式失败不阻断 */ }
     if (text) {
       const s = document.createElement('style')
       s.textContent = text
