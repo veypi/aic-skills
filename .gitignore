@@ -11,6 +11,9 @@
 !git_commit/
 !video_studio/
 !3d_maker/
+!blender_cua/
+!office_studio/
+!README.md
 
 *.sqlite
 *.zip
