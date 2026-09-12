@@ -3,15 +3,16 @@
 <head>
   <title>Hello</title>
   <style>
-    body { height: 100%; margin: 0; container-type: inline-size; display: flex; align-items: center; justify-content: center; font: 14px/1.6 system-ui, 'PingFang SC', sans-serif; background: #0f1115; color: #e8eaed; }
-    .card { text-align: center; padding: 28px 32px; border: 1px solid #2a2f3a; border-radius: 14px; background: #141821; }
-    .count { font-size: 56px; font-weight: 700; margin: 6px 0 14px; font-variant-numeric: tabular-nums; }
-    button { padding: 6px 14px; margin: 0 4px; border-radius: 8px; border: 1px solid #3a4150; background: #1a1f29; color: inherit; cursor: pointer; }
-    button:hover { border-color: #5a6377; }
+    /* 样式规范：页面底色/字体由 OS 统一提供（body 只写布局）；颜色用平台设计 token——见 create_skill references/page-ui-manual.md §6 */
+    body { height: 100%; container-type: inline-size; display: flex; align-items: center; justify-content: center; }
+    .card { text-align: center; padding: var(--spacing-xl) var(--spacing-2xl); border: 1px solid var(--border-color); border-radius: var(--radius-xl); background: var(--bg-color-secondary); box-shadow: var(--shadow-sm); }
+    .count { font-size: 56px; font-weight: var(--font-weight-bold); margin: 6px 0 14px; font-variant-numeric: tabular-nums; color: var(--color-primary); }
+    button { padding: 6px 14px; margin: 0 4px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); background: var(--bg-color-tertiary); color: var(--text-color); cursor: pointer; transition: border-color var(--transition-fast), background var(--transition-fast); }
+    button:hover { border-color: var(--border-color-hover); }
     /* 窗口变窄换小号：页面跑在 OS 窗口里，用 @container（按容器宽度）；不要用 @media（按视口，会误判） */
     @container (max-width: 420px) {
       .count { font-size: 36px; }
-      .card { padding: 16px; }
+      .card { padding: var(--spacing-md); }
     }
   </style>
 </head>

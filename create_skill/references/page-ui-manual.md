@@ -1,6 +1,6 @@
 # 技能界面手册（ui/ 与 pageDesc）
 
-> 本手册覆盖「技能页面」的特有内容：包页面平台集成、pageDesc 指令完全规格、布局响应式、常见坑。
+> 本手册覆盖「技能页面」的特有内容：包页面平台集成、pageDesc 指令完全规格、布局响应式、样式规范、常见坑。
 > vhtml 组件语言的完整语法（绑定、组件、路由、生命周期全契约）请看 **vhtml 技能**：`skills search 'vhtml'` 找到条目 → `skills load <其 id>`（本地已有 vhtml 目录则直接 `load vhtml`）。
 > 本包内参考：`examples/hello`（最小页面 + 指令）、`examples/todo_min`（页面 + 数据）、`examples/notes`（文件驱动）。
 
@@ -120,7 +120,95 @@ body { height: 100%; margin: 0; container-type: inline-size; }   /* 做容器上
 - 工具栏 + 内容骨架：`body { display:flex; flex-direction:column }`、内容区 `flex:1; overflow:auto`（见 todo_min 示例）。
 - 画布/棋盘类要精确像素时：`ResizeObserver` 观察 `$node`，用 JS 算尺寸；位图分辨率固定、指针坐标按缩放比换算。
 
-## 6. 文件交互与导出（页面常用）
+## 6. 样式规范（视觉统一）
+
+平台基调：**轻量工作面板**——简洁、克制、信息密度中高、无重装饰。技能页面与平台本地应用保持同一视觉体系：**一切颜色/圆角/间距/字号用平台设计 token（CSS 变量）**，页面自动适配亮/暗主题。
+
+### 6.1 设计 token（技能页面直接可用）
+
+技能页面是 vhtml 组件、编译进平台同一文档——平台 `global.css` 的 token 直接可用（无需引入任何样式文件）：
+
+**颜色（语义）**：
+
+| token | 用途 |
+| --- | --- |
+| `--color-primary`（+`-hover`/`-active`） | 主操作：主按钮、链接、选中态、强调文字 |
+| `--color-primary-text` | 主色实底上的文字色 |
+| `--color-secondary`（+`-hover`/`-active`） | 次操作 |
+| `--color-info` / `--color-success` / `--color-warning` / `--color-danger`（danger 另有 `-hover`） | 反馈色 |
+| `--bg-color` | 页面底色 |
+| `--bg-color-secondary` | 卡片/面板面 |
+| `--bg-color-tertiary` | 弱面：控件底、分区、徽标底 |
+| `--text-color`（+`-secondary`/`-tertiary`/`-disabled`/`-inverse`） | 正文 / 次要 / 弱化 / 禁用 / 反色 |
+| `--border-color`（+`-hover`） | 描边 / 悬停描边 |
+
+**尺寸与排版**：
+
+| token | 值 |
+| --- | --- |
+| `--radius-sm/md/lg/xl/full` | 2/4/8/12/9999px——**控件与卡片用 `lg`**，小元素 `md`，胶囊 `full` |
+| `--spacing-xs/sm/md/lg/xl/2xl/3xl` | 4/8/16/24/32/40/48px |
+| `--font-size-xs/sm/md/lg/xl/2xl` | 12/13/14（基准）/16/20/24px |
+| `--font-weight-normal/medium/semibold`（另有 `-bold`） | 400/500/600 |
+| `--font-mono` | 代码/等宽场景 |
+| `--shadow-sm/md/lg` | 层级阴影 |
+| `--transition-fast/base/slow` | 150/200/300ms 缓动 |
+
+### 6.2 主题适配（自动）
+
+- 平台根样式在 `body[theme="dark"]` 下维护 token 覆盖——**只要用 token，页面无需写任何暗色代码，也不要自己做主题开关**
+- **不要硬编码颜色**（hex/rgb 常量）作为底色与文字色；需要带色调的半透明面时用平台惯例：`color-mix(in srgb, var(--token) N%, transparent)`
+- 画布/图表类（JS 自绘像素）：如需随主题，用 `getComputedStyle(document.documentElement).getPropertyValue('--bg-color')` 读取；不随主题也可，但保持内部自洽
+
+### 6.3 平台统一提供的基础（不要覆盖）
+
+- **页面底色**：由 OS 布局统一提供——所有窗口共用同一默认背景，随主题自动切换。**页面不要自己设置背景**（不在 `body`/`:root` 写 `background`、不写死色值）；需要局部“面”时，把 `--bg-color-secondary`/`-tertiary` 用在**具体元素**上（卡片、侧栏区块等）。
+- **字体栈、字号（14px 基准）、行高、文字颜色**：平台提供、页面自动继承——**不要重新声明**（`font-family`/`font-size`/`color` 都交给平台）。
+- 文档级已提供：盒模型 reset（含 margin/padding 归零）、细滚动条、`:focus-visible` 焦点环、`prefers-reduced-motion` 降级——不要重复声明或覆盖。
+- 一句话：**`body` 只写布局**（高度/弹性/`container-type`）；颜色与字体交给平台；页面内要面/要色，用 token 作用在具体元素上。
+
+```css
+/* ✓ 页面 body 只写布局 */
+body { height: 100%; display: flex; flex-direction: column; container-type: inline-size; }
+
+/* ✗ 自己设置页面底色/文字色/字体（平台已提供） */
+body { background: #fff; color: #333; font-family: 'Inter', sans-serif; }
+
+/* ✗ 重定义 token */
+:root { --bg-color: #0f1115; }
+```
+
+### 6.4 视觉惯例（推荐骨架）
+
+- **布局**：顶栏 toolbar + 内容区（`flex:1; overflow:auto`）；满高与 `@container` 见 §5
+- **按钮**：主操作实底 `--color-primary`（文字 `--color-primary-text`，hover `--color-primary-hover`）；一般操作弱面 `--bg-color-tertiary` + `1px --border-color`（hover `--border-color-hover`）；危险操作文字/描边用 `--color-danger`
+- **输入框**：面 `--bg-color-secondary`、描边 `--border-color`、圆角 `--radius-lg`（聚焦环平台已给）
+- **卡片/面板**：面 `--bg-color-secondary` + `1px --border-color` + `--radius-lg`（可选 `--shadow-sm`）
+- **列表行**：1px 描边或弱面分隔；悬停 `color-mix(in srgb, var(--text-color) 8%, transparent)`；选中 `color-mix(in srgb, var(--color-primary) 14%, transparent)`
+- **徽标/状态**：胶囊 `--radius-full`、字号 `-xs`、弱底（`--bg-color-tertiary` 或语义色 `color-mix 14%` + 同色文字）
+- **空态/次要说明**：`--text-color-tertiary`；空态居中
+- **间距节奏**：布局级间距取 spacing token；控件内微调（2-8px）可直写；同一页面的视觉密度保持一致
+- **过渡**：交互反馈统一 `var(--transition-fast)`
+- **图标**：优先内联 SVG 或 emoji（不引入外部图标字体依赖）
+
+### 6.5 可访问性
+
+- 可点击元素用 `<button>`/`<a>`（非 div）；悬停与聚焦状态要有可见反馈
+- 正文二级信息对比度不低于 `--text-color-secondary`；禁用态用 `--text-color-disabled`
+- 不做全屏渐变/大图重装饰（窗口是工作面板，不是营销页）；动画克制
+
+### 6.6 参考实现
+
+本包 `examples/` 全部按本规范实现：`hello`（最小页）、`todo_min`（工具型应用骨架：toolbar + 列表 + 底栏）、`notes`（双栏布局）——照它们的样式写就不会跑偏。
+
+### 6.7 反例
+
+- ✗ 硬编码 `#0f1115` / `#fff` 等底色与文字色（不随主题、与平台割裂）
+- ✗ 覆盖 `:root` token、滚动条、焦点环等全局基础
+- ✗ 用 `@media` 做布局（窗口 ≠ 视口，用 `@container`）
+- ✗ 引入外部 UI 框架/大套 CSS（页面是平台组件，不是独立站）
+
+## 7. 文件交互与导出（页面常用）
 
 ```js
 // 打开文件（平台选择器）
@@ -144,7 +232,7 @@ saveBlob = (name, blob) => {
 - 图片/媒体直链：`$mod.$fs.resolve(path)`（同源鉴权 URL）。
 - $fs 完整 API 见 `references/platform-runtime.md` §5。
 
-## 7. 高频坑清单
+## 8. 高频坑清单
 
 1. 不是完整 HTML 文档 → 静默不挂载（叠一个很误导的 404）。
 2. `<script setup>` 里访问 DOM / `$refs` → setup 阶段无 DOM；用 `<script>` 块或事件回调。
@@ -160,7 +248,7 @@ saveBlob = (name, blob) => {
 12. 大二进制素材塞包 → 包 ≤16MB 且不该塞；放用户空间，包内只存 `/fs` 路径。
 13. `:key` 之外的另一半：对象行整体替换（`items[i] = {...}`）会销毁重建行 DOM（焦点丢失）；原地改字段或用数组 mutator 保持身份。
 
-## 8. 调试
+## 9. 调试
 
 - 挂载失败 → 页面内红色 `[vhtml] ... failed` 占位（不是白屏）。
 - 错误登记：`window.__vhtml_dev.errors`（含代码预览）；级联循环：`window.__vhtml_dev.cascadeErrors`。

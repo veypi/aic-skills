@@ -18,7 +18,7 @@ icon: fa-solid fa-wand-magic-sparkles
 | --- | --- | --- |
 | `SKILL.md`（本文） | 总纲：概念、分级、契约速览、红线、检查清单 | 先读 |
 | `references/platform-runtime.md` | 平台运行时：工具/开窗/指令闭环、/fs 路径协议、$fs 全 API、$mod 服务、i18n、调试自测 | 写页面或用文件服务前 |
-| `references/page-ui-manual.md` | 界面手册：vhtml 速览、pageDesc 完全规格、布局响应式、高频坑 | 写 `ui/` 前 |
+| `references/page-ui-manual.md` | 界面手册：vhtml 速览、pageDesc 完全规格、布局响应式、**样式规范**（设计 token）、高频坑 | 写 `ui/` 前 |
 | `references/data-manual.md` | 数据面手册：tables/sqlx 规格、SQL 规范、owner 管理面、curl 通道 | 写 `tables/`、`api/` 前 |
 | `references/publishing.md` | 发布手册：流程、审核自查、发布后更新、常见拒绝原因 | 发布前 |
 | `examples/hello` | 最小纯前端：计数器 + 指令（L2） | 第一个练手 |
@@ -163,6 +163,7 @@ ui:
 - 页面地址：`{url_prefix}/index`（多页面写干净路径：`/skills/.../news`；互链 `$router.push('news')` / `<a href="news">`；带参 `{page}?id=...`，同页 query 变化不重建 → `$router.onChange(() => init())` 自刷新）
 - **不自携 env.js**：平台固定出口已做 router_prefix 锚定、模块本地 `$fetch`、`ui/langs.json` 并入 i18n
 - 响应式用 **`@container`**（窗口 ≠ 视口）；满高 `body{height:100%}`
+- **样式规范**：页面底色与字体由 OS 布局统一提供（`body` 不写背景/字体，只写布局）；配色/圆角/间距/字号用平台设计 token（亮/暗主题自动适配），不硬编码颜色——见 `references/page-ui-manual.md` §6
 - **pageDesc**（页面指令，AI 操控入口）：setup 里 `pageDesc = {desc, commands:[{name, desc, help?, handler}]}`；形状硬校验（desc string / handler 函数），不满足会被平台忽略；返回 `{content: JSON.stringify(...)}`；**每个页面至少写一条 `{前缀}_status` 指令**（自测锚点）
 - 纯前端工具到这一级就结束；需要数据继续 §6
 
@@ -260,6 +261,7 @@ VALUES (:user_id, :name, CASE WHEN :age = '' THEN 0 ELSE CAST(:age AS INTEGER) E
 **页面（ui/）**
 - [ ] 完整 HTML 文档；`pageDesc` 形状合法（desc string / handler 函数）
 - [ ] 每个页面有 `{前缀}_status` 指令；`@container` 而非 `@media`；相对路径无写死前缀
+- [ ] 样式用平台设计 token（无硬编码配色）；`body` 不设底色/字体（OS 统一提供）；亮/暗主题下观感正常
 
 **数据（tables/api）**
 - [ ] sqlx 单语句、过首词黑名单；行级过滤用 `:user_id`；数字用 CAST 模式
