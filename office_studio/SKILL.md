@@ -45,5 +45,5 @@ Office 文件工作台：在平台窗口里打开真实 office 文件（零复�
 
 ## 开发状态
 
-- Phase 0 spike：xlsx 打开 / 编辑 / 导出 / 写回闭环已在真实平台验证
-- 待办：Word（SuperDoc）与 PPT 接入、命令扩展（批注/公式/图表等）、SKILL.md 正式化
+- Phase 0：xlsx 打开 / 编辑 / 导出 / 写回闭环已在真实平台验证（2026-09-11 上线；引擎资源经 jsDelivr 加速）
+- 路线图与待办详见 **[docs/todo.md](docs/todo.md)**（Word 下一步、PPT 规划、功能增强与发布流程）
