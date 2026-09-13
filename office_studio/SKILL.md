@@ -1,49 +1,132 @@
 ---
 name: office_studio
 nickname: Office Studio
-description: Office 文档工作台：打开、编辑、保存真实 office 文件（docx/xlsx/pptx），AI 与用户共用同一编辑器协作。当前已接入 Excel（xlsx）
-keywords: [office, excel, xlsx, 表格, 文档, 电子表格, 编辑器, 工作簿]
-icon: fa-solid fa-file-excel
+description: Office 文档工作台：打开、编辑、保存真实 office 文件（docx/xlsx/pptx），AI 与用户共用同一编辑器协作。当前已接入 Excel（xlsx 编辑）与 Word（docx 审阅/表格编辑/插图，红字修订），含统一首页（打开/新建 + 共享历史）
+keywords: [office, excel, xlsx, word, docx, 表格, 文档, 电子表格, 编辑器, 工作簿, 审阅, 修订, 新建, 首页, 历史, 契约]
+icon: fa-solid fa-file-lines
 ui:
   - path: index.html
-    desc: Office Studio 工作台（Excel：打开 / 编辑 / 保存 xlsx；AI 经窗口指令读写）
+    desc: 统一首页（打开/新建 xlsx、docx；共享最近打开历史，点击进入编辑器）
+  - path: excel.html
+    desc: Excel 工作台（打开 / 编辑 / 保存 xlsx；AI 经窗口指令读写）
+  - path: word.html
+    desc: Word 审阅工作台（打开 / 阅读 / 替换 / 批注 / 修订接受拒绝 / 保存 docx；AI 与用户同工具）
 ---
 
-# Office Studio（开发中 · Phase 0）
+# Office Studio
 
-Office 文件工作台：在平台窗口里打开真实 office 文件（零复制，直接读写 /fs 路径的文件本体），
-用户经 Univer 界面编辑；AI 经窗口指令读写同一工作簿并保存回原文件。
+Office 文件工作台：在平台窗口里打开真实 office 文件（**零复制**，直接读写 `/fs` 路径的文件本体），
+用户经界面编辑/审阅；AI 经窗口指令读写**同一份文件**并保存回原路径——AI 的每次操作，用户屏幕上实时可见。
 
-当前支持：**Excel（.xlsx）**。Word（.docx）与 PPT（.pptx）按计划后续接入。
+当前支持：
 
-## 与文件的约定
+- **统一首页**（`ui/index.html`）：打开 docx/xlsx 与「新建表格 / 新建文档」的统一入口；共享「最近打开」历史（任一编辑器打开的文件都进同一列表，可逐条移除 / 清空）
+- **Excel（.xlsx）**：`ui/excel.html` —— 完整编辑（Univer 引擎）
+- **Word（.docx）**：`ui/word.html` —— **审阅工作台**（docx-core 引擎：AI 产出红字修订，人类审阅/接受/拒绝）
 
+## 页面与导航
+
+- 首页 → 点击文件（或新建）→ **同窗导航**进入对应编辑器（`excel?path=...` / `word?path=...`）；编辑器顶部「首页」按钮返回
+- 文件管理器双击 xlsx/docx → filebind 直达对应编辑器（已有窗口则复用；`filebinds.json` 登记 excel/word 两个入口）
 - 打开的文件 = 一个 `/fs/...` 路径（cloud / page / host 任意端，应用不区分），读写全走平台 `$fs`
-- 打开方式：文件管理器双击 / `$os.open` / AI `open` 命令（同一链路）
-- 保存 = 把当前工作簿导出 xlsx **写回打开时的路径**（覆盖原文件）
-- 页面与用户共用同一编辑器实例：AI 的每次读写用户界面实时可见
+- 保存 = 把文档导出 docx/xlsx **写回打开时的路径**（覆盖原文件）
 
-## 指令表（开发版）
+## 新建文件
 
-所有指令返回 `{content: "<JSON>"}` 信封：成功 `{ok:true, ...}`，失败 `{ok:false, error}`。
-未就绪时除 `status` 外一律报错；先 `status` 看 `ready`。
+首页「新建表格 / 新建文档」→ 平台另存为对话框选目录 + 文件名（默认 `未命名.xlsx` / `未命名.docx`）→
+进入编辑器（空白工作簿 / 空白文档），**首次「保存」时才把文件写到所选路径**（中途关闭不产生文件）。
+空白 Word 文档来自模板 `ui/vendor/blank.docx`（docx-core 生成的标准空文档）。
+
+## 首页（index.html）指令表
 
 | 指令 | 说明 | 参数 |
 | --- | --- | --- |
-| `open` | 打开 /fs 路径的 xlsx（也用于平台打开协议派发） | `--path` 或第一位置参数，如 `/fs/cloud/u/admin/office-test/sample.xlsx` |
-| `status` | 页面状态（唯一未就绪也可调） | 无。返回 `{ready, boot_err, path, status}` |
-| `read_range` | 读活动工作表范围值 | `--range A1:D5`（缺省 A1:Z60） |
-| `set_range` | 写范围值（二维数组 JSON） | `--range A1:B2 --values '[[1,2],[3,4]]'` |
-| `set_cell` | 写单格（值或公式） | `--cell B2 --value 42` 或 `--cell D2 --formula "=B2*C2"` |
-| `save` | 导出并写回打开路径 | 无；可选 `--path` 另存 |
+| `status` | 返回共享「最近打开」列表 `{ok, recent:[{path,name,kind}]}` | 无 |
 
-典型协作流程：
+## Excel（.xlsx）指令表
 
-1. 用户/文件管理器打开一个 xlsx（或 AI `open /fs/...`）
-2. AI `read_range` 读数据 → 计算 → `set_range` / `set_cell` 写回 → 界面实时可见
-3. `save` 写回原文件；用户也可以在页面上直接改，AI 再读即得最新值
+页面：`ui/excel.html`。打开方式：`open /fs/.../xxx.xlsx`（或首页点击 / 文件管理器双击）。
+
+| 指令 | 说明 | 参数 |
+| --- | --- | --- |
+| `open` | 打开 /fs 路径的 xlsx | `--path` 或第一位置参数 |
+| `status` | 页面状态（未就绪也可调） | 无 |
+| `diag` | 调试诊断 | 无 |
+| `read_range` | 读范围值与公式 | `--range A1:D5` |
+| `cell_info` | 单格内部结构 | `--cell D2` |
+| `set_range` | 写范围（二维 JSON） | `--range A1:B2 --values '[[1,2],[3,4]]'` |
+| `set_cell` | 写单格（值或公式） | `--cell B2 --value 42` / `--formula "=B2*C2"` |
+| `save` | 写回原文件 | 可选 `--path` 另存 |
+
+## Word（.docx）指令表
+
+页面：`ui/word.html`。打开方式：`open /fs/.../xxx.docx`（或首页点击 / 文件管理器双击）。
+
+**核心机制（人机同工具）**：AI 的每次编辑默认产生**红字修订**（word 原生 track changes，
+作者署名 `AI`）；人类在同一页面上实时看到红色删除线/绿色插入，并随时「接受 AI 修订 / 接受全部 / 拒绝全部」。
+人类的修改（作者 `Human Reviewer`）同样以修订形式留存，与 AI 修订互不混淆（选择性接受按作者隔离）。
+
+页面右侧为**审阅队列**：逐条列出修订与批注（按文档顺序；点击条目跳转定位），每条可直接「接受 / 拒绝」，批注可删除（二次确认）；顶部提供「接受 AI 修订 / 接受全部 / 拒绝全部」批量操作。底部「选区操作」：在文档中选中文字后替换 / 加批注（各自独立输入，回车提交）。
+
+| 指令 | 说明 | 参数 |
+| --- | --- | --- |
+| `open` | 打开 /fs 路径的 docx | `--path` 或第一位置参数（平台打开协议同此） |
+| `status` | 页面/文档状态（未就绪也可调） | 无 |
+| `read_text` | 读段落索引 `[{id,text}]`；或单段 | 无参 / `--para <id>` |
+| `list_revisions` | 列出待处理修订与批注（结构化 JSON） | 无参。返回 `{ok, revisions:[{id,type,author,text,paraId}], comments:[...]}` |
+| `search_text` | 按子串搜索段落 | `--q "条款"` |
+| `replace_text` | 替换段落内文本（唯一匹配；默认 AI 红字） | `--para <id> --find "原文" --replace "新文" [--author AI] [--plain]` |
+| `replace_range` | 按字符范围替换（默认 AI 红字） | `--para <id> --start 5 --end 18 --replace "新文"` |
+| `insert_paragraph` | 插入新段落（默认 AI 红字）；`--anchor @start\|@end` 插入到文档首/末 | `--anchor <id>\|@start\|@end [--pos after\|before] --text "新段落"`（`\n\n` 可分多段） |
+| `comment` | 加批注（按文本或范围锚定） | `--para <id> --find "文字" --text "批注"`（或 `--start/--end`） |
+| `read_tables` | 读全部表格结构（行列、单元格文本、段落 id、空单元格标记） | 可选 `--index N` |
+| `set_cell_text` | 填/改单元格文本（默认 AI 红字；空单元格写入，非空替换首段） | `--table 0 --row 1 --col 2 --text "内容" [--mode replace\|append] [--plain]` |
+| `add_table_row` | 表格加行（默认 AI 行修订：接受=行保留，拒绝=删行） | `--table 1 [--at 2] [--cells "A\|B\|C"] [--plain]` |
+| `add_table_col` | 表格加列（默认 AI 单元格修订：接受=列保留，拒绝=删列） | `--table 1 [--at 3] [--plain]` |
+| `insert_table` | 插入新表格（直接插入；可带二维初始数据） | `--anchor <id>\|@end [--pos after\|before] --rows 2 --cols 3 [--data "a\|b;c\|d"]` |
+| `insert_image` | 在段落前/后插入图片（png/jpg/gif/bmp；默认 AI 红字修订） | `--src <fs路径> [--anchor <id>\|@end] [--pos after\|before] [--width px] [--height px] [--alt "说明"] [--plain]` |
+| `accept_ai` | 接受 AI 修订（其他作者修订保留） | 可选 `--author AI` |
+| `reject_ai` | 拒绝 AI 修订（恢复 AI 改动前） | 可选 `--author AI` |
+| `accept_all` / `reject_all` | 接受 / 拒绝全部修订 | 无 |
+| `save` | 写回打开时的 /fs 路径 | 可选 `--path` 另存 |
+
+### Word 典型协作流程（AI 修订 → 人类审阅）
+
+1. 用户/文件管理器打开一份 docx（或 AI `open /fs/.../合同.docx`）
+2. AI `read_text` / `search_text` 定位目标段落
+3. AI `replace_text --para <id> --find "..." --replace "..."` → 页面上出现**红字修订**（用户实时可见）
+4. AI `comment` 在关键处加批注
+5. 用户在页面上审阅：逐条「接受 AI 修订」/「拒绝全部」，或直接用手工工具修改（同等产生修订）
+6. AI 或用户 `save` 写回原文件
+
+### Word 注意
+
+- `read_text` 返回的段落 id（`_bk_...`）在一份文档的打开周期内稳定——用它做后续所有操作的锚点
+- **空文档（新建的空白文档、清空后的文档）没有任何可见段落**：写首段用 `insert_paragraph --anchor @end --text "..."`（`@start` 插到文首）；支持 `\n\n` 一次写入多段。写入后段落即获得 `_bk_` id，后续操作照常锚定
+- `replace_text` 要求**唯一匹配**（同段落内多处相同文本会报 ambiguous，请用 `replace_range` 带范围或更长的 find 文本）
+- 若文档有未接受的修订，`read_text` 读到的是**含修订后的当前文本**（与页面所见一致）
+- AI 每次编辑产生红字修订（除非 `--plain`）；红字是给人审的，批量自动场景可直接 `accept_all` 收尾
+- 插入段落的修订在队列中只显示内容条目（段落标记不单列；2026-09-13 起）
+- **表格操作**：先用 `read_tables` 拿表格结构（含每格段落 id 与空单元格标记）→ `set_cell_text` 填格 / `add_table_row` / `add_table_col`；行修订（`trPr/ins`）与列修订（`cellIns`）的「拒绝」= 删行/删列（引擎自实现）；`insert_table` 为直接插入（不进修订流）。可用 `read_tables` 返回的 `paragraphs[].id` 作为后续锚点（如在单元格内插图）
+- **插图**：`insert_image` 支持 png/jpg/gif/bmp；自动读取原图像素尺寸（超宽自动等比缩至内容宽），`--width/--height` 可显式指定（px，96dpi）；插入为「含图新段落」，锚点段落前/后（表格单元格插图 = 锚定单元格内段落）；默认 AI 红字（`--plain` 直接插）
+- **段落定位**：页面点击/选区与 `_bk_` id 精确对应（含空段落与表格内段落）；`#docx-host` 容器按页面实例唯一（多窗口同开互不干扰）
 
 ## 开发状态
 
-- Phase 0：xlsx 打开 / 编辑 / 导出 / 写回闭环已在真实平台验证（2026-09-11 上线；引擎资源经 jsDelivr 加速）
-- 路线图与待办详见 **[docs/todo.md](docs/todo.md)**（Word 下一步、PPT 规划、功能增强与发布流程）
+- Phase 0：Excel 打开 / 编辑 / 导出 / 写回闭环已上线（2026-09-11；引擎经 jsDelivr 分发）
+- Phase 1：Word 审阅工作台上线（2026-09-12；docx-core + docx-preview 全 Apache/MIT 许可栈）
+- Phase 1 增强（2026-09-12）：审阅台重设计 —— 右侧面板改为「审阅队列」（修订/批注列表 + 定位跳转 + 逐条接受/拒绝 + 批注删除 + 批量操作）；引擎 bundle 新增 `listRevisions` / `resolveRevisions` / `deleteComment`
+- Phase 1.5（2026-09-12）：**统一首页 + 新建 + 多类型分流** —— `ui/index.html` 重写为统一首页（打开 docx/xlsx、共享最近打开历史、逐条移除/清空）；Excel 编辑器拆出 `ui/excel.html`，Word 编辑器去掉内置首页；「新建表格 / 新建文档」（另存为选路径，保存时落盘）；审阅引擎新增 `insert_paragraph` 虚拟锚点 `@start/@end`（空文档写入），空白模板 `ui/vendor/blank.docx`
+- Phase 1.6（2026-09-13）：**Word 增强** —— 段落渲染映射修复（复杂文档的点击/选区精确到段，含表格内与空段）；新指令 `read_tables` / `set_cell_text` / `add_table_row` / `add_table_col` / `insert_table` / `insert_image`（表格读写、行列编辑、新表与插图）；页内「插入图片」按钮；修复「多窗口只有一个显示」（页面容器改按实例唯一 id）
+- 路线图与待办详见 **[docs/todo.md](docs/todo.md)**
+
+## 资源分发
+
+引擎与模板资源经 jsDelivr（`gh/veypi/aic-skills`）分发，页面本地优先、CDN 回退：
+
+- Excel：`univer-excel.bundle.js`（16MB → gzip 3.7MB）
+- Word：`docx-review.bundle.js`（本地优先；2026-09-13 版：精确定位映射 + 表格读写/行列编辑 + 插图）
+- 空白模板：`blank.docx`（~10KB；新建 Word 用）
+- Word 页面以 `?v=<ENGINE_V>` 查询参数破缓存（更新 vendor 资源后同步递增）
+
+更新流程：spike 构建（`temps/review-spike`，`node build.mjs`）→ cp 到 `ui/vendor/` → push → purge jsDelivr → 页面 reload。

@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="description" content="Office Studio — 打开/编辑/保存 xlsx（Univer 引擎）；AI 与用户共用同一编辑器" />
+  <meta name="description" content="Office Studio — 统一首页：打开/新建 xlsx、docx，共享最近打开历史，点击进入对应编辑器" />
   <title>Office Studio</title>
 </head>
 <style>
@@ -13,131 +13,109 @@
     height: 100%;
     min-height: 0;
     overflow: hidden;
-    font-size: 13px;
+    container-type: inline-size;
   }
 
-  .off { display: none !important; }
-
-  /* ===== 编辑器视图 ===== */
-  .ed {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 0;
-  }
-
-  .topbar {
-    flex: none;
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm, 8px);
-    padding: 6px 12px;
-    border-bottom: 1px solid var(--border-color, #e0e0e0);
-    background: var(--bg-color-secondary, #f7f7f7);
-  }
-
-  .brand { font-weight: 600; color: var(--color-primary, #3b82f6); white-space: nowrap; }
-  .path { font-size: 12px; opacity: .75; max-width: 46%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .grow { flex: 1; }
-  .st { font-size: 12px; opacity: .75; white-space: nowrap; }
-  .err { font-size: 12px; color: #c0392b; white-space: nowrap; }
-
-  button {
-    padding: 4px 12px;
-    border: 1px solid var(--border-color, #ccc);
-    border-radius: 6px;
-    background: var(--bg-color, #fff);
-    font-size: 13px;
-    cursor: pointer;
-    color: inherit;
-  }
-
-  button:hover { border-color: var(--color-primary, #3b82f6); color: var(--color-primary, #3b82f6); }
-
-  .app { flex: 1; min-height: 0; }
-
-  /* ===== 首页（文件列表） ===== */
   .home {
     flex: 1;
     min-height: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 24px;
+    padding: var(--spacing-lg);
     overflow: auto;
   }
 
-  .home-card { width: min(600px, 100%); }
+  .home-card { width: min(620px, 100%); }
   .home-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 16px; }
-  .home-head .hb { font-size: 18px; font-weight: 600; color: var(--color-primary, #3b82f6); }
-  .home-head .sub { font-size: 12px; opacity: .7; }
-  .home-actions { margin-bottom: 20px; }
+  .home-head .hb { font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); color: var(--color-primary); }
+  .home-head .sub { font-size: var(--font-size-xs); opacity: .7; }
+  .home-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+
+  button {
+    padding: 4px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    background: var(--bg-color-tertiary);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    color: inherit;
+    transition: border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+  }
+
+  button:hover { border-color: var(--border-color-hover); }
 
   button.primary {
     padding: 8px 20px;
-    font-size: 14px;
-    background: var(--color-primary, #3b82f6);
+    font-size: var(--font-size-md);
+    background: var(--color-primary);
     border-color: transparent;
-    color: #fff;
+    color: var(--color-primary-text);
   }
 
-  button.primary:hover { opacity: .92; color: #fff; }
+  button.primary:hover { background: var(--color-primary-hover); color: var(--color-primary-text); }
 
-  .recent-title { font-size: 12px; opacity: .65; margin-bottom: 6px; }
+  .recent-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+  .recent-title { font-size: var(--font-size-xs); opacity: .65; }
+  .clear-btn { padding: 2px 10px; font-size: var(--font-size-xs); border-radius: var(--radius-md); }
+  .clear-btn.confirm { color: var(--color-danger); border-color: var(--color-danger); }
+
   .recent-row {
     display: flex;
     align-items: center;
     gap: 10px;
     padding: 8px 10px;
-    border: 1px solid var(--border-color, #e3e3e3);
-    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
     margin-bottom: 6px;
     cursor: pointer;
+    transition: border-color var(--transition-fast), background var(--transition-fast);
   }
 
-  .recent-row:hover { border-color: var(--color-primary, #3b82f6); }
-  .recent-row > i { opacity: .8; color: #1d6f42; }
-  .recent-row .meta { min-width: 0; display: flex; flex-direction: column; }
-  .recent-row .name { font-weight: 500; }
-  .recent-row .rpath { font-size: 11px; opacity: .6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 460px; }
-  .empty { font-size: 12px; opacity: .6; }
-  .home-err { margin-top: 12px; font-size: 12px; color: #c0392b; word-break: break-all; }
+  .recent-row:hover { border-color: var(--border-color-hover); background: color-mix(in srgb, var(--text-color) 6%, transparent); }
+  .recent-row > i { flex: none; opacity: .9; }
+  .recent-row > i.k-excel { color: color-mix(in srgb, #1d6f42 78%, var(--text-color)); }
+  .recent-row > i.k-word { color: color-mix(in srgb, #2b579a 78%, var(--text-color)); }
+  .recent-row .meta { min-width: 0; flex: 1; display: flex; flex-direction: column; }
+  .recent-row .name { font-weight: var(--font-weight-medium); }
+  .recent-row .rpath { font-size: var(--font-size-xs); opacity: .6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+  .del-btn { flex: none; padding: 2px 8px; font-size: var(--font-size-xs); border-radius: var(--radius-md); opacity: .55; }
+  .del-btn:hover { opacity: 1; color: var(--color-danger); border-color: var(--color-danger); }
+
+  .empty { font-size: var(--font-size-xs); opacity: .6; }
+  .home-err { margin-top: 12px; font-size: var(--font-size-xs); color: var(--color-danger); word-break: break-all; }
+
+  /* ===== 响应式（@container = 窗口宽度，不要用 @media） ===== */
+  @container (max-width: 640px) {
+    .home { padding: var(--spacing-md); }
+  }
 </style>
 
 <body>
-  <!-- 编辑器视图（常驻 DOM：#app 由 Univer 外部管理，不能重建） -->
-  <div class="ed" :class="{ off: view !== 'editor' }">
-    <div class="topbar">
-      <button @click="onHome">文件列表</button>
-      <button @click="onOpen">打开</button>
-      <button @click="onSave">保存</button>
-      <span class="brand">Office Studio</span>
-      <span class="path">{{ file_path || '未打开文件' }}</span>
-      <span class="grow"></span>
-      <span class="st">{{ status_text }}</span>
-      <span v-if="boot_err" class="err">· {{ boot_err }}</span>
-    </div>
-    <div id="app" class="app"></div>
-  </div>
-
-  <!-- 首页（文件列表 / 最近打开） -->
-  <div class="home" :class="{ off: view !== 'home' }">
+  <div class="home">
     <div class="home-card">
       <div class="home-head">
         <span class="hb">Office Studio</span>
-        <span class="sub">打开或选择最近的表格文件（xlsx）</span>
+        <span class="sub">打开或新建 office 文件（xlsx / docx），点击后进入编辑器</span>
       </div>
       <div class="home-actions">
         <button class="primary" @click="onOpen">打开文件</button>
+        <button @click="onNew('excel')">新建表格</button>
+        <button @click="onNew('word')">新建文档</button>
       </div>
       <div v-if="recent.length">
-        <div class="recent-title">最近打开</div>
-        <div class="recent-row" v-for="r in recent" :key="r.path" @click="onRecent(r)">
-          <i class="fa-solid fa-file-excel"></i>
+        <div class="recent-head">
+          <span class="recent-title">最近打开</span>
+          <button class="clear-btn" :class="{ confirm: pending_clear }" @click="onClear">{{ pending_clear ? '确认清空？' : '清空' }}</button>
+        </div>
+        <div class="recent-row" v-for="r in recent" @click="go(r.path)">
+          <i class="fa-solid" :class="r.kind === 'word' ? 'fa-file-word k-word' : 'fa-file-excel k-excel'"></i>
           <div class="meta">
             <span class="name">{{ r.name }}</span>
             <span class="rpath">{{ r.path }}</span>
           </div>
+          <button class="del-btn" @click.stop="onRemove(r.path)">移除</button>
         </div>
       </div>
       <div v-if="!recent.length" class="empty">还没有打开过文件</div>
@@ -147,207 +125,77 @@
 </body>
 
 <script setup>
+  import { loadRecent, removeRecent, clearRecent, kindOf } from './recent.js'
+
   // ===== 界面状态 =====
-  view = 'home'          // 'home' | 'editor'
-  ready = false
-  boot_err = ''
-  status_text = ''
-  file_path = ''
-  home_err = ''          // 首页错误提示（打开失败且尚无已打开文件时）
-  recent = []            // 最近打开：[{path, name, time}]
-  last_pick = ''         // 上次“打开”选择器返回的原始信息（诊断）
-  last_diag = ''         // 上次读取文件的数据形态（诊断）
+  recent = loadRecent()
+  home_err = ''
+  pending_clear = false
 
-  // ===== 引擎引用（窗口级，避免响应式包装）=====
-  modRef = null
-  univerRef = null
-  apiRef = null
+  const errMsg = (e) => String((e && e.message) || e)
 
-  const toTree = (p) => String(p || '').replace(/^\/fs(?=\/)/, '')
-  const nameOf = (p) => String(p || '').split('/').filter(Boolean).pop() || 'workbook.xlsx'
-  const reply = (o) => ({ content: JSON.stringify(o) })
-  const errReply = (e) => ({ content: JSON.stringify({ ok: false, error: String((e && e.message) || e) }) })
-  const argOf = (argv, key, def) => {
-    const a = argv || []
-    for (let i = 0; i < a.length; i++) if (a[i] === '--' + key) return a[i + 1]
-    return def
-  }
-  const firstPos = (argv) => (argv || []).find((x) => !String(x).startsWith('--'))
-
-  // ===== 引擎资源：统一走 jsDelivr 加速源（不引本地，平台只服务页面本体）=====
-  // 更新流程：构建产物提交到 aic-skills 后 purge 缓存即时生效——
-  // https://purge.jsdelivr.net/gh/veypi/aic-skills@main/office_studio/ui/vendor/univer-excel.bundle.js
-  const CDN_VENDOR = 'https://cdn.jsdelivr.net/gh/veypi/aic-skills@main/office_studio/ui/vendor/'
-  const loadEngineModule = async () => {
-    return await import('https://cdn.jsdelivr.net/gh/veypi/aic-skills@main/office_studio/ui/vendor/univer-excel.bundle.js')
+  // 打开/跳转：按类型进入对应编辑器子页面（同窗导航；裸赋值注册 $data，模板事件才能解析）
+  go = (p) => {
+    const page = kindOf(p) === 'word' ? 'word' : 'excel'
+    $router.push(page + '?path=' + encodeURIComponent(p))
   }
 
-  // ===== 引擎样式（CDN 源，fetch 后内联注入；失败不阻断）=====
-  const loadEngineCss = async () => {
-    let text = ''
-    try {
-      const r = await fetch(CDN_VENDOR + 'univer-excel.css')
-      if (r.ok) text = await r.text()
-    } catch (e) { /* 样式失败不阻断 */ }
-    if (text) {
-      const s = document.createElement('style')
-      s.textContent = text
-      document.head.appendChild(s)
-    }
-  }
-  loadEngineCss()
-
-  // ===== 最近文件（localStorage）=====
-  try {
-    const raw = localStorage.getItem('office_studio.recent')
-    const arr = raw ? JSON.parse(raw) : []
-    recent = Array.isArray(arr) ? arr.filter((x) => x && x.path) : []
-  } catch (e) { recent = [] }
-
-  const pushRecent = (p, name) => {
-    const item = { path: p, name: name, time: Date.now() }
-    recent = [item, ...recent.filter((x) => x && x.path !== p)].slice(0, 10)
-    try { localStorage.setItem('office_studio.recent', JSON.stringify(recent)) } catch (e) { /* 忽略 */ }
+  // 另存为对话框的初始目录：最近打开文件所在目录（无历史则根）
+  const startDir = () => {
+    const first = (recent[0] && recent[0].path) || ''
+    if (!first) return ''
+    const seg = String(first).split('/').filter(Boolean)
+    seg.pop()
+    return seg.length ? '/' + seg.join('/') : ''
   }
 
-  // ===== 引擎引导（懒启动：首次打开文件时才创建，确保容器已可见）=====
-  const settleResize = () => setTimeout(() => { try { window.dispatchEvent(new Event('resize')) } catch (e) { /* 忽略 */ } }, 80)
-
-  const ensureEngine = async () => {
-    if (apiRef) { view = 'editor'; settleResize(); return }
-    if (!modRef) {
-      boot_err = ''
-      try {
-        modRef = await loadEngineModule()
-      } catch (e) {
-        boot_err = String((e && e.message) || e)
-        status_text = '引擎加载失败'
-        throw new Error('引擎加载失败：' + boot_err)
-      }
-    }
-    view = 'editor'
-    await new Promise((r) => setTimeout(r, 40)) // 等容器可见并完成布局
-    const inst = modRef.createExcelApp({ container: 'app' })
-    univerRef = inst.univer
-    apiRef = inst.univerAPI
-    ready = true
-    status_text = '就绪'
-    settleResize()
-  }
-
-  // 后台预热（只取模块，不创建编辑器）
-  const prefetch = async () => {
-    if (modRef) return
-    try { modRef = await loadEngineModule() } catch (e) { /* ensureEngine 时再报 */ }
-  }
-  prefetch()
-
-  // ===== 核心操作 =====
-  const openPath = async (p) => {
-    if (!p) throw new Error('需要文件路径')
-    const firstOpen = !apiRef
-    try {
-      home_err = ''
-      status_text = '加载中…'
-      await ensureEngine()
-      const r = await $mod.$fs.get(toTree(p))
-      if (r && r.ok === false) throw new Error(r.message || '读取失败')
-      const content = r && r.content
-      const isBlob = content instanceof Blob
-      const blob = isBlob ? content : new Blob([content], { type: (r && r.mime) || 'application/octet-stream' })
-      let head = ''
-      try {
-        const ab = await blob.slice(0, 8).arrayBuffer()
-        head = Array.from(new Uint8Array(ab)).map((b) => b.toString(16).padStart(2, '0')).join(' ')
-      } catch (e) { head = 'read-err' }
-      last_diag = JSON.stringify({ path: p, tree: toTree(p), ctype: typeof content, ctor: content && content.constructor && content.constructor.name, isBlob, blobSize: blob.size, mime: r && r.mime, size: r && r.size, dir: !!(r && r.dir), head })
-      const name = nameOf(p)
-      if (!/\.xls$/i.test(name) && (blob.size < 4 || head.slice(0, 5) !== '50 4b')) {
-        throw new Error('不是有效的 xlsx（zip 头缺失）｜' + last_diag)
-      }
-      const f = new File([blob], name, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-      await modRef.loadWorkbookFromBlob(univerRef, f)
-      file_path = p
-      pushRecent(p, name)
-      status_text = '已打开 ' + name + '（' + blob.size + ' B）'
-      return { ok: true, path: p, size: blob.size }
-    } catch (e) {
-      const msg = String((e && e.message) || e)
-      status_text = '打开失败：' + msg
-      if (firstOpen) { view = 'home'; home_err = '打开失败：' + msg }
-      throw e
-    }
-  }
-
-  const saveNow = async () => {
-    if (!file_path) throw new Error('未打开文件（可先 open <fs 路径>）')
-    const blob = await modRef.exportWorkbookToBlob(apiRef, nameOf(file_path))
-    await $mod.$fs.put(toTree(file_path), blob)
-    status_text = '已保存 ' + nameOf(file_path) + '（' + blob.size + ' B）'
-    return { ok: true, path: file_path, size: blob.size }
-  }
-
-  const getSheet = () => {
-    const wb = apiRef.getActiveWorkbook()
-    if (!wb) throw new Error('无活动工作簿')
-    return wb.getActiveSheet()
-  }
-
-  // ===== 用户界面事件（裸赋值注册到 $data，模板事件绑定才能解析）=====
+  // ===== 用户界面事件 =====
   onOpen = async () => {
     try {
-      const f = await $mod.$fs.open({ accept: ['.xlsx', '.xls'] })
-      last_pick = f ? JSON.stringify({ path: f.path, name: f.name, size: f.size, mime: f.mime, kind: f.kind }) : '(取消)'
+      home_err = ''
+      const f = await $mod.$fs.open({ accept: ['.xlsx', '.xls', '.docx', '.doc'] })
       if (!f) return
-      await openPath(f.path)
-    } catch (e) { status_text = '打开失败：' + String((e && e.message) || e) }
+      go(f.path)
+    } catch (e) { home_err = '打开失败：' + errMsg(e) }
   }
 
-  onSave = async () => {
-    try { await saveNow() } catch (e) { status_text = '保存失败：' + String((e && e.message) || e) }
+  // 新建：先弹出另存为对话框选路径（只返回路径、不落盘，点「保存」时才写入）
+  onNew = async (kind) => {
+    try {
+      home_err = ''
+      const isWord = kind === 'word'
+      const f = await $mod.$fs.save_as({
+        name: isWord ? '未命名.docx' : '未命名.xlsx',
+        ext: isWord ? '.docx' : '.xlsx',
+        accept: [isWord ? '.docx' : '.xlsx'],
+        start: startDir(),
+      })
+      if (!f) return
+      const page = isWord ? 'word' : 'excel'
+      $router.push(page + '?path=' + encodeURIComponent(f.path) + '&new=1')
+    } catch (e) { home_err = '新建失败：' + errMsg(e) }
   }
 
-  onHome = () => { view = 'home' }
+  onRemove = (p) => {
+    removeRecent(p)
+    recent = loadRecent()
+  }
 
-  onRecent = async (r) => {
-    try { await openPath(r && r.path) } catch (e) { /* openPath 已置状态 */ }
+  onClear = () => {
+    if (!pending_clear) { pending_clear = true; return }
+    clearRecent()
+    recent = []
+    pending_clear = false
   }
 
   // ===== 平台操控面 =====
   pageDesc = {
-    desc: 'Office Studio 工作台（Excel/xlsx）：打开、读写、保存工作簿；AI 与用户共用同一编辑器',
+    desc: 'Office Studio 首页：统一打开/新建 xlsx、docx，展示共享最近打开历史',
     commands: [
-      { name: 'open', desc: '打开一个 /fs 路径的 xlsx 文件',
-        help: 'open /fs/cloud/u/<uid>/xxx.xlsx（平台打开协议派发同此指令）',
-        handler: async (argv) => { try { const p = firstPos(argv) || argOf(argv, 'path'); if (!p) throw new Error('需要 /fs 文件路径'); return reply(await openPath(p)) } catch (e) { return errReply(e) } } },
-      { name: 'status', desc: '页面与文档状态（未就绪时也可调用）',
-        handler: async () => reply({ ok: true, ready, boot_err, view, path: file_path, status: status_text }) },
-      { name: 'diag', desc: '调试：页面关键诊断信息（上次选择器返回/上次读取形态）',
-        handler: async () => reply({ ok: true, ready, boot_err, view, path: file_path, status: status_text, last_pick, last_diag }) },
-      { name: 'read_range', desc: '读取活动工作表范围的值与公式',
-        help: '--range A1:D5（缺省 A1:Z60）',
-        handler: async (argv) => { try { const range = argOf(argv, 'range', 'A1:Z60'); const r = getSheet().getRange(range); const values = r.getValues(); let formulas = null; try { formulas = r.getFormulas() } catch (e) { formulas = null } return reply({ ok: true, range, values, formulas }) } catch (e) { return errReply(e) } } },
-      { name: 'cell_info', desc: '查看单个单元格的内部结构（值/公式/显示）',
-        help: '--cell D2',
-        handler: async (argv) => { try { const cell = argOf(argv, 'cell'); if (!cell) throw new Error('需要 --cell'); const r = getSheet().getRange(cell); const out = {}; try { out.value = r.getValue() } catch (e) { out.valueErr = String((e && e.message) || e) } try { out.formula = r.getFormula() } catch (e) { out.formulaErr = String((e && e.message) || e) } try { out.display = r.getDisplayValue() } catch (e) { out.displayErr = String((e && e.message) || e) } return reply({ ok: true, cell, ...out }) } catch (e) { return errReply(e) } } },
-      { name: 'set_range', desc: '写入一个范围的值（二维数组 JSON）',
-        help: "--range A1:B2 --values '[[1,2],[3,4]]'",
-        handler: async (argv) => { try { const range = argOf(argv, 'range'); const raw = argOf(argv, 'values'); if (!range || raw == null) throw new Error('需要 --range 与 --values'); const values = JSON.parse(raw); await getSheet().getRange(range).setValues(values); return reply({ ok: true, range, rows: values.length }) } catch (e) { return errReply(e) } } },
-      { name: 'set_cell', desc: '写单个单元格（值或公式）',
-        help: '--cell A1 --value 123 / --cell D2 --formula "=B2*C2"',
-        handler: async (argv) => { try { const cell = argOf(argv, 'cell'); const f = argOf(argv, 'formula'); const v = argOf(argv, 'value'); if (!cell) throw new Error('需要 --cell'); const r = getSheet().getRange(cell); if (f != null) await r.setFormula(f); else if (v != null) { const n = Number(v); await r.setValue(v !== '' && !Number.isNaN(n) ? n : v) } else throw new Error('需要 --value 或 --formula'); return reply({ ok: true, cell }) } catch (e) { return errReply(e) } } },
-      { name: 'save', desc: '把当前工作簿写回打开时的 /fs 路径（xlsx）',
-        help: '无参数；可选 --path <fs 路径> 另存',
-        handler: async (argv) => { try { const p = argOf(argv, 'path'); if (p) file_path = p; return reply(await saveNow()) } catch (e) { return errReply(e) } } },
+      { name: 'status', desc: '首页状态（最近打开列表）',
+        handler: async () => ({ content: JSON.stringify({ ok: true, recent: loadRecent().map((r) => ({ path: r.path, name: r.name, kind: r.kind })) }) }) },
     ],
   }
-
-  // ===== 初始打开协议参数（单值 query.path），统一走 openPath =====
-  // 注意：本页路由 /skills/local/office_studio/index 的通配段会把 "index" 落到
-  // $router.params.path，那不是文件参数——只认 query.path，且做 fs 形态校验。
-  const looksLikeFsPath = (p) => /^\/(fs\/)?(cloud|page)\//.test(p) || /^\/(fs\/)?[a-f0-9]{32}\//.test(p)
-  const initPath = String(($router.query && $router.query.path) || '')
-  if (initPath && looksLikeFsPath(initPath)) openPath(initPath).catch(() => { /* openPath 已置状态 */ })
 </script>
 
 </html>
