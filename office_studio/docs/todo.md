@@ -59,7 +59,7 @@
 - [x] 插图：`insert_image`（png/jpg/gif/bmp；自动尺寸/超宽等比缩；media+rels+drawing）+ 页内「插入图片」按钮
 - [x] 引擎自实现行/格修订的拒绝（`trPr/ins` 删行、`cellIns` 删列 + tblGrid 同步——docx-core 不处理）
 - [x] 修复「多窗口只有一个显示」：页面容器改按实例唯一 id（`word.html` / `excel.html`）
-- [ ] 发布：同步 aic-skills 仓库（CDN 源）+ purge
+- [ ] 发布：同步 aic-skills 仓库（CDN 源）+ purge —— 2026-09-13 工作台/引擎文件已更新完毕，待 push 后 purge
 
 ## 阶段 1.7：样式可控性（待开发）
 
@@ -67,8 +67,22 @@
 
 - [x] `insert_paragraph` / `insert_image` 增加 `--from <段落id>`：显式指定**格式源段落**（默认仍取锚点）——**已上线 2026-09-13**（引擎透传 docx-core `styleSourceId`；无效 id 直接报错；返回携带 `styleFrom`）
 - [ ] `set_paragraph_format --para <id> --from <模板段id>`：把目标段落格式整体对齐模板段（pStyle/字体/字号/斜体/缩进），批量修样式用（本次事故的“引擎内修复”路径）
-- [ ] `style_report`（只读）：返回段落样式统计（各 `pStyle` 的段落数 + 每类抽样文本），批量填充前后自查用
-- [ ] 指令返回里回显“继承的样式来源”（如 `styleFrom: <anchor|styleSourceId>`），让 AI 能自检刚插入的段落格式是否预期
+- [x] `style_report`（只读）：返回段落样式统计（各 `pStyle` 的段落数 + 每类抽样文本）＋标题大纲（含解析后的自动编号）——**已上线 2026-09-13**，批量填充前后自查用
+- [x] 指令返回里回显“继承的样式来源”：`insert_paragraph` / `insert_image` 返回 `styleFrom`；`insert_image` 另返回 `numPrRemoved`（图片段不再继承直接编号）——**已上线 2026-09-13**
+
+## 阶段 1.8：工作台加固（2026-09-13，已完成）
+
+源于 Word 工作台作业 bug 清单（批量指令乱序已由平台侧串行化修复，其余落地如下）：
+
+- [x] `delete_paragraph` / `move_paragraph`：修订式删除与移动（内容+段落标记双修订；拒绝=完整恢复；`--plain` 直改不进修订流）
+- [x] `read_text` 扩展：`--offset/--limit` 分页、`--empty` 空段寻址（空段 id 可作 `--from`/`--anchor`）、`--ids` 批量读取
+- [x] `style_report`：样式统计 + 标题大纲（`number` = 解析后的自动编号）——编号自检
+- [x] `insert_image` 图片段不继承直接编号（numPr）——防抢占编号序列 / 渲染多余编号行
+- [x] `insert_table` 返回 `firstParagraphId` / `lastParagraphId` / `afterParagraphId` 锚点
+- [x] `insert_table --data` 支持 JSON 二维数组与 `\|` `\;` 转义
+- [x] `insert_paragraph` 插入文本自动清理 ASCII 首尾空白（保留全角缩进）
+- [x] save 外部修改冲突检测（sha-256 基线；`--force` 覆盖）；同文件重复打开防重载（`--reload` 强制）
+- [x] 首页未保存修改二次确认；`status` 增加 dirty/loads/saves 诊断
 
 ## 阶段 2：PPT（pptx）接入
 
@@ -97,11 +111,11 @@
 
 ## 已知问题 / 技术债
 
-- [ ] 多端并发写同一文件：当前后写覆盖（无冲突检测）——至少做"保存前检测外部修改"
+- [x] 多端并发写同一文件（2026-09-13）：save 前 sha-256 冲突检测（不一致拒绝覆盖，`--force` 强制）——跨窗口实时同步仍不在范围
 - [ ] 引擎包体积（16MB / gzip 3.67MB）：首访依赖 CDN；未来按需拆包（仅编辑器内核 + 用到时加载插件）
-- [ ] 切换首页/编辑器会销毁编辑器页面（未保存改动丢失，无脏检测提示）——按需加离开确认
+- [x] 切换首页/编辑器销毁页面（2026-09-13）：首页二次确认 + 同文件重开防重载已加；窗口被直接关闭/销毁时仍无自动快照（如需再加）
 - [ ] filebind / picker 链路的回归清单需固化（双击打开、选择器、最近文件、新建）
-- [ ] 样式继承对调用方“隐形”（2026-09-13 事故根因）：插入/替换的格式继承无任何回显或警示；除文档警示外，考虑指令返回附带样式来源信息（见阶段 1.7）
+- [x] 样式继承对调用方“隐形”（2026-09-13 事故根因）：插入类已回显 `styleFrom` / `numPrRemoved`（见阶段 1.7/1.8）；替换“保留原格式”仍为文档约定，可用 `style_report` 自查
 
 ## 测试资产
 
@@ -110,6 +124,7 @@
 - 回归清单（页面）：打开 → read_range（对公式）→ set_cell → save → 重开校验
 - 回归清单（Word）：打开 → read_text → replace_text（红字）→ 队列逐条处置 → save；
   新建空白 → `insert_paragraph --anchor @end` 写首段 → save → 重开
+- 加固回归（2026-09-13）：delete_paragraph / move_paragraph 的接受与拒绝；read_text --empty；style_report；insert_table 锚点返回；save 冲突拒绝与 --force；引擎脚本 `temps/review-spike/ttmp/check-fixes.mjs`
 
 ## 不做清单（明确放弃，保住定位）
 

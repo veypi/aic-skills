@@ -22595,6 +22595,78 @@ function cloneParagraphShell(anchorP) {
   }
   return np;
 }
+function stripRevisionMarkup(root) {
+  for (let pass = 0; pass < 5; pass++) {
+    let changed = false;
+    for (const tag of ["ins", "moveFrom"]) {
+      for (const el of Array.from(root.getElementsByTagNameNS(W_NS, tag))) {
+        const parent = el.parentNode;
+        if (!parent) continue;
+        if (isWEl(parent, "rPr") || isWEl(parent, "pPr") || isWEl(parent, "trPr")) continue;
+        while (el.firstChild) parent.insertBefore(el.firstChild, el);
+        parent.removeChild(el);
+        changed = true;
+      }
+    }
+    for (const tag of ["del", "moveTo"]) {
+      for (const el of Array.from(root.getElementsByTagNameNS(W_NS, tag))) {
+        const parent = el.parentNode;
+        if (!parent) continue;
+        if (isWEl(parent, "rPr") || isWEl(parent, "pPr") || isWEl(parent, "trPr")) continue;
+        parent.removeChild(el);
+        changed = true;
+      }
+    }
+    if (!changed) break;
+  }
+  for (const tag of ["moveFromRangeStart", "moveFromRangeEnd", "moveToRangeStart", "moveToRangeEnd"]) {
+    for (const el of Array.from(root.getElementsByTagNameNS(W_NS, tag))) {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    }
+  }
+  for (const rPr of Array.from(root.getElementsByTagNameNS(W_NS, "rPr"))) {
+    for (const ch of Array.from(rPr.childNodes)) {
+      if (ch.nodeType === 1 && ["ins", "del", "moveFrom", "moveTo", "rPrChange"].includes(ch.localName)) rPr.removeChild(ch);
+    }
+  }
+  for (const pPr of Array.from(root.getElementsByTagNameNS(W_NS, "pPr"))) {
+    for (const ch of Array.from(pPr.childNodes)) {
+      if (ch.nodeType === 1 && ch.localName === "pPrChange") pPr.removeChild(ch);
+    }
+  }
+  return root;
+}
+function cloneParagraphAccepted(p) {
+  return stripRevisionMarkup(p.cloneNode(true));
+}
+function removeBookmarksIn(node) {
+  for (const tag of ["bookmarkStart", "bookmarkEnd"]) {
+    for (const el of Array.from(node.getElementsByTagNameNS(W_NS, tag))) {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    }
+  }
+}
+function firstParagraphIn(node) {
+  if (isWEl(node, "p")) return node;
+  const ps = node.getElementsByTagNameNS(W_NS, "p");
+  return ps.length ? ps[0] : null;
+}
+function nextParagraphAfter(node) {
+  let cur = node;
+  while (cur && !isWEl(cur, "body")) {
+    for (let sib = cur.nextSibling; sib; sib = sib.nextSibling) {
+      if (sib.nodeType !== 1) continue;
+      const p = firstParagraphIn(sib);
+      if (p) return p;
+    }
+    cur = cur.parentNode;
+  }
+  return null;
+}
+function normalizeInsertText(text) {
+  if (text == null) return text;
+  return String(text).replace(/\r\n/g, "\n").split(/\n{2,}/).map((s) => s.replace(/^[ \t]+/, "").replace(/[ \t]+$/, "")).join("\n\n");
+}
 function addParagraphInsMark(doc, p, ctx) {
   let pPr = getDirectChild2(p, "pPr");
   if (!pPr) {
@@ -22612,6 +22684,32 @@ function addParagraphInsMark(doc, p, ctx) {
   }
   const ins = createRevisionContainer(doc, "ins", ctx);
   rPr.insertBefore(ins, rPr.firstChild);
+}
+function addParagraphDelMark(doc, p, ctx) {
+  let pPr = getDirectChild2(p, "pPr");
+  if (!pPr) {
+    pPr = doc.createElementNS(W_NS, "w:pPr");
+    p.insertBefore(pPr, p.firstChild);
+  }
+  let rPr = getDirectChild2(pPr, "rPr");
+  if (!rPr) {
+    rPr = doc.createElementNS(W_NS, "w:rPr");
+    const sect = getDirectChild2(pPr, "sectPr");
+    const change = getDirectChild2(pPr, "pPrChange");
+    const ref = sect || change;
+    if (ref) pPr.insertBefore(rPr, ref);
+    else pPr.appendChild(rPr);
+  }
+  const del = createRevisionContainer(doc, "del", ctx);
+  rPr.insertBefore(del, rPr.firstChild);
+}
+function removeDirectNumPr(p) {
+  const pPr = getDirectChild2(p, "pPr");
+  if (!pPr) return false;
+  const numPr = getDirectChild2(pPr, "numPr");
+  if (!numPr) return false;
+  pPr.removeChild(numPr);
+  return true;
 }
 function makeRevisionMark(doc, tag, author, idState) {
   const el = doc.createElementNS(W_NS, "w:" + tag);
@@ -22851,6 +22949,12 @@ var ReviewDoc = class {
         return this.insertTable(p);
       case "insert_image":
         return this.insertImage(p);
+      case "delete_paragraph":
+        return this.deleteParagraph(p);
+      case "move_paragraph":
+        return this.moveParagraph(p);
+      case "style_report":
+        return this.styleReport(p);
       default:
         throw new Error("unknown op: " + op);
     }
@@ -22872,6 +22976,25 @@ var ReviewDoc = class {
     const dom = this.doc.documentXml;
     const ps = Array.from(dom.getElementsByTagNameNS(W_NS, "p"));
     return ps.map((p) => ({ id: getParagraphBookmarkId(p) || null, text: getParagraphText(p) }));
+  }
+  /**
+   * 全量段落（含空段）分页读取——供 read_text --empty / --offset / --limit 使用。
+   * offset 语义（与底层一致）：1-based，负数从尾部算；empty=true 时只列空段落。
+   */
+  readParagraphIndex(opts = {}) {
+    const all = this.readAllParagraphs();
+    const empty = !!opts.empty;
+    const list = empty ? all.filter((x) => !String(x.text || "").trim()) : all;
+    const total = list.length;
+    const offset = Number(opts.offset);
+    let start = 0;
+    if (Number.isFinite(offset)) {
+      if (offset > 0) start = Math.min(Math.max(0, offset - 1), total);
+      if (offset < 0) start = Math.max(0, total + offset);
+    }
+    const lim = Number(opts.limit);
+    const end = Number.isFinite(lim) ? Math.min(total, start + Math.max(0, lim)) : total;
+    return { paragraphs: list.slice(start, end), totalParagraphs: total, totalAll: all.length };
   }
   /** 段落索引：id → 文本 */
   outline() {
@@ -22920,7 +23043,7 @@ var ReviewDoc = class {
       styleId = styleSourceId;
     }
     const res = this.doc.insertParagraph(
-      { positionalAnchorNodeId: anchor.id, relativePosition: anchor.relativePosition, newText, styleSourceId: styleId },
+      { positionalAnchorNodeId: anchor.id, relativePosition: anchor.relativePosition, newText: normalizeInsertText(newText), styleSourceId: styleId },
       this._ctx(author)
     );
     const ids = res && res.newParagraphIds && res.newParagraphIds.length ? res.newParagraphIds : [res && res.newParagraphId];
@@ -23292,18 +23415,31 @@ var ReviewDoc = class {
     const ref = this._siblingInsertRef(anchorP, position);
     ref.parent.insertBefore(tbl, ref.node);
     let firstCellPid = null;
+    let lastCellPid = null;
     const newTrs = this._tableRows(tbl);
     for (let ri = 0; ri < newTrs.length; ri++) {
       for (const tc of this._rowCells(newTrs[ri])) {
         for (const p of this._cellParagraphs(tc)) {
           const pid = insertSingleParagraphBookmark(doc, p);
-          if (ri === 0 && !firstCellPid && pid) firstCellPid = pid;
+          if (pid) {
+            if (!firstCellPid) firstCellPid = pid;
+            lastCellPid = pid;
+          }
         }
       }
     }
     this._markDirty();
     this._touch(firstCellPid);
-    return { tableIndex: this._tablesAll().indexOf(tbl), rows: n, cols: m };
+    const afterP = nextParagraphAfter(tbl);
+    return {
+      tableIndex: this._tablesAll().indexOf(tbl),
+      rows: n,
+      cols: m,
+      firstParagraphId: firstCellPid,
+      lastParagraphId: lastCellPid,
+      beforeParagraphId: getParagraphBookmarkId(anchorP) || null,
+      afterParagraphId: afterP ? getParagraphBookmarkId(afterP) : null
+    };
   }
   // ---------- 图片 ----------
   /**
@@ -23436,6 +23572,7 @@ var ReviewDoc = class {
     const run = doc.createElementNS(W_NS, "w:r");
     run.appendChild(drawing);
     const np = cloneParagraphShell(styleP);
+    const numPrRemoved = removeDirectNumPr(np);
     const ctx = this._ctx(author);
     if (ctx) {
       addParagraphInsMark(doc, np, ctx);
@@ -23459,8 +23596,68 @@ var ReviewDoc = class {
       widthPx: Math.round(cx2 / EMU_PER_PX),
       heightPx: Math.round(cy / EMU_PER_PX),
       format: fmt,
-      styleFrom: styleSourceId || null
+      styleFrom: styleSourceId || null,
+      numPrRemoved
     };
+  }
+  // ---------- 删除 / 移动 ----------
+  /**
+   * 删除段落（默认修订式：内容删除 + 段落标记删除两处修订；
+   * 接受 = 整段消失，拒绝 = 完整恢复。plain=true 直接删除不进修订流）。
+   */
+  deleteParagraph({ paragraphId, author = "AI", plain = false }) {
+    const dom = this.doc.documentXml;
+    const p = findParagraphByBookmarkId(dom, paragraphId);
+    if (!p) throw new Error("paragraph not found: " + paragraphId);
+    const text = getParagraphText(p);
+    if (plain) {
+      const parent = p.parentNode;
+      if (!parent) throw new Error("paragraph has no parent");
+      parent.removeChild(p);
+      this._markDirty();
+      return { paragraphId, plain: true, textLength: text.length };
+    }
+    const ctx = this._ctx(author);
+    if (text.length) replaceParagraphTextRange(p, 0, text.length, "", ctx);
+    addParagraphDelMark(dom, p, ctx);
+    this._markDirty();
+    this._touch(paragraphId);
+    return { paragraphId, plain: false, textLength: text.length };
+  }
+  /**
+   * 移动段落（默认修订式：目标位置插入副本 + 原位置删除；接受 = 移动生效，拒绝 = 原位保留）。
+   * 以「接受修订后」的内容快照克隆，插入副本重新打 ins 标记、原段落打 del 标记。
+   */
+  moveParagraph({ paragraphId, anchorNodeId, relativePosition = "AFTER", author = "AI", plain = false }) {
+    const dom = this.doc.documentXml;
+    const src = findParagraphByBookmarkId(dom, paragraphId);
+    if (!src) throw new Error("paragraph not found: " + paragraphId);
+    const { p: anchorP, position } = this._resolveAnchorP(anchorNodeId, relativePosition);
+    const ctx = plain ? void 0 : this._ctx(author);
+    const np = cloneParagraphAccepted(src);
+    removeBookmarksIn(np);
+    if (ctx) {
+      const ins = createRevisionContainer(dom, "ins", ctx);
+      for (const ch of Array.from(np.childNodes)) {
+        if (ch.nodeType === 1 && ch.namespaceURI === W_NS && ch.localName === "pPr") continue;
+        ins.appendChild(ch);
+      }
+      np.appendChild(ins);
+      addParagraphInsMark(dom, np, ctx);
+    }
+    const ref = this._siblingInsertRef(anchorP, position);
+    ref.parent.insertBefore(np, ref.node);
+    const newId = insertSingleParagraphBookmark(dom, np);
+    const text = getParagraphText(src);
+    if (plain) {
+      if (src.parentNode) src.parentNode.removeChild(src);
+    } else {
+      if (text.length) replaceParagraphTextRange(src, 0, text.length, "", ctx);
+      addParagraphDelMark(dom, src, ctx);
+    }
+    this._markDirty();
+    this._touch(newId, paragraphId);
+    return { paragraphId, newParagraphId: newId, plain: !!plain };
   }
   // ---------- 渲染映射 ----------
   /**
@@ -23738,6 +23935,67 @@ var ReviewDoc = class {
     await this.doc.deleteComment({ commentId });
     this._markDirty();
     return { commentId };
+  }
+  // ---------- 样式 / 编号报告 ----------
+  /**
+   * 样式与标题结构报告（只读）：段落样式统计 + 标题大纲（含解析后的自动编号）。
+   * 基于文档视图（buildDocumentView）：list_label 为编号定义 + 文档序计数器解析后的显示编号。
+   */
+  styleReport() {
+    const nodes = this.view();
+    const styles = /* @__PURE__ */ new Map();
+    const headings = [];
+    const numbers = [];
+    for (const n of nodes) {
+      const key = n.paragraph_style_id || "";
+      let e = styles.get(key);
+      if (!e) {
+        e = { style_id: key, style_name: n.paragraph_style_name || "(\u9ED8\u8BA4)", count: 0, samples: [] };
+        styles.set(key, e);
+      }
+      e.count++;
+      if (e.samples.length < 3) {
+        const t = String(n.clean_text || "").slice(0, 60);
+        if (t) e.samples.push(t);
+      }
+      const nb = n.numbering || {};
+      const numbered = !!nb.is_auto_numbered && nb.num_id != null && String(nb.num_id) !== "0";
+      const isToc = /^(toc|目录)/i.test(String(n.paragraph_style_name || ""));
+      const isHeading = !isToc && (!!n.heading || numbered);
+      if (isHeading) {
+        headings.push({
+          id: n.id,
+          text: String(n.clean_text || "").slice(0, 80),
+          level: n.heading && n.heading.level != null ? n.heading.level : nb.ilvl != null ? nb.ilvl + 1 : null,
+          source: n.heading ? n.heading.source : numbered ? "numbering" : null,
+          style_id: n.paragraph_style_id || null,
+          style_name: n.paragraph_style_name || "",
+          number: n.list_label || null,
+          num_id: nb.num_id != null ? nb.num_id : null,
+          ilvl: nb.ilvl != null ? nb.ilvl : null
+        });
+      }
+      if (nb.is_auto_numbered && n.list_label) {
+        numbers.push({ num_id: nb.num_id, ilvl: nb.ilvl, number: n.list_label });
+      }
+    }
+    const groupsMap = /* @__PURE__ */ new Map();
+    for (const x of numbers) {
+      const k = String(x.num_id) + "/" + String(x.ilvl);
+      let g = groupsMap.get(k);
+      if (!g) {
+        g = { num_id: x.num_id, ilvl: x.ilvl, count: 0, first: x.number, last: x.number };
+        groupsMap.set(k, g);
+      }
+      g.count++;
+      g.last = x.number;
+    }
+    return {
+      total: nodes.length,
+      styles: Array.from(styles.values()).sort((a, b) => b.count - a.count),
+      headings,
+      numbering_groups: Array.from(groupsMap.values())
+    };
   }
   // ---------- 序列化 ----------
   /** 导出 docx 字节（默认清理内部书签；顺带清理残留的渲染标记） */

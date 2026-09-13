@@ -70,9 +70,9 @@ Office 文件工作台：在平台窗口里打开真实 office 文件（**零复
 
 | 指令 | 说明 | 参数 |
 | --- | --- | --- |
-| `open` | 打开 /fs 路径的 docx | `--path` 或第一位置参数（平台打开协议同此） |
+| `open` | 打开 /fs 路径的 docx；同文件有未保存修改时拒绝静默重载 | `--path` 或第一位置参数；`--reload` 从磁盘强制重载 |
 | `status` | 页面/文档状态（未就绪也可调） | 无 |
-| `read_text` | 读段落索引 `[{id,text}]`；或单段 | 无参 / `--para <id>` |
+| `read_text` | 读段落索引 `[{id,text}]`；单段 / 分页 / 空段 | 无参 / `--para <id>` / `--offset N --limit M` / `--empty`（只列空段 id，可作 --from/--anchor） / `--ids _bk_a,_bk_b` |
 | `list_revisions` | 列出待处理修订与批注（结构化 JSON） | 无参。返回 `{ok, revisions:[{id,type,author,text,paraId}], comments:[...]}` |
 | `search_text` | 按子串搜索段落 | `--q "条款"` |
 | `replace_text` | 替换段落内文本（唯一匹配；默认 AI 红字） | `--para <id> --find "原文" --replace "新文" [--author AI] [--plain]` |
@@ -83,12 +83,15 @@ Office 文件工作台：在平台窗口里打开真实 office 文件（**零复
 | `set_cell_text` | 填/改单元格文本（默认 AI 红字；空单元格写入，非空替换首段） | `--table 0 --row 1 --col 2 --text "内容" [--mode replace\|append] [--plain]` |
 | `add_table_row` | 表格加行（默认 AI 行修订：接受=行保留，拒绝=删行） | `--table 1 [--at 2] [--cells "A\|B\|C"] [--plain]` |
 | `add_table_col` | 表格加列（默认 AI 单元格修订：接受=列保留，拒绝=删列） | `--table 1 [--at 3] [--plain]` |
-| `insert_table` | 插入新表格（直接插入；可带二维初始数据） | `--anchor <id>\|@end [--pos after\|before] --rows 2 --cols 3 [--data "a\|b;c\|d"]` |
-| `insert_image` | 在段落前/后插入图片（png/jpg/gif/bmp；默认 AI 红字修订）；`--from` 指定新段落格式源 | `--src <fs路径> [--anchor <id>\|@end] [--pos after\|before] [--from <段落id>] [--width px] [--height px] [--alt "说明"] [--plain]` |
+| `insert_table` | 插入新表格（直接插入；可带二维初始数据）；返回表内首/末段与表后锚点 id | `--anchor <id>\|@end [--pos after\|before] --rows 2 --cols 3 [--data "a\|b;c\|d"（支持 \| \; 转义）或 JSON [["a","b"],["c","d"]]]`；返回 `firstParagraphId` / `lastParagraphId` / `afterParagraphId` |
+| `insert_image` | 在段落前/后插入图片（png/jpg/gif/bmp；默认 AI 红字修订）；`--from` 指定新段落格式源；图片段不继承直接编号（numPr） | `--src <fs路径> [--anchor <id>\|@end] [--pos after\|before] [--from <段落id>] [--width px] [--height px] [--alt "说明"] [--plain]` |
+| `delete_paragraph` | 删除段落（默认 AI 红字修订：接受=删段，拒绝=恢复） | `--para <id> [--plain 直删] [--author AI]` |
+| `move_paragraph` | 移动段落（默认修订式：目标处插入+原处删除；接受=移动生效，拒绝=原位保留） | `--para <id> --anchor <id\|@start\|@end> [--pos after\|before] [--plain] [--author AI]` |
+| `style_report` | 样式与标题结构报告（只读）：段落样式统计 + 标题大纲（`number`=解析后的自动编号） | 无参 |
 | `accept_ai` | 接受 AI 修订（其他作者修订保留） | 可选 `--author AI` |
 | `reject_ai` | 拒绝 AI 修订（恢复 AI 改动前） | 可选 `--author AI` |
 | `accept_all` / `reject_all` | 接受 / 拒绝全部修订 | 无 |
-| `save` | 写回打开时的 /fs 路径 | 可选 `--path` 另存 |
+| `save` | 写回打开时的 /fs 路径；磁盘被外部修改时拒绝覆盖 | 可选 `--path` 另存；`--force` 跳过外部修改检测 |
 
 ### Word 典型协作流程（AI 修订 → 人类审阅）
 
@@ -110,6 +113,10 @@ Office 文件工作台：在平台窗口里打开真实 office 文件（**零复
 - **表格操作**：先用 `read_tables` 拿表格结构（含每格段落 id 与空单元格标记）→ `set_cell_text` 填格 / `add_table_row` / `add_table_col`；行修订（`trPr/ins`）与列修订（`cellIns`）的「拒绝」= 删行/删列（引擎自实现）；`insert_table` 为直接插入（不进修订流）。可用 `read_tables` 返回的 `paragraphs[].id` 作为后续锚点（如在单元格内插图）
 - **插图**：`insert_image` 支持 png/jpg/gif/bmp；自动读取原图像素尺寸（超宽自动等比缩至内容宽），`--width/--height` 可显式指定（px，96dpi）；插入为「含图新段落」，锚点段落前/后（表格单元格插图 = 锚定单元格内段落）；默认 AI 红字（`--plain` 直接插）
 - **段落定位**：页面点击/选区与 `_bk_` id 精确对应（含空段落与表格内段落）；`#docx-host` 容器按页面实例唯一（多窗口同开互不干扰）
+- **同锚多次插入的堆叠方向**：`--pos after` 每次都插到锚点后的第一个位置——同一锚点连续插入时**后插的更靠前**；需要正序时用**链式锚定**（把上一条返回的 `paragraphId` / `newParagraphIds` 作下一条锚点）
+- **删除 / 移动**：`delete_paragraph`、`move_paragraph` 默认都产生红字修订（接受=生效、拒绝=完整恢复）；`--plain` 直改不进修订流；移动 = 目标处插入副本（ins）+ 原处删除（del）两条修订
+- **保存冲突检测**：save 前比对磁盘与打开时内容（sha-256）——磁盘被外部修改时**拒绝覆盖**（`--force` 强制）；有未保存修改时同一文件重复 `open` 会被拒绝（`open --reload` 从磁盘强制重载）
+- **编号自检**：`style_report` 返回标题大纲（`headings[].number` = 页面上渲染的自动编号）与各样式段落统计——批量填充前后各跑一次，编号错位/样式污染可即时发现
 
 ### 样式与格式（批量编写 / 填充文档时必读）
 
@@ -117,7 +124,7 @@ Office 文件工作台：在平台窗口里打开真实 office 文件（**零复
 
 1. **插入段落继承锚点格式**：`insert_paragraph` / `insert_image`（及 `set_cell_text --mode append`）生成的新段落，格式**整体取自锚点段落**——包括段落样式（`pStyle`，如 heading 各层）、自动编号（`numPr`）、行距/缩进，以及字体/字号/**斜体**/加粗等文字属性。（`insert_table` 例外：新表格单元格是干净默认格式——表格文字可能与正文样式不一致，插入后注意目检。）
    - 正文内容用**正文锚点**：拿标题当锚点插正文 → 正文变黑体大标题、还会**抢走章节编号**（现象：正文行首冒出“7.7”式错位编号，后续整篇编号错位）。
-   - 图片用**正文锚点**：图片段同样会继承标题样式、占据编号。
+   - 图片用**正文锚点**：图片段会继承锚点样式（2026-09-13 起不再继承直接编号 numPr，但仍可能继承标题字体/缩进等——锚点仍用正文）。
    - 插标题前先找**同层级**的现存标题作锚点，保证层级一致。
    - **要显式控制格式源时用 `--from`**：`insert_paragraph --anchor <标题id> --pos after --from <正文段落id> --text "..."`——新段落格式取自 `--from` 指定段落（**在标题后插正文的推荐做法**）；`insert_image` 同参。
 2. **替换文字不改变格式**：`replace_text` / `replace_range` / `set_cell_text` 只替换文字、**保留原段落全部格式**。
@@ -138,10 +145,10 @@ Office 文件工作台：在平台窗口里打开真实 office 文件（**零复
 | --- | --- | --- |
 | 正文渲染成黑体大号字、行首带错位编号 | 插入时用了标题段落做锚点 | 正文操作只用正文锚点 |
 | 正文变斜体 / 字体异常 | 替换了“斜体说明”占位，格式被保留 | 替换后目检样式 |
-| 图片出现在正文流并占编号 | 图片插入锚点是标题 | 图片用正文锚点 |
+| 图片套上标题样式 / 进编号序列 | 图片插入锚点是标题 | 图片用正文锚点（图片段已不继承直接编号 numPr） |
 | 章节编号跳号 / 错位 | 有非标题段落占用了标题样式 | 目检编号序列，发现即修 |
 
-> **插入时**已可用 `--from <段落id>` 指定格式源（2026-09-13 起）；格式的**事后修正**目前仍需人工在 Word 处理或脚本修 XML；后续增强（`set_paragraph_format` / `style_report`）见 [docs/todo.md](docs/todo.md)。
+> **插入时**已可用 `--from <段落id>` 指定格式源（2026-09-13 起）；`style_report` 可做样式与编号自检（已上线）；格式的**事后整体修正**（`set_paragraph_format`）仍待后续增强，见 [docs/todo.md](docs/todo.md)。
 
 ## 开发状态
 
@@ -152,6 +159,7 @@ Office 文件工作台：在平台窗口里打开真实 office 文件（**零复
 - Phase 1.6（2026-09-13）：**Word 增强** —— 段落渲染映射修复（复杂文档的点击/选区精确到段，含表格内与空段）；新指令 `read_tables` / `set_cell_text` / `add_table_row` / `add_table_col` / `insert_table` / `insert_image`（表格读写、行列编辑、新表与插图）；页内「插入图片」按钮；修复「多窗口只有一个显示」（页面容器改按实例唯一 id）
 - Phase 1.6.1（2026-09-13）：**样式经验文档化** —— 新增「样式与格式（批量编写/填充文档时必读）」节（两条格式继承规则 + 批量填充流程 + 易错现象速查表）——源于《软件质量安全检测子系统-概要设计说明书》批量填充样式事故的复盘
 - Phase 1.7（2026-09-13，部分）：**插入格式源可指定** —— `insert_paragraph` / `insert_image` 新增 `--from <段落id>`（显式指定新段落格式源；引擎透传 docx-core `styleSourceId`；无效 id 报错；返回携带 `styleFrom`）
+- Phase 1.8（2026-09-13）：**工作台加固（审阅 bug 清单修复）** —— `delete_paragraph` / `move_paragraph`（修订式删/移，拒绝即恢复）；`read_text` 分页 / 空段 / 批量寻址；`style_report` 样式与标题编号自检；`insert_image` 图片段不再继承直接编号（防抢编号序列）；`insert_table` 返回表内首/末段与表后锚点；`--data` 支持 JSON 与 `\|` `\;` 转义；插入文本自动清理 ASCII 首尾空白；save 外部修改冲突检测（`--force` 覆盖）；同文件重复打开防重载 + 首页未保存二次确认；status 增加 dirty/loads/saves 诊断
 - 路线图与待办详见 **[docs/todo.md](docs/todo.md)**
 
 ## 资源分发
@@ -159,7 +167,7 @@ Office 文件工作台：在平台窗口里打开真实 office 文件（**零复
 引擎与模板资源经 jsDelivr（`gh/veypi/aic-skills`）分发，页面本地优先、CDN 回退：
 
 - Excel：`univer-excel.bundle.js`（16MB → gzip 3.7MB）
-- Word：`docx-review.bundle.js`（本地优先；2026-09-13 版：精确定位映射 + 表格读写/行列编辑 + 插图）
+- Word：`docx-review.bundle.js`（本地优先；2026-09-13 版：精确定位映射 + 表格读写/行列编辑 + 插图 + 段落删除/移动 + 样式编号报告）
 - 空白模板：`blank.docx`（~10KB；新建 Word 用）
 - Word 页面以 `?v=<ENGINE_V>` 查询参数破缓存（更新 vendor 资源后同步递增）
 
