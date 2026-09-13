@@ -22750,6 +22750,19 @@ var ReviewDoc = class {
     this.log = [];
     this._seq = 0;
     this._listeners = /* @__PURE__ */ new Set();
+    this._touched = [];
+  }
+  /** 记录最近编辑影响的段落 id（供渲染层刷新后自动定位） */
+  _touch(...ids) {
+    for (const id of ids) {
+      if (id && typeof id === "string" && !this._touched.includes(id)) this._touched.push(id);
+    }
+  }
+  /** 取走并清空「最近编辑影响的段落」列表（渲染层使用） */
+  consumeTouched() {
+    const out = this._touched.slice();
+    this._touched = [];
+    return out;
   }
   on(fn) {
     this._listeners.add(fn);
@@ -22879,6 +22892,7 @@ var ReviewDoc = class {
     if (m.status === "multiple") throw new Error("ambiguous: " + m.matchCount + " matches");
     replaceParagraphTextRange(p, m.start, m.end, replaceText, this._ctx(author));
     this._markDirty();
+    this._touch(paragraphId);
     return { mode: m.mode, start: m.start, end: m.end, matchedText: m.matchedText };
   }
   /** 按已知字符范围替换（供选区交互使用） */
@@ -22888,6 +22902,7 @@ var ReviewDoc = class {
     if (!p) throw new Error("paragraph not found: " + paragraphId);
     replaceParagraphTextRange(p, start, end, replaceText, this._ctx(author));
     this._markDirty();
+    this._touch(paragraphId);
     return { start, end };
   }
   /** 在锚点段落前后插入新段落（author 存在 → 红字）。
@@ -22895,10 +22910,13 @@ var ReviewDoc = class {
    *  空文档或文末追加场景用（解析为真实顶层段落锚点，复用底层插入与书签分配，相对位置参数忽略）。 */
   insertParagraph({ anchorNodeId, relativePosition = "AFTER", newText, author }) {
     const anchor = this._resolveInsertAnchor(anchorNodeId, relativePosition);
-    return this.doc.insertParagraph(
+    const res = this.doc.insertParagraph(
       { positionalAnchorNodeId: anchor.id, relativePosition: anchor.relativePosition, newText },
       this._ctx(author)
     );
+    const ids = res && res.newParagraphIds && res.newParagraphIds.length ? res.newParagraphIds : [res && res.newParagraphId];
+    this._touch(...ids.filter(Boolean));
+    return res;
   }
   /** 虚拟锚点解析：'@start'/'@end' 取顶层首/末段落；其余锚点原样透传 */
   _resolveInsertAnchor(anchorNodeId, relativePosition) {
@@ -22951,10 +22969,12 @@ var ReviewDoc = class {
   }
   /** 在段落文本范围上添加批注（不产生修订标记：批注不属于内容修订） */
   async addComment({ paragraphId, start, end, text, author, initials }) {
-    return this.doc.addComment(
+    const r = await this.doc.addComment(
       { paragraphId, start, end, text, author: author || "Reviewer", initials },
       void 0
     );
+    this._touch(paragraphId);
+    return r;
   }
   /** 基于文本匹配的批注（原型交互友好）：在段落里找 findText 并加批注（同样不产生修订标记） */
   async commentOnText({ paragraphId, findText, text, author }) {
@@ -22965,10 +22985,12 @@ var ReviewDoc = class {
     const m = findUniqueSubstringMatch(full, findText);
     if (m.status === "not_found") throw new Error("text not found: " + JSON.stringify(findText));
     if (m.status === "multiple") throw new Error("ambiguous: " + m.matchCount + " matches");
-    return this.doc.addComment(
+    const r = await this.doc.addComment(
       { paragraphId, start: m.start, end: m.end, text, author: author || "Reviewer" },
       void 0
     );
+    this._touch(paragraphId);
+    return r;
   }
   // ---------- 表格 ----------
   _tablesAll() {
@@ -23076,6 +23098,7 @@ var ReviewDoc = class {
       tc.appendChild(np);
       const id = insertSingleParagraphBookmark(doc, np);
       this._markDirty();
+      this._touch(id);
       return { tableIndex: Number(tableIndex), row: rIdx, col: cIdx, mode, paragraphId: id };
     }
     const p = ps.find((x) => getParagraphText(x).trim()) || ps[0];
@@ -23093,7 +23116,9 @@ var ReviewDoc = class {
       replaceParagraphTextRange(p, 0, full.length, text, ctx);
     }
     this._markDirty();
-    return { tableIndex: Number(tableIndex), row: rIdx, col: cIdx, mode, paragraphId: getParagraphBookmarkId(p) };
+    const pid = getParagraphBookmarkId(p);
+    this._touch(pid);
+    return { tableIndex: Number(tableIndex), row: rIdx, col: cIdx, mode, paragraphId: pid };
   }
   /**
    * 加行：克隆参考行结构（保留格式），清空各格后写入 cells 文本。
@@ -23131,10 +23156,15 @@ var ReviewDoc = class {
     const refRow = trs[idx] || null;
     if (refRow) tbl.insertBefore(newTr, refRow);
     else tbl.appendChild(newTr);
+    let firstCellPid = null;
     for (const tc of this._rowCells(newTr)) {
-      for (const p of this._cellParagraphs(tc)) insertSingleParagraphBookmark(doc, p);
+      for (const p of this._cellParagraphs(tc)) {
+        const pid = insertSingleParagraphBookmark(doc, p);
+        if (!firstCellPid && pid) firstCellPid = pid;
+      }
     }
     this._markDirty();
+    this._touch(firstCellPid);
     return { tableIndex: Number(tableIndex), row: idx, rowCount: this._tableRows(tbl).length, plain: !!plain };
   }
   /**
@@ -23150,6 +23180,7 @@ var ReviewDoc = class {
     const firstTcs = this._rowCells(trs[0]);
     const idx = at == null || at === "" ? firstTcs.length : Math.max(0, Math.min(Number(at) || 0, firstTcs.length));
     let inserted = 0;
+    let firstCellPid = null;
     for (const tr of trs) {
       const tcs = this._rowCells(tr);
       if (!tcs.length) continue;
@@ -23173,7 +23204,10 @@ var ReviewDoc = class {
       if (ref) tr.insertBefore(newTc, ref);
       else tr.appendChild(newTc);
       inserted++;
-      for (const p of this._cellParagraphs(newTc)) insertSingleParagraphBookmark(doc, p);
+      for (const p of this._cellParagraphs(newTc)) {
+        const pid = insertSingleParagraphBookmark(doc, p);
+        if (tr === trs[0] && !firstCellPid && pid) firstCellPid = pid;
+      }
     }
     const grid = getDirectChild2(tbl, "tblGrid");
     if (grid) {
@@ -23186,6 +23220,7 @@ var ReviewDoc = class {
       }
     }
     this._markDirty();
+    this._touch(firstCellPid);
     return { tableIndex: Number(tableIndex), col: idx, insertedRows: inserted, plain: !!plain };
   }
   /**
@@ -23246,12 +23281,18 @@ var ReviewDoc = class {
     }
     const ref = this._siblingInsertRef(anchorP, position);
     ref.parent.insertBefore(tbl, ref.node);
-    for (const tr of this._tableRows(tbl)) {
-      for (const tc of this._rowCells(tr)) {
-        for (const p of this._cellParagraphs(tc)) insertSingleParagraphBookmark(doc, p);
+    let firstCellPid = null;
+    const newTrs = this._tableRows(tbl);
+    for (let ri = 0; ri < newTrs.length; ri++) {
+      for (const tc of this._rowCells(newTrs[ri])) {
+        for (const p of this._cellParagraphs(tc)) {
+          const pid = insertSingleParagraphBookmark(doc, p);
+          if (ri === 0 && !firstCellPid && pid) firstCellPid = pid;
+        }
       }
     }
     this._markDirty();
+    this._touch(firstCellPid);
     return { tableIndex: this._tablesAll().indexOf(tbl), rows: n, cols: m };
   }
   // ---------- 图片 ----------
@@ -23393,6 +23434,7 @@ var ReviewDoc = class {
     ref.parent.insertBefore(np, ref.node);
     const id = insertSingleParagraphBookmark(doc, np);
     this._markDirty();
+    this._touch(id);
     return {
       paragraphId: id,
       mediaPath,
@@ -23624,11 +23666,26 @@ var ReviewDoc = class {
     }
     return out;
   }
+  /** 按 revision id 收集其所在段落 id（接受/拒绝后自动定位用） */
+  _paraIdsOfRevisions(revisionIds) {
+    const want = new Set((revisionIds || []).map(String));
+    const out = [];
+    if (!want.size) return out;
+    for (const el of collectRevisionElements(this.doc.documentXml)) {
+      if (!CONTENT_REVISION_LOCALS.has(el.localName)) continue;
+      const id = revisionElementId(el);
+      if (id == null || !want.has(String(id))) continue;
+      const pid = nearestParagraphId(el);
+      if (pid && !out.includes(pid)) out.push(pid);
+    }
+    return out;
+  }
   /** 按 revision id 逐条接受/拒绝：{ op: 'accept'|'reject', revisionIds: [...] }。
    *  拒绝行插入/单元格插入修订时按本层语义处理（删行 / 删格+同步网格）。 */
   async resolveRevisions({ op, revisionIds, normalizeFirst = false } = {}) {
     const rawIds = (revisionIds || []).map(String);
     if (!rawIds.length) throw new Error("resolveRevisions: revisionIds required");
+    const touched = this._paraIdsOfRevisions(rawIds);
     const handled = /* @__PURE__ */ new Set();
     let rowCount = 0;
     let cellCount = 0;
@@ -23642,6 +23699,7 @@ var ReviewDoc = class {
       for (const id of r2) handled.add(id);
       ids = ids.filter((id) => !handled.has(id));
       if (!ids.length) {
+        this._touch(...touched);
         return { selectedIds: [...handled], result: { rowInsertionsRejected: rowCount, cellInsertionsRejected: cellCount } };
       }
     }
@@ -23652,6 +23710,7 @@ var ReviewDoc = class {
       for (const id of r3) handled.add(id);
     }
     this._markDirty();
+    this._touch(...touched);
     return {
       selectedIds: [.../* @__PURE__ */ new Set([...handled, ...res.selectedIds])],
       result: { ...res.result || {}, rowInsertionsRejected: rowCount, cellInsertionsRejected: cellCount }
@@ -27682,6 +27741,7 @@ var DocxReviewView = class {
     this.opts = Object.assign({ revisionRendering: true }, opts);
     this._paraIdMap = [];
     this._onPick = null;
+    this._flashTimer = 0;
   }
   /** 点击选取回调：(paragraphId) => void */
   onPick(fn) {
@@ -27689,24 +27749,103 @@ var DocxReviewView = class {
   }
   /**
    * 渲染 docx 字节。
+   * 防闪：先在「离屏暂存容器」（绝对定位、不可见）里完整渲染，完成后
+   * 一次性换入 —— 渲染期间旧内容保持可见（无清空/白屏过程）；
+   * 换入后恢复原滚动位置（以视口锚点段落计），或聚焦到指定段落。
    * @param {Uint8Array|ArrayBuffer|Blob} bytes 渲染字节（应来自 ReviewDoc.toRenderBytes()，含段落定位标记）
    * @param {{paragraphs?: Array<{id:string|null}>}} [ctx] 全量段落列表（文档序，用于建立精确映射）
+   * @param {{focus?: string|string[]}} [opts] focus：渲染后滚动+高亮到该段落（本次编辑位置）
+   * @returns {Promise<{focusedId: string|null}>}
    */
-  async render(bytes, ctx = {}) {
+  async render(bytes, ctx = {}, opts = {}) {
     const container = this.container;
-    container.innerHTML = "";
-    await renderAsync(bytes, container, null, {
-      className: "docx",
-      inWrapper: true,
-      breakPages: true,
-      renderChanges: this.opts.revisionRendering,
-      renderComments: this.opts.revisionRendering,
-      renderFootnotes: true,
-      renderEndnotes: true,
-      useBase64URL: true,
-      ignoreLastRenderedPageBreak: false
-    });
+    const staging = document.createElement("div");
+    staging.style.cssText = "position:absolute;left:0;top:0;visibility:hidden;pointer-events:none;width:" + Math.max(320, container.clientWidth || 0) + "px;";
+    container.appendChild(staging);
+    try {
+      await renderAsync(bytes, staging, null, {
+        className: "docx",
+        inWrapper: true,
+        breakPages: true,
+        renderChanges: this.opts.revisionRendering,
+        renderComments: this.opts.revisionRendering,
+        renderFootnotes: true,
+        renderEndnotes: true,
+        useBase64URL: true,
+        ignoreLastRenderedPageBreak: false
+      });
+    } catch (e) {
+      if (staging.parentNode) staging.parentNode.removeChild(staging);
+      throw e;
+    }
+    const anchor = this._captureScrollAnchor();
+    const frag = document.createDocumentFragment();
+    while (staging.firstChild) frag.appendChild(staging.firstChild);
+    container.replaceChildren(frag);
     this._attachParagraphIds(ctx.paragraphs || []);
+    const focusIds = opts && opts.focus != null ? [].concat(opts.focus).filter(Boolean) : [];
+    let focusedId = null;
+    for (const fid of focusIds) {
+      if (this.focusOn(fid)) {
+        focusedId = fid;
+        break;
+      }
+    }
+    if (!focusedId) this._restoreScroll(anchor);
+    return { focusedId };
+  }
+  /** 可视锚点：视口内第一个段落的 id + 相对容器顶偏移（用于换入后恢复滚动位置） */
+  _captureScrollAnchor() {
+    const c = this.container;
+    if (!c.isConnected) return null;
+    const cr = c.getBoundingClientRect();
+    if (cr.height <= 0) return null;
+    for (const { id, el } of this._paraIdMap) {
+      const r = el.getBoundingClientRect();
+      if (r.bottom > cr.top + 1) return { id, offset: r.top - cr.top };
+    }
+    return null;
+  }
+  /** 恢复滚动位置到锚点段落（找不到锚点时回到顶部）；返回是否恢复成功 */
+  _restoreScroll(anchor) {
+    const c = this.container;
+    if (!anchor) {
+      c.scrollTop = 0;
+      return false;
+    }
+    const hit = this._paraIdMap.find((x) => x.id === anchor.id);
+    if (!hit) {
+      c.scrollTop = 0;
+      return false;
+    }
+    const cr = c.getBoundingClientRect();
+    const r = hit.el.getBoundingClientRect();
+    c.scrollTop = Math.max(0, c.scrollTop + (r.top - cr.top) - anchor.offset);
+    return true;
+  }
+  /** 聚焦段落：滚动到视口中部（瞬时）+ 高亮选中 + 短闪提示；可定位时返回 true */
+  focusOn(paragraphId) {
+    const hit = this._paraIdMap.find((x) => x.id === paragraphId);
+    if (!hit) return false;
+    const c = this.container;
+    const cr = c.getBoundingClientRect();
+    const r = hit.el.getBoundingClientRect();
+    const half = Math.max(0, (c.clientHeight - r.height) / 2);
+    c.scrollTop = Math.max(0, c.scrollTop + (r.top - cr.top) - half);
+    this._highlight(paragraphId);
+    this._flash(hit.el);
+    return true;
+  }
+  /** 短闪提示（1.8s 后自动移除；样式由宿主页面定义 .para-flash） */
+  _flash(el) {
+    const prev = this.container.querySelectorAll(".para-flash");
+    for (const p of prev) p.classList.remove("para-flash");
+    void el.offsetWidth;
+    el.classList.add("para-flash");
+    clearTimeout(this._flashTimer);
+    this._flashTimer = setTimeout(() => {
+      if (el.parentNode) el.classList.remove("para-flash");
+    }, 1800);
   }
   /**
    * 建立「渲染 DOM 段落 → 引擎段落」精确映射。
@@ -27780,10 +27919,22 @@ var DocxReviewView = class {
 function createDocxReview({ container, revisionRendering = true }) {
   const doc = new ReviewDoc();
   const view = new DocxReviewView(container, { revisionRendering });
-  async function refresh() {
-    if (!doc.loaded) return;
-    const bytes = await doc.toRenderBytes();
-    await view.render(bytes, { paragraphs: doc.readAllParagraphs() });
+  let _chain = Promise.resolve();
+  let _latestGen = 0;
+  function refresh(opts = {}) {
+    if (!doc.loaded) return Promise.resolve();
+    const gen = ++_latestGen;
+    const next = _chain.then(async () => {
+      if (!doc.loaded) return null;
+      if (gen !== _latestGen) return null;
+      const focus = opts && opts.focus != null ? opts.focus : doc.consumeTouched();
+      const bytes = await doc.toRenderBytes();
+      return view.render(bytes, { paragraphs: doc.readAllParagraphs() }, { focus });
+    });
+    _chain = next.then(() => {
+    }, () => {
+    });
+    return next;
   }
   async function loadBytes(bytes) {
     const info = await doc.load(bytes);

@@ -83,6 +83,12 @@
   body .doc-wrap del { color: color-mix(in srgb, var(--color-danger) 80%, var(--text-color)); text-decoration: line-through; background: color-mix(in srgb, var(--color-danger) 14%, transparent); }
   body .doc-wrap p[data-para-id]:hover { outline: 1px dashed color-mix(in srgb, var(--color-primary) 50%, transparent); }
   body .doc-wrap p.para-selected { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+  /* 编辑定位短闪：AI/用户编辑后目标段落闪一下（引擎渲染后自动添加 .para-flash） */
+  body .doc-wrap p.para-flash { animation: para-flash 1.6s ease-out; }
+  @keyframes para-flash {
+    0% { background: color-mix(in srgb, var(--color-primary) 30%, transparent); }
+    100% { background: transparent; }
+  }
 
   /* ===== 侧面板 ===== */
   .side {
@@ -282,7 +288,7 @@
   // ===== 引擎资源：本地优先，CDN 回退（构建产物随仓库发布）=====
   // ENGINE_V：引擎与空白模板资源版本——更新 vendor 资源后递增以破浏览器缓存
   const CDN_VENDOR = 'https://cdn.jsdelivr.net/gh/veypi/aic-skills@main/office_studio/ui/vendor/'
-  const ENGINE_V = '2026-09-13-2'
+  const ENGINE_V = '2026-09-13-4'
   const importLocal = (p) => import(new URL(((($mod.scoped || '').replace(/\/$/, '')) || '.') + '/' + p, location.origin).href)
   const loadEngineModule = async () => {
     try {
@@ -334,11 +340,29 @@
   const refreshSel = () => {
     sel_text = selRef ? ('已选：「' + truncText(selRef.text, 30) + '」（' + selRef.start + '-' + selRef.end + '）') : ''
   }
-  const refreshAll = async () => {
-    if (!reviewRef) return
-    await reviewRef.refresh()
-    refreshSel()
-    await refreshRevisions()
+  // 渲染调度（合并 + 不阻塞指令返回）：静默 400ms 后发起一次全量重渲染；
+  // 批次最长 2000ms 强制渲染一次。指令 reply 不等渲染（渲染在后台队列执行，
+  // 引擎侧另有串行+合并兜底），保证 AI 批量编辑时指令流水不被打断。
+  let _refresh_timer = 0
+  let _refresh_first = 0
+  const refreshAll = () => {
+    const now = Date.now()
+    if (!_refresh_first) _refresh_first = now
+    clearTimeout(_refresh_timer)
+    const quiet = Math.max(60, Math.min(400, 2000 - (now - _refresh_first)))
+    _refresh_timer = setTimeout(() => {
+      _refresh_timer = 0
+      _refresh_first = 0
+      try {
+        if (reviewRef) {
+          reviewRef.refresh().then(() => {
+            refreshSel()
+            return refreshRevisions()
+          }).catch(() => { /* 刷新失败不影响指令 */ })
+        }
+      } catch (e) { /* 忽略 */ }
+    }, quiet)
+    return Promise.resolve(true)
   }
   // 审阅队列：修订（引擎列表序）+ 批注（段落序），按段落号合并排序
   const TAG_LABEL = { del: '删除', ins: '插入', moveFrom: '移出', moveTo: '移入', cellIns: '表格', cellDel: '表格', cellMerge: '表格' }
@@ -394,7 +418,8 @@
         selRef = null
         file_path = p
         is_new = true
-        await refreshAll()
+        refreshSel()
+        await refreshRevisions()
         status_text = '新建（未保存）：' + nameOf(p)
         return { ok: true, path: p, created: true }
       }
@@ -413,7 +438,8 @@
       file_path = p
       is_new = false
       pushRecent(p, name)
-      await refreshAll()
+      refreshSel()
+      await refreshRevisions()
       status_text = '已打开 ' + name + '（' + blob.size + ' B · ' + info.bookmarks.paragraphCount + ' 段落）'
       return { ok: true, path: p, size: blob.size, paragraphs: info.bookmarks.paragraphCount }
     } catch (e) {
