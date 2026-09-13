@@ -77,14 +77,14 @@ Office 文件工作台：在平台窗口里打开真实 office 文件（**零复
 | `search_text` | 按子串搜索段落 | `--q "条款"` |
 | `replace_text` | 替换段落内文本（唯一匹配；默认 AI 红字） | `--para <id> --find "原文" --replace "新文" [--author AI] [--plain]` |
 | `replace_range` | 按字符范围替换（默认 AI 红字） | `--para <id> --start 5 --end 18 --replace "新文"` |
-| `insert_paragraph` | 插入新段落（默认 AI 红字）；`--anchor @start\|@end` 插入到文档首/末 | `--anchor <id>\|@start\|@end [--pos after\|before] --text "新段落"`（`\n\n` 可分多段） |
+| `insert_paragraph` | 插入新段落（默认 AI 红字）；`--anchor @start\|@end` 插入到文档首/末；`--from` 指定格式源 | `--anchor <id>\|@start\|@end [--pos after\|before] --text "新段落" [--from <段落id>]`（`\n\n` 可分多段） |
 | `comment` | 加批注（按文本或范围锚定） | `--para <id> --find "文字" --text "批注"`（或 `--start/--end`） |
 | `read_tables` | 读全部表格结构（行列、单元格文本、段落 id、空单元格标记） | 可选 `--index N` |
 | `set_cell_text` | 填/改单元格文本（默认 AI 红字；空单元格写入，非空替换首段） | `--table 0 --row 1 --col 2 --text "内容" [--mode replace\|append] [--plain]` |
 | `add_table_row` | 表格加行（默认 AI 行修订：接受=行保留，拒绝=删行） | `--table 1 [--at 2] [--cells "A\|B\|C"] [--plain]` |
 | `add_table_col` | 表格加列（默认 AI 单元格修订：接受=列保留，拒绝=删列） | `--table 1 [--at 3] [--plain]` |
 | `insert_table` | 插入新表格（直接插入；可带二维初始数据） | `--anchor <id>\|@end [--pos after\|before] --rows 2 --cols 3 [--data "a\|b;c\|d"]` |
-| `insert_image` | 在段落前/后插入图片（png/jpg/gif/bmp；默认 AI 红字修订） | `--src <fs路径> [--anchor <id>\|@end] [--pos after\|before] [--width px] [--height px] [--alt "说明"] [--plain]` |
+| `insert_image` | 在段落前/后插入图片（png/jpg/gif/bmp；默认 AI 红字修订）；`--from` 指定新段落格式源 | `--src <fs路径> [--anchor <id>\|@end] [--pos after\|before] [--from <段落id>] [--width px] [--height px] [--alt "说明"] [--plain]` |
 | `accept_ai` | 接受 AI 修订（其他作者修订保留） | 可选 `--author AI` |
 | `reject_ai` | 拒绝 AI 修订（恢复 AI 改动前） | 可选 `--author AI` |
 | `accept_all` / `reject_all` | 接受 / 拒绝全部修订 | 无 |
@@ -119,6 +119,7 @@ Office 文件工作台：在平台窗口里打开真实 office 文件（**零复
    - 正文内容用**正文锚点**：拿标题当锚点插正文 → 正文变黑体大标题、还会**抢走章节编号**（现象：正文行首冒出“7.7”式错位编号，后续整篇编号错位）。
    - 图片用**正文锚点**：图片段同样会继承标题样式、占据编号。
    - 插标题前先找**同层级**的现存标题作锚点，保证层级一致。
+   - **要显式控制格式源时用 `--from`**：`insert_paragraph --anchor <标题id> --pos after --from <正文段落id> --text "..."`——新段落格式取自 `--from` 指定段落（**在标题后插正文的推荐做法**）；`insert_image` 同参。
 2. **替换文字不改变格式**：`replace_text` / `replace_range` / `set_cell_text` 只替换文字、**保留原段落全部格式**。
    - 模板的“占位/说明”文字常带特殊格式（斜体、方括号）——替换成正式内容后，**正式内容会带着占位格式**（“正文全变斜体”即由此而来）。
    - 若被替换的占位本身是标题（如“模块1”），替换成正文内容后就成了“正文套标题样式”。
@@ -140,7 +141,7 @@ Office 文件工作台：在平台窗口里打开真实 office 文件（**零复
 | 图片出现在正文流并占编号 | 图片插入锚点是标题 | 图片用正文锚点 |
 | 章节编号跳号 / 错位 | 有非标题段落占用了标题样式 | 目检编号序列，发现即修 |
 
-> 格式的“事后修正”目前需人工在 Word 处理或脚本修 XML（引擎暂无格式修改指令）；引擎增强计划（`--from` 指定格式源等）见 [docs/todo.md](docs/todo.md)。
+> **插入时**已可用 `--from <段落id>` 指定格式源（2026-09-13 起）；格式的**事后修正**目前仍需人工在 Word 处理或脚本修 XML；后续增强（`set_paragraph_format` / `style_report`）见 [docs/todo.md](docs/todo.md)。
 
 ## 开发状态
 
@@ -150,6 +151,7 @@ Office 文件工作台：在平台窗口里打开真实 office 文件（**零复
 - Phase 1.5（2026-09-12）：**统一首页 + 新建 + 多类型分流** —— `ui/index.html` 重写为统一首页（打开 docx/xlsx、共享最近打开历史、逐条移除/清空）；Excel 编辑器拆出 `ui/excel.html`，Word 编辑器去掉内置首页；「新建表格 / 新建文档」（另存为选路径，保存时落盘）；审阅引擎新增 `insert_paragraph` 虚拟锚点 `@start/@end`（空文档写入），空白模板 `ui/vendor/blank.docx`
 - Phase 1.6（2026-09-13）：**Word 增强** —— 段落渲染映射修复（复杂文档的点击/选区精确到段，含表格内与空段）；新指令 `read_tables` / `set_cell_text` / `add_table_row` / `add_table_col` / `insert_table` / `insert_image`（表格读写、行列编辑、新表与插图）；页内「插入图片」按钮；修复「多窗口只有一个显示」（页面容器改按实例唯一 id）
 - Phase 1.6.1（2026-09-13）：**样式经验文档化** —— 新增「样式与格式（批量编写/填充文档时必读）」节（两条格式继承规则 + 批量填充流程 + 易错现象速查表）——源于《软件质量安全检测子系统-概要设计说明书》批量填充样式事故的复盘
+- Phase 1.7（2026-09-13，部分）：**插入格式源可指定** —— `insert_paragraph` / `insert_image` 新增 `--from <段落id>`（显式指定新段落格式源；引擎透传 docx-core `styleSourceId`；无效 id 报错；返回携带 `styleFrom`）
 - 路线图与待办详见 **[docs/todo.md](docs/todo.md)**
 
 ## 资源分发

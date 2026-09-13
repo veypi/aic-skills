@@ -65,7 +65,7 @@
 
 源于 2026-09-13《软件质量安全检测子系统-概要设计说明书》样式事故：批量填充时未考虑“格式继承”（插入继承锚点、替换保留原格式），产出的正文大面积被套标题样式（黑体+抢编号）与斜体，事后靠外部脚本改 `document.xml` 修复。SKILL.md 已补「样式与格式」警示节；引擎侧增强：
 
-- [ ] `insert_paragraph` / `insert_image` 增加 `--from <段落id>`：显式指定**格式源段落**（默认仍取锚点）。底层 docx-core 已原生支持 `styleSourceId`（`formattingSource = styleSourceP ?? anchorP`）——引擎只需透传参数 + 页面指令解析，**低改造成本**
+- [x] `insert_paragraph` / `insert_image` 增加 `--from <段落id>`：显式指定**格式源段落**（默认仍取锚点）——**已上线 2026-09-13**（引擎透传 docx-core `styleSourceId`；无效 id 直接报错；返回携带 `styleFrom`）
 - [ ] `set_paragraph_format --para <id> --from <模板段id>`：把目标段落格式整体对齐模板段（pStyle/字体/字号/斜体/缩进），批量修样式用（本次事故的“引擎内修复”路径）
 - [ ] `style_report`（只读）：返回段落样式统计（各 `pStyle` 的段落数 + 每类抽样文本），批量填充前后自查用
 - [ ] 指令返回里回显“继承的样式来源”（如 `styleFrom: <anchor|styleSourceId>`），让 AI 能自检刚插入的段落格式是否预期

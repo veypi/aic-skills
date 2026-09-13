@@ -22907,15 +22907,25 @@ var ReviewDoc = class {
   }
   /** 在锚点段落前后插入新段落（author 存在 → 红字）。
    *  anchorNodeId 额外支持虚拟边界：'@start'（顶层首段之前）/ '@end'（顶层末段之后）——
-   *  空文档或文末追加场景用（解析为真实顶层段落锚点，复用底层插入与书签分配，相对位置参数忽略）。 */
-  insertParagraph({ anchorNodeId, relativePosition = "AFTER", newText, author }) {
+   *  空文档或文末追加场景用（解析为真实顶层段落锚点，复用底层插入与书签分配，相对位置参数忽略）。
+   *  styleSourceId：可选——指定「格式源段落」，新段落格式整体取自该段（默认取锚点段落）。
+   *  典型场景：在标题后插入正文时，用 --from 指定一个正文段落 id，避免正文继承标题样式。 */
+  insertParagraph({ anchorNodeId, relativePosition = "AFTER", newText, author, styleSourceId }) {
     const anchor = this._resolveInsertAnchor(anchorNodeId, relativePosition);
+    let styleId;
+    if (styleSourceId) {
+      if (!findParagraphByBookmarkId(this.doc.documentXml, styleSourceId)) {
+        throw new Error("\u683C\u5F0F\u6E90\u6BB5\u843D\u4E0D\u5B58\u5728: " + styleSourceId);
+      }
+      styleId = styleSourceId;
+    }
     const res = this.doc.insertParagraph(
-      { positionalAnchorNodeId: anchor.id, relativePosition: anchor.relativePosition, newText },
+      { positionalAnchorNodeId: anchor.id, relativePosition: anchor.relativePosition, newText, styleSourceId: styleId },
       this._ctx(author)
     );
     const ids = res && res.newParagraphIds && res.newParagraphIds.length ? res.newParagraphIds : [res && res.newParagraphId];
     this._touch(...ids.filter(Boolean));
+    if (res && typeof res === "object") res.styleFrom = styleId || null;
     return res;
   }
   /** 虚拟锚点解析：'@start'/'@end' 取顶层首/末段落；其余锚点原样透传 */
@@ -23304,13 +23314,18 @@ var ReviewDoc = class {
    *  - widthPx / heightPx：显示尺寸（像素，96dpi）；缺省按原图像素尺寸，超宽等比缩
    *  自动完成：word/media 部件 + 关系 + 内容类型声明 + w:drawing。
    */
-  async insertImage({ bytes, ext, paragraphId, position = "AFTER", widthPx, heightPx, altText, author }) {
+  async insertImage({ bytes, ext, paragraphId, position = "AFTER", widthPx, heightPx, altText, author, styleSourceId }) {
     if (!bytes) throw new Error("image bytes required");
     const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
     let fmt = String(ext || "").toLowerCase().replace("jpeg", "jpg");
     if (!fmt) fmt = sniffImageExt(u8) || "";
     if (!IMAGE_EXT_CT[fmt]) throw new Error("unsupported image format: " + (ext || "unknown") + "\uFF08\u652F\u6301 png/jpg/gif/bmp\uFF09");
     const { p: anchorP, position: pos } = this._resolveAnchorP(paragraphId, position);
+    let styleP = anchorP;
+    if (styleSourceId) {
+      styleP = findParagraphByBookmarkId(this.doc.documentXml, styleSourceId);
+      if (!styleP) throw new Error("\u683C\u5F0F\u6E90\u6BB5\u843D\u4E0D\u5B58\u5728: " + styleSourceId);
+    }
     const doc = this.doc.documentXml;
     const dim = parseImageSize(u8, fmt);
     let cx2 = widthPx ? Math.round(Number(widthPx) * EMU_PER_PX) : dim ? dim.w * EMU_PER_PX : 200 * EMU_PER_PX;
@@ -23420,7 +23435,7 @@ var ReviewDoc = class {
     drawing.appendChild(inline);
     const run = doc.createElementNS(W_NS, "w:r");
     run.appendChild(drawing);
-    const np = cloneParagraphShell(anchorP);
+    const np = cloneParagraphShell(styleP);
     const ctx = this._ctx(author);
     if (ctx) {
       addParagraphInsMark(doc, np, ctx);
@@ -23443,7 +23458,8 @@ var ReviewDoc = class {
       heightEmu: cy,
       widthPx: Math.round(cx2 / EMU_PER_PX),
       heightPx: Math.round(cy / EMU_PER_PX),
-      format: fmt
+      format: fmt,
+      styleFrom: styleSourceId || null
     };
   }
   // ---------- 渲染映射 ----------
