@@ -164,11 +164,11 @@ Office 文件工作台：在平台窗口里打开真实 office 文件（**零复
 
 ## 资源分发
 
-引擎与模板资源经 jsDelivr（`gh/veypi/aic-skills`）分发，页面本地优先、CDN 回退：
+引擎与模板资源经 jsDelivr（`gh/veypi/aic-skills`）分发（不占平台带宽）：
 
-- Excel：`univer-excel.bundle.js`（16MB → gzip 3.7MB）
-- Word：`docx-review.bundle.js`（本地优先；2026-09-13 版：精确定位映射 + 表格读写/行列编辑 + 插图 + 段落删除/移动 + 样式编号报告）
-- 空白模板：`blank.docx`（~10KB；新建 Word 用）
+- Excel 引擎：`univer-excel.bundle.js`（16MB → gzip 3.7MB）——大文件走**公共资源库** `assets/office_studio/`（`https://cdn.jsdelivr.net/gh/veypi/aic-skills@main/assets/office_studio/`），页面直接引用；样式 `univer-excel.css` 在 `ui/vendor/`
+- Word：`ui/vendor/docx-review.bundle.js`（本地优先、CDN 回退；2026-09-13 版：精确定位映射 + 表格读写/行列编辑 + 插图 + 段落删除/移动 + 样式编号报告）
+- 空白模板：`ui/vendor/blank.docx`（~10KB；新建 Word 用）
 - Word 页面以 `?v=<ENGINE_V>` 查询参数破缓存（更新 vendor 资源后同步递增）
 
-更新流程：spike 构建（`temps/review-spike`，`node build.mjs`）→ cp 到 `ui/vendor/` → push → purge jsDelivr → 页面 reload。
+更新流程：spike 构建（`temps/review-spike`，`node build.mjs`）→ univer 产物 cp 到 `assets/office_studio/`、docx/blank cp 到 `ui/vendor/` → push → purge jsDelivr → 页面 reload。
