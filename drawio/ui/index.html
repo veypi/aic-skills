@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="description" content="DrawIO 绘图台 — 浏览器内绘制与编辑 .drawio 图表：形状/连线/样式面板、PNG/SVG 导出、统一文件视图读写（云端/本地/主机）" />
+  <title>DrawIO 绘图台</title>
+</head>
+<style>
+  body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    margin: 0;
+    font: 13px/1.5 "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+    color: #24292f;
+    background: transparent; /* 不设背景，平台系统背景透出 */
+    container-type: inline-size; /* 响应窗口宽度（窗口 ≠ 视口）：@container 查询基准 */
+  }
+
+  /* ---------- 顶栏 ---------- */
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: transparent;
+    border-bottom: 1px solid #e1e4e8;
+    flex: none;
+    flex-wrap: wrap; /* 窄窗口自动换行，工具按钮不被裁掉 */
+    row-gap: 4px;
+  }
+  .grp { display: flex; align-items: center; gap: 4px; }
+  .sep { width: 1px; height: 20px; background: #e1e4e8; margin: 0 3px; flex: none; }
+  .tb {
+    appearance: none;
+    border: 1px solid #d5d9de;
+    background: #fff;
+    color: #24292f;
+    border-radius: 6px;
+    padding: 3px 9px;
+    font-size: 12.5px;
+    line-height: 20px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .tb:hover { background: #f3f5f7; }
+  .tb:active { background: #e9edf1; }
+  .tb:disabled { color: #a9b0b8; cursor: default; background: #fafbfc; }
+  .tb.primary { border-color: #2f6fdb; color: #2f6fdb; }
+  .tb.primary:hover { background: #f0f5ff; }
+  .tb.mini { padding: 2px 7px; }
+
+  .menu-wrap { position: relative; }
+  .menu {
+    position: absolute; /* 相对 .menu-wrap：宿主 container-type 的 layout containment 下 fixed 会改锚定宿主 */
+    left: 0;
+    top: calc(100% + 4px);
+    z-index: 40;
+    min-width: 148px;
+    background: #fff;
+    border: 1px solid #d5d9de;
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(27, 31, 35, 0.16);
+    padding: 4px;
+  }
+  .menu-item { padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 12.5px; }
+  .menu-item:hover { background: #f0f3f6; }
+
+  .doc-label {
+    flex: 1;
+    min-width: 40px;
+    text-align: center;
+    color: #57606a;
+    font-size: 12.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 6px;
+  }
+  .doc-label .dirty-dot { color: #cf222e; margin-left: 5px; }
+  .zoom-pct { min-width: 44px; text-align: center; color: #57606a; font-size: 12px; }
+
+  /* ---------- 主体 ---------- */
+  .main { flex: 1; display: flex; min-height: 0; position: relative; }
+
+  .palette {
+    width: 194px;
+    flex: none;
+    background: transparent;
+    border-right: 1px solid #e1e4e8;
+    overflow-y: auto;
+    padding: 8px;
+    box-sizing: border-box;
+  }
+  .pal-title { font-size: 11px; color: #8a9199; text-transform: uppercase; letter-spacing: 0.4px; margin: 4px 4px 6px; }
+  .pal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .pal-item {
+    border: 1px solid #e4e8ec;
+    border-radius: 7px;
+    background: #fbfcfd;
+    padding: 6px 2px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: grab;
+    user-select: none;
+  }
+  .pal-item:hover { border-color: #b9c6d6; background: #f4f8fd; }
+  .pal-item .pv { width: 56px; height: 34px; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+  .pal-item .pl { font-size: 11px; color: #57606a; pointer-events: none; }
+
+  .canvas-wrap { flex: 1; position: relative; min-width: 0; outline: none; }
+  .canvas-host {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background-color: transparent; /* 画布不设底色，仅保留网格 */
+    background-image: linear-gradient(to right, rgba(27, 31, 35, 0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(27, 31, 35, 0.06) 1px, transparent 1px);
+    background-size: 10px 10px;
+    background-position: 0 0;
+    cursor: default;
+  }
+  .drop-hint {
+    position: absolute;
+    inset: 0;
+    border: 2px dashed #2f6fdb;
+    background: rgba(47, 111, 219, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #2f6fdb;
+    font-size: 14px;
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  /* ---------- 右侧属性栏 ---------- */
+  .inspector {
+    width: 236px;
+    flex: none;
+    background: transparent;
+    border-left: 1px solid #e1e4e8;
+    overflow-y: auto;
+    padding: 10px 12px;
+    box-sizing: border-box;
+  }
+  .insp-title { font-size: 11px; color: #8a9199; text-transform: uppercase; letter-spacing: 0.4px; margin: 2px 0 8px; }
+  .insp-empty { color: #8a9199; font-size: 12px; line-height: 1.8; }
+  .row { display: flex; align-items: center; gap: 8px; margin: 7px 0; }
+  .row label { width: 62px; flex: none; color: #57606a; font-size: 12px; }
+  .row input[type="number"], .row input[type="text"], .row select {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid #d5d9de;
+    border-radius: 6px;
+    padding: 3px 6px;
+    font-size: 12px;
+    background: #fff;
+    color: #24292f;
+  }
+  .row input[type="color"] { width: 34px; height: 24px; padding: 1px; border: 1px solid #d5d9de; border-radius: 6px; background: #fff; }
+  .row .clr-x { border: none; background: none; color: #8a9199; cursor: pointer; font-size: 14px; padding: 0 2px; }
+  .row .clr-x:hover { color: #cf222e; }
+  .flags { display: flex; gap: 4px; }
+  .flag {
+    border: 1px solid #d5d9de;
+    background: #fff;
+    border-radius: 6px;
+    width: 28px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #24292f;
+  }
+  .flag.on { background: #2f6fdb; border-color: #2f6fdb; color: #fff; }
+  .flag.b { font-weight: 700; }
+  .flag.i { font-style: italic; }
+  .flag.u { text-decoration: underline; }
+  .insp-hint { color: #8a9199; font-size: 11.5px; margin-top: 10px; line-height: 1.7; }
+
+  /* ---------- 状态栏 ---------- */
+  .status {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 3px 12px;
+    border-top: 1px solid #e1e4e8;
+    background: transparent;
+    color: #57606a;
+    font-size: 11.5px;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .status .grow { flex: 1; }
+
+  /* ---------- 弹层 ---------- */
+  .mask {
+    position: absolute;
+    inset: 0;
+    background: rgba(27, 31, 35, 0.28);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 60;
+  }
+  .modal {
+    width: min(560px, calc(100% - 40px));
+    max-height: calc(100% - 60px);
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 16px 48px rgba(27, 31, 35, 0.3);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .modal-head { padding: 10px 16px; border-bottom: 1px solid #e8ebee; font-size: 13px; font-weight: 600; }
+  .modal-body { padding: 10px 16px; overflow-y: auto; min-height: 60px; }
+  .modal-foot { padding: 10px 16px; border-top: 1px solid #e8ebee; display: flex; justify-content: flex-end; gap: 8px; }
+  .path-row { display: flex; gap: 6px; margin-bottom: 8px; }
+  .path-row input {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid #d5d9de;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+  .flist { border: 1px solid #e8ebee; border-radius: 8px; overflow: hidden; max-height: 240px; overflow-y: auto; }
+  .fitem { display: flex; gap: 8px; align-items: center; padding: 4px 10px; cursor: pointer; font-size: 12.5px; }
+  .fitem:hover { background: #f3f6f9; }
+  .fitem.sel { background: #e8f0fe; }
+  .fitem .fi { width: 16px; flex: none; color: #8a9199; text-align: center; }
+  .fitem .fn { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fitem .fs { color: #a9b0b8; font-size: 11px; }
+  .flist .fempty { padding: 18px 12px; text-align: center; color: #8a9199; font-size: 12px; }
+  .name-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+  .name-row label { color: #57606a; font-size: 12px; flex: none; }
+  .name-row input {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid #d5d9de;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 12.5px;
+  }
+  .toast {
+    position: absolute;
+    bottom: 34px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #24292f;
+    color: #fff;
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-size: 12.5px;
+    z-index: 80;
+    max-width: 80%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-shadow: 0 8px 24px rgba(27, 31, 35, 0.35);
+  }
+  .toast.error { background: #cf222e; }
+
+  /* ---------- 响应式（窗口宽度 ≠ 视口宽度：@container 查询） ---------- */
+  .panel-toggles { display: none; } /* 仅窄窗口显示：面板收为抽屉后的开合入口 */
+  .drawer-mask {
+    position: absolute;
+    inset: 0;
+    z-index: 25;
+    background: rgba(27, 31, 35, 0.22);
+    display: none; /* 仅窄窗口（抽屉模式）下可见 */
+  }
+  .tb.icon {
+    box-sizing: border-box;
+    padding: 0;
+    width: 28px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .tb.on {
+    background: var(--color-primary, #2f6fdb);
+    border-color: var(--color-primary, #2f6fdb);
+    color: var(--color-primary-text, #fff);
+  }
+  .tb.on:hover { background: var(--color-primary-hover, #2a63c9); }
+  .tb.attn { border-color: var(--color-primary, #2f6fdb); color: var(--color-primary, #2f6fdb); }
+
+  /* 中窄窗口：侧栏收窄，给画布让位 */
+  @container (max-width: 980px) {
+    .palette { width: 176px; }
+    .inspector { width: 212px; }
+  }
+
+  /* 窄窗口：形状/属性面板收为左右抽屉（工具栏图标按钮开合 + 遮罩） */
+  @container (max-width: 860px) {
+    .panel-toggles { display: flex; }
+    .drawer-mask { display: block; }
+    .palette, .inspector {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      z-index: 30;
+      background: var(--bg-color-secondary, #ffffff);
+      box-shadow: var(--shadow-lg, 0 12px 36px rgba(27, 31, 35, 0.25));
+      visibility: hidden;
+      transition: transform var(--transition-base, 200ms) ease, visibility var(--transition-base, 200ms);
+    }
+    .palette {
+      left: 0;
+      width: min(264px, 86%);
+      border-radius: 0 var(--radius-lg, 8px) var(--radius-lg, 8px) 0;
+      transform: translateX(-104%);
+    }
+    .inspector {
+      right: 0;
+      width: min(300px, 88%);
+      border-radius: var(--radius-lg, 8px) 0 0 var(--radius-lg, 8px);
+      transform: translateX(104%);
+    }
+    .palette.open, .inspector.open { transform: translateX(0); visibility: visible; }
+  }
+
+  /* 很窄窗口：工具栏/状态栏紧凑化 */
+  @container (max-width: 640px) {
+    .status .hint { display: none; }
+  }
+  @container (max-width: 560px) {
+    .bar { padding: 4px 6px; gap: 4px; row-gap: 3px; }
+    .tb { padding: 2px 7px; font-size: 12px; }
+    .sep { margin: 0 1px; }
+  }
+
+  /* ---------- maxgraph 运行时节点（body 前缀穿透作用域） ---------- */
+  body div.mxRubberband {
+    border: 1px dashed #2f6fdb;
+    background: rgba(47, 111, 219, 0.12);
+  }
+  body div.mxCellEditor {
+    background: transparent;
+    border: 1px solid #2f6fdb;
+    border-radius: 2px;
+    padding: 0;
+    color: #000;
+    font-family: Helvetica, Arial, sans-serif;
+  }
+  body div.mxTooltip {
+    background: #24292f;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 4px 9px;
+    font-size: 12px;
+    box-shadow: 0 6px 18px rgba(27, 31, 35, 0.3);
+  }
+  body div.mxPopupMenu {
+    background: #fff;
+    border: 1px solid #d5d9de;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(27, 31, 35, 0.25);
+    padding: 4px;
+  }
+  body table.mxPopupMenu { border-collapse: collapse; }
+  body tr.mxPopupMenuItem { cursor: pointer; }
+  body tr.mxPopupMenuItemHover { background: #f0f3f6; }
+  body td.mxPopupMenuItem { padding: 5px 22px 5px 10px; font-size: 12.5px; font-family: inherit; color: #24292f; }
+</style>
+<body>
+  <div class="bar">
+    <div class="menu-wrap" @outerclick="menuNew = false">
+      <button class="tb primary" @click="toggleMenuNew()">{{ $t('btn.new') }} ▾</button>
+      <div class="menu" v-if="menuNew">
+        <div class="menu-item" @click="cmdNew('blank')">{{ $t('menu.blank') }}</div>
+        <div class="menu-item" @click="cmdNew('workflow')">{{ $t('menu.workflow') }}</div>
+        <div class="menu-item" @click="cmdNew('layered')">{{ $t('menu.layered') }}</div>
+      </div>
+    </div>
+    <button class="tb" @click="cmdOpen()">{{ $t('btn.open') }}</button>
+    <button class="tb" @click="cmdSave()">{{ $t('btn.save') }}</button>
+    <button class="tb" @click="cmdSaveAs()" :title="$t('btn.saveAs')">{{ $t('btn.saveAs') }}</button>
+    <div class="sep"></div>
+    <button class="tb" @click="doUndo()" :disabled="!st.canUndo">{{ $t('btn.undo') }}</button>
+    <button class="tb" @click="doRedo()" :disabled="!st.canRedo">{{ $t('btn.redo') }}</button>
+    <div class="sep"></div>
+    <button class="tb" @click="doDelete()" :disabled="!st.selCount">{{ $t('btn.del') }}</button>
+    <button class="tb" @click="doCopy()" :disabled="!st.selCount">{{ $t('btn.copy') }}</button>
+    <button class="tb" @click="doPaste()">{{ $t('btn.paste') }}</button>
+    <div class="sep"></div>
+    <button class="tb" @click="cmdExport('png')">{{ $t('btn.png') }}</button>
+    <button class="tb" @click="cmdExport('svg')">{{ $t('btn.svg') }}</button>
+    <div class="doc-label">{{ docLabel() }}<span class="dirty-dot" v-if="st.dirty">●</span></div>
+    <div class="grp panel-toggles">
+      <button class="tb mini icon" :class="{ on: palOpen }" @click="togglePal()" :title="$t('panel.shapes')">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1.8" y="1.8" width="5.4" height="5.4" rx="1.2"/><circle cx="11.5" cy="4.5" r="2.9"/><rect x="1.8" y="8.8" width="5.4" height="5.4" rx="1.2"/><path d="M11.5 8.3 L14.4 14.2 L8.6 14.2 Z"/></svg>
+      </button>
+      <button class="tb mini icon" :class="{ on: inspOpen, attn: !inspOpen && st.selCount > 0 }" @click="toggleInsp()" :title="$t('panel.props')">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 4.5h12M2 11.5h12"/><circle cx="6" cy="4.5" r="1.7" fill="currentColor" stroke="none"/><circle cx="10.5" cy="11.5" r="1.7" fill="currentColor" stroke="none"/></svg>
+      </button>
+    </div>
+    <div class="grp">
+      <button class="tb mini" @click="doZoomOut()">−</button>
+      <span class="zoom-pct">{{ zoomPct() }}%</span>
+      <button class="tb mini" @click="doZoomIn()">＋</button>
+      <button class="tb mini" @click="doFit()">{{ $t('btn.fit') }}</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <aside class="palette" :class="{ open: palOpen }">
+      <div class="pal-title">{{ $t('palette.general') }}</div>
+      <div class="pal-grid">
+        <div class="pal-item" v-for="it in PALETTE_GROUPS[0].items" draggable="true"
+          @dragstart="onPaletteDrag($event, it.kind)" @click="insert(it.kind)" :title="shapeLabel(it.kind)">
+          <div class="pv" v-html="previewSvg(it.kind)"></div>
+          <span class="pl">{{ shapeLabel(it.kind) }}</span>
+        </div>
+      </div>
+    </aside>
+
+    <div class="canvas-wrap" ref="wrap" tabindex="0"
+      @dragover.prevent="onDragOver($event)" @dragleave="onDragLeave()" @drop.prevent="onDrop($event)">
+      <div class="canvas-host" ref="host"></div>
+      <div class="drop-hint" v-if="dropActive">{{ $t('hint.drop') }}</div>
+    </div>
+
+    <div class="drawer-mask" v-if="palOpen || inspOpen" @click="closeDrawers()"></div>
+
+    <aside class="inspector" :class="{ open: inspOpen }">
+      <div class="insp-title">{{ $t('insp.title') }}</div>
+      <div class="insp-empty" v-if="!sel">{{ $t('insp.empty') }}</div>
+      <template v-else>
+        <div class="row">
+          <label>{{ $t('insp.label') }}</label>
+          <input type="text" :value="sel.value" @change="onLabelChange($event)" />
+        </div>
+        <template v-if="sel.vertex && !sel.edge">
+          <div class="row">
+            <label>{{ $t('insp.shape') }}</label>
+            <select :value="shapeVal()" @change="onShapeSel($event)">
+              <option value="">{{ $t('shape.rectangle') }}</option>
+              <option value="ellipse">{{ $t('shape.ellipse') }}</option>
+              <option value="rhombus">{{ $t('shape.rhombus') }}</option>
+              <option value="triangle">{{ $t('shape.triangle') }}</option>
+              <option value="hexagon">{{ $t('shape.hexagon') }}</option>
+              <option value="shape=cylinder3">{{ $t('shape.cylinder') }}</option>
+              <option value="shape=cloud">{{ $t('shape.cloud') }}</option>
+              <option value="shape=actor">{{ $t('shape.actor') }}</option>
+              <option value="shape=parallelogram">{{ $t('shape.parallelogram') }}</option>
+              <option value="shape=note">{{ $t('shape.note') }}</option>
+              <option value="text">{{ $t('shape.text') }}</option>
+              <option value="swimlane">{{ $t('shape.swimlane') }}</option>
+            </select>
+          </div>
+        </template>
+        <div class="row" v-if="sel.vertex && !sel.edge">
+          <label>{{ $t('insp.fill') }}</label>
+          <input type="color" :value="colorVal('fillColor', '#ffffff')" @input="setColor('fillColor', $event)" />
+          <button class="clr-x" @click="clearKey('fillColor')" :title="$t('insp.none')">×</button>
+        </div>
+        <div class="row">
+          <label>{{ $t('insp.stroke') }}</label>
+          <input type="color" :value="colorVal('strokeColor', '#000000')" @input="setColor('strokeColor', $event)" />
+          <button class="clr-x" @click="clearKey('strokeColor')" :title="$t('insp.none')">×</button>
+        </div>
+        <div class="row">
+          <label>{{ $t('insp.width') }}</label>
+          <input type="number" min="0" step="0.5" :value="selVal('strokeWidth', 1)" @change="setNum('strokeWidth', $event)" />
+        </div>
+        <div class="row" v-if="sel.vertex && !sel.edge">
+          <label>{{ $t('insp.rounded') }}</label>
+          <button class="flag" :class="{ on: flagOn('rounded') }" @click="toggleKey('rounded')">◔</button>
+        </div>
+        <div class="row">
+          <label>{{ $t('insp.dashed') }}</label>
+          <button class="flag" :class="{ on: flagOn('dashed') }" @click="toggleKey('dashed')">– –</button>
+        </div>
+        <template v-if="sel.edge">
+          <div class="row">
+            <label>{{ $t('insp.edgeStyle') }}</label>
+            <select :value="selVal('edgeStyle', '')" @change="setSel('edgeStyle', $event)">
+              <option value="">{{ $t('es.straight') }}</option>
+              <option value="orthogonalEdgeStyle">{{ $t('es.orth') }}</option>
+              <option value="entityRelationEdgeStyle">{{ $t('es.entity') }}</option>
+              <option value="elbowEdgeStyle">{{ $t('es.elbow') }}</option>
+            </select>
+          </div>
+          <div class="row">
+            <label>{{ $t('insp.startArrow') }}</label>
+            <select :value="selVal('startArrow', 'none')" @change="setSel('startArrow', $event)">
+              <option value="none">{{ $t('_arrow.none') }}</option>
+              <option value="classic">{{ $t('_arrow.classic') }}</option>
+              <option value="open">{{ $t('_arrow.open') }}</option>
+              <option value="block">{{ $t('_arrow.block') }}</option>
+              <option value="oval">{{ $t('_arrow.oval') }}</option>
+              <option value="diamond">{{ $t('_arrow.diamond') }}</option>
+            </select>
+          </div>
+          <div class="row">
+            <label>{{ $t('insp.endArrow') }}</label>
+            <select :value="selVal('endArrow', 'classic')" @change="setSel('endArrow', $event)">
+              <option value="none">{{ $t('_arrow.none') }}</option>
+              <option value="classic">{{ $t('_arrow.classic') }}</option>
+              <option value="open">{{ $t('_arrow.open') }}</option>
+              <option value="block">{{ $t('_arrow.block') }}</option>
+              <option value="oval">{{ $t('_arrow.oval') }}</option>
+              <option value="diamond">{{ $t('_arrow.diamond') }}</option>
+            </select>
+          </div>
+        </template>
+        <div class="row">
+          <label>{{ $t('insp.font') }}</label>
+          <div class="flags">
+            <button class="flag b" :class="{ on: fontOn(1) }" @click="toggleFont(1)">B</button>
+            <button class="flag i" :class="{ on: fontOn(2) }" @click="toggleFont(2)">I</button>
+            <button class="flag u" :class="{ on: fontOn(4) }" @click="toggleFont(4)">U</button>
+          </div>
+        </div>
+        <div class="row">
+          <label>{{ $t('insp.fontSize') }}</label>
+          <input type="number" min="6" step="1" :value="selVal('fontSize', 12)" @change="setNum('fontSize', $event)" />
+        </div>
+        <div class="row">
+          <label>{{ $t('insp.fontColor') }}</label>
+          <input type="color" :value="colorVal('fontColor', '#000000')" @input="setColor('fontColor', $event)" />
+        </div>
+      </template>
+      <div class="insp-hint">{{ $t('insp.hint') }}</div>
+    </aside>
+  </div>
+
+  <div class="status">
+    <span>{{ $t('status.cells', { v: st.vertices, e: st.edges }) }}</span>
+    <span class="grow"></span>
+    <span class="hint">{{ $t('status.hint') }}</span>
+  </div>
+
+  <div class="mask" v-if="confirmBox.show" @click.self="confirmBox = { show: false, text: '', onOk: null }">
+    <div class="modal" style="width: min(400px, calc(100% - 40px));">
+      <div class="modal-head">{{ $t('confirm.title') }}</div>
+      <div class="modal-body">{{ confirmBox.text }}</div>
+      <div class="modal-foot">
+        <button class="tb" @click="confirmBox = { show: false, text: '', onOk: null }">{{ $t('confirm.cancel') }}</button>
+        <button class="tb primary" @click="confirmOk()">{{ $t('confirm.ok') }}</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" :class="{ error: toast && toast.kind === 'error' }" v-if="toast">{{ toast.text }}</div>
+</body>
+<script setup>
+  import { createEditor, PALETTE_GROUPS } from './lib/editor.js'
+
+  // ---- 状态（$data，跨 script 块共享） ----
+  editor = null
+  st = { vertices: 0, edges: 0, scale: 1, tx: 0, ty: 0, canUndo: false, canRedo: false, selCount: 0, selKind: 'none', dirty: false, path: '', name: '' }
+  sel = null
+  toast = null
+  toastTs = 0
+  menuNew = false
+  palOpen = false
+  inspOpen = false
+  dropActive = false
+  confirmBox = { show: false, text: '', onOk: null }
+  lastDirVal = ''
+  wrapElRef = null
+  resizeOb = null
+
+  // ---- 工具 ----
+  reply = (obj) => ({ content: JSON.stringify(obj) })
+  errReply = (msg) => ({ content: JSON.stringify({ ok: false, error: String(msg) }) })
+
+  argsGet = (argv, flag) => {
+    const a = Array.isArray(argv) ? argv : []
+    const i = a.indexOf(flag)
+    if (i >= 0 && i + 1 < a.length) return String(a[i + 1])
+    return ''
+  }
+
+  toastMsg = (text, kind) => {
+    const ts = ++toastTs
+    toast = { text: String(text), kind: kind || 'info' }
+    setTimeout(() => {
+      if (toastTs === ts) toast = null
+    }, 3000)
+  }
+
+  toggleMenuNew = () => {
+    menuNew = !menuNew
+  }
+
+  // 窄窗口抽屉（宽窗口下侧栏常显，这两个状态无副作用）
+  togglePal = () => {
+    palOpen = !palOpen
+    if (palOpen) inspOpen = false
+  }
+  toggleInsp = () => {
+    inspOpen = !inspOpen
+    if (inspOpen) palOpen = false
+  }
+  closeDrawers = () => {
+    palOpen = false
+    inspOpen = false
+  }
+
+  refresh = () => {
+    if (!editor) return
+    st = editor.state()
+    sel = editor.selectionDetail()
+    const host = $refs.host
+    if (host) {
+      const g = Math.max(4, 10 * st.scale)
+      // 网格与图形同一坐标系：相位 = render(0) = scale × translate（取正模，负值归一）
+      const gx = (((st.scale * st.tx) % g) + g) % g
+      const gy = (((st.scale * st.ty) % g) + g) % g
+      host.style.backgroundSize = g + 'px ' + g + 'px'
+      host.style.backgroundPosition = gx + 'px ' + gy + 'px'
+    }
+  }
+
+  uid = () => ($mod.$auth && $mod.$auth.user && $mod.$auth.user.id) || ''
+  defaultDir = () => '/cloud/u/' + uid() + '/drawio'
+  parentOf = (p) => {
+    const s = String(p || '').replace(/\/+$/, '')
+    const i = s.lastIndexOf('/')
+    return i > 0 ? s.slice(0, i) : ''
+  }
+  docLabel = () => {
+    if (st.path) return st.path.split('/').pop()
+    return st.name || $t('untitled')
+  }
+  zoomPct = () => Math.round(st.scale * 100)
+
+  // ---- 文档操作 ----
+  readText = async (path) => {
+    const r = await $mod.$fs.get(path)
+    if (typeof r.content === 'string') return r.content
+    if (r.content && typeof r.content.text === 'function') return await r.content.text()
+    throw new Error($t('err.readFailed'))
+  }
+  openPathQuiet = async (path) => {
+    if (!editor) throw new Error($t('err.notReady'))
+    const text = await readText(path)
+    const out = editor.load(text, { path })
+    refresh()
+    return out
+  }
+  openPath = async (path) => {
+    try {
+      const out = await openPathQuiet(path)
+      lastDirVal = parentOf(path)
+      toastMsg($t('toast.opened', { name: path.split('/').pop() }))
+      return out
+    } catch (e) {
+      toastMsg($t('err.open', { err: String((e && e.message) || e) }), 'error')
+      throw e
+    }
+  }
+  saveTo = async (path) => {
+    if (!editor) return
+    try {
+      const text = editor.getXml()
+      await $mod.$fs.put(path, text)
+      editor.markSaved(path)
+      lastDirVal = parentOf(path)
+      toastMsg($t('toast.saved', { name: path.split('/').pop() }))
+      refresh()
+    } catch (e) {
+      toastMsg($t('err.save', { err: String((e && e.message) || e) }), 'error')
+      throw e
+    }
+  }
+  doNew = async (templateId) => {
+    if (!editor) return
+    if (templateId && templateId !== 'blank') {
+      try {
+        const r = await fetch('templates/' + templateId + '.drawio')
+        if (!r.ok) throw new Error('HTTP ' + r.status)
+        editor.load(await r.text(), { path: '' })
+        toastMsg($t('toast.openedTemplate'))
+      } catch (e) {
+        editor.newDoc()
+        toastMsg($t('err.templateLoad', { err: String((e && e.message) || e) }), 'error')
+      }
+    } else {
+      editor.newDoc()
+    }
+    refresh()
+  }
+  cmdNew = async (templateId) => {
+    menuNew = false
+    if (!editor) return
+    if (st.dirty) {
+      confirmBox = { show: true, text: $t('confirm.discard'), onOk: () => doNew(templateId) }
+      return
+    }
+    await doNew(templateId)
+  }
+  cmdOpen = async () => {
+    if (!editor) return
+    let f = null
+    try {
+      f = await $mod.$fs.open({
+        accept: ['.drawio', '.xml'],
+        start: st.path ? parentOf(st.path) : lastDirVal || defaultDir(),
+      })
+    } catch (e) {
+      toastMsg($t('err.open', { err: String((e && e.message) || e) }), 'error')
+      return
+    }
+    if (!f) return
+    try {
+      await openPath(f.path)
+    } catch (e) {
+      // openPath 内部已提示
+    }
+  }
+  suggestBase = () => {
+    if (st.path) return st.path.split('/').pop().replace(/\.[^.]+$/, '')
+    return st.name || 'diagram'
+  }
+  cmdSave = async () => {
+    if (!editor) return
+    if (!st.path) return cmdSaveAs()
+    await saveTo(st.path)
+  }
+  cmdSaveAs = async () => {
+    if (!editor) return
+    let f = null
+    try {
+      f = await $mod.$fs.save_as({
+        name: suggestBase() + '.drawio',
+        ext: '.drawio',
+        start: st.path ? parentOf(st.path) : lastDirVal || defaultDir(),
+      })
+    } catch (e) {
+      toastMsg($t('err.save', { err: String((e && e.message) || e) }), 'error')
+      return
+    }
+    if (!f) return
+    try {
+      await saveTo(f.path)
+    } catch (e) {
+      // saveTo 内部已提示
+    }
+  }
+  downloadBlob = (blob, name) => {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = name
+    a.style.display = 'none'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 30000)
+  }
+  cmdExport = async (fmt) => {
+    if (!editor) return
+    const name = suggestBase() + (fmt === 'png' ? '.png' : '.svg')
+    try {
+      if (fmt === 'png') {
+        const blob = await editor.exportPngBlob({ scale: 2 })
+        if (!blob) throw new Error('PNG blob is null')
+        downloadBlob(blob, name)
+      } else {
+        downloadBlob(new Blob([editor.exportSvgString()], { type: 'image/svg+xml;charset=utf-8' }), name)
+      }
+      toastMsg($t('toast.exported', { name }))
+    } catch (e) {
+      toastMsg($t('err.export', { err: String((e && e.message) || e) }), 'error')
+    }
+  }
+
+  // ---- 画布操作 ----
+  doUndo = () => { if (editor) editor.undo() }
+  doRedo = () => { if (editor) editor.redo() }
+  doDelete = () => { if (editor) editor.removeSelection() }
+  doCopy = () => { if (editor) editor.copySelection() }
+  doPaste = () => { if (editor) editor.pasteClipboard() }
+  doFit = () => { if (editor) editor.fit() }
+  doZoomIn = () => { if (editor) editor.zoomIn() }
+  doZoomOut = () => { if (editor) editor.zoomOut() }
+  insert = (kind) => {
+    if (!editor) return
+    editor.insertShape(kind)
+    palOpen = false // 窄窗口下放置后收起形状抽屉
+    try {
+      if (wrapElRef) wrapElRef.focus({ preventScroll: true })
+    } catch (e) {}
+  }
+  onPaletteDrag = (e, kind) => {
+    try {
+      e.dataTransfer.setData('text/plain', 'drawio-shape:' + kind)
+      e.dataTransfer.effectAllowed = 'copy'
+    } catch (err) {}
+  }
+  onDragOver = (e) => {
+    dropActive = true
+  }
+  onDragLeave = () => {
+    dropActive = false
+  }
+  onDrop = (e) => {
+    dropActive = false
+    if (!editor) return
+    const data = (e.dataTransfer && e.dataTransfer.getData('text/plain')) || ''
+    if (data.indexOf('drawio-shape:') !== 0) return
+    const kind = data.slice('drawio-shape:'.length)
+    const hostEl = $refs.host
+    if (!hostEl) return
+    const rect = hostEl.getBoundingClientRect()
+    editor.insertShape(kind, editor.screenToModel(e.clientX - rect.left, e.clientY - rect.top))
+    palOpen = false
+  }
+
+  // ---- 属性面板 ----
+  selVal = (key, dflt) => {
+    const v = sel && sel.computed ? sel.computed[key] : undefined
+    return v == null ? dflt : v
+  }
+  colorVal = (key, dflt) => {
+    const v = selVal(key, dflt)
+    return typeof v === 'string' && v.charAt(0) === '#' ? v : dflt
+  }
+  flagOn = (key) => {
+    const v = selVal(key, 0)
+    return v === 1 || v === true || v === '1'
+  }
+  fontOn = (flag) => {
+    const v = Number(selVal('fontStyle', 0)) || 0
+    return (v & flag) !== 0
+  }
+  shapeVal = () => {
+    if (!sel || !sel.vertex) return ''
+    const raw = sel.raw || {}
+    if (raw.shape) return 'shape=' + raw.shape
+    const bn = raw.baseStyleNames
+    return bn && bn.length ? bn[0] : ''
+  }
+  setColor = (key, ev) => {
+    if (editor) editor.setStyleKey(key, ev.target.value)
+  }
+  clearKey = (key) => {
+    if (editor) editor.setStyleKey(key, null)
+  }
+  setNum = (key, ev) => {
+    if (!editor) return
+    const v = ev.target.value
+    editor.setStyleKey(key, v === '' ? null : Number(v))
+  }
+  setSel = (key, ev) => {
+    if (!editor) return
+    const v = ev.target.value
+    editor.setStyleKey(key, v === '' ? null : v)
+  }
+  toggleKey = (key) => {
+    if (!editor) return
+    editor.setStyleKey(key, flagOn(key) ? null : 1)
+  }
+  toggleFont = (flag) => {
+    if (!editor) return
+    editor.setFontFlag(flag, !fontOn(flag))
+  }
+  onShapeSel = (ev) => {
+    if (editor) editor.setBaseShape(ev.target.value)
+  }
+  onLabelChange = (ev) => {
+    if (editor) editor.setLabel(ev.target.value)
+  }
+  confirmOk = () => {
+    const fn = confirmBox.onOk
+    confirmBox = { show: false, text: '', onOk: null }
+    if (typeof fn === 'function') fn()
+  }
+
+  // ---- 形状名 / 调色板预览 ----
+  shapeLabel = (kind) => $t('_shape.' + kind)
+  shapeNameMap = {
+    rectangle: 'shape.rectangle',
+    rounded: 'shape.rounded',
+    ellipse: 'shape.ellipse',
+    rhombus: 'shape.rhombus',
+    triangle: 'shape.triangle',
+    hexagon: 'shape.hexagon',
+    cylinder: 'shape.cylinder',
+    cloud: 'shape.cloud',
+    actor: 'shape.actor',
+    parallelogram: 'shape.parallelogram',
+    note: 'shape.note',
+    text: 'shape.text',
+    swimlane: 'shape.swimlane',
+  }
+  previewSvg = (kind) => {
+    const s = '<svg width="52" height="32" viewBox="0 0 52 32" fill="none" stroke="#57606a" stroke-width="1.2">'
+    const e = '</svg>'
+    if (kind === 'rectangle') return s + '<rect x="6" y="6" width="40" height="20" rx="1"/></svg>'
+    if (kind === 'rounded') return s + '<rect x="6" y="6" width="40" height="20" rx="6"/></svg>'
+    if (kind === 'ellipse') return s + '<ellipse cx="26" cy="16" rx="20" ry="10"/></svg>'
+    if (kind === 'rhombus') return s + '<path d="M26 4 L48 16 L26 28 L4 16 Z"/></svg>'
+    if (kind === 'triangle') return s + '<path d="M26 4 L46 28 L6 28 Z"/></svg>'
+    if (kind === 'hexagon') return s + '<path d="M14 6 H38 L48 16 L38 26 H14 L4 16 Z"/></svg>'
+    if (kind === 'cylinder')
+      return (
+        s +
+        '<path d="M12 8 C12 4.5 40 4.5 40 8 V24 C40 27.5 12 27.5 12 24 Z"/><path d="M12 8 C12 11.5 40 11.5 40 8"/></svg>'
+      )
+    if (kind === 'cloud')
+      return (
+        s +
+        '<path d="M16 22 a6 6 0 0 1 1-11 a7 7 0 0 1 13-2 a6 6 0 0 1 6 9 a5 5 0 0 1-2 4 Z"/></svg>'
+      )
+    if (kind === 'actor')
+      return s + '<circle cx="26" cy="8" r="4"/><path d="M26 12 V22 M18 16 H34 M26 22 L20 30 M26 22 L32 30"/></svg>'
+    if (kind === 'parallelogram') return s + '<path d="M14 6 H48 L38 26 H4 Z"/></svg>'
+    if (kind === 'note') return s + '<path d="M6 6 H38 L46 14 V26 H6 Z"/><path d="M38 6 V14 H46"/></svg>'
+    if (kind === 'text') return s + '<text x="26" y="21" text-anchor="middle" font-size="13" fill="#57606a" stroke="none">T</text></svg>'
+    if (kind === 'swimlane') return s + '<rect x="4" y="6" width="44" height="20"/><path d="M4 12 H48"/></svg>'
+    return s + '<rect x="6" y="6" width="40" height="20" rx="2"/></svg>'
+  }
+
+  // ---- 快捷键 ----
+  onKeyHandler = (e) => {
+    if (!editor) return
+    const tag = e.target && e.target.tagName
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+    const mod = e.metaKey || e.ctrlKey
+    const k = String(e.key || '').toLowerCase()
+    if (mod && k === 's') { e.preventDefault(); cmdSave(); return }
+    if (mod && k === 'z') { e.preventDefault(); if (e.shiftKey) editor.redo(); else editor.undo(); return }
+    if (mod && k === 'y') { e.preventDefault(); editor.redo(); return }
+    if (mod && k === 'a') { e.preventDefault(); editor.selectAllShapes(); return }
+    if (mod && k === 'c') { if (!editor.graph.isEditing()) { e.preventDefault(); editor.copySelection() } return }
+    if (mod && k === 'x') { if (!editor.graph.isEditing()) { e.preventDefault(); editor.cutSelection() } return }
+    if (mod && k === 'v') { if (!editor.graph.isEditing()) { e.preventDefault(); editor.pasteClipboard() } return }
+    if (mod && k === '0') { e.preventDefault(); editor.fit(); return }
+    if (!mod && (k === 'delete' || k === 'backspace')) { e.preventDefault(); editor.removeSelection(); return }
+    if (!mod && k === 'escape') {
+      if (palOpen || inspOpen) { closeDrawers(); return }
+      editor.graph.clearSelection()
+      return
+    }
+  }
+
+  // ---- pageDesc：AI 操控面 ----
+  pageDesc = {
+    desc: 'DrawIO 绘图台：浏览器内绘制与编辑 .drawio 图表；文件经统一 $fs 文件视图读写（云端 UFS / 浏览器本地 / 主机），支持 PNG/SVG 导出',
+    commands: [
+      {
+        name: 'drawio_status',
+        desc: '页面与当前文档状态（页面未就绪时也可调用）',
+        help: '无参数。返回 {ok, ready, viewport:{w,h}, path, name, dirty, vertices, edges, scale, selection}',
+        handler: async () => {
+          if (!editor) return reply({ ok: true, ready: false })
+          // 窗口（组件宿主）尺寸：响应式布局与自动化诊断
+          let vw = 0
+          let vh = 0
+          try {
+            let node = null
+            try { node = $node } catch (e) {}
+            if (!node && $refs.wrap && $refs.wrap.parentElement) node = $refs.wrap.parentElement.parentElement
+            if (node) {
+              const r = node.getBoundingClientRect()
+              vw = Math.round(r.width)
+              vh = Math.round(r.height)
+            }
+          } catch (e) {}
+          return reply({ ok: true, ready: true, viewport: { w: vw, h: vh }, ...editor.state() })
+        },
+      },
+      {
+        name: 'drawio_list',
+        desc: '列出目录下的 .drawio 文件',
+        help: '--dir <目录路径>（可选；默认当前文档目录或云端默认目录）',
+        handler: async (argv) => {
+          try {
+            const dir = argsGet(argv, '--dir') || (st.path ? parentOf(st.path) : defaultDir())
+            const r = await $mod.$fs.ls(dir)
+            const items = (r.items || []).filter((it) => it.dir || /\.(drawio|xml)$/i.test(it.name))
+            return reply({ ok: true, dir, items })
+          } catch (e) {
+            return errReply(String((e && e.message) || e))
+          }
+        },
+      },
+      {
+        name: 'drawio_open',
+        desc: '打开 .drawio 文件（有未保存改动时先自动保存到原路径）',
+        help: '--path <文件路径>（必填，统一 $fs 树路径，如 /cloud/u/{uid}/drawio/x.drawio）',
+        handler: async (argv) => {
+          if (!editor) return errReply($t('err.notReady'))
+          const p = argsGet(argv, '--path')
+          if (!p) return errReply($t('err.needPath'))
+          try {
+            const s = editor.state()
+            if (s.dirty && s.path && s.path !== p) {
+              await $mod.$fs.put(s.path, editor.getXml())
+              editor.markSaved(s.path)
+            }
+            await openPathQuiet(p)
+            lastDirVal = parentOf(p)
+            return reply({ ok: true, path: p, name: editor.state().name })
+          } catch (e) {
+            return errReply(String((e && e.message) || e))
+          }
+        },
+      },
+      {
+        name: 'drawio_new',
+        desc: '新建空白图（丢弃当前内容）',
+        help: '无参数',
+        handler: async () => {
+          if (!editor) return errReply($t('err.notReady'))
+          editor.newDoc()
+          refresh()
+          return reply({ ok: true })
+        },
+      },
+      {
+        name: 'drawio_save',
+        desc: '保存当前图到 .drawio 文件',
+        help: '--path <目标路径>（可选；未保存过的新文档必填）',
+        handler: async (argv) => {
+          if (!editor) return errReply($t('err.notReady'))
+          const p = argsGet(argv, '--path') || editor.state().path
+          if (!p) return errReply($t('err.needPath'))
+          try {
+            const text = editor.getXml()
+            await $mod.$fs.put(p, text)
+            editor.markSaved(p)
+            refresh()
+            return reply({ ok: true, path: p, bytes: text.length })
+          } catch (e) {
+            return errReply(String((e && e.message) || e))
+          }
+        },
+      },
+      {
+        name: 'drawio_export',
+        desc: '导出当前图为 PNG 或 SVG 文件',
+        help: '--format png|svg（必填），--path <输出路径>（必填）',
+        handler: async (argv) => {
+          if (!editor) return errReply($t('err.notReady'))
+          const fmt = (argsGet(argv, '--format') || '').toLowerCase()
+          const p = argsGet(argv, '--path')
+          if (fmt !== 'png' && fmt !== 'svg') return errReply('--format 需为 png 或 svg')
+          if (!p) return errReply($t('err.needPath'))
+          try {
+            if (fmt === 'png') {
+              const blob = await editor.exportPngBlob({ scale: 2 })
+              if (!blob) throw new Error('PNG blob is null')
+              await $mod.$fs.put(p, blob)
+            } else {
+              await $mod.$fs.put(p, editor.exportSvgString())
+            }
+            return reply({ ok: true, format: fmt, path: p })
+          } catch (e) {
+            return errReply(String((e && e.message) || e))
+          }
+        },
+      },
+      {
+        name: 'drawio_get_xml',
+        desc: '返回当前图的 .drawio XML 全文',
+        help: '无参数。返回内容即 mxfile XML 文本',
+        handler: async () => {
+          if (!editor) return errReply($t('err.notReady'))
+          return { content: editor.getXml() }
+        },
+      },
+      {
+        name: 'drawio_fit',
+        desc: '视图适应窗口',
+        help: '无参数',
+        handler: async () => {
+          if (!editor) return errReply($t('err.notReady'))
+          editor.fit()
+          return reply({ ok: true })
+        },
+      },
+    ],
+  }
+</script>
+<script>
+  // mounted：DOM 已编译、宿主已连接（此时 $refs 可用）
+  editor = createEditor($refs.host, { onChange: () => refresh() })
+  editor.newDoc()
+  refresh()
+  try {
+    resizeOb = new ResizeObserver(() => {
+      if (!editor) return
+      try {
+        editor.graph.sizeDidChange()
+      } catch (e) {
+        try {
+          editor.graph.getView().validate()
+        } catch (e2) {}
+      }
+      refresh()
+    })
+    resizeOb.observe($refs.host)
+  } catch (e) {}
+  wrapElRef = $refs.wrap
+  if (wrapElRef) {
+    wrapElRef.addEventListener('keydown', onKeyHandler)
+    wrapElRef.addEventListener('pointerdown', () => {
+      try {
+        wrapElRef.focus({ preventScroll: true })
+      } catch (e) {}
+    })
+  }
+</script>
+<script dispose>
+  if (wrapElRef && onKeyHandler) wrapElRef.removeEventListener('keydown', onKeyHandler)
+  if (resizeOb) {
+    try {
+      resizeOb.disconnect()
+    } catch (e) {}
+  }
+  if (editor) {
+    try {
+      editor.destroy()
+    } catch (e) {}
+  }
+</script>
+</html>
