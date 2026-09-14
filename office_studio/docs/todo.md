@@ -24,7 +24,7 @@
 - [x] 平台打开协议：filebinds 登记 `xlsx,xls` → `/skills/local/office_studio/excel`
 - [x] AI 指令面：`open` / `status` / `read_range`（含公式）/ `cell_info` / `set_range` /
       `set_cell`（值或公式）/ `save`（写回或另存）——全部经真实平台验证
-- [x] 引擎资源加速：bundle 16.19MB（gzip 3.67MB）经 jsDelivr（`gh/veypi/aic-skills`）分发（2026-09-14 起迁至公共资源库 `assets/office_studio/`），
+- [x] 引擎资源加速：bundle 16.19MB（gzip 3.67MB）经 jsDelivr（`gh/veypi/aic-skills`）分发（2026-09-14 起迁至独立资产分支 `office_assets`），
       页面纯 CDN 引用（不占平台带宽）
 - [x] 大文件读取：host 端 `$fs` 二进制直连整读（RTC 直连，≤64MB）
 
@@ -103,10 +103,10 @@
 
 - 资源引用原则：**只引 CDN 绝对地址，不引平台相对路径**——正式环境相对路径会解析成
   `https://ivec.ai/skills/...`（平台服务器），违背带宽外移目标
-- **大文件走公共资源库** `skills/assets/office_studio/`（jsDelivr 公共地址；不进技能包，发布不再受包体积影响）；小文件（css/docx/blank）留在 `<skill>/ui/vendor/` 随技能目录
+- **大文件走独立资产分支** `office_assets`（`@office_assets/` jsDelivr 地址；不进技能包，发布不再受包体积影响）；小文件（css/docx/blank）留在 `<skill>/ui/vendor/` 随技能目录
 - 版本策略：`@main` 滚动 + purge 即时生效；重大变更时打 tag 并 pin
 - Word 页面以 `?v=<ENGINE_V>` 破浏览器缓存（更新 vendor 资源后同步递增；CDN 侧靠 purge）
-- **引擎/模板变更发布清单**：spike 重建 bundle → univer 产物 cp `assets/office_studio/`、docx/blank cp `ui/vendor/`（`docx-review.bundle.js`、
+- **引擎/模板变更发布清单**：spike 重建 bundle → univer 产物提交 `office_assets` 分支、docx/blank cp `ui/vendor/`（`docx-review.bundle.js`、
   `blank.docx`）→ 同步 aic-skills 仓库（CDN 内容源）→ push + purge → 页面 reload
 
 ## 已知问题 / 技术债

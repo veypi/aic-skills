@@ -30,23 +30,23 @@ AIC（[ivec.ai](https://ivec.ai)）平台的公开技能仓库。每个目录是
 - `api/` —— sqlx 数据接口（可选）
 - `tables/` —— 数据表定义（可选）
 
-仓库根另有 `assets/` —— 公共静态资源库（大文件放此处经 jsDelivr 引用，不进技能包）。
+大体积静态资源放各技能的**独立资产分支**（`<skill>_assets`），经 jsDelivr 引用，不进技能包。例如 office_studio 的引擎在 `office_assets` 分支。
 
 ## 资源加速（jsDelivr）
 
-仓库内的大体积静态资源集中于公共资源库 `assets/`（如 `assets/office_studio/` 下的引擎包），随仓库发布，可通过 jsDelivr 直接引用，不占业务服务器带宽：
+仓库内的大体积静态资源放在各技能的**独立资产分支**（`<skill>_assets`，如 office_studio → `office_assets` 分支），不经技能包分发，可通过 jsDelivr 直接引用，不占业务服务器带宽：
 
 ```
-https://cdn.jsdelivr.net/gh/veypi/aic-skills@main/assets/<路径>
+https://cdn.jsdelivr.net/gh/veypi/aic-skills@<skill>_assets/<文件>
 ```
 
 示例：
 
 ```
-https://cdn.jsdelivr.net/gh/veypi/aic-skills@main/assets/office_studio/univer-excel.bundle.js
+https://cdn.jsdelivr.net/gh/veypi/aic-skills@office_assets/univer-excel.bundle.js
 ```
 
-> 注意：jsDelivr 对单文件有大小上限（约 20 MB）；@main 分支存在 CDN 缓存（约 12 小时），需要即时生效时可使用提交号或 tag 引用。
+> 注意：jsDelivr 对单文件有大小上限（约 20 MB）、对分支树总大小有 50 MB 上限（超限会拒绝未缓存文件）；`@<分支>` 存在 CDN 缓存（约 12 小时），需要即时生效时可使用提交号或 tag 引用。
 
 ## 许可
 

@@ -126,10 +126,10 @@
   const firstPos = (argv) => (argv || []).find((x) => !String(x).startsWith('--'))
 
   // ===== 引擎资源：统一走 jsDelivr 加速源（不引本地，平台只服务页面本体）=====
-  // 大文件（univer 引擎）走公共资源库 assets/；css 等在 ui/vendor/ 随技能目录。
-  // 更新流程：构建产物提交到 aic-skills 后 purge 缓存即时生效——
-  // https://purge.jsdelivr.net/gh/veypi/aic-skills@main/assets/office_studio/univer-excel.bundle.js
-  const CDN_ASSETS = 'https://cdn.jsdelivr.net/gh/veypi/aic-skills@main/assets/office_studio/'
+  // 大文件（univer 引擎）走独立资产分支 office_assets；css 等在 ui/vendor/ 随技能目录。
+  // 更新流程：构建产物提交到 office_assets 分支后 purge 缓存即时生效——
+  // https://purge.jsdelivr.net/gh/veypi/aic-skills@office_assets/univer-excel.bundle.js
+  const CDN_ASSETS = 'https://cdn.jsdelivr.net/gh/veypi/aic-skills@office_assets/'
   const CDN_VENDOR = 'https://cdn.jsdelivr.net/gh/veypi/aic-skills@main/office_studio/ui/vendor/'
   const loadEngineModule = async () => {
     return await import(CDN_ASSETS + 'univer-excel.bundle.js')
