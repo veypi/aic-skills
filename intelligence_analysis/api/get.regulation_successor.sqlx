@@ -1,4 +1,0 @@
-SELECT id, title, status
-FROM space_regulations
-WHERE replaces_id = :id
-LIMIT 1

@@ -1,3 +1,0 @@
-UPDATE space_review_findings
-SET resolution_status = :resolution_status, updated_at = datetime('now')
-WHERE id = :id AND user_id = :user_id

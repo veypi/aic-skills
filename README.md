@@ -13,24 +13,20 @@ AIC（[ivec.ai](https://ivec.ai)）平台的官方技能仓库。每个目录是
 
 browser/cua/hello 的 provider 源码在各包 `provider/` 下，构建产物（`cli/bin/`、`browser.zip`）不入库——由各包 `build.sh` 产出（aic-pod `make browser-zip` / `make cua-bin`）。
 
-## 公开技能
+## 官方技能
 
 | 技能 | 名称 | 简介 |
 | --- | --- | --- |
-| [3d_maker](3d_maker/) | 3D Maker | 浏览器内专业 3D 模型设计：参数化 CAD 建模、多部件装配、打印就绪检测与 STL/OBJ/GLB/3MF 导出（内置 JS 内核 / OCCT 高性能内核） |
-| [blender_cua](blender_cua/) | Blender 键鼠自动化 | 用 cua 驱动 Blender 做 GUI 自动化的操作手册（macOS 中文界面）：键鼠投递规则、菜单搜索建对象、光标标定、渲染与保存、已知坑与规避 |
-| [code_review](code_review/) | 代码评审 | 通用代码评审方法论：摸清范围、精读变更、分维检查、输出带分级的评审报告 |
+| [browser](browser/) | 设备浏览器 | 设备浏览器能力：page.* 页面自动化 + download.* 下载管理 + 实时流（内建集，含 Go provider） |
+| [cua](cua/) | 桌面自动化 | 设备原生桌面自动化（Computer Use）：窗口/控件观察、点击/输入/拖拽（内建集，含 Go provider） |
 | [create_skill](create_skill/) | 创建 Skill 指南 | 创建技能的完整指南与模板：形态判别 → SKILL.md 契约 → ui/api/cli 三种正交扩展 → 发布审核与装设备 |
-| [git_commit](git_commit/) | 代码提交 | 标准 git 提交流程：盘点变更、验证检查、拆分逻辑批次、生成规范提交消息 |
-| [intelligence_analysis](intelligence_analysis/) | 商业航天情报分析 | ORBITALINTEL：全产业链公司/产品/发射/融资数据库、事故案例库、监管知识库、AI 合规审查、三维地球情报舱 |
+| [drawio](drawio/) | 图表工坊 | 流程图/架构图绘制（drawio 引擎） |
 | [office_studio](office_studio/) | Office 工作台 | Office 文档工作台：打开、编辑、保存真实 office 文件（Excel 编辑 + Word 审阅），AI 与用户共用同一编辑器协作 |
-| [play_with_ai](play_with_ai/) | 与 AI 对弈 | 与 AI 下棋的游乐场（当前内置五子棋）：指令绑定阵营、按回合行棋、棋盘变化自动推送 |
 | [ppt_studio](ppt_studio/) | PPT 工坊 | 幻灯片工作室：以本地 /ppt/ JSON 文件驱动创建、编辑、预览与全屏演示，支持逐页语音讲解脚本 |
-| [verisim](verisim/) | VeriSim · 数字电路仿真综合 | 浏览器内真实运行 Icarus Verilog 仿真与 Yosys 综合：波形 / 原理图 / 网表 / 面积报告，12+ FPGA 工艺 + ASIC Liberty |
 | [video_studio](video_studio/) | 视频工坊 | 浏览器内一站式视频制作：AI 文件驱动编辑 + 可视化舞台/时间轴、真实 3D 场景、关键帧动画、素材拖拽剪辑、AI 配音、WebCodecs 导出 MP4 |
 | [vhtml](vhtml/) | vhtml 框架手册 | browser-only HTML 组件框架使用手册：组件、script setup、bindings、路由、i18n、ESM import 与模块作用域概念 |
-| [well-console](well-console/) | Well 微件操控台 | IDEAS 平台 Well 微件操控台：iframe 嵌入 + postMessage 指令下发 + 外部 AI 经 pageDesc 操控 |
-| [well_talk](well_talk/) | 井言 · 三维井场分析 | Well3D 三维井场可视化与分析：合成演示井与构造面场景，外部 AI 查询井数据统计并联动 3D 视图 |
+
+非官方/试验性技能在 [test_skills](../test_skills) 仓（2026-10-02 分出）。
 
 ## 结构约定
 

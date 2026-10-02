@@ -1,3 +1,0 @@
-SELECT id, name
-FROM space_companies
-ORDER BY name
