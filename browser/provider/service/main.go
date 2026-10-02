@@ -1,7 +1,7 @@
 // Copyright (C) 2025 veypi <i@veypi.com>
 // Distributed under terms of the MIT license.
 
-// browser-service 是 skill-packages/browser 的 service 类 provider（v6 P5）：
+// browser-service 是 aic-skills/browser 包的 service 类 provider（v6 P5）：
 // 持有 Chrome 与全部页面/下载/上传状态的唯一进程。skillrun 懒启动（首调用）
 // + bg 登记；SKILLPROC_SOCKET 经 env 注入。
 //

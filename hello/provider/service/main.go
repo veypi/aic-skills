@@ -1,7 +1,7 @@
 // Copyright (C) 2025 veypi <i@veypi.com>
 // Distributed under terms of the MIT license.
 
-// hello-service 是 skill-packages/hello 的 service 类 provider（v6 P0 demo，
+// hello-service 是 aic-skills/hello 包的 service 类 provider（v6 P0 demo，
 // aic/docs/skill.md §9.2）：真实外部进程，演示 skillproc 最小协议的 provider
 // 侧写法——监听 SKILLPROC_SOCKET（pod 经 env 注入的 unix socket 路径），
 // 每连接读帧分发：

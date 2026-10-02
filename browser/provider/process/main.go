@@ -1,7 +1,7 @@
 // Copyright (C) 2025 veypi <i@veypi.com>
 // Distributed under terms of the MIT license.
 
-// browser 是 skill-packages/browser 的 process 类 provider（v6 P5，包根命令的
+// browser 是 aic-skills/browser 包的 process 类 provider（v6 P5，包根命令的
 // 默认 provider）：无状态 skillproc 转发器——argv/cwd 全量经 invoke 帧发给
 // svc provider（SKILLPROC_SOCKET，skillrun 在包命令调用前确保 service 已懒
 // 启动并注入该 env），stdout/stderr/exit code 原样回传。子命令表、解析与

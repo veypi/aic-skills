@@ -1,7 +1,7 @@
 // Copyright (C) 2025 veypi <i@veypi.com>
 // Distributed under terms of the MIT license.
 
-// hello-process 是 skill-packages/hello 的 process 类 provider（v6 P0 demo，
+// hello-process 是 aic-skills/hello 包的 process 类 provider（v6 P0 demo，
 // aic/docs/skill.md §9.2）：真实外部进程，验证包命令的 argv/stdin 透传、
 // cwd、受管取消与进程沙箱文件边界。子命令：
 //

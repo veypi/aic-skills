@@ -1,7 +1,7 @@
 // Copyright (C) 2025 veypi <i@veypi.com>
 // Distributed under terms of the MIT license.
 
-// cua-service 是 skill-packages/cua 的 service 类 provider（v6 P6）：持有
+// cua-service 是 aic-skills/cua 包的 service 类 provider（v6 P6）：持有
 // cua-driver MCP 连接与设备级唯一原生会话的唯一进程。skillrun 懒启动
 // （首调用）+ bg 登记；SKILLPROC_SOCKET 经 env 注入。
 //

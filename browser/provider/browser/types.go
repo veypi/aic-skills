@@ -1,6 +1,6 @@
 // Package browser owns the dedicated Chrome, pages, observations, downloads and viewers.
 //
-// v6 P5：本包是 skill-packages/browser 的能力内核，由 svc provider（外部进程）
+// v6 P5：本包是 aic-skills/browser 包的能力内核，由 svc provider（外部进程）
 // 承载——pod 单用户语义：无 caller/subject 身份模型（权限 = 进程沙箱），页面与
 // 下载全部归属本服务唯一主体。
 package browser
