@@ -565,7 +565,8 @@ class OCCTShape {
         mf.Add_2(radius, oc.TopoDS.Edge_1(exp.Current()));
         exp.Next();
       }
-      mf.Build();
+      // v2 中 Build 带 Message_ProgressRange（embind 全签名必填）：优先传参，失败回退无参（同 loft/sweep 的探测模式）
+      try { mf.Build(_progressRange()); } catch (_) { try { mf.Build(); } catch (_) {} }
       if (mf.IsDone()) {
         const out = new OCCTShape(mf.Shape(), this._meta);
         _recTrace("fillet", [radius], { targetId: this.id, resultId: out.id });
@@ -959,7 +960,11 @@ export async function createOCCTKernel(cdnBase, onProgress) {
         h + 2,
         2 * Math.PI,
       ).Shape();
-      const c = new oc.BRepAlgoAPI_Cut_3(o, i);
+      // embind 重载号随构建变化：优先 3 参（v2 构建必需 Message_ProgressRange），失败回退 2 参
+      const c = _pickCtor([
+        () => new oc.BRepAlgoAPI_Cut_3(o, i, _progressRange()),
+        () => new oc.BRepAlgoAPI_Cut_3(o, i),
+      ]);
       const t = new oc.gp_Trsf_1();
       t.SetTranslation_1(new oc.gp_Vec_4(0, 0, -h / 2));
       return new OCCTShape(

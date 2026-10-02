@@ -1,5 +1,7 @@
 # 技能界面手册（ui/ 与 pageDesc）
 
+> 适用范围：当前 aic v5 的已实现行为；UI/API/CLI 三种扩展正交与 CLI 注册的目标设计见 [skill-v6.md](skill-v6.md)。本页不表示 v6 已上线。
+
 > 本手册覆盖「技能页面」的特有内容：包页面平台集成、pageDesc 指令完全规格、布局响应式、样式规范、常见坑。
 > vhtml 组件语言的完整语法（绑定、组件、路由、生命周期全契约）请看 **vhtml 技能**：`skills search 'vhtml'` 找到条目 → `skills load <其 id>`（本地已有 vhtml 目录则直接 `load vhtml`）。
 > 本包内参考：`examples/hello`（最小页面 + 指令）、`examples/todo_min`（页面 + 数据）、`examples/notes`（文件驱动）。
@@ -89,7 +91,7 @@ pageDesc = {
 ### 命名与指令集设计
 
 - 前缀防冲突：页面 `todo_`、技能 `drawio_`；避开平台根命令 `list / open / close / reload / curl`。
-- 每个页面至少一条 `status`（返回 ready/数据量/关键状态）——AI 自测与排障的锚点。
+- 需要 AI 操作的页面可提供 `status`（返回 ready/数据量/关键状态）用于自测；纯展示或仅供人操作的页面不强制提供 pageDesc/status。
 - 参数一律 `--flag <值>`；**长内容不进 argv**（传文件路径 / ID，页面自己经数据面或 `$fs` 取）。
 - 破坏性操作明确命名（`clear_/delete_`），help 里写警告与影响面。
 - 让指令幂等（重复执行无副作用），或明确在 help 里说明非幂等。

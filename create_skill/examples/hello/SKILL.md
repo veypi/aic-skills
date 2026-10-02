@@ -1,7 +1,7 @@
 ---
 name: hello
 nickname: Hello 示例
-description: 最小技能界面示例（L2 纯前端）：计数器页面 + 三条 pageDesc 指令，演示 vhtml 页面骨架（@container 窗口响应式）与 AI 指令闭环
+description: 最小技能界面示例（当前 v5 格式）：计数器页面 + 三条 pageDesc 指令，演示 vhtml 页面骨架（@container 窗口响应式）与 AI 指令闭环
 keywords: [示例, ui, pageDesc, vhtml, 计数器]
 ui:
   - path: index.html

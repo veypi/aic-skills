@@ -6,7 +6,7 @@ keywords: [3d, cad, 建模, 打印, stl, obj, glb, 3mf, occt, 布尔, 圆角, �
 icon: fa-solid fa-cubes
 ui:
   - path: index.html
-    desc: 3D Maker 建模工作台（画布 + 工具栏 + 属性/分析/详情面板 + 模型文件）
+    desc: 3D Maker 建模工作台（画布 + 工具栏 + 属性/分析/详情面板；文件打开/保存用平台原生对话框）
 ---
 
 # 3D 模型设计代码编写指南
@@ -17,8 +17,9 @@ ui:
 ## 0. 代码如何送达页面执行（page exec 接口）
 
 **你的可见性边界（重要）**：你的信息来源只有两部分——① 本文档（SKILL.md）注入的知识；② 页面注册的指令（见下）。
-模型代码文件统一存放在**本地文件根 `/3d/`**：你用 `fs` 工具（1host=page）直接读写，页面经 `$mod.$fs` 访问同一份文件（页面本地 OPFS），两边完全同步。
-页面注册的指令有 `run_code` / `run_file` / `status` 三个。
+模型代码文件默认存放在**本地文件根 `/3d/`**：你用 `fs` 工具（1host=page）直接读写，页面经 `$mod.$fs` 访问同一份文件（页面本地 OPFS），两边完全同步。
+页面工具栏的「📂 打开 / 💾 保存 / ⬇ 导出」全部走平台原生文件对话框（`$fs.open` / `$fs.save_as`），可读写**任意端**（cloud/page/host）的 `.js` 模型代码与导出文件（不再内置自建文件面板）。
+页面注册指令的完整清单见 §0.3。
 
 建模代码通过 `exec` 工具（`1host=page`）推送到 3D Maker 页面执行。先 `page open` 打开页面（`open --url {url_prefix}/index`，记录返回的 win_id），之后按 `{win_id}.{指令}` 调用：
 
@@ -30,7 +31,7 @@ ui:
 exec {"1host":"page", "action":"{win_id}.run_code", "argv":["--code", "return box(20, 15, 10);"]}
 ```
 
-### 0.2 run_file —— 执行本地 /3d/ 代码文件
+### 0.2 run_file —— 执行代码文件（本地 /3d/ 或任意端 fs 路径）
 
 适合完整模型文件：先用 `fs write` 把代码写入 `/3d/`，再让页面加载执行：
 
@@ -42,14 +43,16 @@ fs {"1host":"page", "action":"write", "path":"/3d/bracket.js", "content":"..."}
  exec {"1host":"page", "action":"{win_id}.run_file", "argv":["--path", "/3d/bracket.js"]}
 ```
 
-`--path` 接受**本地路径**（页面经 `$mod.$fs` 读取）：
+`--path` 接受三类路径（页面经 `$mod.$fs` 读取，跨端统一）：
 
 | path 示例 | 对应位置 | 用途 |
 | --- | --- | --- |
-| `/3d/xxx.js` | 本地 /3d/（推荐，默认位置） | 模型代码 |
-| `xxx.js` | 同上（自动补 /3d/ 前缀） | 简写 |
+| `/3d/xxx.js`、`xxx.js` | 本地 /3d/（推荐默认位置；相对路径自动补 `/page/3d/` 前缀） | 模型代码 |
+| `/fs/cloud/u/{uid}/x.js` | 任意端的 fs 绝对路径（/fs/ 形式） | 云盘/本机等处的模型代码 |
+| `/cloud/u/{uid}/x.js`、`/page/3d/x.js` | 同上（树路径形式，省去 `/fs` 前缀） | 简写 |
 
-run_file 特有错误码（在返回 JSON 的 `code` 字段）：`INVALID_PATH`（路径非法/含 `..`）、`FILE_NOT_FOUND`（文件不存在）、`RUN_FILE_ERROR`。
+run_file 特有错误码（在返回 JSON 的 `code` 字段）：`INVALID_PATH`（路径非法/含 `..`）、`RUN_FILE_ERROR`（读取/执行失败）。
+run_file（及页面「📂 打开」）成功后，页面「当前关联文件」更新为该文件——页面「💾 保存」将写回该路径。
 
 ### 0.3 指令表
 
@@ -58,8 +61,9 @@ run_file 特有错误码（在返回 JSON 的 `code` 字段）：`INVALID_PATH`�
 | 指令 | 说明 | 参数 | 返回要点 |
 | --- | --- | --- | --- |
 | `run_code` | 执行一段建模代码字符串 | `--code <源码>`（或 argv[0]） | `{success, stats, parts, warnings, executionTime}`；失败 `{success:false, code, message}` |
-| `run_file` | 执行本地 /3d/ 建模代码文件 | `--path <路径>`（如 `/3d/x.js`） | 同 run_code；特有 code：`INVALID_PATH`/`RUN_FILE_ERROR` |
-| `status` | 查询页面状态 | 无 | `{ok, ready, busy, kernel, kernelLoading, stats, fileCount}` |
+| `run_file` | 执行建模代码文件（本地 /3d/ 或任意端 fs 路径；成功后设为「当前关联文件」） | `--path <路径>`（如 `/3d/x.js`、`/fs/cloud/u/{uid}/x.js`） | 同 run_code；特有 code：`INVALID_PATH`/`RUN_FILE_ERROR` |
+| `save_code` | 保存当前模型代码（最近一次运行的代码，含 @param 调整值）到指定路径 | `--path <路径>`（同 run_file 路径形态；省略则只返回代码文本） | `{ok, path, bytes}`；省略 --path → `{ok, code}` |
+| `status` | 查询页面状态 | 无 | `{ok, ready, busy, kernel, kernelLoading, stats, file}`（file=当前关联文件路径） |
 | `shot` | 截取当前 3D 视图保存为本地图片 | `--path <路径>`（默认 `/3d/shot.png`） | `{ok, path, width, height, bytes}`；**只落盘不返回图片**，看图需再 `fs.read` 读回 |
 | `parts_audit` | 逐部件打印问题清单（水密/非流形/悬空/薄壁/干涉） | `--min-wall <最小壁厚 mm>`（默认 1.2） | `{summary, parts:[…]}`；不修改模型，只做分析 |
 | `set_kernel` | 切换几何内核（builtin=内置 JS / occt=高性能） | `--kernel builtin|occt` | `{success, kernel, message?}`；**尽力切换**：当前模型超 OCCT 重建限额（>2 万三角面/开放网格）时自动回退内置渲染并返回 `kernelFallback` 提示，重跑小模型后 OCCT 自动生效 |
@@ -306,7 +310,8 @@ return filletR > 0 ? shape.fillet(filletR) : shape;
 
 ### 模型导出
 
-用户可在页面工具栏「⬇ 下载」导出模型，格式：STL（二进制/文本）、OBJ、GLB、**3MF**（3D 打印格式，保留部件名称与颜色，含 rgba 透明色）、JSON（模型）。
+用户可在页面工具栏「⬇ 导出」把模型导出为文件——**走平台原生另存为对话框选择保存位置**（`$fs.save_as` + `$fs.put`；对话框不可用时回退浏览器下载）。格式：STL（二进制/文本）、OBJ、GLB、**3MF**（3D 打印格式，保留部件名称与颜色，含 rgba 透明色）、JSON（模型）。
+页面文件操作一览：「📂 打开」= 原生打开对话框载入任意端的 `.js` 代码并运行；「💾 保存」= 把当前模型代码（含 @param 调整值）写回关联文件，无关联文件时弹另存为。
 
 ### 成功
 
@@ -383,7 +388,7 @@ return filletR > 0 ? shape.fillet(filletR) : shape;
 2. **壁厚 ≥ 1.2mm**（FDM 常规下限），细长杆直径 ≥ 2mm；避免 <0.8mm 的薄壁残留——刀具盲端不要停在板内，应完全穿透。
 3. **悬空角 ≤ 45°**：超过的斜面考虑加支撑结构、拆分件或调整方向。
 4. **装配间隙 0.2~0.4mm**（FDM 常规）；配合孔建议设计小 0.2mm 打印后扩孔。
-5. **导出**：用户用工具栏「⬇ 下载」导 STL/3MF 即可直接切片打印。
+5. **导出**：用户用工具栏「⬇ 导出」导 STL/3MF 即可直接切片打印。
 
 ### 常见错误码
 

@@ -78,6 +78,10 @@
   .doc-wrap { flex: 1; min-width: 0; overflow: auto; background: var(--bg-color-tertiary); }
   body .doc-wrap .docx-wrapper { background: transparent; padding: 16px; }
   body .doc-wrap .docx-wrapper > section.docx { max-width: 100%; box-shadow: var(--shadow-md); }
+  /* 文档语言与平台 UI 语言解耦：docx-preview 默认注入 .docx{hyphens:auto}，断字词典跟随
+     <html lang>（平台切语言会改 documentElement.lang）→ 断词与否决定两端对齐的空格拉伸。
+     固定为 Word 默认：自动断字关闭（文档 w:autoHyphenation 尚未支持，默认即关） */
+  body .doc-wrap section.docx { hyphens: none; }
   /* 修订样式：红=删除，绿=插入（docx-preview renderChanges 输出真实 ins/del 标签） */
   body .doc-wrap ins { color: color-mix(in srgb, var(--color-success) 80%, var(--text-color)); text-decoration: underline; background: color-mix(in srgb, var(--color-success) 16%, transparent); }
   body .doc-wrap del { color: color-mix(in srgb, var(--color-danger) 80%, var(--text-color)); text-decoration: line-through; background: color-mix(in srgb, var(--color-danger) 14%, transparent); }

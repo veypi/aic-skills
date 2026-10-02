@@ -1,7 +1,7 @@
 ---
 name: todo_min
 nickname: 待办清单示例
-description: 最小活 skill 示例（L2+L3+L4）：待办清单——ui 页面 + tables 声明 + sqlx 接口 + pageDesc 指令的完整链路，含行级隔离与自测指令
+description: 界面与 API 组合示例（当前 v5 格式）：待办清单——ui 页面 + tables 声明 + sqlx 接口 + pageDesc 指令的完整链路，含行级隔离与自测指令
 keywords: [示例, 待办, tables, sqlx, 数据面, pageDesc]
 ui:
   - path: index.html

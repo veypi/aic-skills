@@ -1,5 +1,7 @@
 # 数据面手册（tables + api）
 
+> 适用范围：当前 aic v5 的已实现行为；UI/API/CLI 三种扩展正交与 CLI 注册的目标设计见 [skill-v6.md](skill-v6.md)。本页不表示 v6 已上线。
+
 > 覆盖：tables 声明 → sqlx 接口 → SQL 书写规范 → owner 管理面 → AI 数据通道。
 > 完整示例：`examples/todo_min`（tables + 4 条 sqlx + 页面 + 指令，可直接复制改造）。
 
@@ -80,7 +82,7 @@ VALUES (:user_id, :id, :title, 0,
 - 命名绑定 `:name` / `@name`；字符串与注释里的冒号不替换，`::` 跳过。**参数必须全部提供**（缺 → `400 missing sqlx param :x`）。
 - **base 参数服务端注入**：`user_id`（当前调用者）、`skill_id`——客户端同名参数被覆盖，**不可伪造**。行级隔离 = 在所有读写里带 `user_id = :user_id`。
 - `get` 强制只读连接（写 sqlite 报 `readonly database`）；`post` 走写连接。
-- 参数合并：query、form、json body（优先级 query < form < json）；multipart 拒绝；query/form 多值（`?id=1&id=2`）不支持 → 400。
+- 参数合并：json body < form < query（后者覆盖前者）；multipart 拒绝。query/form 多值先保留为数组，是否可绑定由执行器的值类型校验决定；不要把数组当作标量接口参数。
 - 响应契约：
   - `get` → `{"rows":[...], "truncated": false}`（恒数组；超 1000 行截断并标 truncated）
   - `post` → `{"rows":[], "affected": n, "last_insert_id": n}`

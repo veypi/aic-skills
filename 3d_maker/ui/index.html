@@ -149,6 +149,21 @@
       border-color: var(--border-color);
     }
 
+    /* 紧凑顶栏：文字小标签 + 状态下拉 / 图标按钮 */
+    .bar .lbl {
+      color: var(--text-color-tertiary);
+      font-size: 12px;
+      margin-left: 6px;
+    }
+
+    .bar select.ssel {
+      min-width: 76px;
+    }
+
+    .bar button.ico {
+      padding: 4px 6px;
+    }
+
     /* ---------- 内核加载进度条（header 中间） ---------- */
     .kload {
       flex: 1 1 auto;
@@ -275,80 +290,7 @@
       color: var(--text-color-secondary);
     }
 
-    /* ---------- 会话文件弹出列表 ---------- */
-    .fhead {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-    }
 
-    .fhead h4 {
-      margin: 0;
-    }
-
-    .fhead button,
-    .fhead a {
-      font: inherit;
-      color: var(--text-color-tertiary);
-      background: transparent;
-      border: 1px solid transparent;
-      border-radius: var(--radius-md);
-      padding: 2px 8px;
-      cursor: pointer;
-      text-decoration: none;
-      transition: color var(--transition-fast), background var(--transition-fast);
-    }
-
-    .fhead button:hover,
-    .fhead a:hover {
-      color: var(--color-primary);
-      background: color-mix(in srgb, var(--color-primary) 12%, transparent);
-    }
-
-    .flist {
-      max-height: 280px;
-      overflow-y: auto;
-      margin-top: 8px;
-    }
-
-    .fitem {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 5px 8px;
-      border-radius: var(--radius-md);
-      cursor: pointer;
-      transition: background var(--transition-fast), transform var(--transition-fast);
-    }
-
-    .fitem:hover {
-      background: color-mix(in srgb, var(--color-primary) 12%, transparent);
-    }
-
-    .fitem:active {
-      transform: scale(0.98);
-    }
-
-    .fitem .fname {
-      flex: 1 1 auto;
-      min-width: 0;
-      font-family: var(--font-mono);
-      font-size: var(--font-size-xs);
-      color: var(--text-color);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .fitem .fmeta {
-      flex: 0 0 auto;
-      display: flex;
-      gap: 8px;
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--text-color-tertiary);
-    }
 
     .fempty {
       padding: 8px;
@@ -626,24 +568,26 @@
   <header class="panel p-top" ref="topbar">
     <div class="bar">
       <div class="grp">
-        <button v-for="m in viewModes" :class="{ on: viewMode === m[0] }" @click="setMode(m[0])">{{ m[1]
-          }}</button>
+        <span class="lbl">视图</span>
+        <select ref="viewSel" class="ssel" :value="viewMode" @change="onViewSel()"
+          title="视图模式：实体 / 线框 / 隐藏线 / 透明 / X光 / 剖面">
+          <option v-for="m in viewModes" :value="m[0]">{{ m[1] }}</option>
+        </select>
+        <span class="lbl">拾取</span>
+        <select ref="pickSel" class="ssel" :value="pickMode" @change="onPickSel()"
+          title="选择模式：拾取零件 / 面 / 边 / 点">
+          <option v-for="m in pickModes" :value="m[0]" :title="m[2]">{{ m[1] }}</option>
+        </select>
       </div>
       <div class="sep"></div>
       <div class="grp">
-        <button :class="{ on: measureOn }" @click="toggleMeasure()" title="距离测量 (M)">📐 测量</button>
-        <button @click="fit()" title="适应视图 (F)">🔍 适应</button>
-        <button :class="{ on: projection === 'orthographic' }" @click="toggleProj()" title="透视/正交">{{ projection ===
-          'orthographic' ? '🎥 透视' : '🎥 正交' }}</button>
-        <button :class="{ on: showSettings }" @click="toggleSettings()" title="显示设置">⚙</button>
-        <button :class="{ on: kernelName === 'occt' }" @click="toggleKernel()" :disabled="kernelLoading"
-          :title="kernelName === 'occt' ? '当前：高性能内核（OCCT）——点击切回内置内核' : '当前：内置内核——点击加载高性能内核（OCCT）'">{{
-          kernelLoading ? '⏳ 加载中' : (kernelName === 'occt' ? '⚡ OCCT' : '🧮 内置') }}</button>
-      </div>
-      <div class="sep"></div>
-      <div class="grp" title="选择模式：拾取零件 / 面 / 边 / 点">
-        <button v-for="m in pickModes" :class="{ on: pickMode === m[0] }" @click="setPick(m[0])" :title="m[2]">{{ m[1]
-          }}</button>
+        <button class="ico" :class="{ on: measureOn }" @click="toggleMeasure()" title="距离测量 (M)">📐</button>
+        <button class="ico" @click="fit()" title="适应视图 (F)">🔍</button>
+        <button class="ico" :class="{ on: projection === 'orthographic' }" @click="toggleProj()"
+          :title="projection === 'orthographic' ? '投影：正交（点击切回透视）' : '投影：透视（点击切换为正交）'">🎥</button>
+        <button class="ico" :class="{ on: showSettings }" @click="toggleSettings()" title="显示设置">⚙</button>
+        <button class="ico" :class="{ on: kernelName === 'occt' }" @click="toggleKernel()" :disabled="kernelLoading"
+          :title="kernelName === 'occt' ? '当前：高性能内核（OCCT）——点击切回内置内核' : '当前：内置内核——点击加载高性能内核（OCCT）'">{{ kernelLoading ? '⏳' : (kernelName === 'occt' ? '⚡' : '🧮') }}</button>
       </div>
       <!-- OCCT 高性能解析器加载进度（加载完成前使用内置 JS 解析器） -->
       <div class="kload" v-if="kernelLoading">
@@ -657,11 +601,12 @@
           <option value="">📦 案例…</option>
           <option v-for="e in examples" :value="e[0]">{{ e[1] }}</option>
         </select>
-        <button :class="{ on: showFiles }" @click="toggleFiles()" title="浏览并加载本地 /3d/ 目录下的模型文件">📂 文件</button>
-        <select ref="fmtSel" title="导出格式">
+        <button @click="onOpenModel()" title="打开模型代码文件（.js，平台文件对话框）">📂 打开</button>
+        <button @click="onSaveModel()" :title="curFile ? '保存到 ' + curFile : '保存当前模型代码（选择保存位置）'">💾 保存</button>
+        <select ref="expSel" @change="onExportSel()" title="导出模型（选择格式后弹出平台另存为对话框）">
+          <option value="">⬇ 导出…</option>
           <option v-for="f in exportFormats" :value="f[0]">{{ f[1] }}</option>
         </select>
-        <button @click="doDownload()" title="下载模型">⬇ 下载</button>
         <button :class="{ on: isMobile ? mobileShowSide : showSide }" @click="togglePanel()" title="属性面板">☰</button>
       </div>
     </div>
@@ -707,26 +652,7 @@
       </div>
     </div>
 
-    <!-- 本地模型文件（弹出）：浏览本地 /3d/ 下的 .js 模型文件，点击加载渲染 -->
-    <div class="pop right" v-if="showFiles" style="min-width: 300px">
-      <div class="fhead">
-        <h4>📂 模型文件</h4>
-        <div style="display:flex;align-items:center;gap:6px">
-          <a href="@/fs/page/3d" title="浏览本地文件">🗂 打开文件</a>
-          <button @click="refreshSessFiles()" :disabled="sessLoading" title="刷新文件列表">⟳ 刷新</button>
-        </div>
-      </div>
-      <div class="flist">
-        <div v-if="sessLoading" class="fempty"><i class="spin"></i>正在列出文件…</div>
-        <div v-else-if="!sessFiles.length" class="fempty">本地 /3d/ 还没有 .js 模型文件<br>可以让 AI 生成模型并保存</div>
-        <div class="fitem" v-for="f in sessFiles" :title="' 点击加载：' + f.path" @click="loadSessFile(f.path)">
-          <span class="fname">{{ f.path }}</span>
-          <span class="fmeta"><span>{{ fmtAgo(f.mod_time) }}</span><span>{{ fmtSize(f.size) }}</span></span>
-        </div>
-        <div v-if="scanInfo" class="fempty"
-          style="border-top: 1px dashed var(--border-color); margin-top: 6px; padding-top: 6px">{{ scanInfo }}</div>
-      </div>
-    </div>
+    <!-- 文件打开/保存使用平台原生对话框（$fs.open / $fs.save_as）；原「模型文件」弹出面板已移除 -->
   </header>
 
   <!-- 面板 2：右侧面板（属性 / 分析 / 详情 三标签页；拾取或选中部件自动切到详情） -->
@@ -1037,20 +963,91 @@
     sideTab = 'info';
     sideTabs = [['info', '🗂 属性'], ['analysis', '📊 分析'], ['detail', '🎯 详情']];
 
-    // ---------- 会话文件弹出面板 ----------
-    showFiles = false;
-    sessFiles = [];
-    sessLoading = false;
-    fmtSize = (n) => n >= 1024 ? (n / 1024).toFixed(1) + ' KB' : n + ' B';
-    fmtAgo = (ts) => {
-      // 本地文件无修改时间（mod_time 为 0）时显示 '-'，避免算出 2 万天前的荒谬时间
-      if (!ts || ts <= 0) return '-';
-      const d = Date.now() / 1000 - ts;
-      if (d < 0) return '-';
-      if (d < 60) return '刚刚';
-      if (d < 3600) return Math.floor(d / 60) + ' 分钟前';
-      if (d < 86400) return Math.floor(d / 3600) + ' 小时前';
-      return Math.floor(d / 86400) + ' 天前';
+    // ---------- 文件：平台原生「打开 / 另存为」对话框（$fs.open / $fs.save_as），不再自建文件面板 ----------
+    // 当前关联文件（统一存 /fs 形式路径，跨端 cloud/page/host 均可）：打开 / run_file / 保存后更新
+    curFile = '';
+    // 导出格式 → 文件扩展名
+    const EXTS = {stl: 'stl', 'stl-ascii': 'stl', obj: 'obj', glb: 'glb', json: 'json', '3mf': '3mf'};
+    const CURFILE_KEY = '3dmaker_cur_file';
+    // /fs/... → 树路径（$fs.get/put 用）；已是树路径则原样返回
+    const toTree = (p) => String(p || '').replace(/^\/fs(?=\/)/, '');
+    const baseOf = (p) => String(p || '').split('/').filter(Boolean).pop() || '';
+    const dirOf = (p) => {const seg = String(p || '').split('/').filter(Boolean); seg.pop(); return seg.length ? '/' + seg.join('/') : '';};
+    const fmtBytes = (n) => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : n >= 1024 ? (n / 1024).toFixed(1) + ' KB' : (n || 0) + ' B';
+    const startDir = () => dirOf(curFile) || '/fs/page/3d';
+    try {curFile = localStorage.getItem(CURFILE_KEY) || '';} catch (_) {}
+    const setCurFile = (p) => {curFile = p || ''; try {curFile ? localStorage.setItem(CURFILE_KEY, curFile) : localStorage.removeItem(CURFILE_KEY);} catch (_) {}};
+    const pickFs = () => {const fs = $mod && $mod.$fs; if (!fs) throw new Error('环境缺少 $mod.$fs，无法访问文件'); return fs;};
+    // 路径归一为 /fs 形式：/fs/... 原样；/cloud|/page|/{host_id}/... 视为树路径；其余为本地 /3d/ 相对路径
+    const normalizeFspath = (raw) => {
+      const p = String(raw || '').trim();
+      if (p.startsWith('/fs/')) return p;
+      if (/^\/(cloud|page)\//.test(p) || /^\/[0-9a-f]{32}\//i.test(p)) return '/fs' + p;
+      const rel = p.replace(/^\/+/, '').replace(/^3d\//, '');
+      return '/fs/page/3d/' + rel;
+    };
+    // 读取 + 运行代码文件（p 任意形态路径）；成功后设为当前关联文件
+    const runFileByPath = async (p) => {
+      const fp = normalizeFspath(p);
+      const r = await pickFs().get(toTree(fp));
+      if (r && r.ok === false) throw new Error(r.message || '读取失败');
+      const code = typeof r.content === 'string' ? r.content : await r.content.text();
+      setCurFile(fp);
+      return await bv?.run(code);
+    };
+    // 打开：平台打开对话框（.js）→ 读取并运行
+    onOpenModel = async () => {
+      try {
+        const fs = pickFs();
+        if (!fs.open) throw new Error('当前平台不支持文件对话框（$fs.open）');
+        const f = await fs.open({accept: ['.js'], start: startDir()});
+        if (!f) return;
+        await runFileByPath(f.path);
+        $message.success('已打开 ' + (f.name || baseOf(f.path)));
+      } catch (e) {
+        $message.error('打开失败：' + ((e && e.message) || e));
+      }
+    };
+    // 保存当前模型代码：有关联文件 → 写回；否则弹另存为对话框
+    onSaveModel = async () => {
+      try {
+        const code = bv?.getCode();
+        if (!code) throw new Error('没有可保存的模型代码（先运行或打开一个模型）');
+        const fs = pickFs();
+        let target = curFile;
+        if (!target) {
+          if (!fs.save_as) throw new Error('当前平台不支持另存为对话框（$fs.save_as）');
+          const t = await fs.save_as({name: '未命名.js', ext: '.js', accept: ['.js'], start: startDir()});
+          if (!t) return;
+          target = t.path;
+        }
+        const r = await fs.put(toTree(target), code);
+        setCurFile(target);
+        $message.success('已保存 ' + baseOf(target) + '（' + fmtBytes((r && r.bytes) || code.length) + '）');
+      } catch (e) {
+        $message.error('保存失败：' + ((e && e.message) || e));
+      }
+    };
+    // 导出：生成 Blob → 平台另存为对话框 → 写盘（对话框不可用时回退浏览器下载）
+    doExport = async (fmt) => {
+      fmt = fmt || 'stl';
+      const ext = EXTS[fmt] || fmt;
+      try {
+        const fs = $mod && $mod.$fs;
+        if (!fs || !fs.save_as) { // 回退：浏览器下载
+          const r = await bv?.download(fmt);
+          $message.success('已导出 ' + (r && r.filename));
+          return;
+        }
+        const blob = await bv?.export(fmt);
+        const stem = (baseOf(curFile) || 'model').replace(/\.js$/i, '');
+        const t = await fs.save_as({name: stem + '.' + ext, ext: '.' + ext, accept: ['.' + ext], start: startDir()});
+        if (!t) return; // 用户取消
+        const r = await fs.put(toTree(t.path), blob);
+        $message.success('已导出 ' + (t.name || baseOf(t.path)) + '（' + fmtBytes((r && r.bytes) || blob.size) + '）');
+      } catch (e) {
+        $message.error('导出失败：' + ((e && e.message) || e));
+      }
     };
 
     // ---------- OCCT 高性能解析器：默认内核（后台加载，就绪前用内置兜底） ----------
@@ -1092,10 +1089,19 @@
     };
 
     // ---------- 工具栏动作：全部转发给 viewer 引擎（引擎实例放 window，避免响应式包装） ----------
-    setMode = (m) => {showSettings = false; showFiles = false; bv?.setViewMode(m);}
+    setMode = (m) => {showSettings = false; bv?.setViewMode(m);}
     toggleMeasure = () => bv?.enableMeasurement(!measureOn);
     fit = () => bv?.fitToView();
     toggleProj = () => bv?.toggleProjection();
+    // 顶栏下拉：视图 / 拾取 / 导出（选择即执行，导出参照案例下拉的即选即复位模式）
+    onViewSel = () => setMode($refs.viewSel.value);
+    onPickSel = () => setPick($refs.pickSel.value);
+    onExportSel = () => {
+      const s = $refs.expSel;
+      const fmt = s.value;
+      s.value = '';
+      if (fmt) doExport(fmt);
+    };
     applySettings = () => bv?.setDisplay({
       grid: settings.grid,
       axes: settings.axes,
@@ -1134,72 +1140,8 @@
     isolate = () => bv?.isolateSelected();
     hideSel = () => bv?.hideSelected();
     showAll = () => bv?.showAllParts();
-    doDownload = async () => {
-      try {
-        const r = await bv?.download($refs.fmtSel.value);
-        $message.success(`已导出 ${r.filename}`);
-      } catch (e) {
-        $message.error('导出失败：' + (e?.message || e));
-      }
-    };
-
     // ---------- 弹出面板互斥打开 ----------
-    toggleSettings = () => {showSettings = !showSettings; showFiles = false;};
-    toggleFiles = () => {
-      showFiles = !showFiles;
-      showSettings = false;
-      if (showFiles) refreshSessFiles();
-    };
-    // ---------- 本地模型目录（OPFS /3d/，与 AI fs 工具 1host=page 同一存储） ----------
-    const modelsDir = () => '/3d/';
-    // 递归列出本地模型目录下的 .js 模型文件（按修改时间倒序，支持任意层级子目录）。
-    // 逐目录错误隔离：单个目录读取失败不会拖垮整体列表；结果总是回写并附扫描摘要便于诊断。
-    scanInfo = '';
-    refreshSessFiles = async () => {
-      if (!$mod.$fs) {sessFiles = []; scanInfo = '环境缺少 $mod.$fs，无法列出文件'; return;}
-      sessLoading = true;
-      const out = [];
-      let dirs = 0, errs = 0;
-      const walk = async (dir, prefix) => {
-        dirs++;
-        let node;
-        try {
-          node = await $mod.$fs.ls(dir);
-        } catch (e) {
-          errs++;
-          console.warn('[Files] 目录读取失败:', dir, (e && e.message) || e);
-          return;
-        }
-        if (!node || !node.ok || !Array.isArray(node.items)) {
-          errs++;
-          console.warn('[Files] 目录响应异常:', dir, node);
-          return;
-        }
-        for (const it of node.items) {
-          const rel = prefix ? prefix + '/' + it.name : it.name;
-          if (it.dir) await walk(dir + it.name + '/', rel);
-          else if (/\.js$/i.test(it.name)) out.push({path: rel, size: it.size || 0, mod_time: it.mod_time || 0});
-        }
-      };
-      await walk('/page' + modelsDir(), '');
-      out.sort((a, b) => b.mod_time - a.mod_time);
-      sessFiles = out;
-      scanInfo = `已扫 ${dirs} 个目录 · ${out.length} 个 js 文件` + (errs ? ` · ${errs} 处异常` : '');
-      console.log('[Files]', scanInfo, out);
-      sessLoading = false;
-    };
-    // 加载选中的本地模型文件并在查看器中运行
-    loadSessFile = async (rel) => {
-      showFiles = false;
-      try {
-        const r = await $mod.$fs.get('/page' + modelsDir() + rel);
-        if (!r.ok) throw new Error((r.message || '文件不存在') + ': ' + rel);
-        const code = typeof r.content === 'string' ? r.content : await r.content.text();
-        await bv?.run(code);
-      } catch (e) {
-        $message.error('文件加载失败：' + (e?.message || e));
-      }
-    };
+    toggleSettings = () => {showSettings = !showSettings;};
 
     // ---------- 参数面板：防抖回写引擎 ----------
     let _paramTimer = null;
@@ -1245,7 +1187,7 @@
     // handler 统一返回 {content: JSON.stringify(result)}：调用方收到后 JSON.parse 看 success/stats
     // 指令不要并行调用，一轮一个（计算密集）。
     pageDesc = {
-      desc: '3D Maker 建模工作台：浏览器内参数化 CAD 建模、装配、打印就绪检测与导出（内置 JS 内核 / OCCT 高性能内核）。本地文件根 /3d/（与 AI fs 工具 1host=page 同一存储）。',
+      desc: '3D Maker 建模工作台：浏览器内参数化 CAD 建模、装配、打印就绪检测与导出（内置 JS 内核 / OCCT 高性能内核）。本地文件根 /3d/（与 AI fs 工具 1host=page 同一存储）；文件打开/保存经平台原生对话框（任意端 fs 路径）。',
       commands: [
         {
           // run_code：直接执行代码字符串
@@ -1263,25 +1205,45 @@
           },
         },
         {
-          // run_file：执行本地 /3d/ 中的建模代码文件（--path 如 /3d/models/x.js 或 models/x.js）
+          // run_file：执行建模代码文件并渲染。--path 三种形态：/3d/x.js（本地默认，OPFS /3d/）、
+          // /fs/... 与 /cloud|/page|/{host_id}/...（任意端存储，跨端统一 $mod.$fs 读取）
           name: 'run_file',
-          desc: '运行本地 /3d/ 建模代码文件（页面经 $mod.$fs 读取，与 AI fs 工具 1host=page 同一存储）',
-          help: '--path <路径>（如 /3d/models/bracket.js 或 models/bracket.js）；返回同 run_code',
+          desc: '运行建模代码文件（.js）并渲染：本地 /3d/ 相对路径，或任意端的 fs 绝对路径（成功后设为当前关联文件）',
+          help: '--path <路径>（如 /3d/models/bracket.js、models/bracket.js、/fs/cloud/u/{uid}/x.js）；返回同 run_code',
           handler: async (argv) => {
             try {
               const i = argv.indexOf('--path');
-              const raw = String(i >= 0 ? argv[i + 1] : (argv[0] || '')).replace(/^\/+/, '');
+              const raw = String(i >= 0 ? argv[i + 1] : (argv[0] || '')).trim();
               if (!raw || raw.includes('..')) {
-                return {content: JSON.stringify({success: false, code: 'INVALID_PATH', message: 'run_file 需要合法的本地路径（如 /3d/models/x.js）'})};
+                return {content: JSON.stringify({success: false, code: 'INVALID_PATH', message: 'run_file 需要合法路径（如 /3d/models/x.js 或 /fs/cloud/u/{uid}/x.js）'})};
               }
-              const rel = raw.replace(/^3d\//, '');
-              const r = await $mod.$fs.get('/page/3d/' + rel);
-              if (!r.ok) throw new Error('fs get: /3d/' + rel + ': ' + (r.message || 'not found'));
-              const code = typeof r.content === 'string' ? r.content : await r.content.text();
-              const res = await bv?.run(code);
+              const res = await runFileByPath(raw);
               return {content: JSON.stringify(res || {success: false, message: '页面引擎未就绪'})};
             } catch (e) {
               return {content: JSON.stringify({success: false, code: 'RUN_FILE_ERROR', message: String((e && e.message) || e)})};
+            }
+          },
+        },
+        {
+          // save_code：把当前模型代码（页面上最近一次运行，含 @param 调整后的值）保存到指定路径；
+          // 省略 --path 时只返回代码文本（供 AI 读取当前代码）
+          name: 'save_code',
+          desc: '保存当前模型代码到指定路径（省略 --path 时返回代码文本）',
+          help: '--path <路径>（同 run_file 路径形态）；返回 {ok, path, bytes}；无 --path 返回 {ok, code}',
+          handler: async (argv) => {
+            try {
+              const i = argv.indexOf('--path');
+              const raw = i >= 0 ? String(argv[i + 1] || '').trim() : '';
+              const code = bv?.getCode();
+              if (!code) return {content: JSON.stringify({ok: false, message: '没有可保存的模型代码（先运行或打开一个模型）'})};
+              if (!raw) return {content: JSON.stringify({ok: true, code})};
+              if (raw.includes('..')) return {content: JSON.stringify({ok: false, code: 'INVALID_PATH', message: 'save_code 路径不合法'})};
+              const fp = normalizeFspath(raw);
+              const r = await pickFs().put(toTree(fp), code);
+              setCurFile(fp);
+              return {content: JSON.stringify({ok: true, path: fp, bytes: (r && r.bytes) || code.length})};
+            } catch (e) {
+              return {content: JSON.stringify({ok: false, code: 'SAVE_CODE_ERROR', message: String((e && e.message) || e)})};
             }
           },
         },
@@ -1330,9 +1292,9 @@
           // status：查询页面状态（就绪/内核/忙/模型统计）
           name: 'status',
           desc: '查询页面状态（就绪/内核/忙/模型统计）',
-          help: '无参数；返回 {ok, ready, busy, kernel, kernelLoading, stats, fileCount}',
+          help: '无参数；返回 {ok, ready, busy, kernel, kernelLoading, stats, file}（file=当前关联文件路径）',
           handler: async () => {
-            return {content: JSON.stringify({ok: true, ready: !!bv, busy: bv?.running || false, kernel: kernelName, kernelLoading, stats: stats || null, fileCount: (sessFiles || []).length})};
+            return {content: JSON.stringify({ok: true, ready: !!bv, busy: bv?.running || false, kernel: kernelName, kernelLoading, stats: stats || null, file: curFile || null})};
           },
         },
         {
