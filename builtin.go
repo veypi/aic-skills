@@ -132,8 +132,10 @@ func Zip(name string) ([]byte, error) {
 }
 
 // Frontmatter 读 SKILL.md frontmatter 顶层 name/version（`---` 围栏内
-// 无缩进 `key: value`；不引 yaml 依赖，只取两个标量键）。与 skillrun 预装、
-// aic InitBuiltin 同口径——version 契约演进只改这里。
+// 无缩进 `key: value`；不引 yaml 依赖，只取两个标量键）。宽松提取，仅供
+// 内嵌场景取版本真相（本包 Version / pod skillrun 预装身份解析）；aic 侧
+// 完整契约走 skillhub parseSkillMD（yaml KnownFields 严格解析），两端各取
+// 所需——frontmatter 字段契约真相 = aic docs/skill.md §1。
 func Frontmatter(doc []byte) (name, version string) {
 	lines := strings.Split(string(doc), "\n")
 	if len(lines) == 0 || strings.TrimSpace(lines[0]) != "---" {
