@@ -1,9 +1,9 @@
 # 技能界面手册（ui/ 与 pageDesc）
 
-> 适用范围：当前 aic v5 的已实现行为；UI/API/CLI 三种扩展正交与 CLI 注册的目标设计见 [skill-v6.md](skill-v6.md)。本页不表示 v6 已上线。
+> 适用范围：现行 v6.1 行为（2026-10-02 核对）。包格式契约见 [current-format.md](current-format.md)。
 
 > 本手册覆盖「技能页面」的特有内容：包页面平台集成、pageDesc 指令完全规格、布局响应式、样式规范、常见坑。
-> vhtml 组件语言的完整语法（绑定、组件、路由、生命周期全契约）请看 **vhtml 技能**：`skills search 'vhtml'` 找到条目 → `skills load <其 id>`（本地已有 vhtml 目录则直接 `load vhtml`）。
+> vhtml 组件语言的完整语法（绑定、组件、路由、生命周期全契约）请看 **vhtml 技能**：`skill search 'vhtml'` 找到条目 → `skill load <其 id>`。
 > 本包内参考：`examples/hello`（最小页面 + 指令）、`examples/todo_min`（页面 + 数据）、`examples/notes`（文件驱动）。
 
 ## 1. 页面形态与文件位置
@@ -12,7 +12,7 @@
 - 平台按内容分流两种渲染形态：
   - **含 `<script setup>` → vhtml 组件**（推荐）：响应式、scoped 样式、生命周期全语义、**可获得 pageDesc 指令通道**。
   - **普通 HTML → iframe 隔离渲染**：独立文档、平台运行时不可达、**无指令通道**（需要 AI 交互就用 vhtml 形态）。
-- 页面地址由平台直路由，技能只画页面、零路由代码：`/skills/{scope}/{ref}/{页面名}`（缺省 `index`）。
+- 页面地址由平台直路由，技能只画页面、零路由代码：云端 `/skills/cloud/{id}/{页面名}`、设备 `/skills/{host_id}/{name}/{页面名}`（缺省 `index`）。
 - **必须是完整 HTML 文档**（`<!DOCTYPE html>` + `html/head/body`）。裸 `<template>` / `<style>` 开头的片段会"静默不挂载"，并伴随一个指向包目录 URL 的误导性 404——见到这个报错先怀疑文档结构。
 
 ## 2. vhtml 速览（最小可用心智）
@@ -246,7 +246,7 @@ saveBlob = (name, blob) => {
 8. 自携 `env.js` → 平台固定出口，不生效；逻辑别写 env.js 里。
 9. 页内导航写 `news.html` → 写干净路径 `news`（`$router.push('news')` / `<a href="news">`）。
 10. 同页 query 变化不重建组件 → 用 `$router.onChange(() => init())` 自刷新。
-11. 组件里写死 `/skills/local/xxx` 前缀 → 发布后 scope 变了就 404；用相对路径或 `$router`/`$mod.scoped` 派生。
+11. 组件里写死 `/skills/cloud/{id}` 等绝对前缀 → fork/重发换 id 即 404；用相对路径或 `$router`/`$mod.scoped` 派生。
 12. 大二进制素材塞包 → 包 ≤16MB 且不该塞；放用户空间，包内只存 `/fs` 路径。
 13. `:key` 之外的另一半：对象行整体替换（`items[i] = {...}`）会销毁重建行 DOM（焦点丢失）；原地改字段或用数组 mutator 保持身份。
 

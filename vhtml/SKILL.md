@@ -1,5 +1,6 @@
 ---
 name: vhtml
+version: 0.1.1
 description: Develop and troubleshoot pages and components with the browser-only vhtml framework. Use for vhtml templates, reactive state and list identity, lifecycle and resource cleanup, routing, module context, i18n, or rendering performance. Explains framework usage and its boundaries for application authors.
 ---
 

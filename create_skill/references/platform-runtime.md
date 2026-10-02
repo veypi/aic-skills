@@ -1,18 +1,15 @@
 # 平台运行时手册（技能作者视角）
 
-> 适用范围：当前 aic v5 的已实现行为；UI/API/CLI 三种扩展正交与 CLI 注册的目标设计见 [skill-v6.md](skill-v6.md)。本页不表示 v6 已上线。
+> 适用范围：现行 v6.1 行为（2026-10-02 核对）：SKILL.md 必需，UI/API/CLI 三种扩展正交且均已落地（cli/manifest.json 注册、provider process/service、stream 可用）。包格式契约见 [current-format.md](current-format.md)。
 
 > 本手册面向「第一次在本平台创建技能的 AI 助手」：内容是从平台实现提炼的实用契约，你不需要平台源码或历史记忆。
 >
-> 如何读本包其它文件：
-> - 本地形态（技能作者自己的空间）：fs 工具读 `/u/{uid}/skills/create_skill/references/xxx.md`
-> - 公开形态（从广场加载）：fs 工具读 `/skills/{load 返回的 skill_id}/references/xxx.md`
-> - 全文只读；本包内 `examples/` 是可直接复制改造的完整示例。
+> 如何读本包其它文件：fs 工具读 `{load 返回的包根}/references/xxx.md`（寻址双面：云端 `/skills/cloud/{id}`、设备 `/skills/{host_id}/{name}`；AI fs 工具读 `/skills/{id}/references/xxx.md`——公开行只读、私有行 owner 可读）。全文只读；本包内 `examples/`、`templates/` 是可直接复制改造的完整示例。
 
 ## 1. 平台形态一页
 
 - ivec.ai 是一个「浏览器内操作系统」：一切页面都跑在可拖拽/缩放/平铺的 **OS 窗口**里；窗口尺寸可变，不等于浏览器视口（响应式要用 `@container`，不是 `@media`）。
-- **技能包格式**：`SKILL.md` 始终必需，提供包元数据与使用说明；UI/API/CLI 三种扩展按需组合。当前 v5 可提供 `ui/`、`api/` 与按需存储 `tables/`；`cli/` 只有目录标记，注册执行尚未实现。
+- **技能包格式**：`SKILL.md` 始终必需，提供包元数据与使用说明；UI/API/CLI 三种扩展按需组合、均已落地（`ui/`、`api/`、按需存储 `tables/`、`cli/manifest.json` 注册命令）。
 - 人机两条交互面：
   - **人** → `ui/` 页面（HTML，跑在窗口里）
   - **AI** → 页面的**指令**（`{win_id}.{cmd}`，经 page 通道调用）+ **数据面**（sqlx 接口，经同源 curl）
@@ -27,12 +24,12 @@
 | `exec` | 执行命令 | 本机/host 命令；`1host=page` 走浏览器页的指令通道（§3、§8） |
 | page `curl` | 同源 HTTP | `exec 1host=page` → `curl <url>`，数据面调用（见数据手册） |
 
-**寻址与加载其它技能**：`skills load` 的 ref **本地优先**（先试本地目录名，miss 后按注册表 uuid）；公开技能用其 id 加载。例如写页面前加载公共的 vhtml 技能：`skills search 'vhtml'` 找到条目 → `skills load <它的 id>`（若你本地已有 vhtml 目录，直接 `load vhtml`）。
+**寻址与加载其它技能**：`skill load` 的 ref 按 caller 自己的行**私有先、公开后**，再末跳平台内建行；系统面（URL/API）一律用注册表 id。例如写页面前加载公共的 vhtml 技能：`skill search 'vhtml'` 找到条目 → `skill load <它的 id>`。
 
 ## 3. 页面地址与开窗（AI 操作序）
 
-页面 URL 前缀 `url_prefix`（search/load 输出直接给，勿自己拼 scope）：
-- 本地：`/skills/local/{目录名}`；公开：`/skills/public/{技能 id}`
+页面 URL 前缀 `url_prefix`（search/load 输出直接给，勿自己拼）：
+- 云端：`/skills/cloud/{id}`；设备包：`/skills/{host_id}/{name}`
 
 `exec 1host=page` 的根命令：`list` / `open` / `close` / `reload` / `curl`：
 
@@ -57,8 +54,8 @@ reload [win_id]                   # 刷新（缺省当前活动窗口）
 | AI fs 工具（cloud 端） | `/u/{uid}/...` | `/u/{uid}/notes/todo.md` |
 | 页面 `$mod.$fs`（树路径） | `/cloud/u/{uid}/...`（仅省 `/fs` 前缀） | `/cloud/u/{uid}/notes/todo.md` |
 | HTTP / 消息 `@` 引用 / 浏览器地址栏 | `/fs/cloud/u/{uid}/...` | `/fs/cloud/u/{uid}/notes/todo.md` |
-| 技能包（作者本地） | `/u/{uid}/skills/{name}/...`（$fs：`/cloud/u/{uid}/skills/{name}/...`） | SKILL.md、ui/index.html |
-| 技能包（公开，只读） | `/skills/{id}/...` | `/skills/{uuid}/references/x.md` |
+| 技能包（私有行工作区，owner 读写） | `/skills/{id}/...`（$fs：`/cloud/skills/{id}/...`） | SKILL.md、ui/index.html |
+| 技能包（公开行，只读） | `/skills/{id}/...` | `/skills/{uuid}/references/x.md` |
 | host 设备文件 | `/fs/{host_id}/绝对路径`（$fs：`/{host_id}/...`） | — |
 
 **页面内相对资源规则**（vhtml 自动处理，别手拼前缀）：
@@ -170,13 +167,13 @@ if (target) await fs.put(target.path, blob)
 | `command "x" not found` | 指令名拼错；或页面未声明该指令（先 list 看 events） |
 | API `400 missing sqlx param :x` | 请求缺参数——sqlx 里的参数**必须全部提供** |
 | API 400 statement not allowed / multiple statements | SQL 触发首词黑名单（PRAGMA/事务类）或多语句 |
-| 页面 404 | 技能名/页面路径拼错；本地与公开 scope 不同（`/skills/local/...` vs `/skills/public/...`） |
+| 页面 404 | 包 id/页面路径拼错；私有行非 owner 一律 404（不暴露存在性） |
 | 相对 fetch 404 且路径重复 | 自己又拼了包前缀（§4 规则） |
 
 ## 11. 约束速查
 
-- 技能名：`^[a-z0-9][a-z0-9-_]{0,31}$`；**目录名 = frontmatter name = 发布名**
+- 技能名：`^[a-z0-9][a-z0-9-_]{0,31}$`；**注册表行 name = frontmatter name = 发布名**
 - 任意 UFS 路径**单段 ≤64 字符**
-- 包结构：`SKILL.md` 必需，`ui/`、`api/` 与按需存储 `tables/` 可选（`cli/` 注册未启用）；`references/`、`examples/` 等为普通资料目录（平台透明，AI 经 fs 读）
+- 包结构：`SKILL.md` 必需，`ui/`、`api/`、`tables/`、`cli/` 按需（契约见 current-format.md）；`references/`、`examples/` 等为普通资料目录（平台透明，AI 经 fs 读）
 - 发布：压缩后 ≤16MB；每用户正式技能 ≤10
 - 数据：运行库 sqlite 在包目录外——**发布不带数据**，公开库从空开始

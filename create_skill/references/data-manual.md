@@ -1,6 +1,6 @@
 # 数据面手册（tables + api）
 
-> 适用范围：当前 aic v5 的已实现行为；UI/API/CLI 三种扩展正交与 CLI 注册的目标设计见 [skill-v6.md](skill-v6.md)。本页不表示 v6 已上线。
+> 适用范围：现行 v6.1 行为（2026-10-02 核对）。包格式契约见 [current-format.md](current-format.md)。
 
 > 覆盖：tables 声明 → sqlx 接口 → SQL 书写规范 → owner 管理面 → AI 数据通道。
 > 完整示例：`examples/todo_min`（tables + 4 条 sqlx + 页面 + 指令，可直接复制改造）。
@@ -9,7 +9,7 @@
 
 - **声明式**：`tables/*.json` 声明表结构（文件名即表名）；`api/{get|post}.{name}.sqlx` 一条 SQL 一个接口。引擎托管：懒建表、additive 迁移、参数绑定、只读/写连接分流、1000 行截断。
 - **无通用 CRUD、无 schema 管理 API**：想读写就声明接口；**行级安全由你的 SQL 负责**。
-- 运行库 = sqlite 单文件，在包目录外：本地 `/u/{uid}/skills/{name}.sqlite`、公开 `/skills/{id}.sqlite`；**发布打包天然不含数据**——公开库从空开始。
+- 运行库 = sqlite 单文件，在包目录外：私有/公开同族 `/skills/{id}.sqlite`；**发布打包天然不含数据**——公开库从空开始。
 - 两个使用面（同一运行库，权限不同）：
   - **业务面** `{url_prefix}/api/{name}`：页面与 AI 都走这里；`user_id` 服务端注入。
   - **owner 管理面** `/api/skills/{ref}/...`：owner-only 的跨用户排查/批量修数；**无自动过滤**。
