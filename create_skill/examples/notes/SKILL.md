@@ -13,7 +13,7 @@ ui:
 内容以文件为准（不是数据库）：默认目录 `/cloud/u/{uid}/notes/`（`/u/{uid}/notes/` 的 $fs 树路径写法），页面可切换其它目录。
 这是 ppt / drawio 一类「文件即数据」模式的最小版：**AI 用 fs 工具写文件 → 页面指令刷新展示；用户页面编辑 → 保存落盘**。
 
-> **复制改造**：把本目录复制为 `/u/{uid}/skills/{你的名字}/`，同步修改：目录名、本文件 frontmatter 的 `name`、`nickname`/`description`。
+> **复制改造**：`POST /api/skills {"name": "{你的名字}"}` 建行得 `/skills/{id}/` 工作区，把本目录内容经 fs 门 PUT 进去，同步修改：frontmatter 的 `name`、`nickname`/`description`。
 
 ## 页面与指令
 

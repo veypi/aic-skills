@@ -12,7 +12,7 @@ ui:
 
 四件套完整链路：`ui/`（界面）+ `tables/todos.json`（存储声明）+ `api/*.sqlx`（5 条接口）+ pageDesc 指令。
 
-> **复制改造**：把本目录复制为 `/u/{uid}/skills/{你的名字}/`，同步修改：目录名、本文件 frontmatter 的 `name`、`nickname`/`description`。
+> **复制改造**：`POST /api/skills {"name": "{你的名字}"}` 建行得 `/skills/{id}/` 工作区，把本目录内容经 fs 门 PUT 进去，同步修改：frontmatter 的 `name`、`nickname`/`description`。
 
 ## 数据面（页面与 AI 共用，行级隔离）
 

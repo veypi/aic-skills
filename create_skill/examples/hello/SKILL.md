@@ -13,7 +13,7 @@ ui:
 最小可用形态：只有 `SKILL.md` + `ui/index.html`，无数据面。
 演示两件事：vhtml 页面骨架（含 `@container` 窗口响应式）+ pageDesc 指令（AI 经 `{win_id}.{cmd}` 操控页面）。
 
-> **复制改造**：把本目录复制为 `/u/{uid}/skills/{你的名字}/`，同步修改：目录名、本文件 frontmatter 的 `name`、`nickname`/`description`。
+> **复制改造**：`POST /api/skills {"name": "{你的名字}"}` 建行得 `/skills/{id}/` 工作区，把本目录内容经 fs 门 PUT 进去，同步修改：frontmatter 的 `name`、`nickname`/`description`。
 
 ## 使用（AI 操作序，均为 exec 1host=page 通道）
 
