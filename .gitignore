@@ -15,6 +15,19 @@
 !README.md
 !drawio/
 !assets/
+!browser/
+!cua/
+!hello/
+!sdk/
+!builtin.go
+!builtin_test.go
+!go.mod
+!go.sum
+
+# provider 构建产物（build.sh 产出，仓库为源）
+browser/cli/bin/
+cua/cli/bin/
+hello/cli/bin/
 
 *.sqlite
 *.zip
