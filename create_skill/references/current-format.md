@@ -23,7 +23,7 @@
   ui/                 界面（vhtml 页面；index.html 缺省入口；langs.json 包 i18n）
   tables/             数据表定义（{table}.json）
   api/                数据接口（{method}.{name}.sqlx）
-  cli/manifest.json   命令清单（providers + streams；提供 CLI 时必需）
+  cli/manifest.json   命令清单（kind/entry/args + streams；提供 CLI 时必需）
   cli/bin/            provider 可执行文件（安装时补执行位）
   scripts/            包内资源脚本（构建期打包，运行期经包目录相对路径调用）
   artifacts.lock.json 按需：大二进制声明（设备侧下载 + sha256 校验）
@@ -95,16 +95,15 @@ select title, qty from items where user_id = :user_id order by rowid
 
 ```json
 {
-  "providers": [
-    {"id": "main", "kind": "process", "entry": "cli/bin/hello"},
-    {"id": "svc", "kind": "service", "entry": "cli/bin/hello-service"}
-  ],
-  "streams": [{"name": "events", "provider": "svc"}]
+  "kind": "service",
+  "entry": "cli/bin/hello-service",
+  "streams": ["events"]
 }
 ```
 
 - **process**：每次调用起一个进程跑 entry（argv/stdin/stdout 全量透传）——无状态命令脚本即可，**任何语言**（模板是 shell）。
-- **service**：常驻进程，skillrun 懒启动（首调用）+ bg 登记；经 `SKILLPROC_SOCKET`（env 注入的 unix socket）收 invoke/stream 帧——有状态（持连接/会话）才需要，协议参考 hello/browser/cua 包源码。
+- **service**：常驻进程，skillrun 按包懒启动与停止，不占 bg 配额；经 `SKILLPROC_SOCKET`（env 注入的 unix socket）收 invoke/stream 帧——有状态（持连接/会话）才需要，协议参考 hello-service/browser/cua 包源码。
+- 每包一个 provider；process 不声明 streams，资源包省略 CLI manifest。端点统一为 `<包名>.<流名>`。skillproc 固定 v2，每连接一次调用或一条流，断连即取消，没有 ID/cancel 帧。
 - 根命令 = 包名（隐式，manifest 无 commands[]）；子命令与 --help 由包 CLI 自行实现。
 - 大二进制不进包：用 `cli/artifacts.lock.json`（url/sha256/落盘路径）在安装阶段设备侧下载校验。
 - 根命令冲突（内建/保留名/已装包）安装时显式拒绝；禁用 = 命令保留但显式报错，不回落同名系统程序。

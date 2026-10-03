@@ -4,14 +4,25 @@ AIC（[ivec.ai](https://ivec.ai)）平台的官方技能仓库。每个目录是
 
 ## 本仓两类技能
 
-- **内建集**（`builtin.go` go:embed 的五包：browser / cua / create_skill / vhtml / office_studio）：随 aic 与 aic-pod 二进制分发——aic 启动定版到注册表（system 属主公开行），pod 启动预装到设备（零下载）。版本真相 = 各包 SKILL.md frontmatter `version`（semver 版本闸，改内容必 bump）。
+- **内建集**（`builtin_embed.go` 的完整目录：browser / cua / create_skill / vhtml / office_studio）：随 aic 与 aic-pod 应用构建分发——aic 启动定版到注册表（system 属主公开行），pod 启动预装到设备（零下载）。版本真相 = 各包 SKILL.md frontmatter `version`（semver 版本闸，改内容必 bump）。
 - **广场集**（其余目录）：技能源码，经平台发布流上架广场，与本仓 git 历史同源。
 
 ## provider 与 Go SDK（sdk/go）
 
 技能的 cli provider **机制上代码无关**：process = argv/stdin/stdout 透传，service = unix socket 帧协议（skillproc）——任何语言实现交互协议即可（契约见 aic `docs/skill.md` §9.2）。`sdk/go` 是第一方 Go provider 的自包含工具包（wire 类型 / skillproc / ui 词汇 / cliargs / image_data 编码），**不依赖 aic / aic-pod**；Go 并非特权语言，其他语言按协议文档自行实现同等地位。
 
-browser/cua/hello 的 provider 源码在各包 `provider/` 下，构建产物（`cli/bin/`、`browser.zip`）不入库——由各包 `build.sh` 产出（aic-pod `make browser-zip` / `make cua-bin`）。
+browser/cua 各自只有一个 service provider；hello 演示 process，hello-service 演示 service。manifest 统一为 kind/entry/args/streams；流端点必须带包名。skillproc 固定 v2，每连接一次调用或一条流，断连即取消。service 归 skillrun，不进入 bg。各包 build.sh 只生成打包用二进制，设备安装统一走 ZIP。
+
+应用构建、开发启动和完整集成测试统一使用 `cmd/build`：在临时目录按应用 GOOS/GOARCH 构建 browser/CUA，再用 Go overlay 生成专用的 `builtin_embed.go` 声明。并发构建互不覆盖，不读取源码目录遗留的 `cli/bin` 文件，也不改写运行时代码。
+
+目录始终只包含完整包。直接 `go build` / `go test` 提供 create_skill、vhtml、office_studio 三个纯资源包，**不会嵌入 browser/cua**；干净设备不会自动拥有这两项能力，完整应用构建必须使用 `cmd/build`（应用 Makefile 已接入）。browser/cua 只有在 provider 构建完成后才进入目录。aic 发布与 pod 预装直接消费同一目录，无 optional entry、启动时编译或半包降级分支。开发时需要完整设备能力请使用统一入口：
+
+```sh
+# 在 aic-pod 目录构建含 provider 的 Linux CLI
+go run ../aic-skills/cmd/build -goos linux -goarch amd64 -- -o dist/aic-cli ./cli
+go run ../aic-skills/cmd/build -command run -- ./cli
+go run ../aic-skills/cmd/build -command test -- ./libs/skillrun
+```
 
 ## 官方技能
 

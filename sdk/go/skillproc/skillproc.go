@@ -1,21 +1,12 @@
 // Copyright (C) 2025 veypi <i@veypi.com>
 // Distributed under terms of the MIT license.
 
-// Package skillproc 是 skill service provider 与 pod 之间的最小有线协议
-// （aic/docs/skill.md §9.2，2026-10-01 定）：
-//
-//	帧 = [4B 大端头长][JSON 头][负载字节]（头 len 字段 = 负载字节数）
-//
-// 单连接多路复用（id 关联请求/输出/取消/stream 通道）。只提供
-// invoke/frame/exit/cancel 与 stream.open/stream.frame/stream.close/error；
-// 无 handshake、health、版本协商、幂等缓存或自动恢复——启动/停止由进程
-// 管理（bg 任务表）完成，取消不承诺撤销已发生的副作用。
-//
-// 本模块是纯编解码 + 连接读写，零业务知识：pod 核心（libs/skillrun）与
-// provider 双向 import 它，provider 不 import pod 的 cfg/host/runtime。
+// Package skillproc implements one invoke or one stream per connection.
+// Closing the connection cancels its work. Version 2 has no request IDs or cancel frames.
 package skillproc
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
@@ -33,10 +24,8 @@ const (
 	TypeFrame = "frame"
 	// provider → pod：调用终态。Code = exit_code；Error 非空 = 执行失败。
 	TypeExit = "exit"
-	// pod → provider：取消当前调用（关联 ID；不承诺撤销已发生副作用）。
-	TypeCancel = "cancel"
 	// 双向：打开一条 stream 二进制通道（Name = manifest 声明的 stream 名；
-	// ID 自此标识该通道）。对端以 StreamFrame/StreamClose/Error 应答。
+	// 连接自此仅承载该通道）。对端以 StreamFrame/StreamClose/Error 应答。
 	TypeStreamOpen = "stream.open"
 	// 双向：stream 通道数据帧（负载 = 不透明字节，不逐帧 JSON/base64）。
 	TypeStreamFrame = "stream.frame"
@@ -60,8 +49,7 @@ const (
 
 // Header 是帧的 JSON 头。字段按帧类型取用（见类型常量注释）。
 type Header struct {
-	V      int               `json:"v"`                // 协议结构版本（恒 1；非协商，仅供未来解析分流）
-	ID     string            `json:"id"`               // 请求/通道关联键
+	V      int               `json:"v"`                // 协议结构版本（恒 2；不协商）
 	Type   string            `json:"type"`             // 帧类型（见常量）
 	Len    int               `json:"len,omitempty"`    // 负载字节数（0 = 无负载）
 	Stream string            `json:"stream,omitempty"` // frame：stdout|stderr
@@ -77,7 +65,13 @@ type Header struct {
 // 裸用本函数的调用方自行串行化写端。
 func WriteFrame(w io.Writer, h Header, payload []byte) error {
 	if h.V == 0 {
-		h.V = 1
+		h.V = 2
+	}
+	if len(payload) > MaxPayload {
+		return fmt.Errorf("skillproc: payload too large")
+	}
+	if h.V != 2 {
+		return fmt.Errorf("skillproc: unsupported version %d", h.V)
 	}
 	h.Len = len(payload)
 	hb, err := json.Marshal(h)
@@ -89,17 +83,19 @@ func WriteFrame(w io.Writer, h Header, payload []byte) error {
 	}
 	var prefix [4]byte
 	binary.BigEndian.PutUint32(prefix[:], uint32(len(hb)))
-	if _, err := w.Write(prefix[:]); err != nil {
-		return err
-	}
-	if _, err := w.Write(hb); err != nil {
-		return err
-	}
-	if len(payload) > 0 {
-		if _, err := w.Write(payload); err != nil {
+	for _, part := range [][]byte{prefix[:], hb, payload} {
+		if len(part) == 0 {
+			continue
+		}
+		n, err := w.Write(part)
+		if err != nil {
 			return err
 		}
+		if n != len(part) {
+			return io.ErrShortWrite
+		}
 	}
+
 	return nil
 }
 
@@ -119,8 +115,16 @@ func ReadFrame(r io.Reader) (Header, []byte, error) {
 		return Header{}, nil, err
 	}
 	var h Header
-	if err := json.Unmarshal(hb, &h); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(hb))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&h); err != nil {
 		return Header{}, nil, fmt.Errorf("skillproc: bad header: %w", err)
+	}
+	if err := dec.Decode(new(any)); err != io.EOF {
+		return Header{}, nil, fmt.Errorf("skillproc: trailing header data")
+	}
+	if h.V != 2 {
+		return Header{}, nil, fmt.Errorf("skillproc: unsupported version %d", h.V)
 	}
 	if h.Len < 0 || h.Len > MaxPayload {
 		return Header{}, nil, fmt.Errorf("skillproc: bad payload length %d", h.Len)
@@ -137,7 +141,7 @@ func ReadFrame(r io.Reader) (Header, []byte, error) {
 
 // Conn 是一条 skillproc 连接（unix socket / named pipe）：写端串行化
 // （多 goroutine 可并发 Send——stdout/stderr/stream 各写者不交叠帧）；
-// 读端单读者（Recv 由接收循环独占，demux 是调用方职责）。
+// 读端单读者（Recv 由接收循环独占，连接无多路复用）。
 type Conn struct {
 	conn net.Conn
 	wmu  sync.Mutex

@@ -136,7 +136,7 @@ export class BrowserView {
   }
   async connect() {
     try {
-      const stream = await this.connection.openStream('page.frames', {page_id:this.target.page_id});
+      const stream = await this.connection.openStream('browser.page.frames', {page_id:this.target.page_id});
       if (this.closed || !this.visible) { await stream.close(); return; }
       this.live = stream; this.state();
       this.pump(stream);
@@ -205,7 +205,7 @@ export class BrowserView {
     // Opening a channel does not acquire control. Keep the first input queued
     // while the channel connects; the backend reacts to actual input only.
     const controls = new BrowserInput(
-      this.connection.openStream('page.input',{page_id:this.target.page_id}),
+      this.connection.openStream('browser.page.input',{page_id:this.target.page_id}),
       () => this.document || this.target.document_id,
       error => {
         if (this.controls !== controls) return;

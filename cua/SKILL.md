@@ -1,6 +1,6 @@
 ---
 name: cua
-version: 0.2.0
+version: 0.3.0
 description: 设备原生桌面自动化（Computer Use）：窗口/应用枚举与激活、原生控件观察（无障碍树+截图）、点击/输入/拖拽/菜单/剪贴板操作。驱动本机 CuaDriver（macOS 辅助功能 API），供 AI 操作桌面应用。
 ui:
   - path: index.html

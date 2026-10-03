@@ -3,19 +3,14 @@
 //   - aic    InitBuiltin 定版到注册表（id=包名、owner='system' 公开行）+ /skills/{id}/；
 //   - aic-pod 启动预装到 ~/.aic/skills（installZip 同一原子序列，零下载）。
 //
-// 版本真相 = 各包 SKILL.md frontmatter 的 version 标量。browser/cua 的 cli/bin
-// provider 二进制由各包 build.sh 先于 pod 构建产出（gitignore，embed 在构建期
-// 收进——pod 二进制按目标平台编译，内嵌的即本平台 provider，不存在跨平台错配）。
-//
-// 本仓是全部官方 skill 的专仓：内建集（本文件 embed 的五包）+ 广场集（仓内
-// 其余技能源码，走平台发布流）。provider 机制代码无关——Go provider 的零依赖
-// SDK 在 sdk/go（协议真相 = 文档，任何语言按文档实现即可）。
+// 版本取各包 SKILL.md。目录只包含完整包：源码构建提供纯资源包；
+// cmd/build 为 browser/cua 构建目标平台的 provider 后，将完整包加入目录。
+
 package aicskills
 
 import (
 	"archive/zip"
 	"bytes"
-	"embed"
 	"fmt"
 	"io"
 	"io/fs"
@@ -23,12 +18,6 @@ import (
 	"sort"
 	"strings"
 )
-
-// 选择性嵌入：browser.zip（构建产物）与 provider 源码（设备侧不经 zip 分发）
-// 在包根被自然排除；cli/bin provider 二进制构建后收进（build.sh 先于 pod 构建）。
-//
-//go:embed all:browser/SKILL.md all:browser/cli all:browser/ui all:cua/SKILL.md all:cua/cli all:cua/ui all:create_skill all:vhtml all:office_studio
-var builtin embed.FS
 
 // List 内建包名（嵌入根下的目录名 = 包名 = 注册表 id）。按名排序，遍历稳定。
 func List() []string {

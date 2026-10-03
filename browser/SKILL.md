@@ -1,6 +1,6 @@
 ---
 name: browser
-version: 0.1.0
+version: 0.2.0
 description: 设备浏览器能力（page.* 页面自动化 + download.* 下载管理 + page.frames/page.input 实时流）。驱动本机 Chrome，供 AI 浏览、观察与操作网页。
 ui:
   - path: index.html
@@ -55,8 +55,8 @@ locator flags 四选一：`--ref R`（observe 返回的元素引用；页面导�
 
 ### stream 端点（RTC 私有，不在 CLI 面）
 
-- `page.frames`：页面实时画面（JPEG 帧流，只读）。
-- `page.input`：真实输入通道（指针/键盘事件批，占用页面控制租约）。
+- `browser.page.frames`：页面实时画面（JPEG 帧流，只读）。
+- `browser.page.input`：真实输入通道（指针/键盘事件批，占用页面控制租约）。
 
 ## 配置（包内默认 + 环境变量覆盖）
 
@@ -64,4 +64,4 @@ locator flags 四选一：`--ref R`（observe 返回的元素引用；页面导�
 - `AIC_BROWSER_STATE_DIR`：状态目录（默认 `$HOME/.aic/browser`）。
 - `AIC_BROWSER_WIDTH` / `AIC_BROWSER_HEIGHT`：新建页面默认视口（默认 1280/720）。
 
-打包形态：desktop 把本包 `build.sh` 产出的 `browser.zip` 带进 resources，pod 首跑经 `AIC_BUILTIN_SKILLS` 预装（builtin 来源；幂等，失败不阻断启动）。
+打包形态：provider 与包资源内嵌于 pod 二进制，启动时统一预装到 `~/.aic/skills`。同源同版本跳过，升级失败保留旧包。

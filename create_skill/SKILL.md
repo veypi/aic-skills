@@ -1,6 +1,6 @@
 ---
 name: create_skill
-version: 0.2.0
+version: 0.3.0
 nickname: 创建 Skill 指南
 description: 创建或修改 aic 的单文件界面、静态描述技能与组合技能包；技能包必带 SKILL.md 使用说明，UI、API、CLI 三种正交扩展按需组合；含现行包格式契约、复制即用模板与发布/装设备全流程。用户要"做个页面/工具/技能/自动化"时必读
 keywords: [skill, 创建, 技能包, 组件, SKILL.md, ui, api, cli, stream, tables, 模板, 发布, 自动化]
@@ -13,7 +13,7 @@ icon: fa-solid fa-wand-magic-sparkles
 
 ## 现行契约
 
-2026-10-02 核对（v6.1）：SKILL.md 必需；UI、API、CLI 三种扩展**均已落地可运行**——cli/manifest.json 声明 providers（process/service）与 streams，process = argv/stdin/stdout 透传，service = unix socket 帧协议（skillproc）；**provider 可用任何语言编写，只需实现交互协议**，Go 作者可参考 `sdk/go` 与 browser/cua/hello 包源码。
+2026-10-03 公开版契约：SKILL.md 必需；UI、API、CLI 三种扩展**均已落地可运行**——cli/manifest.json 声明单个 provider（kind/entry/args）与可选 streams 字符串列表，process = argv/stdin/stdout 透传，service = unix socket 帧协议（skillproc）；**provider 可用任何语言编写，只需实现交互协议**，Go 作者可参考 `sdk/go` 与 browser/cua/hello/hello-service 包源码。
 
 **模板文件在 `templates/` 下，复制后改内容即可，不要从零写结构。**
 

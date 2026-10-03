@@ -15,14 +15,13 @@ func TestFrameRoundTrip(t *testing.T) {
 		h       Header
 		payload []byte
 	}{
-		{"invoke with stdin", Header{ID: "r1", Type: TypeInvoke, Argv: []string{"echo", "hi"}, Cwd: "/tmp", Env: map[string]string{"A": "b"}}, []byte("stdin-bytes")},
-		{"stdout frame", Header{ID: "r1", Type: TypeFrame, Stream: StreamStdout}, bytes.Repeat([]byte("x"), 10000)},
-		{"exit no payload", Header{ID: "r1", Type: TypeExit, Code: 3}, nil},
-		{"stream open", Header{ID: "s1", Type: TypeStreamOpen, Name: "echo"}, nil},
-		{"stream frame binary", Header{ID: "s1", Type: TypeStreamFrame}, []byte{0, 1, 2, 255, 254}},
-		{"cancel", Header{ID: "r1", Type: TypeCancel}, nil},
-		{"error", Header{ID: "r9", Type: TypeError, Error: "no such method"}, nil},
-		{"unicode argv", Header{ID: "r2", Type: TypeInvoke, Argv: []string{"写", "文件"}}, nil},
+		{"invoke with stdin", Header{Type: TypeInvoke, Argv: []string{"echo", "hi"}, Cwd: "/tmp", Env: map[string]string{"A": "b"}}, []byte("stdin-bytes")},
+		{"stdout frame", Header{Type: TypeFrame, Stream: StreamStdout}, bytes.Repeat([]byte("x"), 10000)},
+		{"exit no payload", Header{Type: TypeExit, Code: 3}, nil},
+		{"stream open", Header{Type: TypeStreamOpen, Name: "echo"}, nil},
+		{"stream frame binary", Header{Type: TypeStreamFrame}, []byte{0, 1, 2, 255, 254}},
+		{"error", Header{Type: TypeError, Error: "no such method"}, nil},
+		{"unicode argv", Header{Type: TypeInvoke, Argv: []string{"写", "文件"}}, nil},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -34,7 +33,7 @@ func TestFrameRoundTrip(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if h.V != 1 || h.ID != c.h.ID || h.Type != c.h.Type || h.Stream != c.h.Stream ||
+			if h.V != 2 || h.Type != c.h.Type || h.Stream != c.h.Stream ||
 				h.Code != c.h.Code || h.Error != c.h.Error || h.Name != c.h.Name || h.Cwd != c.h.Cwd {
 				t.Fatalf("header mismatch: %+v != %+v", h, c.h)
 			}
@@ -52,11 +51,11 @@ func TestMultiFrameStream(t *testing.T) {
 	var buf bytes.Buffer
 	// 连续多帧（模拟 stdout 多次刷写 + exit 收尾）不出帧间串扰
 	for _, p := range [][]byte{[]byte("a"), bytes.Repeat([]byte("b"), 4096), nil} {
-		if err := WriteFrame(&buf, Header{ID: "r", Type: TypeFrame, Stream: StreamStdout}, p); err != nil {
+		if err := WriteFrame(&buf, Header{Type: TypeFrame, Stream: StreamStdout}, p); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if err := WriteFrame(&buf, Header{ID: "r", Type: TypeExit, Code: 0}, nil); err != nil {
+	if err := WriteFrame(&buf, Header{Type: TypeExit, Code: 0}, nil); err != nil {
 		t.Fatal(err)
 	}
 	var got []byte
@@ -88,7 +87,7 @@ func TestBadHeaderRejected(t *testing.T) {
 		t.Fatal("malformed header must be rejected")
 	}
 	// 负载长越界（直接构造头 JSON——WriteFrame 会覆写 Len）
-	hb, _ := json.Marshal(Header{ID: "x", Type: TypeFrame, Len: MaxPayload + 1})
+	hb, _ := json.Marshal(Header{Type: TypeFrame, Len: MaxPayload + 1})
 	var buf2 bytes.Buffer
 	buf2.Write([]byte{0, 0, 0, byte(len(hb))})
 	buf2.Write(hb)
@@ -112,7 +111,7 @@ func TestConnConcurrentSend(t *testing.T) {
 			defer wg.Done()
 			payload := bytes.Repeat([]byte{id}, 100)
 			for i := 0; i < frames; i++ {
-				if err := ca.Send(Header{ID: "r", Type: TypeFrame, Stream: StreamStdout}, payload); err != nil {
+				if err := ca.Send(Header{Type: TypeFrame, Stream: StreamStdout}, payload); err != nil {
 					t.Error(err)
 					return
 				}
@@ -148,7 +147,7 @@ func TestCleanEOF(t *testing.T) {
 	// net.Pipe 无缓冲：写端阻塞直到读端接收，Send 必须异步
 	done := make(chan error, 1)
 	go func() {
-		done <- ca.Send(Header{ID: "r", Type: TypeExit, Code: 0}, nil)
+		done <- ca.Send(Header{Type: TypeExit, Code: 0}, nil)
 		ca.Close()
 	}()
 	if _, _, err := cb.Recv(); err != nil {

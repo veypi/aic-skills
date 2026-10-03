@@ -33,7 +33,7 @@ function fixture() {
   let finish, end, closed=0;
   const frames={recv:() => new Promise((resolve,reject) => {finish=resolve;end=reject;}),close:async () => {closed++;end?.(new Error('closed'));}};
   const input={send:async raw => inputs.push(JSON.parse(new TextDecoder().decode(raw))),close:async () => {input.closed=true;}};
-  const session={execCall:async script => {calls.push(['exec',script]);return {content:'{}',attrs:{exit_code:'0'}};},openStream:async endpoint => {calls.push(['stream',endpoint]);return endpoint==='page.frames'?frames:input;}};
+  const session={execCall:async script => {calls.push(['exec',script]);return {content:'{}',attrs:{exit_code:'0'}};},openStream:async endpoint => {calls.push(['stream',endpoint]);return endpoint==='browser.page.frames'?frames:input;}};
   const view=new BrowserView(session,{page_id:'p',document_id:'doc',viewport:{width:800,height:600}});
   return {view,calls,inputs,input,sendFrame:item=>finish(encodeFrame(item)),closed:()=>closed};
 }
@@ -42,7 +42,7 @@ test('viewing sends no input; the first real input opens a channel without contr
   assert.equal(f.inputs.length,0); assert.equal(f.view.controls,undefined);
   f.view.send('text','once'); await f.view.controls.flush();
   assert.deepEqual(f.inputs,[{seq:1,document_id:'doc',events:[{type:'text',text:'once'}]}]);
-  assert.deepEqual(f.calls.map(c=>c[1]),['page.frames','page.input']);
+  assert.deepEqual(f.calls.map(c=>c[1]),['browser.page.frames','browser.page.input']);
   f.view.setVisible(false); await tick(); assert.equal(f.input.closed,true);
   assert.equal(f.view.interactive,false); await f.view.close();
   assert.ok(!f.calls.some(c=>c[1].startsWith('page.control.')));
@@ -104,7 +104,7 @@ test('the first input survives channel setup and navigation needs no release cal
   assert.deepEqual(f.inputs[0].events.map(e=>e.type),['pointer.down','pointer.up']);
   await f.view.mutate('reload');
   assert.equal(f.input.closed,true);
-  assert.deepEqual(f.calls.map(c=>c[1]),['page.frames','browser page.reload --json -- p']);
+  assert.deepEqual(f.calls.map(c=>c[1]),['browser.page.frames','browser page.reload --json -- p']);
 });
 test('focus loss resets pressed state without closing the input channel', async t => {
   const f=fixture(); t.after(()=>f.view.close()); await f.view.start();
@@ -113,7 +113,7 @@ test('focus loss resets pressed state without closing the input channel', async 
   f.view.send('text','again'); await f.view.controls.flush();
   assert.deepEqual(f.inputs.map(b=>b.events[0].type),['key.down','reset','text']);
   assert.equal(f.input.closed,undefined);
-  assert.deepEqual(f.calls.map(c=>c[1]),['page.frames','page.input']);
+  assert.deepEqual(f.calls.map(c=>c[1]),['browser.page.frames','browser.page.input']);
 });
 
 function encodeFrame({bytes, ...header}) {
