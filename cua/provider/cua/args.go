@@ -44,8 +44,8 @@ func (l Locator) Validate() error {
 	}
 	if len(l.At) > 0 {
 		n++
-		if len(l.At) != 2 || l.Snapshot == "" {
-			return wire.Fail("invalid_argument", "Coordinates require two values and snapshot")
+		if _, ok := coordinatePair(l.At); !ok || l.Snapshot == "" {
+			return wire.Fail("invalid_argument", "Coordinates require two finite numbers and snapshot")
 		}
 	}
 	if n != 1 || l.Name != "" && l.Role == "" {
@@ -60,8 +60,8 @@ type ActionArgs struct {
 	Text     string  `json:"text,omitempty"`
 	Key      string  `json:"key,omitempty"`
 	Value    any     `json:"value,omitempty"`
-	X        float64 `json:"x,omitempty"`
-	Y        float64 `json:"y,omitempty"`
+	DX       float64 `json:"dx,omitempty"`
+	DY       float64 `json:"dy,omitempty"`
 	Button   string  `json:"button,omitempty" enum:"left,right,middle"`
 	Count    int     `json:"count,omitempty"`
 	Delivery string  `json:"delivery,omitempty" enum:"background,foreground"`
@@ -71,6 +71,9 @@ type ActionArgs struct {
 func (a *ActionArgs) Validate() error {
 	if !wire.ValidID(a.WindowID) || a.Count < 0 || a.Count > 2 {
 		return wire.Fail("invalid_argument", "Invalid window or click count")
+	}
+	if !finite(a.DX) || !finite(a.DY) {
+		return wire.Fail("invalid_argument", "Scroll deltas must be finite numbers")
 	}
 	return a.Locator.Validate()
 }
@@ -88,6 +91,16 @@ type DragArgs struct {
 	To       []float64 `json:"to_at" required:"true"`
 	Delivery string    `json:"delivery,omitempty" enum:"background,foreground"`
 }
+
+func (a *DragArgs) Validate() error {
+	_, fromOK := coordinatePair(a.From)
+	_, toOK := coordinatePair(a.To)
+	if !wire.ValidID(a.WindowID) || a.Snapshot == "" || !fromOK || !toOK {
+		return wire.Fail("invalid_argument", "Drag requires a window, snapshot and two finite coordinate pairs (--from_at/--to_at)")
+	}
+	return nil
+}
+
 type MenuArgs struct {
 	WindowID string   `json:"window_id" required:"true"`
 	Path     []string `json:"path" required:"true"`

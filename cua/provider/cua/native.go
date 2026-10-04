@@ -328,9 +328,13 @@ func (e *nativeUI) resolve(ctx context.Context, s *nativeSession, t *nativeTarge
 		args["element_token"] = el.token
 		return args, el, nil
 	}
-	if p, ok := locator["at"].([]float64); ok {
+	if at, present := locator["at"]; present {
+		p, ok := coordinatePair(at)
+		if !ok {
+			return nil, nil, ui.Err("invalid_argument", "coordinates require two finite numbers")
+		}
 		snap := t.snapshot
-		if snap == nil || snap.id != str(locator["snapshot"]) || snap.width == 0 {
+		if snap == nil || snap.id != str(locator["snapshot"]) || snap.width <= 0 || snap.height <= 0 || snap.rawWidth <= 0 || snap.rawHeight <= 0 {
 			return nil, nil, ui.Err("stale_ref", "coordinates require the current window image snapshot")
 		}
 		if p[0] < 0 || p[1] < 0 || p[0] >= float64(snap.width) || p[1] >= float64(snap.height) {
@@ -839,6 +843,16 @@ func (e *nativeUI) execute(ctx context.Context, o *ui.Operation, epoch uint64, c
 			args["delivery_mode"] = o.Options.Delivery
 			_, err = action("press_key", args)
 		case "scroll":
+			dx, dy := o.Number("dx"), o.Number("dy")
+			if !finite(dx) || !finite(dy) || (dx == 0 && dy == 0) {
+				err = ui.Err("invalid_argument", "scroll requires a non-zero finite dx or dy")
+				break
+			}
+			// Validate both axes before delivering either one.
+			if math.Abs(dx) > 20000 || math.Abs(dy) > 20000 {
+				err = ui.Err("invalid_argument", "native scroll exceeds 500 lines")
+				break
+			}
 			r.Warn("unit_approximation", "native driver scrolls lines; 40 logical pixels are mapped to one line")
 			args["delivery_mode"] = o.Options.Delivery
 			for _, axis := range []string{"dx", "dy"} {
@@ -857,10 +871,6 @@ func (e *nativeUI) execute(ctx context.Context, o *ui.Operation, epoch uint64, c
 					}
 				}
 				remaining := int(math.Ceil(math.Abs(delta) / 40))
-				if remaining > 500 {
-					err = ui.Err("invalid_argument", "native scroll exceeds 500 lines")
-					break
-				}
 				for remaining > 0 {
 					n := remaining
 					if n > 50 {

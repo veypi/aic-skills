@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -28,7 +29,8 @@ func TestNativeTypedLive(t *testing.T) {
 	}
 	defer func() { _ = cmd.Process.Kill(); _ = cmd.Wait() }()
 	s := New(Config{Logf: t.Logf})
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer s.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 	invoke := func(args ...string) map[string]any {
 		t.Helper()
@@ -104,4 +106,53 @@ func TestNativeTypedLive(t *testing.T) {
 	if total < 100 {
 		t.Fatal("empty screenshot")
 	}
+	type fixtureState struct {
+		Clicks  int                  `json:"clicks"`
+		ScrollY float64              `json:"scroll_y"`
+		Points  map[string][]float64 `json:"points"`
+	}
+	readState := func() fixtureState {
+		t.Helper()
+		b, err := os.ReadFile(state)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var got fixtureState
+		if err := json.Unmarshal(b, &got); err != nil {
+			t.Fatal(err)
+		}
+		return got
+	}
+	point := func(obs map[string]any, name string) string {
+		t.Helper()
+		p := readState().Points[name]
+		if len(p) != 2 {
+			t.Fatalf("fixture has no %s point", name)
+		}
+		img := obs["image"].(map[string]any)
+		return fmt.Sprintf("%g,%g", p[0]*img["width"].(float64), p[1]*img["height"].(float64))
+	}
+	awaitEffect := func(name string, check func(fixtureState) bool) {
+		t.Helper()
+		for {
+			got := readState()
+			if check(got) {
+				return
+			}
+			select {
+			case <-ctx.Done():
+				t.Fatalf("%s not observed: %+v", name, got)
+			case <-time.After(30 * time.Millisecond):
+			}
+		}
+	}
+	// Use the actual delivered image dimensions, including any wrapper scaling.
+	clicked := invoke("window.click", window, "--snapshot", observation["snapshot"].(string), "--at", point(observation, "button"), "--after", "image")
+	awaitEffect("coordinate click", func(got fixtureState) bool { return got.Clicks == 2 })
+	t.Log("coordinate click changed fixture clicks from 1 to 2")
+	observation = clicked["observation"].(map[string]any)
+	before := readState().ScrollY
+	invoke("window.scroll", window, "--snapshot", observation["snapshot"].(string), "--at="+point(observation, "scroll"), "--dy", "400", "--after", "image")
+	awaitEffect("coordinate scroll", func(got fixtureState) bool { return got.ScrollY > before })
+	t.Logf("coordinate scroll changed fixture offset from %g to %g", before, readState().ScrollY)
 }

@@ -118,11 +118,8 @@ func (s *Service) subcommands() []cuaSub {
 			return s.execute(ctx, "wait", a.WindowID, locator, fields(&a), "none", "")
 		}},
 		// drag 的 delivery=foreground 不需审批（§3.1），由 rules 决定。
-		{usage: "window.drag <window_id> --snapshot S --from x,y --to x,y [--delivery background|foreground]", positionals: []string{"window_id"}, newArgs: func() any { return &DragArgs{} }, run: func(ctx context.Context, a any) (any, error) {
+		{usage: "window.drag <window_id> --snapshot S --from_at x,y --to_at x,y [--delivery background|foreground]", positionals: []string{"window_id"}, newArgs: func() any { return &DragArgs{} }, run: func(ctx context.Context, a any) (any, error) {
 			args := a.(*DragArgs)
-			if args.Snapshot == "" || len(args.From) != 2 || len(args.To) != 2 {
-				return nil, wire.Fail("invalid_argument", "Drag requires snapshot and two coordinate pairs")
-			}
 			return s.execute(ctx, "drag", args.WindowID, nil, fields(args), "none", args.Delivery)
 		}},
 		{usage: "observation.image.read <window_id> <image_id> [--offset N] [--limit N]", positionals: []string{"window_id", "image_id"}, newArgs: func() any { return &ImageArgs{} }, run: func(ctx context.Context, a any) (any, error) {
@@ -143,11 +140,11 @@ func (s *Service) subcommands() []cuaSub {
 			newArgs:     func() any { return &ActionArgs{} },
 			run: func(ctx context.Context, a any) (any, error) {
 				args := a.(*ActionArgs)
-				if !wire.ValidID(args.WindowID) || args.Count < 0 || args.Count > 2 {
-					return nil, wire.Fail("invalid_argument", "Invalid window or click count")
+				if (op == "fill" || op == "set") && len(args.Locator.At) > 0 {
+					return nil, wire.Fail("unsupported", "fill/set require an accessible element; use type for coordinate-based text input")
 				}
-				if err := args.Locator.Validate(); err != nil {
-					return nil, err
+				if op == "scroll" && args.DX == 0 && args.DY == 0 {
+					return nil, wire.Fail("invalid_argument", "Scroll requires a non-zero --dx or --dy")
 				}
 				m := fields(args)
 				if args.Count == 2 {
@@ -174,15 +171,22 @@ const Help = `usage: cua <subcommand> [args] [--json]
   window.bounds <window_id> --x N --y N --width N --height N
   window.wait <window_id> [--text T | --role R --name N --state S]
   window.<click|fill|type|press|scroll|set|move> <window_id> <locator-flags> [选项]
-  window.drag <window_id> --snapshot S --from x,y --to x,y [--delivery ...]
+  window.drag <window_id> --snapshot S --from_at x,y --to_at x,y [--delivery ...]
   clipboard.read | clipboard.write <text>
   cursor.state | cursor.set --enabled[=false]
   observation.image.read <window_id> <image_id> [--offset N] [--limit N]
   observation.image.export <window_id> <image_id> <path>   完整截图写文件（推荐）
 
 locator flags：--ref R | --role R --name N | --label L | --snapshot S --at x,y。
+--at x,y 与 --at=x,y 均可；--x/--y 只用于 window.bounds，不是动作 locator。
+坐标以 window.observe --image 返回图片的左上角为原点，单位为该图片像素；
+按返回的 width/height 取点，不乘屏幕缩放比例，包装器自动换算到驱动截图。
+fill/set 只支持无障碍元素；move 只支持截图坐标（移动代理光标，不触发 hover）。
 选项：--text T --key K --value V --button left|right|middle --count 2
+      scroll: --dx N --dy N（至少一项非零；右/下为正，40 逻辑像素约一行）
       --delivery background|foreground --after none|observation|image
+动作执行后旧 snapshot/ref/image 失效，部分失败也会使其失效；新 observe 替换旧快照。
+用 --after observation|image 获取后续快照；图片 read/export 本身不会消费快照。
 输出：stdout 只放约定 JSON（--json 紧凑）；诊断写 stderr。
 activate 与 --delivery foreground 不需要审批（由 rules 决定）。`
 

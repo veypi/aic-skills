@@ -43,7 +43,7 @@ func TestCLIStrictArgsAndJSONContract(t *testing.T) {
 		t.Fatal("ref-based wait admitted")
 	}
 	// drag 缺坐标。
-	if _, _, code := runCLI(t, s, "window.drag", "w_1", "--snapshot", "s", "--from", "1,2", "--to", "1"); code == 0 {
+	if _, _, code := runCLI(t, s, "window.drag", "w_1", "--snapshot", "s", "--from_at", "1,2", "--to_at", "1"); code == 0 {
 		t.Fatal("bad drag admitted")
 	}
 	// help 自答。
