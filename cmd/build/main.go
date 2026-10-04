@@ -58,12 +58,20 @@ func build(command, goos, goarch string, args []string) error {
 	}
 	replace := map[string]string{}
 	assets := []string{"all:create_skill", "all:vhtml", "all:office_studio"}
+	// Windows 的 provider 产物名必须带 .exe：无扩展名时 CreateProcess 会自动补 .exe、
+	// exec.LookPath 也按 PATHEXT 查找，两边都找不到文件（2026-10-05 win 实机：skill
+	// 服务启动报 "exec: unknown action <无后缀路径>"）。manifest 保持平台中立（entry
+	// 写 cli/bin/<name>-service），由 skillrun 在 Windows 上回退到 <entry>.exe。
+	providerExt := ""
+	if goos == "windows" {
+		providerExt = ".exe"
+	}
 	for _, name := range []string{"browser", "cua"} {
-		binary := filepath.Join(dir, name+"-service")
+		binary := filepath.Join(dir, name+"-service"+providerExt)
 		if err := run("build", "-trimpath", "-o", binary, filepath.Join(root, name, "provider", "service")); err != nil {
 			return fmt.Errorf("build %s for %s/%s: %w", name, goos, goarch, err)
 		}
-		asset := name + "/cli/bin/" + name + "-service"
+		asset := name + "/cli/bin/" + name + "-service" + providerExt
 		assets = append(assets, "all:"+name+"/SKILL.md", "all:"+name+"/cli/manifest.json", "all:"+name+"/ui", asset)
 		replace[filepath.Join(root, filepath.FromSlash(asset))] = binary
 	}
