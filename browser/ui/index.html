@@ -186,6 +186,14 @@
     opacity: .65;
   }
 
+  .device-error {
+    margin: 2px 4px 6px;
+    color: var(--color-danger, #df6464);
+    font-size: 11px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+
   .no-devices {
     padding: 6px 4px;
     color: var(--text-color-secondary);
@@ -499,7 +507,7 @@
   <aside v-show="sidebarOpen" :aria-label="$t('browser.window_list')">
     <div class="aside-heading">
       <span>{{$t('browser.window_list')}}</span>
-      <button class="icon-button" @click="refresh" :disabled="refreshing" :title="$t('browser.refresh')"
+      <button class="icon-button" @click="retryDevices" :disabled="refreshing" :title="$t('browser.refresh')"
         :aria-label="$t('browser.refresh')"><i class="fa-solid fa-arrows-rotate" :class="{'fa-spin':refreshing}"
           aria-hidden="true"></i></button>
     </div>
@@ -517,6 +525,7 @@
           :aria-label="$t('browser.new_window') + ' · ' + host.name"><i class="fa-solid fa-plus"
             aria-hidden="true"></i></button>
       </div>
+      <p class="device-error" v-if="host.status === 'error' && host.error">{{host.error}}<br>{{$t('browser.retry_hint')}}</p>
       <div class="window-row" v-for="item in host.pages" :class="{active:selectedHostId === host.id && selected()?.tabId === item.tabId}">
         <button class="window" :aria-pressed="selectedHostId === host.id && selected()?.tabId === item.tabId"
           :title="item.url" @click="selectWindow(host.id, item.tabId)">
@@ -604,7 +613,7 @@
       Object.assign(previous, row, {pages})
       return previous
     })
-    syncSelection()
+    syncCurrentView()
   })
   // Preserve row identity using upstream tabId; no second page identity is added.
   const mergePages = (previous, pages) => pages.map(page => {
@@ -632,6 +641,7 @@
   resetAddress = () => { address = isBlankPage() ? '' : selected()?.url || '' }
   statusText = status => ({
     connecting: $t('browser.status_connecting'),
+    starting: $t('browser.status_starting'),
     disabled: $t('browser.status_disabled'),
     error: $t('browser.status_error'),
     offline: $t('browser.status_offline'),
@@ -680,6 +690,11 @@
       }
     }})
   }
+  const syncCurrentView = () => {
+    if (!selectedDevice()) selectedHostId = devices.find(host => host.status === 'ready')?.id || ''
+    syncSelection()
+    startView()
+  }
   const updateDialog = async () => {
     const id = selectedHostId, tab = selected()?.tabId
     if (!tab) return
@@ -693,19 +708,18 @@
       dialog = value
     } else dialog = null
   }
-  refresh = async () => {
+  refresh = async ({retryFailed = false} = {}) => {
     if (refreshing || disposed) return
     refreshing = true
     try {
-      await directory.refresh()
+      await directory.refresh({retryFailed})
       if (disposed) return
-      if (!selectedDevice()) selectedHostId = devices.find(host => host.status === 'ready')?.id || ''
-      syncSelection()
-      startView()
+      syncCurrentView()
       await updateDialog()
     } catch (error) { reportError(error.message) }
     finally { refreshing = false }
   }
+  retryDevices = () => refresh({retryFailed: true})
   const act = async fn => {
     if (busy || disposed) return
     busy = true
@@ -743,15 +757,28 @@
     await refresh()
   }
   createWindow = (hostId, url) => act(() => createTab(hostId, url)).catch(() => {})
-  closeWindow = (hostId, tab) => act(async () => {
+  const readTabs = async hostId => {
     const result = await call(hostId, 'agent_browser_tab_list')
-    const tabs = result.structuredContent.response.data.tabs
-    // The upstream browser requires one tab; closing the last page returns to a fresh blank page.
-    if (tabs.length === 1 && tabs[0].tabId === tab) {
-      await call(hostId, 'agent_browser_tab_new', {url: 'about:blank'})
+    const tabs = result.structuredContent?.response?.data?.tabs
+    directory.setPages(hostId, tabs)
+    return tabs
+  }
+  closeWindow = (hostId, tab) => act(async () => {
+    const tabs = await readTabs(hostId)
+    if (tabs.some(page => page.tabId === tab)) {
+      // The upstream browser requires one tab; keep a blank page when closing the last one.
+      if (tabs.length === 1) await call(hostId, 'agent_browser_tab_new', {url: 'about:blank'})
+      let missingError
+      try { await call(hostId, 'agent_browser_tab_close', {tab}) }
+      catch (error) {
+        // Another viewer or agent may have closed the tab after our list request.
+        if (!error.message?.startsWith(`Tab ${tab} not found;`)) throw error
+        missingError = error
+      }
+      const remaining = await readTabs(hostId)
+      if (missingError && remaining.some(page => page.tabId === tab)) throw missingError
     }
-    await call(hostId, 'agent_browser_tab_close', {tab})
-    await refresh()
+    if (selectedHostId === hostId) await updateDialog()
   }).catch(() => {})
   answerDialog = accept => act(async () => {
     await call(selectedHostId, accept ? 'agent_browser_dialog_accept' : 'agent_browser_dialog_dismiss',

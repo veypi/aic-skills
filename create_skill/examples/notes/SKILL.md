@@ -17,7 +17,7 @@ ui:
 
 ## 页面与指令
 
-打开：`open {url_prefix}/index`
+打开：`open /skills/{skill_id}`，skill_id 取自 `skill search/load`；HTTP 数据面仍使用返回的 `url_prefix`。
 
 | 指令 | 说明 |
 | --- | --- |
@@ -38,5 +38,5 @@ notes_open --path /u/{uid}/notes/会议记录.md     # 让用户在页面上看�
 
 ## 文件说明
 
-- `ui/index.html`：侧栏文件列表 + 编辑区；演示 `$fs.ls/get/put/open/save_as` 全套文件交互。
+- `ui/index.html`：侧栏文件列表 + 编辑区；演示 `$fs.list/readFile/writeFile/pickFiles/pickSavePath` 全套文件交互。
 - 无 tables/api：数据在文件里，不需要 sqlx。

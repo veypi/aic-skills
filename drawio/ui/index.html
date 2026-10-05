@@ -638,7 +638,7 @@
 
   // ---- 文档操作 ----
   readText = async (path) => {
-    const r = await $mod.$fs.get(path)
+    const r = await $mod.$fs.readFile(path)
     if (typeof r.content === 'string') return r.content
     if (r.content && typeof r.content.text === 'function') return await r.content.text()
     throw new Error($t('err.readFailed'))
@@ -665,7 +665,7 @@
     if (!editor) return
     try {
       const text = editor.getXml()
-      await $mod.$fs.put(path, text)
+      await $mod.$fs.writeFile(path, text)
       editor.markSaved(path)
       lastDirVal = parentOf(path)
       toastMsg($t('toast.saved', { name: path.split('/').pop() }))
@@ -705,7 +705,7 @@
     if (!editor) return
     let f = null
     try {
-      f = await $mod.$fs.open({
+      f = await $mod.$fs.pickFiles({
         accept: ['.drawio', '.xml'],
         start: st.path ? parentOf(st.path) : lastDirVal || defaultDir(),
       })
@@ -733,7 +733,7 @@
     if (!editor) return
     let f = null
     try {
-      f = await $mod.$fs.save_as({
+      f = await $mod.$fs.pickSavePath({
         name: suggestBase() + '.drawio',
         ext: '.drawio',
         start: st.path ? parentOf(st.path) : lastDirVal || defaultDir(),
@@ -980,7 +980,7 @@
         handler: async (argv) => {
           try {
             const dir = argsGet(argv, '--dir') || (st.path ? parentOf(st.path) : defaultDir())
-            const r = await $mod.$fs.ls(dir)
+            const r = await $mod.$fs.list(dir)
             const items = (r.items || []).filter((it) => it.dir || /\.(drawio|xml)$/i.test(it.name))
             return reply({ ok: true, dir, items })
           } catch (e) {
@@ -999,7 +999,7 @@
           try {
             const s = editor.state()
             if (s.dirty && s.path && s.path !== p) {
-              await $mod.$fs.put(s.path, editor.getXml())
+              await $mod.$fs.writeFile(s.path, editor.getXml())
               editor.markSaved(s.path)
             }
             await openPathQuiet(p)
@@ -1031,7 +1031,7 @@
           if (!p) return errReply($t('err.needPath'))
           try {
             const text = editor.getXml()
-            await $mod.$fs.put(p, text)
+            await $mod.$fs.writeFile(p, text)
             editor.markSaved(p)
             refresh()
             return reply({ ok: true, path: p, bytes: text.length })
@@ -1054,9 +1054,9 @@
             if (fmt === 'png') {
               const blob = await editor.exportPngBlob({ scale: 2 })
               if (!blob) throw new Error('PNG blob is null')
-              await $mod.$fs.put(p, blob)
+              await $mod.$fs.writeFile(p, blob)
             } else {
-              await $mod.$fs.put(p, editor.exportSvgString())
+              await $mod.$fs.writeFile(p, editor.exportSvgString())
             }
             return reply({ ok: true, format: fmt, path: p })
           } catch (e) {

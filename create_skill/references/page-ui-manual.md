@@ -12,7 +12,8 @@
 - 平台按内容分流两种渲染形态：
   - **含 `<script setup>` → vhtml 组件**（推荐）：响应式、scoped 样式、生命周期全语义、**可获得 pageDesc 指令通道**。
   - **普通 HTML → iframe 隔离渲染**：独立文档、平台运行时不可达、**无指令通道**（需要 AI 交互就用 vhtml 形态）。
-- 页面地址由平台直路由，技能只画页面、零路由代码：云端 `/skills/cloud/{id}/{页面名}`、设备 `/skills/{host_id}/{name}/{页面名}`（缺省 `index`）。
+- 页面地址由平台直路由，技能只画页面、零路由代码：默认 `/skills/{skill_id}` 直接加载 `index.html`，子页 `/skills/{skill_id}/{页面名}`；没有 UI 时回退到 `/skills_detail/{skill_id}`。`skill_id` 取自 `skill search/load` 返回值。
+- HTTP 包服务保持返回的 `url_prefix`（`/skills/cloud/{skill_id}`），用于 API、manifest 和静态资源。页内 `$router` 与链接使用相对页面名，平台 `router_prefix` 指向前端入口；`$mod.scoped` 仍指向 HTTP 包目录。
 - **必须是完整 HTML 文档**（`<!DOCTYPE html>` + `html/head/body`）。裸 `<template>` / `<style>` 开头的片段会"静默不挂载"，并伴随一个指向包目录 URL 的误导性 404——见到这个报错先怀疑文档结构。
 
 ## 2. vhtml 速览（最小可用心智）
@@ -99,7 +100,7 @@ pageDesc = {
 ## 4. AI 调用流程（探测与调用）
 
 ```
-open {url_prefix}/index        # 开窗
+open /skills/{skill_id}         # 开窗；skill_id 取自 skill search/load
 list                            # win_id | title | ... | events ← 指令名清单
 {win_id}.todo_status            # 调用
 {win_id}.todo_add --title "买牛奶" --priority 2
@@ -214,12 +215,12 @@ body { background: #fff; color: #333; font-family: 'Inter', sans-serif; }
 
 ```js
 // 打开文件（平台选择器）
-const pick = await $mod.$fs.open({ accept: ['.md', '.txt'], multiple: false, start: dir })
-if (pick) { text = (await $mod.$fs.get(pick.path)).content }
+const pick = await $mod.$fs.pickFiles({ accept: ['.md', '.txt'], multiple: false, start: dir })
+if (pick) { text = (await $mod.$fs.readFile(pick.path)).content }
 
 // 另存为（只返回目标路径，自行写入）
-const target = await $mod.$fs.save_as({ name: current || 'a.md', ext: 'md', start: dir })
-if (target) await $mod.$fs.put(target.path, text)
+const target = await $mod.$fs.pickSavePath({ name: current || 'a.md', ext: 'md', start: dir })
+if (target) await $mod.$fs.writeFile(target.path, text)
 
 // 导出为浏览器下载
 saveBlob = (name, blob) => {
@@ -231,8 +232,8 @@ saveBlob = (name, blob) => {
 }
 ```
 
-- 图片/媒体直链：`$mod.$fs.resolve(path)`（同源鉴权 URL）。
-- $fs 完整 API 见 `references/platform-runtime.md` §5。
+- 图片/媒体：`const lease = await $mod.$fs.resolve(path)`，使用 `lease.url`，不用时调用 `lease.close()`。
+- $fs 与共享资源用法见 `references/platform-runtime.md`「页面共享服务」。
 
 ## 8. 高频坑清单
 
@@ -246,7 +247,7 @@ saveBlob = (name, blob) => {
 8. 自携 `env.js` → 平台固定出口，不生效；逻辑别写 env.js 里。
 9. 页内导航写 `news.html` → 写干净路径 `news`（`$router.push('news')` / `<a href="news">`）。
 10. 同页 query 变化不重建组件 → 用 `$router.onChange(() => init())` 自刷新。
-11. 组件里写死 `/skills/cloud/{id}` 等绝对前缀 → fork/重发换 id 即 404；用相对路径或 `$router`/`$mod.scoped` 派生。
+11. 组件里写死技能 id 或混用前缀 → fork 后可能 404；页内导航用相对路径或 `$router`/`$mod.router_prefix`，资源使用 `$mod.scoped`/`url_prefix`。
 12. 大二进制素材塞包 → 包 ≤16MB 且不该塞；放用户空间，包内只存 `/fs` 路径。
 13. `:key` 之外的另一半：对象行整体替换（`items[i] = {...}`）会销毁重建行 DOM（焦点丢失）；原地改字段或用数组 mutator 保持身份。
 

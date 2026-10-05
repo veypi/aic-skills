@@ -26,7 +26,7 @@ ui:
 
 能力摘要只反映已存在的 UI 和 API；scripts、二进制、MCP 配置示例都是普通资料，不产生运行能力或命令名。没有 cli manifest、provider、服务状态或 artifacts 安装约定。
 
-私有行由 owner 编辑，公开内容通过发布和审核形成。读取 `skill search/load` 返回的 skill_id/url_prefix，不手工推测地址。云端技能页面 `/skills/cloud/{id}/...`，资源也从同一前缀加载；设备不提供技能内容路由。
+私有行由 owner 编辑，公开内容通过发布和审核形成。读取 `skill search/load` 返回的 `skill_id` 与 `url_prefix`：前端默认打开 `/skills/{skill_id}`，子页为 `/skills/{skill_id}/{page}`，没有 UI 时回退到 `/skills_detail/{skill_id}`。`url_prefix` 是 HTTP 包服务前缀（`/skills/cloud/{skill_id}`），只用于 API、manifest 和静态资源；勿把它拼成页面入口。设备不提供技能内容路由。
 
 创建工作区：`POST /api/skills {name}` → `/fs/cloud/skills/{id}/...` 写文件。独立 HTML 可写 `/fs/cloud/u/{uid}/name.html`；本页临时文件可用 OPFS 的 `/fs/page/name.html`。页面关闭后的能力需要云端 API 或设备 MCP，不能靠页面任务常驻。
 

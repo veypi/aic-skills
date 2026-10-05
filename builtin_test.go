@@ -44,11 +44,11 @@ func TestListAndOpen(t *testing.T) {
 
 func TestVersionFromFrontmatter(t *testing.T) {
 	for name, want := range map[string]string{
-		"browser":       "1.0.7",
-		"cua":           "1.0.3",
-		"create_skill":  "1.0.3",
+		"browser":       "1.0.10",
+		"cua":           "1.0.7",
+		"create_skill":  "1.0.4",
 		"vhtml":         "0.1.1",
-		"office_studio": "1.0.2",
+		"office_studio": "1.0.3",
 	} {
 		if !slices.Contains(List(), name) {
 			want = ""

@@ -10,7 +10,8 @@
 | --- | --- | --- |
 | 存储 | `/skills/{id}/`（owner 可读写） | `/skills/{id}/`（内容不可变） |
 | 寻址 | 注册表 id（AI 面可按 name 便利解析） | 注册表 id |
-| 页面 URL | `/skills/cloud/{id}/...` | `/skills/cloud/{id}/...`（同族，按行归属鉴权） |
+| 页面 URL | `/skills/{id}[/{page}]` | `/skills/{id}[/{page}]`（同族，按行归属鉴权） |
+| HTTP 包前缀 | 返回的 `url_prefix`（`/skills/cloud/{id}`） | 返回的 `url_prefix`（`/skills/cloud/{id}`） |
 | 元数据 | SKILL.md frontmatter 实时生效 | 发布时落库冻结 |
 | 数据 | sqlite 运行库随改随生效 | 发布不带数据；公开库从空开始 |
 | 更新 | 直接改文件 | 发新版本 |
@@ -28,7 +29,7 @@
 
 ## 3. 发布前自查（≈ 审核关注点）
 
-- **ui/**：有没有越权调用平台 API（任意 `/api/...`）、偷传数据、来路不明的脚本；地址一律 `{url_prefix}/...` 或相对路径派生，不写死前缀。
+- **ui/**：有没有越权调用平台 API（任意 `/api/...`）、偷传数据、来路不明的脚本；资源与 API 使用 `{url_prefix}/...` 或相对路径；页内导航用 `$router` 或相对页面名，不把 HTTP 包前缀用作页面地址。
 - **api/**：SQL 是否拼接字符串（禁止）；`user_id = :user_id` 行级过滤是否齐全；全表拉取是否加 LIMIT。
 - **文本**：内容合规。
 - **通用**：frontmatter 严格 yaml 且 name 与注册表行一致；包体积；无调试垃圾（`.bak`、临时文件、大素材）。
@@ -38,13 +39,13 @@
 1. name 与注册表行不一致 / 名字不合规（`^[a-z0-9][a-z0-9-_]{0,31}$`）。
 2. frontmatter 拼错字段导致解析失败（如 `desc` ≠ `description`）。
 3. sqlx 多语句、DDL、拼接 SQL、缺 `:user_id` 过滤。
-4. UI 写死包前缀（fork/改名后 404）——用相对路径或 `$mod.scoped`/`url_prefix` 派生。
+4. UI 写死技能 id（fork 后 404）——页内导航用相对路径或 `$mod.router_prefix`；资源与 API 用 `$mod.scoped`/`url_prefix`，两类前缀不可混用。
 5. 包内塞大文件（>16MB）或无关二进制。
 6. 内容违规 / 明显调试残留。
 
 ## 5. 发布后
 
-- **验证**：换一个账号 → `skill search` 找到条目 → `skill load` 其 id → 打开 `{url_prefix}/index` → `curl` 数据面读回。
+- **验证**：换一个账号 → `skill search` 找到条目 → `skill load` 其 id → 打开 `/skills/{skill_id}`（id 取自返回条目） → `curl` 数据面读回。
 - **内容不可变**：无编辑面 + fs 门只读双保险；任何修改 = 发新版本；`description/nickname/keywords/icon` 随新版本从 frontmatter 刷新（非空覆盖、省略保持现值）。
 - **数据不迁移**：公开库从空开始；要带数据就用 owner 管理面（`tables_sqlx`）导出/重建。
 - **删除条目（下架）**：管理页危险区——删行 + 包目录 + 全部历史 zip + 运行库，agent_binds 级联硬删，释放名称与名额；已安装设备不受影响。

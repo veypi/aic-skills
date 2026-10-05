@@ -31,3 +31,27 @@ await connection.close();
 设备服务使用 `mcp.<alias>` 命令权限，拒绝时按现有 grant 流程申请。官方 browser/CUA 以设备权限运行，该授权允许访问相应设备资源；原生 fs 规则不会隔离浏览器/桌面操作。browser 显式文件参数由上游 filesystem-root 检查。第三方服务默认使用设备沙箱。UI 与 AI 都用原生 exec 取消；Pod SDK 将上下文取消传给 MCP 服务，保留共享连接，写入不自动重放。
 
 browser/CUA 工具名、schema 和结果原样来自上游，不实现工具别名或 ID 映射。Browser UI 提供上游页面列表、导航、快照和截图，CUA UI 显示官方权限诊断；没有实时接管或媒体协议。
+
+## 页面共享服务
+
+平台壳向技能页面注入 `$auth/$ai/$hosts/$skills/$account/$catalog/$fs/$pageExec`；经 `$mod` 读取同名服务也可。技能自己的 `$fetch` 用于包内 API，公共元数据通过资源服务读取。
+
+```js
+// 同步返回同一个响应式对象，首次读取才异步拉取，DOM 自动补齐。
+owner = $auth.users.get(ownerId)
+agent = $ai.agents.get(agentId)
+// 必须等待结果的操作使用 load；peek 只检查现有缓存。
+await $ai.agents.load(agentId, { force: true })
+
+skills = $skills.query({ scope: 'mine' })
+// query 自动首载，模板绑定 skills.items / skills.loading。
+$scope.addCleanup(() => skills.dispose())
+```
+
+普通资源统一 `get(id)/peek(id)/state(id)/load(id, options)/query(params)`，支持写入的资源提供 `create(input)/update(id, patch)/remove(id)`；嵌套资源使用 `{agentId, sessionId}` 等引用对象。`get` 不返回 Promise，不需要全量预载用户。查询条件相同会共享请求，但页面须分别释放自己的 handle。表单草稿保持局部，不直接修改共享实体。
+
+`$account.get()/load(options)` 读取当前账户概况；`$catalog.tools/modelSchemas/quotaProviders` 是低频只读目录。聊天通过 `$ai.open({agentId})` 创建独立客户端。设备操作通过 `openFiles/openTools` 获取句柄并在不用时关闭。
+
+`$fs` 使用完整树路径：`readFile(path)`、`writeFile(path, content, options)`、`list(path, options)`、`stat(path)`、`mkdir(path, options)`、`remove(path, options)`、`move(source, target, options)`；读取文件不兼作列目录。`pickFiles(options)` 返回选择结果，`pickSavePath(options)` 只选择保存路径，调用方随后执行 writeFile。媒体 `resolve(path)` 返回需在不用时 close 的 lease。详情见平台 `docs/agentos.md`。
+
+JS 控制参数使用 camelCase，后端 DTO 及工具协议字段保留 snake_case。旧 `$auth.User`、`$fs.get/put/ls/rm/mv/open/save_as`、`$page_exec` 不再提供兼容别名，新页面使用上述入口。

@@ -35,7 +35,7 @@ curl {url_prefix}/api/todo_add -X POST -H 'Content-Type: application/json' -d '{
 
 ## 页面与指令
 
-打开：`open {url_prefix}/index`
+打开：`open /skills/{skill_id}`，skill_id 取自 `skill search/load`；HTTP 数据面仍使用返回的 `url_prefix`。
 
 | 指令 | 说明 |
 | --- | --- |
@@ -48,6 +48,6 @@ curl {url_prefix}/api/todo_add -X POST -H 'Content-Type: application/json' -d '{
 ## 自测闭环（AI）
 
 ```
-open {url_prefix}/index → list → {win_id}.todo_status → {win_id}.todo_add --title "测试"
+open /skills/{skill_id} → list → {win_id}.todo_status → {win_id}.todo_add --title "测试"
 → {win_id}.todo_status（total 应 +1）→ curl {url_prefix}/api/todos（读回持久化结果）
 ```

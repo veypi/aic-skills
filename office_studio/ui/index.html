@@ -153,7 +153,7 @@
   onOpen = async () => {
     try {
       home_err = ''
-      const f = await $mod.$fs.open({ accept: ['.xlsx', '.xls', '.docx', '.doc'] })
+      const f = await $mod.$fs.pickFiles({ accept: ['.xlsx', '.xls', '.docx', '.doc'] })
       if (!f) return
       go(f.path)
     } catch (e) { home_err = '打开失败：' + errMsg(e) }
@@ -164,7 +164,7 @@
     try {
       home_err = ''
       const isWord = kind === 'word'
-      const f = await $mod.$fs.save_as({
+      const f = await $mod.$fs.pickSavePath({
         name: isWord ? '未命名.docx' : '未命名.xlsx',
         ext: isWord ? '.docx' : '.xlsx',
         accept: [isWord ? '.docx' : '.xlsx'],

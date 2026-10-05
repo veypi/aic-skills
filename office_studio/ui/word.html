@@ -474,7 +474,7 @@
         status_text = '新建（未保存）：' + nameOf(p)
         return { ok: true, path: p, created: true }
       }
-      const r = await $mod.$fs.get(toTree(p))
+      const r = await $mod.$fs.readFile(toTree(p))
       if (r && r.ok === false) throw new Error(r.message || '读取失败')
       const content = r && r.content
       const blob = (content instanceof Blob) ? content : new Blob([content], { type: (r && r.mime) || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' })
@@ -510,7 +510,7 @@
     if (!is_new && !opts.force) {
       let conflict = false
       try {
-        const r2 = await $mod.$fs.get(toTree(file_path))
+        const r2 = await $mod.$fs.readFile(toTree(file_path))
         if (r2 && r2.ok !== false) {
           const c2 = r2 && r2.content
           const b2 = (c2 instanceof Blob) ? c2 : new Blob([c2])
@@ -524,7 +524,7 @@
     }
     const bytes = await reviewRef.exportBytes()
     const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' })
-    await $mod.$fs.put(toTree(file_path), blob)
+    await $mod.$fs.writeFile(toTree(file_path), blob)
     _disk_hash = await sha256Hex(bytes)
     _saved_seq = reviewRef.doc._seq
     _save_seq += 1
@@ -552,7 +552,7 @@
 
   onOpen = async () => {
     try {
-      const f = await $mod.$fs.open({ accept: ['.docx', '.doc'] })
+      const f = await $mod.$fs.pickFiles({ accept: ['.docx', '.doc'] })
       if (!f) return
       await openPath(f.path)
     } catch (e) { status_text = '打开失败：' + String((e && e.message) || e) }
@@ -566,10 +566,10 @@
   onInsertImage = async () => {
     try {
       if (!reviewRef || !reviewRef.doc.loaded) throw new Error('未打开文件')
-      const f = await $mod.$fs.open({ accept: ['.png', '.jpg', '.jpeg', '.gif', '.bmp'] })
+      const f = await $mod.$fs.pickFiles({ accept: ['.png', '.jpg', '.jpeg', '.gif', '.bmp'] })
       if (!f) return
       status_text = '读取图片…'
-      const r = await $mod.$fs.get(toTree(f.path))
+      const r = await $mod.$fs.readFile(toTree(f.path))
       const content = r && r.content
       const blob = (content instanceof Blob) ? content : new Blob([content])
       const bytes = new Uint8Array(await blob.arrayBuffer())
@@ -750,7 +750,7 @@
         handler: async (argv) => { try { if (!reviewRef || !reviewRef.doc.loaded) throw new Error('未打开文件'); const anchor = argOf(argv, 'anchor', '@end'); const rows = Number(argOf(argv, 'rows', '2')) || 2; const cols = Number(argOf(argv, 'cols', '3')) || 3; const dataArg = argOf(argv, 'data'); const data = dataArg != null ? parseTableData(dataArg) : undefined; const pos = (argOf(argv, 'pos', 'after') || 'after').toUpperCase(); const r = await reviewRef.doc.run('ai', 'insert_table', { anchorNodeId: anchor, relativePosition: pos, rows, cols, data }); await refreshAll(); if (!r.ok) throw new Error(r.error); return reply({ ok: true, ...r.result }) } catch (e) { return errReply(e) } } },
       { name: 'insert_image', desc: '在段落前/后插入图片（png/jpg/gif/bmp；默认 AI 红字修订）',
         help: 'insert_image --src <fs路径> [--anchor <段落id>|@end] [--pos after|before] [--from <段落id> 格式源，默认取锚点] [--width px] [--height px] [--alt "说明"] [--plain] [--author AI]',
-        handler: async (argv) => { try { if (!reviewRef || !reviewRef.doc.loaded) throw new Error('未打开文件'); const src = argOf(argv, 'src') || firstPos(argv); if (!src) throw new Error('需要 --src <fs 路径>'); const r0 = await $mod.$fs.get(toTree(src)); if (r0 && r0.ok === false) throw new Error(r0.message || '读取图片失败'); const content = r0 && r0.content; const blob = (content instanceof Blob) ? content : new Blob([content]); const bytes = new Uint8Array(await blob.arrayBuffer()); const anchor = argOf(argv, 'anchor', '@end'); const pos = (argOf(argv, 'pos', 'after') || 'after').toUpperCase(); const w = argOf(argv, 'width'); const h = argOf(argv, 'height'); const plain = argv && argv.includes('--plain'); const r = await reviewRef.doc.run('ai', 'insert_image', { bytes, ext: '', paragraphId: anchor, position: pos, styleSourceId: argOf(argv, 'from') || undefined, widthPx: w != null ? Number(w) : undefined, heightPx: h != null ? Number(h) : undefined, altText: argOf(argv, 'alt'), author: plain ? undefined : argOf(argv, 'author', 'AI') }); await refreshAll(); if (!r.ok) throw new Error(r.error); return reply({ ok: true, ...r.result, src }) } catch (e) { return errReply(e) } } },
+        handler: async (argv) => { try { if (!reviewRef || !reviewRef.doc.loaded) throw new Error('未打开文件'); const src = argOf(argv, 'src') || firstPos(argv); if (!src) throw new Error('需要 --src <fs 路径>'); const r0 = await $mod.$fs.readFile(toTree(src)); if (r0 && r0.ok === false) throw new Error(r0.message || '读取图片失败'); const content = r0 && r0.content; const blob = (content instanceof Blob) ? content : new Blob([content]); const bytes = new Uint8Array(await blob.arrayBuffer()); const anchor = argOf(argv, 'anchor', '@end'); const pos = (argOf(argv, 'pos', 'after') || 'after').toUpperCase(); const w = argOf(argv, 'width'); const h = argOf(argv, 'height'); const plain = argv && argv.includes('--plain'); const r = await reviewRef.doc.run('ai', 'insert_image', { bytes, ext: '', paragraphId: anchor, position: pos, styleSourceId: argOf(argv, 'from') || undefined, widthPx: w != null ? Number(w) : undefined, heightPx: h != null ? Number(h) : undefined, altText: argOf(argv, 'alt'), author: plain ? undefined : argOf(argv, 'author', 'AI') }); await refreshAll(); if (!r.ok) throw new Error(r.error); return reply({ ok: true, ...r.result, src }) } catch (e) { return errReply(e) } } },
       { name: 'delete_paragraph', desc: '删除段落（默认 AI 红字修订：接受=删段，拒绝=恢复）',
         help: 'delete_paragraph --para <id> [--plain 直接删除] [--author AI]',
         handler: async (argv) => { try { if (!reviewRef || !reviewRef.doc.loaded) throw new Error('未打开文件'); const para = argOf(argv, 'para'); if (!para) throw new Error('需要 --para'); const plain = !!(argv && argv.includes('--plain')); const r = await reviewRef.doc.run('ai', 'delete_paragraph', { paragraphId: para, author: plain ? undefined : argOf(argv, 'author', 'AI'), plain }); await refreshAll(); if (!r.ok) throw new Error(r.error); return reply({ ok: true, ...r.result }) } catch (e) { return errReply(e) } } },

@@ -7,17 +7,20 @@ export class BrowserDirectory {
     this.hosts = hosts;
     this.changed = changed;
     this.connections = new Map();
+    this.revisions = new Map();
     this.closed = false;
   }
-  async refresh() {
+  async refresh({ retryFailed = false } = {}) {
     if (this.pending) return this.pending;
-    this.pending = this.load().finally(() => {
+    this.pending = this.load({ retryFailed }).finally(() => {
       this.pending = null;
     });
     return this.pending;
   }
-  async load() {
-    const hosts = await this.hosts.directory.list();
+  async load({ retryFailed = false } = {}) {
+    const query = this.hosts.query({});
+    let hosts;
+    try { hosts = [...await query.load()]; } finally { query.dispose(); }
     if (this.closed) return;
     const wanted = new Set(
       hosts.filter((h) => h.status === 'enabled').map((h) => h.id),
@@ -33,10 +36,12 @@ export class BrowserDirectory {
           id: host.id,
           name: host.name || host.id,
           status: 'connecting',
+          error: '',
           pages: [],
         },
     );
     this.rows = rows;
+    this.changed(rows.filter(Boolean));
     let next = 0;
     // A slow/unreachable device must not hold up discovery of the other devices.
     const worker = async () => {
@@ -47,6 +52,7 @@ export class BrowserDirectory {
           id: host.id,
           name: host.name || host.hostname || host.id,
           status: 'connecting',
+          error: '',
           pages: [],
         };
 
@@ -61,10 +67,16 @@ export class BrowserDirectory {
           host.caps?.transports?.rtc?.protocol !== 'hosts_rtc/3'
         )
           row.status = 'unavailable';
-        else {
+        else if (rows[index].status === 'error' && !retryFailed) {
+          row.status = 'error';
+          row.error = rows[index].error;
+        } else {
+          const revision = this.revisions.get(host.id) || 0;
           try {
             let connection = this.connections.get(host.id);
             if (!connection) {
+              rows[index] = row;
+              this.changed(rows.filter(Boolean));
               connection = await this.hosts.openTools(host.id);
               if (this.closed) {
                 await connection.close();
@@ -72,18 +84,26 @@ export class BrowserDirectory {
               }
               this.connections.set(host.id, connection);
             }
+            if (rows[index].status !== 'ready') {
+              row.status = 'starting';
+              rows[index] = row;
+              this.changed(rows.filter(Boolean));
+            }
             const result = await browserCall(connection, 'agent_browser_tab_list');
+            if (this.closed || revision !== (this.revisions.get(host.id) || 0)) continue;
             row.status = 'ready';
             const pages = result.structuredContent?.response?.data?.tabs;
             if (!Array.isArray(pages)) throw new Error('Invalid agent-browser tab list');
             row.pages = pages;
           } catch (error) {
+            if (this.closed || revision !== (this.revisions.get(host.id) || 0)) continue;
             row.status = 'error';
             row.error = error.message;
             const connection = this.connections.get(host.id);
             this.connections.delete(host.id);
             await connection?.close().catch(() => {});
           }
+          if (this.closed || revision !== (this.revisions.get(host.id) || 0)) continue;
         }
         rows[index] = row;
         if (!this.closed) this.changed(rows.filter(Boolean));
@@ -95,11 +115,21 @@ export class BrowserDirectory {
     if (!this.closed) this.changed(rows.filter(Boolean));
     return rows;
   }
+  setPages(hostId, pages) {
+    if (!Array.isArray(pages)) throw new Error('Invalid agent-browser tab list');
+    if (this.closed) return;
+    const row = this.rows?.find((item) => item.id === hostId);
+    if (!row) return;
+    this.revisions.set(hostId, (this.revisions.get(hostId) || 0) + 1);
+    Object.assign(row, { pages, status: 'ready', error: '' });
+    this.changed(this.rows.filter(Boolean));
+  }
   connection(hostId) {
     return this.connections.get(hostId);
   }
   async close() {
     this.closed = true;
+    this.revisions.clear();
     const connections = [...this.connections.values()];
     this.connections.clear();
     await Promise.all(connections.map((s) => s.close().catch(() => {})));

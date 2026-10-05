@@ -1,0 +1,6 @@
+{
+  "name": "cua-skill-ui",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test" }
+}

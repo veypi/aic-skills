@@ -15,7 +15,7 @@ ui:
 
 ## 打开与操控
 
-1. 打开页面：`open {url_prefix}/index`（`url_prefix` = skill 列表返回的包前缀，形如 `/skills/local/video_studio`，勿硬编码）
+1. 打开页面：`open /skills/{skill_id}`（`skill_id` 取自 skill 列表；HTTP API 与资源仍用返回的 `url_prefix`）
 2. 探测指令：`exec 1host=page {win_id}.list`（返回全部 `*_video` / `gen_voice` / `run_js` 指令清单）
 3. 项目文件读写：用 **fs 工具（1host=page）** 直接读写 `/video/...` 路径（与页面同一浏览器本地存储）
 4. 页面操作（新建/打开/播放/重载/截图/配音）走 `exec 1host=page {win_id}.<cmd>`，argv 形如 `["--name","my-video"]`
@@ -246,7 +246,7 @@ material `kind: standard|basic`，支持 `color/metalness/roughness/wireframe/op
 
 ## 常见问题
 
-- 用户没打开页面时指令会超时/无响应：先 `open {url_prefix}/index` 打开页面，再重试
+- 用户没打开页面时指令会超时/无响应：先 `open /skills/{skill_id}` 打开页面，再重试
 - 导出需要最新版 Chrome/Edge（WebCodecs）：不支持时向用户说明
 - 导出分辨率建议 ≤1280×720（更高会明显变慢）；单视频建议 ≤60 秒
 - 视频剪辑：拖入素材后，时间轴出现绿色剪辑块——**左缘拖切入、右缘拖切出（同步源出点）、块体拖动改开始时间**；所有元素都有时间窗（开始/时长，inspector 或时间轴拖拽）；入点/出点（trimStart/trimEnd）是媒体专属的源裁剪。预览播放时视频真实播放（变速/倒放时按帧定位显示）。时间轴是多轨道视图：场景组（可折叠/眼睛隐藏）+ 元素轨 + overlay 轨 + 音乐/配音轨，左栏眼睛开关元素可见性（hidden，预览/导出都不渲染）

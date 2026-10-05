@@ -607,16 +607,16 @@
   // 样例资源（图片等）的绝对 URL 基座：组件内 fetch 会被运行时自动加 $mod.scoped 前缀，
   // 但引擎运行时动态创建的 <img> 不走该前缀，必须给绝对路径（{scoped}/cases/...）
   const caseBaseUrl = (id) => String($mod.scoped || '').replace(/\/+$/, '') + '/cases/' + id + '/'
-  // 写文件：统一走 $mod.$fs.put（树路径 = '/page' + 本地绝对路径；string/Blob 通吃，
+  // 写文件：统一走 $mod.$fs.writeFile（树路径 = '/page' + 本地绝对路径；string/Blob 通吃，
   // 父目录自动创建。原 $mod.$page_fs 已并入 $fs，v0.14.5 起不再单独存在）
   const fsPut = async (path, blob) => {
     if (!$mod.$fs) throw new Error($t('err.noFsPut'))
-    return await $mod.$fs.put('/page' + path, blob)
+    return await $mod.$fs.writeFile('/page' + path, blob)
   }
-  // 删除文件/目录：统一走 $mod.$fs.rm（树路径 '/page' 前缀；rm 递归语义对齐旧 $page_fs.rm）
+  // 删除文件/目录：统一走 $mod.$fs.remove（树路径 '/page' 前缀；rm 递归语义对齐旧 $page_fs.rm）
   const fsRm = async (path) => {
     if (!$mod.$fs) throw new Error($t('err.noFsRm'))
-    return await $mod.$fs.rm('/page' + path)
+    return await $mod.$fs.remove('/page' + path)
   }
 
   // ---- 显示辅助 ----
@@ -669,7 +669,7 @@
   const fsUrl = async (rel) => {
     if (imgUrls.has(rel)) return imgUrls.get(rel)
     try {
-      const r = await $mod.$fs.get('/page' + sessRoot() + rel)
+      const r = await $mod.$fs.readFile('/page' + sessRoot() + rel)
       const blob = r.content instanceof Blob ? r.content : new Blob([r.content], {type: r.mime || 'image/png'})
       const url = URL.createObjectURL(blob)
       imgUrls.set(rel, url)
@@ -808,7 +808,7 @@
   // ---- 会话文件读写（$mod.$fs 树路径 '/page' 前缀；OPFS 本地存储） ----
   const readDir = async (dir) => {
     try {
-      return await $mod.$fs.get('/page' + dir)    // 目录 → {ok, dir:true, items}；不存在 → throw → null
+      return await $mod.$fs.list('/page' + dir)    // 目录 → {ok, dir:true, items}；不存在 → throw → null
     } catch (_) { return null }
   }
   // 递归列出会话中的 .json 文件（跳过无权限目录，按修改时间倒序）
@@ -834,9 +834,9 @@
     out.sort((a, b) => b.mod_time - a.mod_time)
     return out
   }
-  // $fs.get 读取会话文件文本（不存在直接 throw；content string|Blob）
+  // $fs.readFile 读取会话文件文本（不存在直接 throw；content string|Blob）
   const readSessionText = async (rel) => {
-    const r = await $mod.$fs.get('/page' + sessRoot() + rel)
+    const r = await $mod.$fs.readFile('/page' + sessRoot() + rel)
     return typeof r.content === 'string' ? r.content : await r.content.text()
   }
   // 保存：还原相对引用后写 JSON。拆分结构（slides 含字符串引用）按引用逐页写回，

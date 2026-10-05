@@ -33,8 +33,7 @@ maxgraph——drawio 上游 mxGraph 的官方现代版）。文件经**统一 $f
 
 ## 操作方式（AI 标准流程）
 
-1. 打开页面：`open {url_prefix}/index`（`url_prefix` = skill 列表返回的包前缀，形如
-   `/skills/local/drawio`；随部署可变，**勿硬编码**）
+1. 打开页面：`open /skills/{skill_id}`（`skill_id` 取自 skill 列表；`url_prefix` 是 HTTP 包地址，用于资源与 API）
 2. 探测指令：`exec 1host=page {win_id}.list`（返回全部 `drawio_*` 指令清单）
 3. 出图：fs 工具直接写 `.drawio` 文件（默认目录 `/u/{uid}/drawio/`；**先读
    `references/xml-authoring.md`**，本文末尾有快速骨架）
@@ -70,8 +69,8 @@ argv 形如 `["--path", "/u/admin/drawio/x.drawio"]`（`--key val` 成对）。
 
 形状面板点击/拖拽放置 → 拖动连接点拉线 → 双击形状改文本 → 右侧属性面板调样式；
 右键拖动平移、滚轮缩放；Ctrl/Cmd+S 保存、Z 撤销、Shift+Z 重做、A 全选、C/X/V
-复制剪切粘贴、Delete 删除。顶部按钮：**打开 / 另存为走平台文件选择器**（`$fs.open` /
-`$fs.save_as`，与 /fs 管理器同一棵三端树），**导出 PNG/SVG 为浏览器下载**（不写入 $fs）。
+复制剪切粘贴、Delete 删除。顶部按钮：**打开 / 另存为走平台文件选择器**（`$fs.pickFiles` /
+`$fs.pickSavePath`，与 /fs 管理器同一棵三端树），**导出 PNG/SVG 为浏览器下载**（不写入 $fs）。
 
 **响应式**：窗口宽度变化自适应（`@container` 查询）。工具栏按钮按需自动换行；窗口较窄
 （≤860px）时形状/属性面板收为左右抽屉，由工具栏右侧的两个图标按钮开合（画布占满全宽）；

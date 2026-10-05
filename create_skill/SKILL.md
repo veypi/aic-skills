@@ -1,6 +1,6 @@
 ---
 name: create_skill
-version: 1.0.3
+version: 1.0.4
 nickname: 创建 Skill 指南
 description: 创建静态说明、云端 UI/API 技能；按实际需要附带脚本、原生 CLI 或独立 MCP 软件的安装说明。
 keywords: [skill, 创建, 技能, ui, api, mcp, 脚本, 模板, 发布]
@@ -16,7 +16,7 @@ icon: fa-solid fa-wand-magic-sparkles
 ## 实施流程
 
 1. 确定最小交付：纯文本、UI、API，或这些内容的组合。只需要独立 HTML 时不必建技能。
-2. 创建私有行：`POST /api/skills {"name":"example"}`，按返回 id 写入 `/fs/cloud/skills/{id}/SKILL.md` 及必要文件。使用服务返回的 `url_prefix` 打开 UI 和资源。
+2. 创建私有行：`POST /api/skills {"name":"example"}`，按返回 id 写入 `/fs/cloud/skills/{id}/SKILL.md` 及必要文件。使用返回的 `skill_id` 打开 `/skills/{skill_id}`；HTTP API 和资源使用返回的 `url_prefix`。
 3. 阅读 [包格式](references/current-format.md)，按需加载 [页面手册](references/page-ui-manual.md)、[数据手册](references/data-manual.md)、[运行边界](references/platform-runtime.md)。
 4. 从 `templates/ui`、`templates/api`、`templates/tables` 复制需要的模板。普通脚本示例在 `templates/scripts`；执行前说明解释器和依赖。
 5. UI 通过 HTTP API 调云端业务；设备 UI 用 `$hosts.openTools(hostId)` 的 `execCall(script, {stdin})` 调 Pod command。参数经 stdin 传 JSON，读取命令 stdout；不在 UI 接入 MCP 协议。

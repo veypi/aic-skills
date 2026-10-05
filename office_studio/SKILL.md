@@ -1,6 +1,6 @@
 ---
 name: office_studio
-version: 1.0.2
+version: 1.0.3
 nickname: Office Studio
 description: Office 文档工作台：打开、编辑、保存真实 office 文件（docx/xlsx/pptx），AI 与用户共用同一编辑器协作。当前已接入 Excel（xlsx 编辑）与 Word（docx 审阅/表格编辑/插图，红字修订），含统一首页（打开/新建 + 共享历史）
 keywords: [office, excel, xlsx, word, docx, 表格, 文档, 电子表格, 编辑器, 工作簿, 审阅, 修订, 新建, 首页, 历史, 契约]

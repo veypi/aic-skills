@@ -205,7 +205,7 @@
         status_text = '新建（未保存）：' + nameOf(p)
         return { ok: true, path: p, created: true }
       }
-      const r = await $mod.$fs.get(toTree(p))
+      const r = await $mod.$fs.readFile(toTree(p))
       if (r && r.ok === false) throw new Error(r.message || '读取失败')
       const content = r && r.content
       const isBlob = content instanceof Blob
@@ -238,7 +238,7 @@
     if (!file_path) throw new Error('未打开文件（可先 open <fs 路径>）')
     if (!apiRef) throw new Error('编辑器未就绪')
     const blob = await modRef.exportWorkbookToBlob(apiRef, nameOf(file_path))
-    await $mod.$fs.put(toTree(file_path), blob)
+    await $mod.$fs.writeFile(toTree(file_path), blob)
     const created = is_new
     is_new = false
     pushRecent(file_path, nameOf(file_path))
@@ -257,7 +257,7 @@
 
   onOpen = async () => {
     try {
-      const f = await $mod.$fs.open({ accept: ['.xlsx', '.xls'] })
+      const f = await $mod.$fs.pickFiles({ accept: ['.xlsx', '.xls'] })
       last_pick = f ? JSON.stringify({ path: f.path, name: f.name, size: f.size, mime: f.mime, kind: f.kind }) : '(取消)'
       if (!f) return
       await openPath(f.path)

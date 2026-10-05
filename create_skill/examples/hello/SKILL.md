@@ -18,7 +18,7 @@ ui:
 ## 使用（AI 操作序，均为 exec 1host=page 通道）
 
 ```
-open {url_prefix}/index      # 打开页面
+open /skills/{skill_id}      # 打开页面；skill_id 取自 skill search/load
 list                          # 拿 win_id；events 列应含 hello_status / hello_inc / hello_reset
 {win_id}.hello_status         # → {"ok":true,"count":0}
 {win_id}.hello_inc --by 3     # 计数 +3 → {"ok":true,"count":3}

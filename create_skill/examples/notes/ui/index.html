@@ -72,19 +72,19 @@
 
     // ===== 文件操作（$mod.$fs） =====
     ensureDir = async () => {
-      try { await $mod.$fs.ls(dir) } catch (e) { await $mod.$fs.mkdir(dir) }
+      try { await $mod.$fs.list(dir) } catch (e) { await $mod.$fs.mkdir(dir) }
     }
 
     refresh = async () => {
       try {
-        const r = await $mod.$fs.ls(dir)
+        const r = await $mod.$fs.list(dir)
         files = (r.items || []).filter((it) => !it.dir).map((it) => ({ name: it.name, path: it.path }))
       } catch (e) { files = [] }
     }
 
     openFile = async (p) => {
       const path = norm(p)
-      const f = await $mod.$fs.get(path)
+      const f = await $mod.$fs.readFile(path)
       if (f.dir) throw new Error('is a directory: ' + path)
       current = path
       text = typeof f.content === 'string' ? f.content : ''
@@ -94,21 +94,21 @@
     save = async (p) => {
       const path = p ? norm(p) : current
       if (!path) throw new Error('no target path: open a file or use save as')
-      await $mod.$fs.put(path, text)
+      await $mod.$fs.writeFile(path, text)
       current = path
       await refresh()
       return current
     }
 
     saveAs = async () => {
-      const t = await $mod.$fs.save_as({ name: current ? basename(current) : '未命名.md', ext: 'md', start: dir })
+      const t = await $mod.$fs.pickSavePath({ name: current ? basename(current) : '未命名.md', ext: 'md', start: dir })
       if (!t) return null
       await save(t.path)
       return t.path
     }
 
     openPicker = async () => {
-      const pick = await $mod.$fs.open({ accept: ['.md', '.txt'], start: dir })
+      const pick = await $mod.$fs.pickFiles({ accept: ['.md', '.txt'], start: dir })
       if (!pick) return null
       await openFile(pick.path)
       return pick.path
@@ -118,7 +118,7 @@
       const raw = name || ('新笔记-' + new Date().toTimeString().slice(0, 8).replace(/:/g, ''))
       const nm = String(raw).replace(/[\\/]/g, '')
       const path = dir.replace(/\/+$/, '') + '/' + (nm.endsWith('.md') ? nm : nm + '.md')
-      await $mod.$fs.put(path, '')
+      await $mod.$fs.writeFile(path, '')
       await refresh()
       await openFile(path)
       return path

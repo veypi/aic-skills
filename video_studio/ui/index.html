@@ -589,16 +589,16 @@
 
   // ---- 本地存储（$mod.$fs 树路径 '/page' 前缀 → 浏览器 OPFS 本地 /video/，纯本地）----
   storageReady = () => !!$mod.$fs
-  const fsGet = (path) => $mod.$fs.get('/page' + path)         // {ok, content(string|Blob), mime, size}
+  const fsGet = (path) => $mod.$fs.readFile('/page' + path)         // {ok, content(string|Blob), mime, size}
   const fsText = async (path) => {
     const r = await fsGet(path)
     return typeof r.content === 'string' ? r.content : await r.content.text()
   }
-  const fsPut = (path, content) => $mod.$fs.put('/page' + path, content)   // string | Blob
+  const fsPut = (path, content) => $mod.$fs.writeFile('/page' + path, content)   // string | Blob
   const fsLs = async (path) => {
-    try {return await $mod.$fs.get('/page' + path)} catch (e) {return {ok: false, items: []}}
+    try {return await $mod.$fs.list('/page' + path)} catch (e) {return {ok: false, items: []}}
   }
-  const fsRm = (path) => $mod.$fs.rm('/page' + path)
+  const fsRm = (path) => $mod.$fs.remove('/page' + path)
   // 目录删除：先试整删，失败则递归逐文件
   const rmDir = async (dir) => {
     try {await fsRm(dir); return } catch (e) { }
