@@ -1,4 +1,0 @@
-{
-  "kind": "service",
-  "entry": "cli/bin/cua-service"
-}

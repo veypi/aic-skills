@@ -20,7 +20,7 @@
 ## 2. 发布流程
 
 1. 管理页（`/skills_admin/cloud/{id}`）发起，或 `POST /api/skills/releases {source, name?, version}`（source = 私有行 id/name；name 省略 = 公开占 source 名）。
-2. 契约校验：frontmatter name == 注册表行 name；含 cli/ 必有有效 manifest；有 artifacts.lock 必有效——坏清单直接拒发，走不到审核。
+2. 契约校验：frontmatter name == 注册表行 name；所有内容仅按静态包校验路径、大小和元数据，不解析可执行软件安装清单。
 3. 配额：公开行 ≤10/用户（仅新条目占名额，发新版不占）。
 4. 服务端流式打包私有行目录（**不含 `.sqlite` 运行库**——在包目录外）；**16MB 闸门**：压缩后超限立即失败，走不到审核。
 5. **审核**：全量审核（含纯文本；SKILL.md 同样是注入载体）；管理员自发布 autoApprove。
@@ -30,7 +30,6 @@
 
 - **ui/**：有没有越权调用平台 API（任意 `/api/...`）、偷传数据、来路不明的脚本；地址一律 `{url_prefix}/...` 或相对路径派生，不写死前缀。
 - **api/**：SQL 是否拼接字符串（禁止）；`user_id = :user_id` 行级过滤是否齐全；全表拉取是否加 LIMIT。
-- **cli/**：manifest 有效（providers 非空、id 唯一、entry 相对不逃逸、stream 引用存在的 provider）。
 - **文本**：内容合规。
 - **通用**：frontmatter 严格 yaml 且 name 与注册表行一致；包体积；无调试垃圾（`.bak`、临时文件、大素材）。
 
@@ -49,8 +48,10 @@
 - **内容不可变**：无编辑面 + fs 门只读双保险；任何修改 = 发新版本；`description/nickname/keywords/icon` 随新版本从 frontmatter 刷新（非空覆盖、省略保持现值）。
 - **数据不迁移**：公开库从空开始；要带数据就用 owner 管理面（`tables_sqlx`）导出/重建。
 - **删除条目（下架）**：管理页危险区——删行 + 包目录 + 全部历史 zip + 运行库，agent_binds 级联硬删，释放名称与名额；已安装设备不受影响。
-- **fork**：`POST /api/skills/{id}/copy`（或 cloud vsh `skill download <ref>`）→ 得 caller 私有副本（可改可再发布）。
+- **fork**：`POST /api/skills/{id}/copy`（或 cloud vsh `skill fork <ref>`）→ 得 caller 私有副本（可改可再发布）。
 
 ## 6. 试用副本（了解即可）
 
 审核台的「试用」会把待审 zip 解压为**审核员自己的临时私有行**用于真实试用；审核决定（通过/拒绝）后统一清理。作者无需操作。
+
+下载内容使用 `skill download <ref> --output <archive.zip>` 或 `GET /api/skills/{id}/download`。下载不会执行脚本或启动服务；MCP 软件独立发行和配置。

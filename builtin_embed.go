@@ -2,8 +2,7 @@ package aicskills
 
 import "embed"
 
-// 源码构建中的包均可直接安装。cmd/build 通过 overlay 替换本文件，
-// 为完整应用加入 browser/cua 资源及当次构建的 provider。
+// Builtin skills contain static instructions, UI, API and resources only.
 //
-//go:embed all:create_skill all:vhtml all:office_studio
+//go:embed all:create_skill all:vhtml all:office_studio all:browser all:cua
 var builtin embed.FS

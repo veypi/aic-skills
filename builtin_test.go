@@ -4,8 +4,6 @@ package aicskills
 import (
 	"archive/zip"
 	"bytes"
-	"encoding/json"
-	"errors"
 	"io/fs"
 	"slices"
 	"testing"
@@ -13,8 +11,8 @@ import (
 
 func TestListAndOpen(t *testing.T) {
 	names := List()
-	if len(names) != 3 && len(names) != 5 {
-		t.Fatalf("List = %v, want resource catalog (3) or complete app catalog (5)", names)
+	if len(names) != 5 {
+		t.Fatalf("List = %v, want five static skills", names)
 	}
 	for _, name := range []string{"create_skill", "vhtml", "office_studio"} {
 		if !slices.Contains(names, name) {
@@ -33,27 +31,10 @@ func TestListAndOpen(t *testing.T) {
 		if _, err := fs.Stat(dir, "SKILL.md"); err != nil {
 			t.Errorf("%s missing SKILL.md: %v", n, err)
 		}
-		// Every advertised CLI package must contain its provider entry.
-		manifest, err := fs.ReadFile(dir, "cli/manifest.json")
-		if err == nil {
-			var m struct {
-				Kind  string
-				Entry string
+		for _, path := range []string{"cli/manifest.json", "provider", "cli/bin"} {
+			if _, err := fs.Stat(dir, path); err == nil {
+				t.Fatalf("%s contains runtime artifact %s", n, path)
 			}
-			if err := json.Unmarshal(manifest, &m); err != nil {
-				t.Fatal(err)
-			}
-			if m.Kind != "process" && m.Kind != "service" {
-				t.Fatalf("%s: invalid kind %q", n, m.Kind)
-			}
-			{
-				info, err := fs.Stat(dir, m.Entry)
-				if err != nil || !info.Mode().IsRegular() || info.Size() == 0 {
-					t.Fatalf("%s advertises missing/empty provider %s: %v", n, m.Entry, err)
-				}
-			}
-		} else if !errors.Is(err, fs.ErrNotExist) {
-			t.Fatal(err)
 		}
 	}
 	if _, err := Open("ghost"); err == nil {
@@ -63,9 +44,9 @@ func TestListAndOpen(t *testing.T) {
 
 func TestVersionFromFrontmatter(t *testing.T) {
 	for name, want := range map[string]string{
-		"browser":       "0.2.0",
-		"cua":           "0.3.0",
-		"create_skill":  "0.3.0",
+		"browser":       "1.0.7",
+		"cua":           "1.0.3",
+		"create_skill":  "1.0.3",
 		"vhtml":         "0.1.1",
 		"office_studio": "1.0.2",
 	} {

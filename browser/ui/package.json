@@ -3,6 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --max-old-space-size=4096 --test"
+    "test": "node --import ./test/register.mjs --max-old-space-size=4096 --test"
   }
 }

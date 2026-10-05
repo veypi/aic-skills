@@ -1,16 +1,7 @@
 // Copyright (C) 2025 veypi <i@veypi.com>
 // Distributed under terms of the MIT license.
 
-// hello-process 是 aic-skills/hello 包的 process 类 provider（v6 P0 demo，
-// aic/docs/skill.md §9.2）：真实外部进程，验证包命令的 argv/stdin 透传、
-// cwd、受管取消与进程沙箱文件边界。子命令：
-//
-//	（无参）            打印问候
-//	argv a b c         逐行打印参数（透传验证）
-//	cwd                打印进程 cwd
-//	pipe               stdin 原样复制到 stdout（二进制安全）
-//	probe-write <path> 尝试写文件，打印 ok / denied:<err>（沙箱边界探测，恒 exit 0）
-//	sleep <秒>         睡眠（取消测试）
+// A standalone native CLI example. Skills do not register or launch it.
 package main
 
 import (

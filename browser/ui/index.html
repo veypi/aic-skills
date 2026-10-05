@@ -437,6 +437,37 @@
     border-color: var(--color-primary);
     color: white;
   }
+  canvas {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    touch-action: none;
+  }
+
+  .keyboard {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .dialog-input {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 16px;
+    color: inherit;
+    font: inherit;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+  }
 </style>
 
 <body :class="{collapsed:!sidebarOpen}">
@@ -448,17 +479,17 @@
       {{selectedDevice()?.name || $t('browser.choose_device')}}
     </button>
     <div class="navigation">
-      <button class="icon-button" @click="mutate('back')" :disabled="!selected || busy" :title="$t('browser.back')"
+      <button class="icon-button" @click="mutate('agent_browser_back')" :disabled="!selected() || busy" :title="$t('browser.back')"
         :aria-label="$t('browser.back')"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i></button>
-      <button class="icon-button" @click="mutate('forward')" :disabled="!selected || busy"
+      <button class="icon-button" @click="mutate('agent_browser_forward')" :disabled="!selected() || busy"
         :title="$t('browser.forward')" :aria-label="$t('browser.forward')"><i class="fa-solid fa-arrow-right"
           aria-hidden="true"></i></button>
-      <button class="icon-button" @click="mutate('reload')" :disabled="!selected || busy" :title="$t('browser.reload')"
+      <button class="icon-button" @click="mutate('agent_browser_reload')" :disabled="!selected() || busy" :title="$t('browser.reload')"
         :aria-label="$t('browser.reload')"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i></button>
     </div>
     <input class="address" v:value="address" @keydown.enter="navigate" @keydown.esc="resetAddress"
       v-if="selectedDevice()"
-      :disabled="!selected || busy" :placeholder="$t('browser.address')" :aria-label="$t('browser.address')"
+      :disabled="!selected() || busy" :placeholder="$t('browser.address')" :aria-label="$t('browser.address')"
       autocomplete="off" spellcheck="false">
     <button class="icon-button new-tab" v-if="selectedDevice()" @click="createWindow(selectedDevice().id)"
       :disabled="busy" :title="$t('browser.new_tab')" :aria-label="$t('browser.new_tab')">
@@ -480,28 +511,32 @@
         <span class="device-note" v-if="host.status !== 'ready'"
           :title="host.error || statusText(host.status)">{{statusText(host.status)}}</span>
         <span class="count" v-else
-          :title="host.windows.length ? '' : $t('browser.no_windows')">{{host.windows.length}}</span>
+          :title="host.pages.length ? '' : $t('browser.no_windows')">{{host.pages.length}}</span>
         <button class="icon-button new-window" @click="createWindow(host.id)"
           :disabled="host.status !== 'ready' || busy" :title="$t('browser.new_window') + ' · ' + host.name"
           :aria-label="$t('browser.new_window') + ' · ' + host.name"><i class="fa-solid fa-plus"
             aria-hidden="true"></i></button>
       </div>
-      <div class="window-row" v-for="item in host.windows" :class="{active:selected?.key === item.key}">
-        <button class="window" :aria-pressed="selected?.key === item.key"
-          :title="item.url + ' · ' + item.viewport.width + ' × ' + item.viewport.height" @click="selectWindow(item)">
-          <strong>{{item.title || item.url || item.id}}</strong><small>{{item.url || 'about:blank'}}</small>
+      <div class="window-row" v-for="item in host.pages" :class="{active:selectedHostId === host.id && selected()?.tabId === item.tabId}">
+        <button class="window" :aria-pressed="selectedHostId === host.id && selected()?.tabId === item.tabId"
+          :title="item.url" @click="selectWindow(host.id, item.tabId)">
+          <strong>{{item.title || item.url || item.tabId}}</strong><small>{{item.url}}</small>
         </button>
-        <button class="icon-button danger window-close" @click="closeWindow(item)"
+        <button class="icon-button danger window-close" @click="closeWindow(host.id, item.tabId)"
           :disabled="busy || host.status !== 'ready'" :title="$t('browser.close_window')"
-          :aria-label="$t('browser.close_window') + ' · ' + (item.title || item.url || item.id)"><i
+          :aria-label="$t('browser.close_window') + ' · ' + (item.title || item.url || item.tabId)"><i
             class="fa-solid fa-trash-can" aria-hidden="true"></i></button>
       </div>
     </section>
     <div class="no-devices" v-if="!devices.length">{{$t('browser.no_devices')}}</div>
   </aside>
   <main>
-    <div class="frames" ref="frames" v-show="!isBlankPage()">
-      <div class="empty" v-if="!selected">{{selectedDevice() ? $t('browser.no_windows') : $t('browser.select_window')}}</div>
+    <div class="frames" v-show="!isBlankPage()">
+      <canvas ref="canvas" v-show="selected() && live" :aria-label="$t('browser.live')"></canvas>
+      <textarea ref="keyboard" class="keyboard" :aria-label="$t('browser.keyboard')"
+        autocapitalize="off" autocomplete="off" spellcheck="false"></textarea>
+      <div class="empty" v-if="selected() && !live">{{$t('browser.connecting')}}</div>
+      <div class="empty" v-if="!selected()">{{selectedDevice() ? $t('browser.no_windows') : $t('browser.select_window')}}</div>
     </div>
     <section class="blank-page" v-if="isBlankPage()" :aria-label="$t('browser.new_tab')">
       <div class="blank-content">
@@ -519,12 +554,12 @@
         <section class="open-tabs" :aria-label="$t('browser.open_tabs')">
           <h2>{{$t('browser.open_tabs')}}</h2>
           <ul>
-            <li v-for="item in otherTabs()">
-              <button class="tab-shortcut" @click="selectWindow(item)" :title="item.url">
+            <li v-for="entry in otherTabs()">
+              <button class="tab-shortcut" @click="selectWindow(entry.host.id, entry.tab.tabId)" :title="entry.tab.url">
                 <i class="fa-regular fa-window-maximize" aria-hidden="true"></i>
                 <span class="tab-label">
-                  <strong>{{item.title || (item.url === 'about:blank' ? $t('browser.new_tab') : item.url) || item.id}}</strong>
-                  <small>{{item.hostName}} · {{item.url || 'about:blank'}}</small>
+                  <strong>{{entry.tab.title || (entry.tab.url === 'about:blank' ? $t('browser.new_tab') : entry.tab.url) || entry.tab.tabId}}</strong>
+                  <small>{{entry.host.name}}<span v-if="entry.tab.url"> · {{entry.tab.url}}</span></small>
                 </span>
                 <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
               </button>
@@ -534,196 +569,250 @@
         </section>
       </div>
     </section>
-    <div class="page-dialog" v-if="selected?.dialog" role="dialog" :aria-label="$t('browser.page_dialog')">
-      <p>{{selected.dialog.message}}</p>
+    <div class="page-dialog" v-if="dialog" role="dialog" :aria-label="$t('browser.page_dialog')">
+      <p>{{dialog.message}}</p>
+      <input class="dialog-input" v-if="dialog.type === 'prompt'" v:value="dialogText" :aria-label="$t('browser.page_dialog')" @keydown.enter="answerDialog(true)">
       <div class="dialog-actions">
-        <button @click="mutate('dialog',{accept:false})" :disabled="busy">{{$t('browser.dismiss_dialog')}}</button>
-        <button class="confirm" @click="mutate('dialog',{accept:true})"
+        <button @click="answerDialog(false)" :disabled="busy">{{$t('browser.dismiss_dialog')}}</button>
+        <button class="confirm" @click="answerDialog(true)"
           :disabled="busy">{{$t('browser.accept_dialog')}}</button>
       </div>
     </div>
   </main>
 </body>
 <script setup>
-  import {BrowserDirectory, BrowserView, browserCall} from './browser.js'
-  import {shellQuote} from './shell_quote.js'
-  import {createBrowserViewer} from './browser-viewer.js'
+  import {BrowserDirectory, browserCall} from './browser.js'
+  import {BrowserViewer} from './viewer.js'
+
   devices = []
   selectedHostId = ''
-  selected = null
   address = ''
   sidebarOpen = true
   refreshing = false
   busy = false
-  let directory, view, canvas, element, timer, disposed = false, lastURL = null, lastError = ''
-  // 字面量枚举（不用字符串拼接，让 i18n 扫描器可见；未知状态回落原值）
+  live = false
+  dialog = null
+  dialogText = ''
+  let viewer, viewerConnection, viewHost = '', visible = false, disposed = false, timer, pollCycle = 0
+  let lastPage = null, lastURL = '', lastError = '', routeOpened = false
+  const directory = new BrowserDirectory($hosts, rows => {
+    if (disposed) return
+    devices = rows.map(row => {
+      const previous = devices.find(host => host.id === row.id)
+      if (!previous) return row
+      const pages = mergePages(previous.pages, row.pages)
+      Object.assign(previous, row, {pages})
+      return previous
+    })
+    syncSelection()
+  })
+  // Preserve row identity using upstream tabId; no second page identity is added.
+  const mergePages = (previous, pages) => pages.map(page => {
+    const old = previous.find(item => item.tabId === page.tabId)
+    if (!old) return page
+    Object.assign(old, page)
+    return old
+  })
+  const reportError = message => {
+    if (disposed || !visible) return
+    if (message && message !== lastError) $message.error(message)
+    lastError = message || ''
+  }
+  const call = (hostId, tool, args = {}) => {
+    const connection = directory.connection(hostId)
+    if (!connection) throw new Error($t('browser.status_offline'))
+    return browserCall(connection, tool, args)
+  }
+  selectedDevice = () => devices.find(host => host.id === selectedHostId && host.status === 'ready')
+  selected = () => selectedDevice()?.pages.find(page => page.active)
+  isBlankPage = () => selected()?.url === 'about:blank'
+  otherTabs = () => devices.flatMap(host => host.pages
+    .filter(tab => host.id !== selectedHostId || tab.tabId !== selected()?.tabId)
+    .map(tab => ({host, tab})))
+  resetAddress = () => { address = isBlankPage() ? '' : selected()?.url || '' }
   statusText = status => ({
     connecting: $t('browser.status_connecting'),
     disabled: $t('browser.status_disabled'),
     error: $t('browser.status_error'),
     offline: $t('browser.status_offline'),
     unavailable: $t('browser.status_unavailable'),
-    unsupported: $t('browser.status_unsupported'),
   })[status] || status
-  selectedDevice = () => devices.find(host => host.id === selectedHostId && host.status === 'ready') || null
-  isBlankPage = () => selected?.url === 'about:blank'
-  otherTabs = () => devices.flatMap(host => host.windows).filter(item => item.key !== selected?.key)
-  resetAddress = () => {address = isBlankPage() ? '' : selected?.url || ''}
-  const reportError = message => {
-    if (disposed) return
-    if (message && message !== lastError) $message.error(message)
-    lastError = message || ''
-  }
-  const apply = rows => {
-    if (disposed) return
-    devices = rows.map(row => {
-      const old = devices.find(h => h.id === row.id)
-      if (!old) return row
-      const windows = row.windows.map(item => {
-        const previous = old.windows.find(w => w.key === item.key)
-        if (previous) {Object.assign(previous, item); return previous}
-        return item
-      })
-      Object.assign(old, {...row, windows}); return old
-    })
-    if (selected) {
-      const current = devices.flatMap(h => h.windows).find(w => w.key === selected.key)
-      if (!current) selectWindow(null)
-      else if (view && view.connection !== directory.connection(current.hostId)) selectWindow(current, true)
-      else if (current.url !== lastURL) {resetAddress(); lastURL = current.url}
+
+  const syncSelection = () => {
+    const page = selected()
+    if (page !== lastPage || page?.url !== lastURL) {
+      if (page !== lastPage) { dialog = null; dialogText = '' }
+      resetAddress()
+      lastPage = page
+      lastURL = page?.url
     }
   }
+  const stopView = () => {
+    viewer?.close()
+    viewer = null
+    viewHost = ''
+    live = false
+  }
+  const startView = () => {
+    const connection = directory.connection(selectedHostId)
+    if (!visible || disposed || !selectedDevice() || !connection || !$refs.canvas) {
+      stopView()
+      return
+    }
+    if (viewer && !viewer.closed && viewHost === selectedHostId && viewerConnection === connection) return
+    stopView()
+    const id = selectedHostId
+    viewHost = id
+    viewerConnection = connection
+    viewer = new BrowserViewer($refs.canvas, $refs.keyboard, {connection, changed: message => {
+      if (disposed || viewHost !== id) return
+      if (message.error) { live = false; reportError(message.error) }
+      if (message.type === 'frame') live = true
+      if (message.type === 'status' && !message.connected) live = false
+      if (message.type === 'tabs') {
+        const host = selectedDevice()
+        if (host) host.pages = mergePages(host.pages, message.tabs)
+        syncSelection()
+      }
+      if (message.type === 'url' && selected()) {
+        selected().url = message.url
+        syncSelection()
+      }
+    }})
+  }
+  const updateDialog = async () => {
+    const id = selectedHostId, tab = selected()?.tabId
+    if (!tab) return
+    const result = await call(id, 'agent_browser_dialog_status')
+    if (disposed || id !== selectedHostId || tab !== selected()?.tabId) return
+    const value = result.structuredContent?.response?.data
+    if (value?.hasDialog) {
+      if (!dialog || dialog.message !== value.message || dialog.type !== value.type) {
+        dialogText = value.defaultPrompt || ''
+      }
+      dialog = value
+    } else dialog = null
+  }
   refresh = async () => {
-    if (!directory || refreshing || disposed) return
+    if (refreshing || disposed) return
     refreshing = true
     try {
       await directory.refresh()
       if (disposed) return
-      // Choose by directory order after discovery, not by RTC response speed.
-      const host = selectedDevice() || devices.find(host => host.status === 'ready')
-      if (!host) {selectedHostId = ''; await selectWindow(null)}
-      else if (host.id !== selectedHostId) await selectDevice(host.id)
-      else if (!selected) await selectWindow(host.windows[0] || null)
-    } catch (e) {reportError(e.message)}
-    finally {refreshing = false}
-  }
-  selectDevice = async hostId => {
-    const host = devices.find(host => host.id === hostId && host.status === 'ready')
-    if (disposed || !host) return
-    if (host.id === selectedHostId && selected) return
-    selectedHostId = host.id
-    await selectWindow(host.windows[0] || null)
-  }
-  selectWindow = async (item, force = false) => {
-    if (disposed || (!force && selected?.key === item?.key)) return
-    if (item) selectedHostId = item.hostId
-    const previous = view
-    view = null; canvas?.dispose(); canvas = null
-    selected = item; lastError = ''; resetAddress(); lastURL = item?.url
-    await previous?.close()
-    if (disposed || selected !== item || !item) return
-    const connection = directory.connection(item.hostId)
-    if (!connection) {reportError($t('browser.status_offline')); return }
-    const next = new BrowserView(connection, item, {
-      frame: frame => {if (view === next) return canvas?.paint(frame)},
-      changed: state => {if (view === next) {reportError(state.error)}},
-    })
-    view = next
-    canvas = createBrowserViewer({el: element, view: next})
-    next.start()
+      if (!selectedDevice()) selectedHostId = devices.find(host => host.status === 'ready')?.id || ''
+      syncSelection()
+      startView()
+      await updateDialog()
+    } catch (error) { reportError(error.message) }
+    finally { refreshing = false }
   }
   const act = async fn => {
     if (busy || disposed) return
-    busy = true; lastError = ''
-    try {return await fn()} catch (e) {reportError(e.message)}
-    finally {busy = false}
+    busy = true
+    lastError = ''
+    try { return await fn() }
+    catch (error) { reportError(error.message); throw error }
+    finally { busy = false }
   }
-  mutate = (method, args) => act(async () => {await view?.mutate(method, args); await refresh()})
-  navigate = () => {
-    const value = String(address || '').trim()
-    if (!selected || !value) return
-    return mutate('navigate', {url: /^https?:\/\//i.test(value) || value === 'about:blank' ? value : 'https://' + value})
+  selectDevice = id => {
+    if (busy || disposed || selectedHostId === id) return
+    selectedHostId = id
+    syncSelection()
+    startView()
+    updateDialog().catch(error => reportError(error.message))
   }
-  // doCreateWindow 不带 busy 闸（openLink 已持闸）；按钮入口经 createWindow 包装。
-  const doCreateWindow = async (hostId, url) => {
-    const connection = directory.connection(hostId)
-    if (!connection) throw new Error($t('browser.status_offline'))
-    const result = await browserCall(connection, `browser page.create --json -- ${shellQuote(url || 'about:blank')}`)
+  const switchTab = async (hostId, tab) => {
+    await call(hostId, 'agent_browser_tab_switch', {tab})
+    selectedHostId = hostId
     await refresh()
-    const item = devices.find(h => h.id === hostId)?.windows.find(w => w.page_id === result.page_id)
-    if (item) await selectWindow(item)
   }
-  createWindow = (hostId, url) => act(() => doCreateWindow(hostId, url))
-  closeWindow = target => act(async () => {
-    if (!target) return
-    const connection = directory.connection(target.hostId)
-    if (!connection) throw new Error($t('browser.status_offline'))
-    const current = selected?.key === target.key ? view : null
-    // Detach first so an intentional close does not show a disconnect toast.
-    await current?.close()
-    try {await browserCall(connection, `browser page.close --json -- ${shellQuote(target.page_id)}`)}
-    catch (e) {if (current && selected?.key === target.key) await selectWindow(target, true); throw e}
-    if (selected?.key === target.key) await selectWindow(null)
+  selectWindow = (hostId, tab) => act(() => switchTab(hostId, tab)).catch(() => {})
+  mutate = tool => act(async () => {
+    await call(selectedHostId, tool)
     await refresh()
-  })
-  // openLink 多标签打开（OS 通用 handles 打开机制的页面侧入口，skill.md §9.1）：
-  // 全设备已有同 URL 窗口 → 聚焦；否则在选中/首台就绪设备新建标签并选中。
-  // URL 规范化比较：CDP 报的窗口 URL 是规范形（https://example.com/ 带尾斜杠），
-  // 输入裸写不带——两侧同走 URL 构造器规范形再比较，否则复用永不命中（P5 回归实测）。
-  const canonUrl = u => { try { return new URL(u).href } catch { return u } }
-  openLink = raw => act(async () => {
-    const value = String(raw || '').trim()
-    if (!value) throw new Error('browser.open: URL required, e.g. open --url https://example.com')
-    const url = canonUrl(/^https?:\/\//i.test(value) || value === 'about:blank' ? value : 'https://' + value)
+  }).catch(() => {})
+  const normalizeURL = value => new URL(/^[a-z][a-z\d+.-]*:/i.test(value) ? value : 'https://' + value).href
+  navigate = () => act(async () => {
+    if (!selected() || !address.trim()) return
+    await call(selectedHostId, 'agent_browser_open', {url: normalizeURL(address.trim())})
     await refresh()
-    const existing = devices.flatMap(h => h.windows).find(w => w.url === url)
-    if (existing) {
-      await selectWindow(existing)
-      return {content: JSON.stringify({page_id: existing.page_id, host_id: existing.hostId, url, reused: true})}
+  }).catch(() => {})
+  const createTab = async (hostId, url = 'about:blank') => {
+    await call(hostId, 'agent_browser_tab_new', {url})
+    selectedHostId = hostId
+    await refresh()
+  }
+  createWindow = (hostId, url) => act(() => createTab(hostId, url)).catch(() => {})
+  closeWindow = (hostId, tab) => act(async () => {
+    const result = await call(hostId, 'agent_browser_tab_list')
+    const tabs = result.structuredContent.response.data.tabs
+    // The upstream browser requires one tab; closing the last page returns to a fresh blank page.
+    if (tabs.length === 1 && tabs[0].tabId === tab) {
+      await call(hostId, 'agent_browser_tab_new', {url: 'about:blank'})
     }
-    const host = selectedDevice() || devices.find(h => h.status === 'ready')
+    await call(hostId, 'agent_browser_tab_close', {tab})
+    await refresh()
+  }).catch(() => {})
+  answerDialog = accept => act(async () => {
+    await call(selectedHostId, accept ? 'agent_browser_dialog_accept' : 'agent_browser_dialog_dismiss',
+      accept && dialog?.type === 'prompt' ? {text: dialogText} : {})
+    dialog = null
+    await refresh()
+  }).catch(() => {})
+  openLink = raw => act(async () => {
+    if (!String(raw || '').trim()) throw new Error('open --url <url>')
+    const url = normalizeURL(String(raw).trim())
+    await refresh()
+    for (const host of devices) {
+      const page = host.pages.find(tab => tab.url === url)
+      if (page) {
+        await switchTab(host.id, page.tabId)
+        return {content: JSON.stringify({host_id: host.id, tabId: page.tabId, url, reused: true})}
+      }
+    }
+    const host = selectedDevice()
     if (!host) throw new Error($t('browser.no_devices'))
-    await doCreateWindow(host.id, url)
-    return {content: JSON.stringify({host_id: host.id, url, reused: false})}
+    await createTab(host.id, url)
+    return {content: JSON.stringify({host_id: host.id, tabId: selected()?.tabId, url, reused: false})}
   })
-  // open 指令 argv 解析：--url <url> / --url=<url> / 裸位置参数。
   const openArgv = argv => {
     let url = ''
-    const args = (argv || []).map(String)
-    for (let i = 0; i < args.length; i++) {
-      if (args[i] === '--url') {url = args[++i] || ''; continue}
-      if (args[i].startsWith('--url=')) {url = args[i].slice(6); continue}
-      if (!args[i].startsWith('--') && !url) url = args[i]
+    for (let i = 0; i < argv.length; i++) {
+      if (argv[i] === '--url') url = argv[++i] || ''
+      else if (argv[i].startsWith('--url=')) url = argv[i].slice(6)
+      else if (!argv[i].startsWith('--') && !url) url = argv[i]
     }
     return url
   }
-  mount = el => {
-    element = el; directory = new BrowserDirectory($hosts, apply)
-    // ?url= 深链：OS open 经 query 注入（包页面裸 URL + ?url=...）；首刷后消费一次即清
-    let initUrl = String($router?.current?.query?.url || '').trim()
-    const tick = async () => {
-      await refresh()
-      if (disposed) return
-      if (initUrl) {const url = initUrl; initUrl = ''; openLink(url).catch(e => reportError(e.message))}
-      timer = setTimeout(tick, 3000)
-    }
-    tick()
-  }
-  unmount = () => {
-    disposed = true; clearTimeout(timer); canvas?.dispose(); view?.close(); directory?.close()
-  }
   pageDesc = {
-    desc: 'Manage browser windows running on connected devices. Window lifecycle and automation belong to the host browser command.',
-    commands: [{
-      name: 'open', desc: 'open URL in a device browser tab (existing tab with same URL focused, new tab created otherwise)', help: 'open --url <url>', handler: argv => openLink(openArgv(argv)),
-    }, {
-      name: 'list_windows', desc: 'List device browser windows', help: 'list_windows', handler: async () => {
-        await refresh(); return {content: JSON.stringify(devices.map(h => ({host_id: h.id, name: h.name, status: h.status, windows: h.windows})))}
-      }
-    }],
+    desc: 'Open and view browser tabs on connected devices.',
+    commands: [
+      {name: 'open', desc: 'Open a URL, reusing an existing tab when possible', help: 'open --url <url>', handler: argv => openLink(openArgv(argv || []))},
+      {name: 'list_windows', desc: 'List device browser windows', help: 'list_windows', handler: async () => {
+        await refresh()
+        return {content: JSON.stringify(devices.map(host => ({host_id: host.id, name: host.name, status: host.status, windows: host.pages})))}
+      }},
+    ],
   }
+  const tick = async cycle => {
+    if (!busy) await refresh()
+    if (visible && !disposed && cycle === pollCycle) timer = setTimeout(() => tick(cycle), 3000)
+  }
+  activateBrowser = async () => {
+    visible = true
+    const cycle = ++pollCycle
+    clearTimeout(timer)
+    const url = $router.current?.query?.url
+    if (!routeOpened && url) {
+      routeOpened = true
+      await openLink(url).catch(() => {})
+    }
+    if (visible && !disposed && cycle === pollCycle) await tick(cycle)
+  }
+  deactivateBrowser = () => { visible = false; pollCycle++; clearTimeout(timer); stopView() }
+  disposeBrowser = () => { disposed = true; deactivateBrowser(); directory.close() }
 </script>
-<script>mount($refs.frames)</script>
-<script dispose>unmount()</script>
-
+<script active>activateBrowser()</script>
+<script deactive>deactivateBrowser()</script>
+<script dispose>disposeBrowser()</script>
 </html>

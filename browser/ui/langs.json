@@ -26,7 +26,10 @@
     "browser.status_unavailable": "设备未开启直连",
     "browser.status_unsupported": "设备未提供 Browser 命令",
     "browser.window_list": "窗口",
-    "nav.browser": "浏览器"
+    "nav.browser": "浏览器",
+    "browser.live": "浏览器实时画面",
+    "browser.keyboard": "浏览器键盘输入",
+    "browser.connecting": "正在连接画面…"
   },
   "en-US": {
     "browser.accept_dialog": "Accept page dialog",
@@ -55,6 +58,9 @@
     "browser.status_unavailable": "Direct connection unavailable",
     "browser.status_unsupported": "Browser command unavailable",
     "browser.window_list": "Windows",
-    "nav.browser": "Browser"
+    "nav.browser": "Browser",
+    "browser.live": "Live browser",
+    "browser.keyboard": "Browser keyboard input",
+    "browser.connecting": "Connecting to the browser…"
   }
 }

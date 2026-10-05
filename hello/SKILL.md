@@ -1,11 +1,9 @@
 ---
 name: hello
-version: 0.1.0
-description: 最小 process provider 示例，验证参数、stdin、cwd 和取消。
+version: 1.0.0
+description: 普通原生 CLI 示例：参数、stdin、工作目录和取消。
 ---
 
-# Hello
-
-每次调用启动 cli/bin/hello-process。使用 `hello argv 'a b' ''` 验证参数，`printf hi | hello pipe` 验证 stdin。
-
-在本包目录运行 `go build -o cli/bin/hello-process ./provider/process`，将 SKILL.md 与 cli/ 打成 ZIP 后经统一安装入口安装。
+下载本技能后，在本目录执行 `go build -o ./hello ./scripts/hello.go`。
+执行 `./hello argv 'a b' ''`、`printf hi | ./hello pipe`、`./hello cwd`。
+这是独立命令，可自行放入 PATH；不需要技能注册表、manifest 或 MCP。

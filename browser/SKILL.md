@@ -1,67 +1,57 @@
 ---
 name: browser
-version: 0.2.1
-description: 设备浏览器能力（page.* 页面自动化 + download.* 下载管理 + page.frames/page.input 实时流）。驱动本机 Chrome，供 AI 浏览、观察与操作网页。
+version: 1.0.7
+description: 使用设备上的官方 agent-browser MCP 操作浏览器，UI 提供同一浏览器的实时画面和人工交互。
 ui:
   - path: index.html
-    desc: 设备浏览器查看器（页面列表 + 实时画面 + 输入转发；多标签 open 指令 + ?url= 深链）
+    desc: 设备窗口列表、导航与实时键鼠交互
     handles: [http, https]
 ---
 
-# browser
+# Browser
 
-设备上的 Chrome 浏览器。根命令 `browser`，全部页面操作走子命令；实时画面与输入走 stream 端点。
+Pod 的 `browser` 别名直接启动官方 `agent-browser mcp --tools core,tabs`，当前发行固定 0.38.2。工具名称、参数、描述、schema 和完整结果均来自上游，以 `mcp tools/describe` 为准。技能仅包含静态说明与云端 UI。
 
-## 用法
+## 运行依赖
 
+Desktop 附带 agent-browser 原生二进制和 Chrome for Testing；首次调用由 Pod 的 MCP manager 启动服务，AI 与 UI 共享上游 daemon 和浏览器。无需 Browser 专用 Node 运行时。
+
+独立 CLI 按 [agent-browser 安装说明](https://github.com/vercel-labs/agent-browser#installation) 安装 0.38.2 和 Chrome。可用 `AIC_AGENT_BROWSER_PATH`、`AIC_BROWSER_PATH` 指定程序位置。运行目录固定为 `$HOME/.aic/browser/runtime`，浏览器资料位于 `$HOME/.aic/browser/profile`，不跟随单次 shell 的 cwd/env 改变。
+
+默认以设备权限启动；MCP 调用和实时流都经过 `mcp.browser` 命令权限门。浏览器可访问的设备资源由上游及操作系统管理。
+
+设备所有者可在 `~/.aic/config.yaml` 的 `mcp.servers.browser` 设置 `disabled: true`，或用完整 command/url 配置替换默认项。替换项不继承默认启动参数和权限；内建实时 UI 仅连接默认 agent-browser 实例。
+
+## 使用
+
+在目标设备的 exec 中：
+
+```sh
+mcp tools browser
+mcp describe browser agent_browser_open
+mcp call browser agent_browser_open --input '{"url":"https://example.com"}' --json
+mcp call browser agent_browser_tab_list --json
+mcp call browser agent_browser_snapshot --json
+mcp describe browser agent_browser_click
 ```
-browser <subcommand> [args] [--json]
+
+切换标签页使用上游返回的 `tabId`，例如：
+
+```sh
+mcp call browser agent_browser_tab_switch --input '{"tab":"t1"}' --json
+mcp call browser agent_browser_click --input '{"selector":"@e1"}' --json
 ```
 
-输出契约：stdout 只放约定 JSON（`--json` 紧凑单行，默认缩进）；诊断与警告写 stderr。非零退出不能当成功数据使用。
+元素引用取自最新快照；先查看实际 schema 再填参数。工具作用于上游当前活动标签页，人工与 AI 共享该选择。上游提供什么工具，命令就透传什么工具，不另外注册别名或平台 fs/exec 工具。
 
-### 子命令
+外层 `exec.1host` 选择设备，mcp 命令只选择服务。`--input -` 从 stdin 读取 JSON；`--json` 返回完整 MCP 结果，包含 `content`、`structuredContent`、`isError` 等字段。大截图可用上游 `agent_browser_screenshot.path` 保存，再通过原生 fs 读取。
 
-| 命令 | 说明 |
-| --- | --- |
-| `status` | 浏览器服务状态（state/executable/viewport/error） |
-| `page.list`（别名 `pages`） | 列出页面 |
-| `page.create [url]`（别名 `open`） | 新建页面（`--width N` `--height N`） |
-| `page.navigate <page_id> <url>`（别名 `navigate`） | 导航 |
-| `page.close <page_id>`（别名 `close`） | 关闭页面 |
-| `page.observe <page_id>`（别名 `observe`） | 观察页面：元素树 + 可选截图（`--query Q` `--limit N` `--image`）。返回元素 `ref` 供后续动作定位 |
-| `page.wait <page_id>`（别名 `wait`） | 等待条件：`--text T` / `--url U` / `--load` / locator + `--state visible\|hidden\|enabled`；`--timeout_ms N`（≤300000） |
-| `page.events <page_id>` | 页面事件流（`--cursor N` `--kind K`；navigation/dialog/console/network/popup） |
-| `page.dialog.resolve <page_id> <dialog_id>` | 处理 JS 对话框（`--accept` / `--accept=false` `--text T`） |
-| `page.evaluate <page_id> <code...>`（别名 `eval`） | 执行 JS，返回 returnByValue 结果 |
-| `page.upload <page_id> <locator-flags> <file>` | 给 file input 上传本地文件 |
-| `page.<click\|fill\|type\|press\|hover\|scroll\|drag\|set> <page_id> <locator-flags> [选项]` | 页面动作：`--text T` `--key K` `--value V` `--x N --y N` `--after none\|summary\|observation\|image` |
-| `page.<back\|forward\|reload> <page_id>` | 历史导航 |
-| `download.list <page_id>`（别名 `downloads`） | 页面下载列表 |
-| `download.get / download.wait / download.cancel <download_id>` | 下载状态/等待/取消 |
-| `download.export <download_id> <path>` | 导出到本地路径（目标不存在才写，相对路径按调用 cwd 解析） |
-| `download.read <download_id>` | 读取下载内容（`--offset N` `--limit N`，≤32KB/次） |
+## UI 和实时交互
 
-locator flags 四选一：`--ref R`（observe 返回的元素引用；页面导航即失效，单页引用满 4096 条时淘汰最久未用）| `--css C`（必须唯一匹配）| `--role R --name N` | `--label L`。
+UI 通过 `$hosts.openTools(hostId)` 的 RTC 连接执行 `execCall("mcp call browser <tool> --input - --json", {stdin: JSON.stringify(args)})`，调用上游标签页、导航和弹窗工具。界面沿用单行导航栏、按设备分组的可折叠窗口列表、窗口旁的新建/关闭、空白页入口和居中的实时画面；快照和截图仍可由 AI 使用上游 MCP 调用。
 
-### 典型流程
+上游不允许直接关闭最后一个标签页。UI 关闭最后一页时，先调用 `agent_browser_tab_new` 创建空白页，再用 `agent_browser_tab_close` 关闭原页；其余标签页正常关闭。AI 直接调用 MCP 时仍遵循上游限制。
 
-1. `browser page.create https://example.com --json` → 拿 `page_id` 与 `document_id`。
-2. `browser page.observe <page_id>` → 拿元素 `ref`。
-3. `browser page.click <page_id> --ref ref_x`；`page.fill --ref ... --text ...`；`page.wait --load`。
-4. 下载：`download.list <page_id>` → `download.wait <download_id>` → `download.export <download_id> ./file.pdf`（相对路径按你的 cwd 解析）或 `download.read` 直接读内容。
+实时画面和人工输入走同一 RTC 连接上的内建 Browser 通道。Pod 只把 agent-browser 原生 WebSocket 消息双向转发，UI 绘制完帧再回传上游 ACK；不新增 CDP 连接、MCP 工具或页面身份。标签页标识直接使用上游 `tabId`。
 
-注意：页面被真实用户输入（page.input 租约）占用时，自动化动作返回 `control_busy`；页面关闭后其 page_id、ref 与下载记录（含已下载文件）全部回收失效。
-
-### stream 端点（RTC 私有，不在 CLI 面）
-
-- `browser.page.frames`：页面实时画面（JPEG 帧流，只读）。
-- `browser.page.input`：真实输入通道（指针/键盘事件批，占用页面控制租约）。
-
-## 配置（包内默认 + 环境变量覆盖）
-
-- `AIC_BROWSER_PATH`：Chrome 可执行文件（显式用户覆盖，最高优先）。缺省探测链：`AIC_BROWSER_BUNDLE_DIR`（打包器提示：目录内含 Chrome for Testing，`{platform}-{arch}/` 布局，desktop 随包分发）→ 系统候选（macOS .app / Windows PROGRAMFILES 系 / Linux PATH 名）→ 报错提示 set `AIC_BROWSER_PATH`。
-- `AIC_BROWSER_STATE_DIR`：状态目录（默认 `$HOME/.aic/browser`）。
-- `AIC_BROWSER_WIDTH` / `AIC_BROWSER_HEIGHT`：新建页面默认视口（默认 1280/720）。
-
-打包形态：provider 与包资源内嵌于 pod 二进制，启动时统一预装到 `~/.aic/skills`。同源同版本跳过，升级失败保留旧包。
+画面跟随上游当前活动标签页。关闭 UI 释放观看连接，AI 仍可操作；关闭 Pod 时用上游 CLI 关闭其专用运行目录中的 daemon。重新进入 UI 或点击刷新可重连。人工和 AI 同时输入遵循上游行为，没有额外接管锁。实时画面是 JPEG 帧流，当前限制 15 fps，不包含音频；支持鼠标、滚轮、键盘、中文输入和向远端粘贴文本。远端剪贴板读取及本地文件拖放不在此 UI 中提供。

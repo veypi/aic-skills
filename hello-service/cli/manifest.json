@@ -1,1 +1,0 @@
-{"kind":"service","entry":"cli/bin/hello-service","streams":["echo"]}

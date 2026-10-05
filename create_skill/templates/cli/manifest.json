@@ -1,4 +1,0 @@
-{
-  "kind": "process",
-  "entry": "cli/bin/hello"
-}

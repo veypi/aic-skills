@@ -4,26 +4,17 @@
 !browser/
 !cua/
 !hello/
-!hello-service/
 !create_skill/
 !vhtml/
 !office_studio/
 !drawio/
 !ppt_studio/
 !video_studio/
-!sdk/
-!cmd/
 !builtin.go
 !builtin_embed.go
 !builtin_test.go
 !go.mod
 !go.sum
-
-# provider 构建产物（build.sh 产出，仓库为源）
-browser/cli/bin/
-cua/cli/bin/
-hello/cli/bin/
-hello-service/cli/bin/
 
 *.sqlite
 *.zip

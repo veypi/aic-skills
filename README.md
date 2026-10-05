@@ -1,71 +1,10 @@
-# AIC-SKILL
+# aic-skills
 
-AIC（[ivec.ai](https://ivec.ai)）平台的官方技能仓库。每个目录是一个可直接加载的技能（skill）：`SKILL.md` 描述规则与用法，`ui/` 提供页面组件，`api/` 提供数据接口，`tables/` 定义数据表。
+官方技能内容仓库。技能由 `SKILL.md`、可选 `ui/`、`api/`、`tables/` 与普通资源组成；Go embed 仅嵌入这些静态内容。
 
-## 本仓两类技能
+- 说明、UI 和 API 在 cloud 发布和使用。
+- CLI、脚本由用户按说明下载、安装后原生执行。
+- 有状态工具使用 MCP。Pod 默认直接启动官方 agent-browser MCP 与 cua-driver mcp，所有工具遵循上游；Desktop 分发固定版本依赖，独立 CLI 按说明安装。第三方服务由 `mcp.servers` 配置。
+- `hello/scripts/hello.go` 演示普通 CLI，`create_skill/templates/scripts/hello.sh` 演示普通脚本。都不需要 manifest 或 provider SDK。
 
-- **内建集**（`builtin_embed.go` 的完整目录：browser / cua / create_skill / vhtml / office_studio）：随 aic 与 aic-pod 应用构建分发——aic 启动定版到注册表（system 属主公开行），pod 启动预装到设备（零下载）。版本真相 = 各包 SKILL.md frontmatter `version`（semver 版本闸，改内容必 bump）。
-- **广场集**（其余目录）：技能源码，经平台发布流上架广场，与本仓 git 历史同源。
-
-## provider 与 Go SDK（sdk/go）
-
-技能的 cli provider **机制上代码无关**：process = argv/stdin/stdout 透传，service = unix socket 帧协议（skillproc）——任何语言实现交互协议即可（契约见 aic `docs/skill.md` §9.2）。`sdk/go` 是第一方 Go provider 的自包含工具包（wire 类型 / skillproc / ui 词汇 / cliargs / image_data 编码），**不依赖 aic / aic-pod**；Go 并非特权语言，其他语言按协议文档自行实现同等地位。
-
-browser/cua 各自只有一个 service provider；hello 演示 process，hello-service 演示 service。manifest 统一为 kind/entry/args/streams；流端点必须带包名。skillproc 固定 v2，每连接一次调用或一条流，断连即取消。service 归 skillrun，不进入 bg。各包 build.sh 只生成打包用二进制，设备安装统一走 ZIP。
-
-应用构建、开发启动和完整集成测试统一使用 `cmd/build`：在临时目录按应用 GOOS/GOARCH 构建 browser/CUA，再用 Go overlay 生成专用的 `builtin_embed.go` 声明。并发构建互不覆盖，不读取源码目录遗留的 `cli/bin` 文件，也不改写运行时代码。
-
-目录始终只包含完整包。直接 `go build` / `go test` 提供 create_skill、vhtml、office_studio 三个纯资源包，**不会嵌入 browser/cua**；干净设备不会自动拥有这两项能力，完整应用构建必须使用 `cmd/build`（应用 Makefile 已接入）。browser/cua 只有在 provider 构建完成后才进入目录。aic 发布与 pod 预装直接消费同一目录，无 optional entry、启动时编译或半包降级分支。开发时需要完整设备能力请使用统一入口：
-
-```sh
-# 在 aic-pod 目录构建含 provider 的 Linux CLI
-go run ../aic-skills/cmd/build -goos linux -goarch amd64 -- -o dist/aic-cli ./cli
-go run ../aic-skills/cmd/build -command run -- ./cli
-go run ../aic-skills/cmd/build -command test -- ./libs/skillrun
-```
-
-## 官方技能
-
-| 技能 | 名称 | 简介 |
-| --- | --- | --- |
-| [browser](browser/) | 设备浏览器 | 设备浏览器能力：page.* 页面自动化 + download.* 下载管理 + 实时流（内建集，含 Go provider） |
-| [cua](cua/) | 桌面自动化 | 设备原生桌面自动化（Computer Use）：窗口/控件观察、点击/输入/拖拽（内建集，含 Go provider） |
-| [create_skill](create_skill/) | 创建 Skill 指南 | 创建技能的完整指南与模板：形态判别 → SKILL.md 契约 → ui/api/cli 三种正交扩展 → 发布审核与装设备 |
-| [drawio](drawio/) | 图表工坊 | 流程图/架构图绘制（drawio 引擎） |
-| [office_studio](office_studio/) | Office 工作台 | Office 文档工作台：打开、编辑、保存真实 office 文件（Excel 编辑 + Word 审阅），AI 与用户共用同一编辑器协作 |
-| [ppt_studio](ppt_studio/) | PPT 工坊 | 幻灯片工作室：以本地 /ppt/ JSON 文件驱动创建、编辑、预览与全屏演示，支持逐页语音讲解脚本 |
-| [video_studio](video_studio/) | 视频工坊 | 浏览器内一站式视频制作：AI 文件驱动编辑 + 可视化舞台/时间轴、真实 3D 场景、关键帧动画、素材拖拽剪辑、AI 配音、WebCodecs 导出 MP4 |
-| [vhtml](vhtml/) | vhtml 框架手册 | browser-only HTML 组件框架使用手册：组件、script setup、bindings、路由、i18n、ESM import 与模块作用域概念 |
-
-非官方/试验性技能在 [test_skills](../test_skills) 仓（2026-10-02 分出）。
-
-## 结构约定
-
-每个技能目录遵循平台技能规范：
-
-- `SKILL.md` —— 技能主文档（front-matter：`name` / `nickname` / `description` / `keywords` / `icon`）
-- `ui/` —— 页面组件（vhtml；可含 `vendor/` 等静态资源）
-- `api/` —— sqlx 数据接口（可选）
-- `tables/` —— 数据表定义（可选）
-
-大体积静态资源放各技能的**独立资产分支**（`<skill>_assets`），经 jsDelivr 引用，不进技能包。例如 office_studio 的引擎在 `office_assets` 分支。
-
-## 资源加速（jsDelivr）
-
-仓库内的大体积静态资源放在各技能的**独立资产分支**（`<skill>_assets`，如 office_studio → `office_assets` 分支），不经技能包分发，可通过 jsDelivr 直接引用，不占业务服务器带宽：
-
-```
-https://cdn.jsdelivr.net/gh/veypi/aic-skills@<skill>_assets/<文件>
-```
-
-示例：
-
-```
-https://cdn.jsdelivr.net/gh/veypi/aic-skills@office_assets/univer-excel.bundle.js
-```
-
-> 注意：jsDelivr 对单文件有大小上限（约 20 MB）、对分支树总大小有 50 MB 上限（超限会拒绝未缓存文件）；`@<分支>` 存在 CDN 缓存（约 12 小时），需要即时生效时可使用提交号或 tag 引用。
-
-## 许可
-
-见 [LICENSE](LICENSE)。
+`go test ./...` 验证静态目录、元数据和 ZIP；`cd browser/ui && npm test` 验证页面发现与上游结果透传。

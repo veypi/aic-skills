@@ -1,10 +1,5 @@
-# scripts/ — 包内资源脚本
+# 普通脚本
 
-随包分发的辅助脚本（构建期打进包目录，发布/安装后只读）。运行期由 cli
-provider 或 ui 经包目录相对路径引用，例如 process provider 里：
+此目录是可选的静态附件。用户按 SKILL.md 下载、检查并运行脚本；平台不自动安装、不扫描命令、不启动服务。
 
-    DIR="$(cd "$(dirname "$0")" && pwd)"
-    sh "$DIR/../../scripts/init.sh"
-
-大二进制不进包：用 cli/artifacts.lock.json 声明（来源/摘要/平台），安装阶段
-设备侧下载校验。
+例如：`sh scripts/hello.sh world`。脚本依赖、工作目录和所需权限写在技能正文中。需要常驻状态时独立提供 MCP 服务，并在正文中说明安装和设备配置。
