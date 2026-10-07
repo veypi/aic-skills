@@ -1,0 +1,52 @@
+name: ci
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  go:
+    name: gofmt + vet + test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: gofmt -l 必须为空
+        run: |
+          out="$(gofmt -l .)"
+          if [ -n "$out" ]; then
+            echo "以下文件未格式化（本地跑 gofmt -w）："
+            echo "$out"
+            exit 1
+          fi
+      - run: go vet ./...
+      - run: go test ./...
+
+  skill-ui:
+    name: skill UI tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: 逐个技能 UI 跑 node --test（零依赖，无需 npm install）
+        run: |
+          set -e
+          found=0
+          for f in */ui/package.json; do
+            [ -f "$f" ] || continue
+            d="$(dirname "$f")"
+            echo "== $d"
+            (cd "$d" && npm test)
+            found=1
+          done
+          [ "$found" = 1 ] || echo "（没有带 ui/package.json 的技能）"
