@@ -1,7 +1,10 @@
 ---
 name: vhtml
 version: 0.1.1
+nickname: vhtml 前端指南
 description: Develop and troubleshoot pages and components with the browser-only vhtml framework. Use for vhtml templates, reactive state and list identity, lifecycle and resource cleanup, routing, module context, i18n, or rendering performance. Explains framework usage and its boundaries for application authors.
+keywords: [vhtml, 前端, 组件, 响应式, 列表标识, 生命周期, 路由, 模块上下文, i18n, 渲染性能]
+icon: fa-solid fa-code
 ---
 
 # vhtml Frontend Guide

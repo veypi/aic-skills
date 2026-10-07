@@ -1,5 +1,6 @@
 ---
 name: ppt_studio
+version: 1.0.0
 nickname: PPT 工坊
 description: 幻灯片工作室：以本地 /ppt/ JSON 文件驱动的方式创建、编辑、预览与全屏演示 PPT，支持逐页语音讲解脚本
 keywords: [ppt, slides, 幻灯片, 演示, 演讲, 讲解, deck, 演示文稿]

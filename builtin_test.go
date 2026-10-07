@@ -11,15 +11,15 @@ import (
 
 func TestListAndOpen(t *testing.T) {
 	names := List()
-	if len(names) != 5 {
-		t.Fatalf("List = %v, want five static skills", names)
+	if len(names) != 9 {
+		t.Fatalf("List = %v, want nine static skills", names)
 	}
 	for _, name := range []string{"create_skill", "vhtml", "office_studio"} {
 		if !slices.Contains(names, name) {
 			t.Errorf("resource package %s missing", name)
 		}
 	}
-	want := map[string]bool{"browser": true, "cua": true, "create_skill": true, "vhtml": true, "office_studio": true}
+	want := map[string]bool{"browser": true, "cua": true, "create_skill": true, "vhtml": true, "office_studio": true, "drawio": true, "hello": true, "ppt_studio": true, "video_studio": true}
 	for _, n := range names {
 		if !want[n] {
 			t.Fatalf("unexpected builtin package %q in %v", n, names)
@@ -49,6 +49,10 @@ func TestVersionFromFrontmatter(t *testing.T) {
 		"create_skill":  "1.0.4",
 		"vhtml":         "0.1.1",
 		"office_studio": "1.0.3",
+		"drawio":        "1.0.0",
+		"hello":         "1.0.0",
+		"ppt_studio":    "1.0.0",
+		"video_studio":  "1.0.0",
 	} {
 		if !slices.Contains(List(), name) {
 			want = ""
