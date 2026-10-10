@@ -23,7 +23,7 @@ Boundary (contract truth: aic `docs/skill.md`):
 ## Layout
 
 - `<skill>/SKILL.md` — the only required file; frontmatter + body.
-- `<skill>/ui/` — optional cloud UI (`index.html` + modules), loaded at `/skills/{id}`.
+- `<skill>/ui/` — optional cloud UI (`index.html` + modules), loaded at `/skills/cloud/{id}`.
 - `<skill>/api/`, `<skill>/tables/` — optional cloud API and tables.
 - `builtin.go` — `List` / `Open` / `Version` / `Zip` / `Frontmatter` helpers over the embed.
 - `builtin_embed.go` — **the publication switch** (`//go:embed all:<dir> …`): a directory that
@@ -50,11 +50,13 @@ Boundary (contract truth: aic `docs/skill.md`):
   `nickname`, `description`, `keywords`, `icon`, `ui` (list of `{path, desc, handles?}`).
 - Chinese is the authoring language for user-facing skill content; `vhtml/` is the exception
   (framework guide, English).
-- Page/resource addressing: entry `/skills/{id}` (loads `ui/index.html`), subpages
-  `/skills/{id}/{page}`, HTTP package service `/skills/cloud/{id}`. Use the `url_prefix`
-  returned by `skill search/load` for API/static resources, `$mod.scoped` for HTTP package
-  paths, `$router` / `$mod.router_prefix` for in-page navigation. **Never hardcode platform
-  hosts or ports** in skill content or UI.
+- Page/resource addressing: the page entry and the HTTP package service share **one
+  segment** — `/skills/cloud/{id}` (mirrors `/fs/cloud`): the bare entry loads `ui/index.html`,
+  subpages are `/skills/cloud/{id}/{page}`, detail is `/skills_detail/cloud/{id}`, admin is
+  `/skills_admin/cloud/{id}`. Use the `url_prefix` returned by `skill search/load` for
+  API/static resources, `$mod.scoped` for HTTP package paths, `$router` / `$mod.router_prefix`
+  for in-page navigation. The fs-tool package path stays `/skills/{id}/...` (a different
+  segment from the URL). **Never hardcode platform hosts or ports** in skill content or UI.
 - Shared page services (`$auth`, `$ai`, `$hosts`, `$skills`, `$account`, `$catalog`, `$fs`,
   `$pageExec`) are documented by `create_skill`; keep `create_skill` aligned whenever a
   contract changes — it is what other authors copy.

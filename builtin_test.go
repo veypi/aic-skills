@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"io/fs"
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -36,6 +37,19 @@ func TestListAndOpen(t *testing.T) {
 				t.Fatalf("%s contains runtime artifact %s", n, path)
 			}
 		}
+		// Zip() 整目录打包：包内不得出现 zip / sqlite 等非静态内容（否则会随
+		// embed 进入构建产物，并挤占发布的 16MB 闸门）。
+		if err := fs.WalkDir(dir, ".", func(p string, d fs.DirEntry, err error) error {
+			if err != nil || d.IsDir() {
+				return err
+			}
+			if strings.HasSuffix(p, ".zip") || strings.HasSuffix(p, ".sqlite") {
+				t.Errorf("%s contains non-content artifact %s", n, p)
+			}
+			return nil
+		}); err != nil {
+			t.Fatalf("walk %s: %v", n, err)
+		}
 	}
 	if _, err := Open("ghost"); err == nil {
 		t.Error("Open ghost should fail")
@@ -44,15 +58,15 @@ func TestListAndOpen(t *testing.T) {
 
 func TestVersionFromFrontmatter(t *testing.T) {
 	for name, want := range map[string]string{
-		"browser":       "1.0.10",
-		"cua":           "1.0.7",
-		"create_skill":  "1.0.4",
-		"vhtml":         "0.1.1",
+		"browser":       "1.0.11",
+		"cua":           "1.0.9",
+		"create_skill":  "1.0.6",
+		"vhtml":         "0.2.0",
 		"office_studio": "1.0.3",
-		"drawio":        "1.0.0",
+		"drawio":        "1.0.2",
 		"hello":         "1.0.0",
-		"ppt_studio":    "1.0.0",
-		"video_studio":  "1.0.0",
+		"ppt_studio":    "1.0.2",
+		"video_studio":  "1.0.2",
 	} {
 		if !slices.Contains(List(), name) {
 			want = ""

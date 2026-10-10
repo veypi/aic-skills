@@ -13,11 +13,11 @@ ui:
 内容以文件为准（不是数据库）：默认目录 `/cloud/u/{uid}/notes/`（`/u/{uid}/notes/` 的 $fs 树路径写法），页面可切换其它目录。
 这是 ppt / drawio 一类「文件即数据」模式的最小版：**AI 用 fs 工具写文件 → 页面指令刷新展示；用户页面编辑 → 保存落盘**。
 
-> **复制改造**：`POST /api/skills {"name": "{你的名字}"}` 建行得 `/skills/{id}/` 工作区，把本目录内容经 fs 门 PUT 进去，同步修改：frontmatter 的 `name`、`nickname`/`description`。
+> **复制改造**：`exec 1host=page` → `curl /api/skills -X POST -H 'Content-Type: application/json' -d '{"name":"{你的名字}"}'` 建行，再 `grant fs /skills/{id}` 后把本目录内容写进 `/skills/{id}/`（fs 工具路径）；同步修改 frontmatter 的 `name`、`nickname`/`description`。
 
 ## 页面与指令
 
-打开：`open /skills/{skill_id}`，skill_id 取自 `skill search/load`；HTTP 数据面仍使用返回的 `url_prefix`。
+打开：`open /skills/cloud/{skill_id}`，skill_id 取自 `skill search/load`；HTTP 数据面仍使用返回的 `url_prefix`（同前缀）。
 
 | 指令 | 说明 |
 | --- | --- |

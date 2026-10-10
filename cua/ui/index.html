@@ -9,11 +9,15 @@
 <style>
   body {
     height: 100%; min-width: 0; margin: 0; padding: 0;
+    overflow: hidden;
+    container-type: inline-size; /* 窗口 ≠ 视口：用 @container，不要用 @media；页面底色/文字色由平台提供 */
+  }
+  .app {
+    height: 100%; min-width: 0;
     display: grid;
     grid-template: "header header" auto "aside main" minmax(0, 1fr) / clamp(180px, 23%, 240px) minmax(0, 1fr);
-    overflow: hidden; background: var(--bg-color); color: var(--text-color);
   }
-  body.collapsed { grid-template: "header" auto "main" minmax(0, 1fr) / minmax(0, 1fr); }
+  .app.collapsed { grid-template: "header" auto "main" minmax(0, 1fr) / minmax(0, 1fr); }
   button, input, select, textarea { font: inherit; color: inherit; }
   button { cursor: pointer; }
   button:disabled, select:disabled { opacity: .4; cursor: default; }
@@ -71,7 +75,7 @@
   .toolbar-actions { display: flex; align-items: center; gap: 5px; }
   .mode-switch { display: flex; padding: 2px; border-radius: 7px; background: color-mix(in srgb, var(--text-color) 5%, transparent); }
   .mode-switch button { border: 0; border-radius: 5px; padding: 5px 9px; background: transparent; color: var(--text-color-secondary); font-size: 12px; }
-  .mode-switch button.active { background: var(--bg-color); color: var(--text-color); box-shadow: 0 1px 3px #0001; }
+  .mode-switch button.active { background: var(--bg-color); color: var(--text-color); box-shadow: var(--shadow-sm); }
   .mode-switch button.control.active { color: var(--color-primary); }
   .scale-select { max-width: 112px; height: 28px; padding: 0 4px; border: 0; border-radius: 5px; background: var(--bg-color); font-size: 12px; }
   .error-banner { display: flex; align-items: flex-start; gap: 8px; padding: 9px 12px; border-bottom: 1px solid var(--border-color); color: var(--color-danger, #df6464); background: color-mix(in srgb, var(--color-danger, #df6464) 5%, var(--bg-color)); font-size: 12px; line-height: 1.6; }
@@ -91,11 +95,11 @@
   .input-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; padding: 8px; border-top: 1px solid var(--border-color); }
   .input-tools input { flex: 1; box-sizing: border-box; min-width: 120px; height: 32px; padding: 0 9px; border: 1px solid var(--border-color); border-radius: 6px; background: transparent; font-size: 12px; }
   .input-tools select { max-width: 132px; height: 32px; padding: 0 5px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-color); font-size: 12px; }
-  .send-button { height: 32px; padding: 0 11px; border: 0; border-radius: 6px; background: var(--color-primary); color: #fff; font-size: 12px; }
+  .send-button { height: 32px; padding: 0 11px; border: 0; border-radius: 6px; background: var(--color-primary); color: var(--color-primary-text); font-size: 12px; }
   .control-note { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-top: 1px solid var(--border-color); color: var(--text-color-secondary); font-size: 11px; line-height: 1.5; }
   .control-note > span { flex: 1; }
   .delivery-select { max-width: 180px; min-width: 0; padding: 3px 4px; border: 1px solid var(--border-color); border-radius: 5px; background: var(--bg-color); font-size: 11px; }
-  .permissions { position: absolute; z-index: 4; top: 8px; right: 8px; width: min(510px, calc(100% - 16px)); box-sizing: border-box; max-height: calc(100% - 16px); overflow: auto; padding: 16px; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-color); box-shadow: 0 8px 30px #0003; font-size: 12px; }
+  .permissions { position: absolute; z-index: 4; top: 8px; right: 8px; width: min(510px, calc(100% - 16px)); box-sizing: border-box; max-height: calc(100% - 16px); overflow: auto; padding: 16px; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-color); box-shadow: var(--shadow-lg); font-size: 12px; }
   .permissions-heading { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
   .permissions-heading strong { flex: 1; font-size: 13px; }
   .permissions pre { margin: 10px 0 18px; padding: 10px; border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font: 11px/1.6 var(--font-mono, monospace); background: color-mix(in srgb, var(--text-color) 4%, transparent); }
@@ -104,8 +108,8 @@
   .guide li { margin: 7px 0; }
   .guide code { padding: 1px 4px; border-radius: 3px; background: color-mix(in srgb, var(--text-color) 7%, transparent); font-family: var(--font-mono, monospace); }
   .subtle { color: var(--text-color-secondary); line-height: 1.6; }
-  @media (max-width: 680px) {
-    body { grid-template-columns: 180px minmax(0, 1fr); }
+  @container (max-width: 680px) {
+    .app { grid-template-columns: 180px minmax(0, 1fr); }
     aside { padding: 6px; }
     .toolbar { gap: 5px; }
     .toolbar-actions { margin-left: auto; }
@@ -116,16 +120,17 @@
     .input-tools select { max-width: none; flex: 1; }
     .connection { font-size: 11px; }
   }
-  @media (max-width: 420px) {
-    body:not(.collapsed) { grid-template: "header" auto "aside" minmax(0, 1fr) / minmax(0, 1fr); }
-    body:not(.collapsed) main { display: none; }
-    body:not(.collapsed) aside { border-right: 0; }
+  @container (max-width: 420px) {
+    .app:not(.collapsed) { grid-template: "header" auto "aside" minmax(0, 1fr) / minmax(0, 1fr); }
+    .app:not(.collapsed) main { display: none; }
+    .app:not(.collapsed) aside { border-right: 0; }
     .connection span:last-child { max-width: 80px; }
     .toolbar-actions { gap: 2px; }
   }
 </style>
 
-<body :class="{collapsed: !sidebarOpen}">
+<body>
+  <div class="app" :class="{collapsed: !sidebarOpen}">
   <header>
     <button class="icon-button" @click="sidebarOpen = !sidebarOpen" :title="$t('cua.window_list')"
       :aria-label="$t('cua.window_list')" :aria-expanded="sidebarOpen"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
@@ -207,6 +212,7 @@
       <div class="guide"><strong>{{$t('cua.guide_title')}}</strong><ol><li>{{$t('cua.guide_step1')}}</li><li>{{$t('cua.guide_step2')}}</li><li v-html="$t('cua.guide_step3')"></li><li v-html="$t('cua.guide_step4')"></li></ol></div>
     </section>
   </main>
+  </div>
 </body>
 <script setup>
   import {CuaSession} from './cua.js'

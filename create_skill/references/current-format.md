@@ -26,9 +26,9 @@ ui:
 
 能力摘要只反映已存在的 UI 和 API；scripts、二进制、MCP 配置示例都是普通资料，不产生运行能力或命令名。没有 cli manifest、provider、服务状态或 artifacts 安装约定。
 
-私有行由 owner 编辑，公开内容通过发布和审核形成。读取 `skill search/load` 返回的 `skill_id` 与 `url_prefix`：前端默认打开 `/skills/{skill_id}`，子页为 `/skills/{skill_id}/{page}`，没有 UI 时回退到 `/skills_detail/{skill_id}`。`url_prefix` 是 HTTP 包服务前缀（`/skills/cloud/{skill_id}`），只用于 API、manifest 和静态资源；勿把它拼成页面入口。设备不提供技能内容路由。
+私有行由 owner 编辑，公开内容通过发布和审核形成。读取 `skill search/load` 返回的 `skill_id` 与 `url_prefix`：页面入口与 HTTP 包服务同段（`url_prefix` = `/skills/cloud/{skill_id}`）——裸入口打开包首页，子页 `/skills/cloud/{skill_id}/{page}`，没有 UI 时回退 `/skills_detail/cloud/{skill_id}`；API、manifest、静态资源用同一前缀下的子路径。包目录的 fs 工具路径是 `/skills/{skill_id}/...`（与 URL 不同段）。设备不提供技能内容路由。
 
-创建工作区：`POST /api/skills {name}` → `/fs/cloud/skills/{id}/...` 写文件。独立 HTML 可写 `/fs/cloud/u/{uid}/name.html`；本页临时文件可用 OPFS 的 `/fs/page/name.html`。页面关闭后的能力需要云端 API 或设备 MCP，不能靠页面任务常驻。
+创建工作区（两步）：`exec 1host=page` → `curl /api/skills -X POST -H 'Content-Type: application/json' -d '{"name":"example"}'` 建行（同源 + cookie 身份自动携带；cloud vsh 无平台 API 入口），再 `grant fs /skills/{id}` 后写 `/skills/{id}/...`（fs 工具路径，私有包默认只读）。独立 HTML 可放用户云空间 `/u/{uid}/name.html`，或页面本地 OPFS（`1host=page`，如 `/name.html`）。页面关闭后的能力需要云端 API 或设备 MCP，不能靠页面任务常驻。
 
 本地工作：`skill download <ref> --output <path.zip>` 只保存 ZIP，拒绝覆盖，不解压、不执行、不注册；解压和安装按说明执行。`skill fork <ref>` 只创建云端私有内容副本。
 

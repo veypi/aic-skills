@@ -237,13 +237,14 @@ ui/
   （引擎内置，vendored PptxGenJS 离线生成 .pptx 下载）与 `print()`（浏览器打印
   另存 PDF）；不支持导入/上传。
 - **图片不内嵌 base64**：编辑器经 `imageStore` 钩子把图片上传到 `<名称>/image/`，
-  json 里存相对路径（`image/xxx.png`）；渲染时经 `$mod.$cloud_fs.fsPrefix` 解析为 HTTP URL，
+  json 里存相对路径（`image/xxx.png`）；渲染时经 `$mod.$fs` 读取并转为内存 object URL，
   保存时还原。删除图片元素 / 删除页会同步删除对应图片文件。
 - **样例只读**：页面不会自动保存对样例的编辑；点顶栏「存入会话」显式转为会话文件后可编辑保存。
 - **文件删除**：「📁 文件」弹层每项 ✕ 删除整个目录（json + `image/`），不可恢复。
 - **双语**：面板与工具栏文案在 `langs.json`（zh-CN / en-US），经 `$t()` 引用，语言跟随全局 header。
 
-双向交互：AI 直接用 fs 工具读写会话目录下的 json 完成内容编辑；页面操作经
-`page_exec` 指令（`list_ppt / open_ppt / open_case / run_ppt [--start] / stop_ppt /
-new_ppt / save_ppt / get_ppt [--full] / set_mode / delete_ppt`），由 AI 用 `exec 1host=page`
-调用，路径参数为全局 UFS 路径（`sessions/{sid}/...`）。指令声明见 agent 的 `index.md`。
+双向交互：AI 直接用 fs 工具（`1host=page`）读写 `/ppt/...` 下的 json 完成内容编辑；页面操作经
+`$pageExec` 指令（`ppt_status / ppt_list / ppt_open / ppt_case / ppt_run [--start] /
+ppt_stop / ppt_new / ppt_save / ppt_get [--full] / ppt_mode / ppt_delete`），由 AI 用
+`exec 1host=page {win_id}.<cmd>` 调用，路径为页面本地 OPFS（`/ppt/<名称>/index.json`）。
+指令声明见 `index.html` 的 `pageDesc`。

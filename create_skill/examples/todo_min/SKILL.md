@@ -1,7 +1,7 @@
 ---
 name: todo_min
 nickname: 待办清单示例
-description: 界面与 API 组合示例（当前 v5 格式）：待办清单——ui 页面 + tables 声明 + sqlx 接口 + pageDesc 指令的完整链路，含行级隔离与自测指令
+description: 界面与 API 组合示例（当前 v6.1 格式）：待办清单——ui 页面 + tables 声明 + sqlx 接口 + pageDesc 指令的完整链路，含行级隔离与自测指令
 keywords: [示例, 待办, tables, sqlx, 数据面, pageDesc]
 ui:
   - path: index.html
@@ -12,7 +12,7 @@ ui:
 
 四件套完整链路：`ui/`（界面）+ `tables/todos.json`（存储声明）+ `api/*.sqlx`（5 条接口）+ pageDesc 指令。
 
-> **复制改造**：`POST /api/skills {"name": "{你的名字}"}` 建行得 `/skills/{id}/` 工作区，把本目录内容经 fs 门 PUT 进去，同步修改：frontmatter 的 `name`、`nickname`/`description`。
+> **复制改造**：`exec 1host=page` → `curl /api/skills -X POST -H 'Content-Type: application/json' -d '{"name":"{你的名字}"}'` 建行，再 `grant fs /skills/{id}` 后把本目录内容写进 `/skills/{id}/`（fs 工具路径）；同步修改 frontmatter 的 `name`、`nickname`/`description`。
 
 ## 数据面（页面与 AI 共用，行级隔离）
 
@@ -35,7 +35,7 @@ curl {url_prefix}/api/todo_add -X POST -H 'Content-Type: application/json' -d '{
 
 ## 页面与指令
 
-打开：`open /skills/{skill_id}`，skill_id 取自 `skill search/load`；HTTP 数据面仍使用返回的 `url_prefix`。
+打开：`open /skills/cloud/{skill_id}`，skill_id 取自 `skill search/load`；HTTP 数据面仍使用返回的 `url_prefix`（同前缀）。
 
 | 指令 | 说明 |
 | --- | --- |
@@ -48,6 +48,6 @@ curl {url_prefix}/api/todo_add -X POST -H 'Content-Type: application/json' -d '{
 ## 自测闭环（AI）
 
 ```
-open /skills/{skill_id} → list → {win_id}.todo_status → {win_id}.todo_add --title "测试"
+open /skills/cloud/{skill_id} → {win_id}.todo_status → {win_id}.todo_add --title "测试"
 → {win_id}.todo_status（total 应 +1）→ curl {url_prefix}/api/todos（读回持久化结果）
 ```

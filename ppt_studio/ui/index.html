@@ -12,6 +12,7 @@
     height: 100%;
     min-height: 0;
     overflow: hidden;
+    container-type: inline-size; /* 窗口 ≠ 视口：用 @container，不要用 @media */
   }
 
   /* ---- 顶部工具栏 ---- */
@@ -466,7 +467,7 @@
     font-variant-numeric: tabular-nums;
   }
 
-  @media (max-width: 960px) {
+  @container (max-width: 960px) {
     .side-pane {
       width: 300px;
     }
@@ -1195,7 +1196,7 @@
     })
   }
 
-  // ---- 立即保存（page_exec save_ppt）；样例不自动保存，此显式调用将样例转为会话文件 ----
+  // ---- 立即保存（$pageExec ppt_save）；样例不自动保存，此显式调用将样例转为会话文件 ----
   saveNow = async () => {
     flushSave()
     if (cur_kind === 'case') {
@@ -1334,7 +1335,7 @@
     audio.play().catch(() => done(false))
   })
 
-  // ---- page_exec 事件（AI 通过 exec 1host=page 调用；内容编辑由 AI 直接写文件完成） ----
+  // ---- $pageExec 事件（AI 通过 exec 1host=page {win_id}.<cmd> 调用；内容编辑由 AI 直接写文件完成） ----
   // exec argv 解析：--key val 优先，否则取第一个非 -- 位置参数
   const arg = (argv, key, dft) => {
     const i = argv.indexOf('--' + key)

@@ -2,45 +2,45 @@
 <html>
   <head><title>Video Scenes</title></head>
   <style>
-    body { display: flex; flex-direction: column; height: 100%; min-height: 0; background: rgba(13, 17, 28, 0.55); }
+    body { display: flex; flex-direction: column; height: 100%; min-height: 0; background: var(--bg-color-secondary); }
     .sc-head {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 12px 9px; border-bottom: 1px solid rgba(255, 255, 255, 0.07); flex: none;
+      padding: 10px 12px 9px; border-bottom: 1px solid color-mix(in srgb, var(--text-color) 7%, transparent); flex: none;
     }
-    .sc-title { font-size: 13px; color: #94a3b8; font-weight: 600; letter-spacing: 0.5px; }
-    .sc-title b { color: #e2e8f0; margin-left: 4px; }
+    .sc-title { font-size: 13px; color: var(--text-color-secondary); font-weight: 600; letter-spacing: 0.5px; }
+    .sc-title b { color: var(--text-color); margin-left: 4px; }
     .sc-add {
-      border: 1px solid rgba(67, 97, 238, 0.45); background: rgba(67, 97, 238, 0.15);
-      color: #c7d2fe; font-size: 12px; padding: 4px 10px; border-radius: 7px; cursor: pointer;
+      border: 1px solid color-mix(in srgb, var(--color-primary) 45%, transparent); background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+      color: var(--color-primary); font-size: 12px; padding: 4px 10px; border-radius: 7px; cursor: pointer;
     }
-    .sc-add:hover { background: rgba(67, 97, 238, 0.3); color: #fff; }
+    .sc-add:hover { background: color-mix(in srgb, var(--color-primary) 30%, transparent); color: var(--color-primary-text); }
     .sc-add:disabled { opacity: 0.4; cursor: not-allowed; }
     .sc-list { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 7px; }
-    .sc-empty { padding: 22px 10px; text-align: center; color: #4b5563; font-size: 12.5px; }
+    .sc-empty { padding: 22px 10px; text-align: center; color: var(--text-color-tertiary); font-size: 12.5px; }
     .sc-card {
       position: relative; display: flex; gap: 9px; align-items: center;
       padding: 8px 9px; border-radius: 9px; cursor: pointer;
       border: 1px solid transparent; transition: all 0.12s;
     }
-    .sc-card:hover { background: rgba(255, 255, 255, 0.05); }
-    .sc-card.active { background: rgba(67, 97, 238, 0.14); border-color: rgba(67, 97, 238, 0.5); }
+    .sc-card:hover { background: color-mix(in srgb, var(--text-color) 5%, transparent); }
+    .sc-card.active { background: color-mix(in srgb, var(--color-primary) 14%, transparent); border-color: color-mix(in srgb, var(--color-primary) 50%, transparent); }
     .sc-bg {
       flex: none; width: 34px; height: 26px; border-radius: 5px;
-      border: 1px solid rgba(255, 255, 255, 0.14); background: #0f1420;
+      border: 1px solid color-mix(in srgb, var(--text-color) 14%, transparent); background: #0f1420;
     }
     .sc-info { flex: 1; min-width: 0; }
-    .sc-t { font-size: 13px; color: #e2e8f0; font-weight: 600; display: flex; align-items: baseline; gap: 7px; }
-    .sc-dur { font-size: 11px; color: #64748b; font-weight: 400; font-variant-numeric: tabular-nums; }
-    .sc-d { font-size: 11px; color: #64748b; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sc-t { font-size: 13px; color: var(--text-color); font-weight: 600; display: flex; align-items: baseline; gap: 7px; }
+    .sc-dur { font-size: 11px; color: var(--text-color-tertiary); font-weight: 400; font-variant-numeric: tabular-nums; }
+    .sc-d { font-size: 11px; color: var(--text-color-tertiary); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .sc-ops { display: none; flex-direction: column; gap: 2px; flex: none; }
     .sc-card:hover .sc-ops { display: flex; }
     .sc-ops button {
-      border: none; background: rgba(255, 255, 255, 0.08); color: #94a3b8;
+      border: none; background: color-mix(in srgb, var(--text-color) 8%, transparent); color: var(--text-color-secondary);
       width: 20px; height: 15px; font-size: 10px; line-height: 1; border-radius: 4px; cursor: pointer;
       padding: 0;
     }
-    .sc-ops button:hover { background: rgba(67, 97, 238, 0.35); color: #fff; }
-    .sc-ops button.del:hover { background: rgba(239, 68, 68, 0.35); color: #fca5a5; }
+    .sc-ops button:hover { background: color-mix(in srgb, var(--color-primary) 35%, transparent); color: var(--color-primary-text); }
+    .sc-ops button.del:hover { background: color-mix(in srgb, var(--color-danger) 35%, transparent); color: var(--color-danger); }
     .sc-ops button:disabled { opacity: 0.3; cursor: not-allowed; }
   </style>
   <body>

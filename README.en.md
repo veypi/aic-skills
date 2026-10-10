@@ -10,14 +10,14 @@ it inside the platform (aic) and the device client (aic-pod).
 
 | Skill | Version | Shape |
 | --- | --- | --- |
-| `browser` | 1.0.10 | Prose + UI: using the device-side official `agent-browser` (0.38.2) MCP, with a live view |
-| `cua` | 1.0.7 | Prose + UI: remote view and control through the official `cua-driver` (0.33.2) MCP |
-| `create_skill` | 1.0.4 | Guide + templates: how to author a skill (static prose + optional cloud UI/API) |
+| `browser` | 1.0.11 | Prose + UI: using the device-side official `agent-browser` (0.38.2) MCP, with a live view |
+| `cua` | 1.0.9 | Prose + UI: remote view and control through the official `cua-driver` (0.33.2) MCP |
+| `create_skill` | 1.0.6 | Guide + templates: how to author a skill (static prose + optional cloud UI/API) |
 | `office_studio` | 1.0.3 | Prose + UI: office document workspace |
-| `drawio` | 1.0.0 | Prose + UI: DrawIO diagram workspace |
-| `ppt_studio` | 1.0.0 | Prose + UI: slide studio |
-| `video_studio` | 1.0.0 | Prose + UI: video studio |
-| `vhtml` | 0.1.1 | Prose: the vhtml frontend framework guide |
+| `drawio` | 1.0.2 | Prose + UI: DrawIO diagram workspace |
+| `ppt_studio` | 1.0.2 | Prose + UI: slide studio |
+| `video_studio` | 1.0.2 | Prose + UI: video studio |
+| `vhtml` | 0.2.0 | Prose: the vhtml frontend framework guide |
 | `hello` | 1.0.0 | Example: a plain native CLI |
 
 The `//go:embed` list in [`builtin_embed.go`](builtin_embed.go) is the **only publication
@@ -33,9 +33,12 @@ switch** — a directory that is not listed is never published.
   `agent-browser mcp` and `cua-driver mcp` (versions pinned by the Desktop bundle; standalone
   CLIs install them per the prose), and third-party services come from the device's
   `mcp.servers`.
-- Skill pages open at `/skills/{id}` (loading the package's `ui/index.html`) and package
-  resources are served from `/skills/cloud/{id}`; locate resources through `url_prefix` /
-  `$mod.scoped` and **never hardcode platform hosts**.
+- Skill pages and package resources share **one segment**: `/skills/cloud/{id}` (mirrors
+  `/fs/cloud` — the bare entry loads the package's `ui/index.html`, the same segment serves
+  the package); subpages `/skills/cloud/{id}/{page}`, detail `/skills_detail/cloud/{id}`,
+  admin `/skills_admin/cloud/{id}`. Locate resources through `url_prefix` / `$mod.scoped` and
+  **never hardcode platform hosts**. Note the fs-tool path stays `/skills/{id}/...` (a
+  different segment from the URL — do not mix them).
 
 ## Consuming it
 

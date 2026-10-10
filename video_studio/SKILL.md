@@ -1,6 +1,6 @@
 ---
 name: video_studio
-version: 1.0.0
+version: 1.0.2
 nickname: 视频工坊
 description: 浏览器内一站式视频制作：AI 文件驱动编辑 + 可视化舞台/时间轴，真实 3D 场景、关键帧动画、逐字弹簧、素材拖拽剪辑、AI 配音（TTS），WebCodecs 硬编直接导出 MP4
 keywords: [video, 视频, 剪辑, 动画, 3D, MP4, 配音, TTS, 时间轴, WebCodecs]
@@ -16,7 +16,7 @@ ui:
 
 ## 打开与操控
 
-1. 打开页面：`open /skills/{skill_id}`（`skill_id` 取自 skill 列表；HTTP API 与资源仍用返回的 `url_prefix`）
+1. 打开页面：`open /skills/cloud/{skill_id}`（`skill_id` 取自 skill 列表；HTTP API 与资源用返回的 `url_prefix`，同前缀）
 2. 探测指令：`exec 1host=page {win_id}.list`（返回全部 `*_video` / `gen_voice` / `run_js` 指令清单）
 3. 项目文件读写：用 **fs 工具（1host=page）** 直接读写 `/video/...` 路径（与页面同一浏览器本地存储）
 4. 页面操作（新建/打开/播放/重载/截图/配音）走 `exec 1host=page {win_id}.<cmd>`，argv 形如 `["--name","my-video"]`
@@ -40,7 +40,7 @@ ui:
 4. 改完 `index.json` 或素材后调 `{win_id}.reload_video` 让页面刷新画面（保持当前帧）
 5. 需要配图/配乐：先尝试 page curl 下载（CORS 经常失败）；失败则把素材链接发给用户请其下载后上传「素材」tab——上传完成后 AI 写相对路径引用（`assets/封面.png`），再 `reload_video` 刷新画面
 6. `{win_id}.run_video --name x-主题` 预览播放
-7. 删除文件/项目：`fs.rm`（本地文件操作）；清理项目用 `fs.rm` 删 `/video/{name}` 目录
+7. 删除文件/项目：删除请走页面端 `exec 1host=page rm <路径>`（页面端内置 `rm`；fs 工具本身没有删除动作）；清理项目 = 删 `/video/{name}` 目录
 8. 完成：提醒用户点击页面顶部「导出」按钮自行导出（导出由用户操作，AI 不触发）
 
 用户说「来个样例看看」：`{win_id}.list_video` 查看样例清单，告知用户点页面上的「样例」即可（样例只读，用户可在页面右侧「另存为项目」后手动编辑）。
@@ -247,7 +247,7 @@ material `kind: standard|basic`，支持 `color/metalness/roughness/wireframe/op
 
 ## 常见问题
 
-- 用户没打开页面时指令会超时/无响应：先 `open /skills/{skill_id}` 打开页面，再重试
+- 用户没打开页面时指令会超时/无响应：先 `open /skills/cloud/{skill_id}` 打开页面，再重试
 - 导出需要最新版 Chrome/Edge（WebCodecs）：不支持时向用户说明
 - 导出分辨率建议 ≤1280×720（更高会明显变慢）；单视频建议 ≤60 秒
 - 视频剪辑：拖入素材后，时间轴出现绿色剪辑块——**左缘拖切入、右缘拖切出（同步源出点）、块体拖动改开始时间**；所有元素都有时间窗（开始/时长，inspector 或时间轴拖拽）；入点/出点（trimStart/trimEnd）是媒体专属的源裁剪。预览播放时视频真实播放（变速/倒放时按帧定位显示）。时间轴是多轨道视图：场景组（可折叠/眼睛隐藏）+ 元素轨 + overlay 轨 + 音乐/配音轨，左栏眼睛开关元素可见性（hidden，预览/导出都不渲染）

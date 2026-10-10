@@ -12,7 +12,6 @@
     height: 100%;
     min-height: 0;
     overflow: hidden;
-    background: #0a0e16;
   }
 
   .topbar {
@@ -21,8 +20,8 @@
     align-items: center;
     gap: var(--spacing-sm);
     padding: var(--spacing-sm) var(--spacing-md);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(15, 20, 32, 0.95);
+    border-bottom: 1px solid color-mix(in srgb, var(--text-color) 8%, transparent);
+    background: var(--bg-color-secondary);
     position: relative;
     z-index: 20;
   }
@@ -30,7 +29,7 @@
   .brand {
     font-size: var(--font-size-lg);
     font-weight: var(--font-weight-bold);
-    color: #4361ee;
+    color: var(--color-primary);
     white-space: nowrap;
     display: flex;
     align-items: center;
@@ -41,11 +40,11 @@
     width: 22px;
     height: 22px;
     border-radius: 6px;
-    background: linear-gradient(135deg, #4361ee, #7c3aed);
+    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #fff;
+    color: var(--color-primary-text);
     font-size: 11px;
   }
 
@@ -66,21 +65,21 @@
   }
 
   .doc-title:hover {
-    color: #c7d2fe;
+    color: var(--color-primary);
   }
 
   .save-state {
     font-size: 11px;
-    color: #64748b;
+    color: var(--text-color-tertiary);
     white-space: nowrap;
   }
 
   .save-state.dirty {
-    color: #fbbf24;
+    color: var(--color-warning);
   }
 
   .save-state.fail {
-    color: #f87171;
+    color: var(--color-danger);
   }
 
   .spacer {
@@ -88,9 +87,9 @@
   }
 
   .tbtn {
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.05);
-    color: #cbd5e1;
+    border: 1px solid color-mix(in srgb, var(--text-color) 12%, transparent);
+    background: color-mix(in srgb, var(--text-color) 5%, transparent);
+    color: var(--text-color);
     padding: 6px 14px;
     border-radius: 9px;
     font-size: 13px;
@@ -100,14 +99,14 @@
   }
 
   .tbtn:hover {
-    background: rgba(255, 255, 255, 0.12);
-    color: #fff;
+    background: color-mix(in srgb, var(--text-color) 12%, transparent);
+    color: var(--color-primary-text);
   }
 
   .tbtn.primary {
-    background: linear-gradient(135deg, #4361ee, #5b46f0);
+    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
     border: none;
-    color: #fff;
+    color: var(--color-primary-text);
     font-weight: 600;
   }
 
@@ -135,7 +134,7 @@
   .left {
     flex: none;
     width: 196px;
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    border-right: 1px solid color-mix(in srgb, var(--text-color) 8%, transparent);
     display: flex;
     flex-direction: column;
     min-height: 0;
@@ -145,21 +144,21 @@
   .left .ltabs {
     flex: none;
     display: flex;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    border-bottom: 1px solid color-mix(in srgb, var(--text-color) 7%, transparent);
   }
   .left .ltabs button {
     flex: 1;
     padding: 9px 0;
     font-size: 13px;
-    color: #94a3b8;
+    color: var(--text-color-secondary);
     background: none;
     border: none;
     border-bottom: 2px solid transparent;
     cursor: pointer;
     letter-spacing: 0.5px;
   }
-  .left .ltabs button:hover { color: #e2e8f0; }
-  .left .ltabs button.on { color: #e2e8f0; border-bottom-color: #4361ee; }
+  .left .ltabs button:hover { color: var(--text-color); }
+  .left .ltabs button.on { color: var(--text-color); border-bottom-color: var(--color-primary); }
 
   .left video-scenes,
   .left video-assets {
@@ -184,8 +183,8 @@
   .right {
     flex: none;
     width: 322px;
-    border-left: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(13, 17, 28, 0.9);
+    border-left: 1px solid color-mix(in srgb, var(--text-color) 8%, transparent);
+    background: var(--bg-color-secondary);
     display: flex;
     flex-direction: column;
     min-height: 0;
@@ -224,7 +223,7 @@
   .pd::after { content: ''; position: absolute; background: transparent; transition: background 0.12s; }
   .pd.v::after { left: 2px; top: 0; bottom: 0; width: 1px; }
   .pd.h::after { top: 2px; left: 0; right: 0; height: 1px; }
-  .pd:hover::after, .pd.dragging::after { background: #4361ee; }
+  .pd:hover::after, .pd.dragging::after { background: var(--color-primary); }
 
   .popover {
     position: absolute;
@@ -233,10 +232,10 @@
     width: 300px;
     max-height: 60vh;
     overflow: auto;
-    background: #121826;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--bg-color-secondary);
+    border: 1px solid color-mix(in srgb, var(--text-color) 10%, transparent);
     border-radius: 12px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 12px 40px color-mix(in srgb, var(--text-color) 60%, transparent);
     z-index: 40;
     padding: 8px;
   }
@@ -248,48 +247,48 @@
     padding: 9px 10px;
     border-radius: 8px;
     cursor: pointer;
-    color: #cbd5e1;
+    color: var(--text-color);
     position: relative;
   }
 
   .pop-item:hover {
-    background: rgba(67, 97, 238, 0.16);
+    background: color-mix(in srgb, var(--color-primary) 16%, transparent);
   }
 
   .pop-item .t {
     font-size: 13.5px;
     font-weight: 600;
-    color: #e2e8f0;
+    color: var(--text-color);
   }
 
   .pop-item .d {
     font-size: 11.5px;
-    color: #64748b;
+    color: var(--text-color-tertiary);
   }
 
   .pop-item .del {
     position: absolute;
     right: 8px;
     top: 9px;
-    color: #94a3b8;
+    color: var(--text-color-secondary);
     font-size: 12px;
     padding: 2px 6px;
     border-radius: 6px;
   }
 
   .pop-item .del:hover {
-    background: rgba(239, 68, 68, 0.2);
-    color: #f87171;
+    background: color-mix(in srgb, var(--color-danger) 20%, transparent);
+    color: var(--color-danger);
   }
 
   /* ---- 导出设置弹层 ---- */
-  .exf-t { font-size: 13px; font-weight: 600; color: #e2e8f0; padding: 4px 6px 8px; }
+  .exf-t { font-size: 13px; font-weight: 600; color: var(--text-color); padding: 4px 6px 8px; }
   .exf-r { display: flex; align-items: center; gap: 8px; padding: 4px 6px; }
-  .exf-r label { flex: none; width: 52px; font-size: 12px; color: #64748b; }
-  .exf-r .hint { font-size: 11px; color: #475569; line-height: 1.6; }
+  .exf-r label { flex: none; width: 52px; font-size: 12px; color: var(--text-color-tertiary); }
+  .exf-r .hint { font-size: 11px; color: var(--text-color-tertiary); line-height: 1.6; }
   .exf-sel, .exf-in {
-    flex: 1; min-width: 0; background: rgba(255, 255, 255, 0.06); color: #cbd5e1;
-    border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 7px;
+    flex: 1; min-width: 0; background: color-mix(in srgb, var(--text-color) 6%, transparent); color: var(--text-color);
+    border: 1px solid color-mix(in srgb, var(--text-color) 12%, transparent); border-radius: 7px;
     font-size: 12px; padding: 5px 7px; outline: none;
   }
   .exf-in { flex: none; width: 72px; }
@@ -298,24 +297,24 @@
   .pop-title {
     padding: 6px 8px 4px;
     font-size: 11px;
-    color: #64748b;
+    color: var(--text-color-tertiary);
     letter-spacing: 0.5px;
     display: flex;
     align-items: center;
     gap: 8px;
   }
   .pop-title .pop-link {
-    color: #818cf8;
+    color: var(--color-primary);
     text-decoration: none;
     font-size: 10.5px;
     letter-spacing: 0;
-    border: 1px solid rgba(99, 102, 241, 0.35);
+    border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
     border-radius: 5px;
     padding: 1px 7px;
   }
   .pop-title .pop-link:hover {
-    background: rgba(99, 102, 241, 0.2);
-    color: #c7d2fe;
+    background: color-mix(in srgb, var(--color-primary) 20%, transparent);
+    color: var(--color-primary);
   }
 
   .toast {
@@ -323,14 +322,14 @@
     top: 56px;
     left: 50%;
     transform: translateX(-50%);
-    background: #1e293b;
-    color: #e2e8f0;
+    background: var(--bg-color-tertiary);
+    color: var(--text-color);
     padding: 8px 18px;
     border-radius: 10px;
     font-size: 13px;
     z-index: 100;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 30px color-mix(in srgb, var(--text-color) 50%, transparent);
+    border: 1px solid color-mix(in srgb, var(--text-color) 8%, transparent);
   }
 </style>
 
@@ -417,7 +416,7 @@
       <div class="d">暂无项目，点击「新建」开始创作</div>
     </div>
     <div v-for="p in projects" class="pop-item" @click="openProject(p.name)">
-      <div class="t">{{ p.title }} <span style="color:#64748b;font-weight:400">· {{ p.duration }}s · {{ p.scenes }}
+      <div class="t">{{ p.title }} <span style="color:var(--text-color-tertiary);font-weight:400">· {{ p.duration }}s · {{ p.scenes }}
           场景</span></div>
       <div class="d">{{ p.name }}</div>
       <span class="del" @click.stop="deleteProject(p.name)">删除</span>

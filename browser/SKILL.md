@@ -1,6 +1,6 @@
 ---
 name: browser
-version: 1.0.10
+version: 1.0.11
 description: 使用设备上的官方 agent-browser MCP 操作浏览器，UI 提供同一浏览器的实时画面和人工交互。
 ui:
   - path: index.html

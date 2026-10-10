@@ -6,12 +6,12 @@
     .vd-host {
       position: relative; flex: 1; min-height: 0; display: flex; overflow: hidden;
       background:
-        radial-gradient(1200px 600px at 50% -10%, rgba(67, 97, 238, 0.14), transparent 60%),
-        #0a0e16;
+        radial-gradient(1200px 600px at 50% -10%, color-mix(in srgb, var(--color-primary) 14%, transparent), transparent 60%),
+        var(--bg-color);
     }
     .vd-box {
       position: relative; margin: auto; flex: none;
-      box-shadow: 0 10px 50px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.06);
+      box-shadow: 0 10px 50px color-mix(in srgb, var(--text-color) 55%, transparent), 0 0 0 1px color-mix(in srgb, var(--text-color) 6%, transparent);
       border-radius: 4px;
     }
     .vd-clip {
@@ -21,41 +21,41 @@
     .vd-empty {
       position: absolute; inset: 0; display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 10px;
-      color: #4b5563; font-size: 15px;
+      color: var(--text-color-tertiary); font-size: 15px;
     }
-    .vd-empty b { color: #9ca3af; font-size: 17px; font-weight: 600; }
+    .vd-empty b { color: var(--text-color-secondary); font-size: 17px; font-weight: 600; }
 
     /* ---- 选中框与八向手柄 ---- */
-    .vd-sel { position: absolute; border: 1.5px solid #4f6ef7; pointer-events: none; z-index: 10; }
-    .vd-sel-one { position: absolute; border: 1px dashed rgba(79, 110, 247, 0.9); pointer-events: none; z-index: 10; }
-    .vd-guide { position: absolute; pointer-events: none; z-index: 11; background: #f472b6; }
+    .vd-sel { position: absolute; border: 1.5px solid var(--color-primary); pointer-events: none; z-index: 10; }
+    .vd-sel-one { position: absolute; border: 1px dashed color-mix(in srgb, var(--color-primary) 90%, transparent); pointer-events: none; z-index: 10; }
+    .vd-guide { position: absolute; pointer-events: none; z-index: 11; background: var(--color-info); }
     .vd-guide.v { top: 0; bottom: 0; width: 1px; }
     .vd-guide.h { left: 0; right: 0; height: 1px; }
-    .vd-rubber { position: absolute; border: 1px solid #4f6ef7; background: rgba(79, 110, 247, 0.12); z-index: 12; pointer-events: none; }
+    .vd-rubber { position: absolute; border: 1px solid var(--color-primary); background: color-mix(in srgb, var(--color-primary) 12%, transparent); z-index: 12; pointer-events: none; }
     .vd-rot {
       position: absolute; width: 11px; height: 11px; border-radius: 50%;
-      background: #fff; border: 1.5px solid #4f6ef7; cursor: grab; pointer-events: auto; z-index: 11;
+      background: var(--color-primary-text); border: 1.5px solid var(--color-primary); cursor: grab; pointer-events: auto; z-index: 11;
     }
     .vd-ctx {
       position: absolute; z-index: 30; display: flex; flex-direction: column; min-width: 108px;
-      background: #1a2233; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 9px;
-      padding: 4px; box-shadow: 0 10px 32px rgba(0, 0, 0, 0.5);
+      background: var(--bg-color-secondary); border: 1px solid color-mix(in srgb, var(--text-color) 12%, transparent); border-radius: 9px;
+      padding: 4px; box-shadow: 0 10px 32px color-mix(in srgb, var(--text-color) 50%, transparent);
     }
     .vd-ctx button {
-      border: none; background: transparent; color: #cbd5e1; font-size: 12px;
+      border: none; background: transparent; color: var(--text-color); font-size: 12px;
       text-align: left; padding: 6px 10px; border-radius: 6px; cursor: pointer;
     }
-    .vd-ctx button:hover { background: rgba(67, 97, 238, 0.25); color: #fff; }
-    .vd-ctx button.danger:hover { background: rgba(239, 68, 68, 0.25); color: #fca5a5; }
+    .vd-ctx button:hover { background: color-mix(in srgb, var(--color-primary) 25%, transparent); color: var(--color-primary-text); }
+    .vd-ctx button.danger:hover { background: color-mix(in srgb, var(--color-danger) 25%, transparent); color: var(--color-danger); }
     .vd-sel .nm {
       position: absolute; top: -20px; left: -1.5px; font-size: 11px; line-height: 16px;
-      color: #e0e7ff; background: rgba(79, 110, 247, 0.92); padding: 0 7px;
+      color: var(--color-primary-text); background: var(--color-primary); padding: 0 7px;
       border-radius: 4px 4px 4px 0; white-space: nowrap;
     }
     .vd-handle {
-      position: absolute; width: 9px; height: 9px; background: #fff;
-      border: 1.5px solid #4f6ef7; border-radius: 2px; pointer-events: auto;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+      position: absolute; width: 9px; height: 9px; background: var(--color-primary-text);
+      border: 1.5px solid var(--color-primary); border-radius: 2px; pointer-events: auto;
+      box-shadow: 0 1px 3px color-mix(in srgb, var(--text-color) 35%, transparent);
     }
     .vh-nw { left: -5px; top: -5px; cursor: nwse-resize; }
     .vh-n  { left: calc(50% - 5px); top: -5px; cursor: ns-resize; }
@@ -69,54 +69,54 @@
     /* ---- 文本编辑浮层 ---- */
     .vd-textedit { position: absolute; z-index: 12; display: flex; flex-direction: column; gap: 4px; }
     .vd-textedit textarea {
-      flex: 1; min-height: 48px; resize: both; background: rgba(15, 23, 42, 0.94);
-      color: #e5e7eb; border: 1.5px solid #4f6ef7; border-radius: 6px;
+      flex: 1; min-height: 48px; resize: both; background: var(--bg-color-secondary);
+      color: var(--text-color); border: 1.5px solid var(--color-primary); border-radius: 6px;
       padding: 6px 8px; font-size: 14px; line-height: 1.4; outline: none;
       font-family: inherit;
     }
     .vd-textedit .te-bar { display: flex; gap: 6px; justify-content: flex-end; }
     .vd-textedit .te-bar button {
       border: none; border-radius: 6px; padding: 3px 12px; font-size: 12px; cursor: pointer;
-      background: rgba(255, 255, 255, 0.1); color: #cbd5e1;
+      background: color-mix(in srgb, var(--text-color) 10%, transparent); color: var(--text-color);
     }
-    .vd-textedit .te-bar button.ok { background: #4361ee; color: #fff; }
+    .vd-textedit .te-bar button.ok { background: var(--color-primary); color: var(--color-primary-text); }
 
     /* ---- 控制条 ---- */
     .vd-controls {
       display: flex; align-items: center; gap: 10px;
-      padding: 8px 14px; background: rgba(15, 20, 32, 0.92);
-      border-top: 1px solid rgba(255, 255, 255, 0.07);
+      padding: 8px 14px; background: var(--bg-color-secondary);
+      border-top: 1px solid color-mix(in srgb, var(--text-color) 7%, transparent);
     }
     .vd-btn {
-      border: none; background: rgba(67, 97, 238, 0.16); color: #c7d2fe;
+      border: none; background: color-mix(in srgb, var(--color-primary) 16%, transparent); color: var(--color-primary);
       width: 34px; height: 34px; border-radius: 9px; cursor: pointer;
       font-size: 15px; display: flex; align-items: center; justify-content: center;
       transition: background 0.15s; flex: none;
     }
-    .vd-btn:hover { background: rgba(67, 97, 238, 0.32); color: #fff; }
-    .vd-btn.primary { background: #4361ee; color: #fff; width: 40px; height: 40px; }
-    .vd-btn.primary:hover { background: #2563eb; }
-    .vd-seek { flex: 1; height: 5px; -webkit-appearance: none; appearance: none; background: rgba(255, 255, 255, 0.12); border-radius: 99px; outline: none; cursor: pointer; }
+    .vd-btn:hover { background: color-mix(in srgb, var(--color-primary) 32%, transparent); color: var(--color-primary-text); }
+    .vd-btn.primary { background: var(--color-primary); color: var(--color-primary-text); width: 40px; height: 40px; }
+    .vd-btn.primary:hover { background: var(--color-primary-hover); }
+    .vd-seek { flex: 1; height: 5px; -webkit-appearance: none; appearance: none; background: color-mix(in srgb, var(--text-color) 12%, transparent); border-radius: 99px; outline: none; cursor: pointer; }
     .vd-seek::-webkit-slider-thumb {
       -webkit-appearance: none; width: 13px; height: 13px; border-radius: 50%;
-      background: #4361ee; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+      background: var(--color-primary); border: 2px solid var(--color-primary-text); box-shadow: 0 1px 4px color-mix(in srgb, var(--text-color) 40%, transparent);
     }
-    .vd-time { color: #9ca3af; font-size: 12.5px; font-variant-numeric: tabular-nums; min-width: 130px; text-align: center; }
+    .vd-time { color: var(--text-color-secondary); font-size: 12.5px; font-variant-numeric: tabular-nums; min-width: 130px; text-align: center; }
     .vd-rate {
-      background: rgba(255, 255, 255, 0.07); color: #c7d2fe; border: 1px solid rgba(255, 255, 255, 0.12);
+      background: color-mix(in srgb, var(--text-color) 7%, transparent); color: var(--color-primary); border: 1px solid color-mix(in srgb, var(--text-color) 12%, transparent);
       border-radius: 7px; font-size: 12px; padding: 4px 3px; outline: none; flex: none;
     }
-    .vd-btn.on { background: rgba(67, 97, 238, 0.55); color: #fff; }
-    .vd-vol { width: 64px; flex: none; accent-color: #4361ee; cursor: pointer; }
+    .vd-btn.on { background: color-mix(in srgb, var(--color-primary) 55%, transparent); color: var(--color-primary-text); }
+    .vd-vol { width: 64px; flex: none; accent-color: var(--color-primary); cursor: pointer; }
 
     .vd-exporting {
       position: absolute; inset: 0; display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 12px;
-      background: rgba(10, 14, 22, 0.88); color: #c7d2fe; font-size: 14px;
+      background: var(--bg-color-secondary); color: var(--color-primary); font-size: 14px;
       z-index: 20; backdrop-filter: blur(2px);
     }
-    .vd-export-bar { width: 260px; height: 6px; background: rgba(255, 255, 255, 0.12); border-radius: 99px; overflow: hidden; }
-    .vd-export-fill { height: 100%; background: linear-gradient(90deg, #4361ee, #7c3aed); border-radius: 99px; transition: width 0.2s; }
+    .vd-export-bar { width: 260px; height: 6px; background: color-mix(in srgb, var(--text-color) 12%, transparent); border-radius: 99px; overflow: hidden; }
+    .vd-export-fill { height: 100%; background: linear-gradient(90deg, var(--color-primary), var(--color-primary-hover)); border-radius: 99px; transition: width 0.2s; }
   </style>
   <body>
     <div class="vd-wrap">

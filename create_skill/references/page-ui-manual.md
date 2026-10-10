@@ -12,8 +12,8 @@
 - 平台按内容分流两种渲染形态：
   - **含 `<script setup>` → vhtml 组件**（推荐）：响应式、scoped 样式、生命周期全语义、**可获得 pageDesc 指令通道**。
   - **普通 HTML → iframe 隔离渲染**：独立文档、平台运行时不可达、**无指令通道**（需要 AI 交互就用 vhtml 形态）。
-- 页面地址由平台直路由，技能只画页面、零路由代码：默认 `/skills/{skill_id}` 直接加载 `index.html`，子页 `/skills/{skill_id}/{页面名}`；没有 UI 时回退到 `/skills_detail/{skill_id}`。`skill_id` 取自 `skill search/load` 返回值。
-- HTTP 包服务保持返回的 `url_prefix`（`/skills/cloud/{skill_id}`），用于 API、manifest 和静态资源。页内 `$router` 与链接使用相对页面名，平台 `router_prefix` 指向前端入口；`$mod.scoped` 仍指向 HTTP 包目录。
+- 页面地址由平台直路由，技能只画页面、零路由代码：页面入口与 HTTP 包服务**同段** = `/skills/cloud/{skill_id}`（对齐 `/fs/cloud`）——裸入口加载 `index.html`，子页 `/skills/cloud/{skill_id}/{页面名}`；没有 UI 时回退到 `/skills_detail/cloud/{skill_id}`。`skill_id` 取自 `skill search/load` 返回值。
+- `url_prefix`（`/skills/cloud/{skill_id}`）既是页面入口前缀，也用于 API、manifest 和静态资源。页内 `$router` 与链接使用相对页面名（`router_prefix` = 本入口前缀）；`$mod.scoped` 指向 HTTP 包目录（同一个前缀）。注意：包目录的 **fs 工具路径**仍是 `/skills/{skill_id}/...`（与 URL 不同段，勿混用）。
 - **必须是完整 HTML 文档**（`<!DOCTYPE html>` + `html/head/body`）。裸 `<template>` / `<style>` 开头的片段会"静默不挂载"，并伴随一个指向包目录 URL 的误导性 404——见到这个报错先怀疑文档结构。
 
 ## 2. vhtml 速览（最小可用心智）
@@ -99,14 +99,16 @@ pageDesc = {
 
 ## 4. AI 调用流程（探测与调用）
 
+以下命令都走 `exec 1host=page`（page 通道；cloud 与设备端没有 `open`/`list`）：
+
 ```
-open /skills/{skill_id}         # 开窗；skill_id 取自 skill search/load
-list                            # win_id | title | ... | events ← 指令名清单
+open /skills/cloud/{skill_id}   # 开窗；skill_id 取自 skill search/load
+                                # 返回已含 win_id 与 events（指令名清单）——一般无需再 list
 {win_id}.todo_status            # 调用
 {win_id}.todo_add --title "买牛奶" --priority 2
 ```
 
-- 全量命令（含 desc/help）也可用 `commands` 查看。
+- `open` 的返回里 `events` 已列出该窗口可调用指令，直接拼 `{win_id}.{cmd}` 即可；需要全量命令（含 desc/help）再用 `list` / `commands`。
 - 报错语义：win_id 过期 → `window "x" not found (run list to refresh)`（重跑 list）；命令不存在 → `command "x" not found on window "y"`（先看 events）。
 - handler 里的异步代码抛错会作为错误响应返回；耗时操作保持快节奏（先返回"已受理"，再让 AI 用 status 轮询）。
 
@@ -247,7 +249,7 @@ saveBlob = (name, blob) => {
 8. 自携 `env.js` → 平台固定出口，不生效；逻辑别写 env.js 里。
 9. 页内导航写 `news.html` → 写干净路径 `news`（`$router.push('news')` / `<a href="news">`）。
 10. 同页 query 变化不重建组件 → 用 `$router.onChange(() => init())` 自刷新。
-11. 组件里写死技能 id 或混用前缀 → fork 后可能 404；页内导航用相对路径或 `$router`/`$mod.router_prefix`，资源使用 `$mod.scoped`/`url_prefix`。
+11. 组件里写死技能 id 或手拼前缀 → fork/换部署后 404；页内导航用相对页面名（`$router` + `$mod.router_prefix`），资源用相对路径（`$mod.scoped` 自动加前缀）。
 12. 大二进制素材塞包 → 包 ≤16MB 且不该塞；放用户空间，包内只存 `/fs` 路径。
 13. `:key` 之外的另一半：对象行整体替换（`items[i] = {...}`）会销毁重建行 DOM（焦点丢失）；原地改字段或用数组 mutator 保持身份。
 
