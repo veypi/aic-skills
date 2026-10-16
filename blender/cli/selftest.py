@@ -2,22 +2,27 @@
 
 跑法：python3 cli/selftest.py（在技能包根目录）。
 覆盖：认证握手（正确/错误/缺失/HTTP 报文首行）、协议帧收发（真实 socket
-回环）、tools 目录（含截图 out 参数）、call 成功/工具级失败/未知工具/未知方法/
-坏行跳过、execute_code 的 stdout 与 traceback、ping 版本字段、addon 幂等
-start/stop。
+回环）、tools 目录（含 out/file/render schema）、call 成功/工具级失败/未知工具/未知
+方法/坏行跳过、execute_code 的 code 与 file 两条路径、render 参数校验、ping
+版本与环境字段、addon 幂等 start/stop。
 """
 
 import json
 import os
 import socket
 import sys
+import tempfile
 import threading
 import types
 
-# stub bpy：bridge 只在 ping 里读 version_string/filepath
+# stub bpy：bridge 只在 ping/scene/render 里读这些字段
 bpy = types.ModuleType("bpy")
 bpy.app = types.SimpleNamespace(version_string="4.2.0-stub")
 bpy.data = types.SimpleNamespace(filepath="")
+bpy.context = types.SimpleNamespace(scene=types.SimpleNamespace(
+    render=types.SimpleNamespace(engine="BLENDER_EEVEE", resolution_x=1920, resolution_y=1080),
+    camera=types.SimpleNamespace(name="Camera"),
+))
 sys.modules["bpy"] = bpy
 
 os.environ["AIC_BRIDGE_SYNC"] = "1"
@@ -95,20 +100,57 @@ def main():
     # tools 目录
     [rep] = roundtrip(port, [{"id": 1, "method": "tools"}])
     names = [t["name"] for t in rep.get("tools", [])]
-    check("tools lists five", names == ["ping", "get_scene_info", "get_object_info", "execute_code", "get_viewport_screenshot"], names)
+    check("tools lists six", names == ["ping", "get_scene_info", "get_object_info", "execute_code", "get_viewport_screenshot", "render"], names)
     check("tools carry schema", all("inputSchema" in t for t in rep["tools"]))
     shot = next(t for t in rep["tools"] if t["name"] == "get_viewport_screenshot")
     check("screenshot schema carries out", "out" in shot["inputSchema"]["properties"], shot["inputSchema"])
+    exec_tool = next(t for t in rep["tools"] if t["name"] == "execute_code")
+    check("execute_code schema carries file", "file" in exec_tool["inputSchema"]["properties"] and "entry" in exec_tool["inputSchema"]["properties"], exec_tool["inputSchema"])
+    render_props = next(t for t in rep["tools"] if t["name"] == "render")["inputSchema"]
+    check("render schema carries path/camera/clip",
+          render_props.get("required") == ["path"] and {"path", "camera", "clip", "res", "samples", "engine"} <= set(render_props["properties"]),
+          render_props)
 
     # ping
     [rep] = roundtrip(port, [{"id": 2, "method": "call", "name": "ping", "arguments": {}}])
     check("ping ok", rep["result"]["ok"] and rep["result"]["addon"] == bridge.ADDON_VERSION and rep["result"]["blender"] == "4.2.0-stub", rep)
     check("ping protocol", rep["result"]["protocol"] == "vtools/tcp v1")
+    check("ping env fields",
+          rep["result"].get("engine") == "BLENDER_EEVEE" and rep["result"].get("resolution") == "1920x1080" and rep["result"].get("camera") == "Camera",
+          rep)
 
     # execute_code：stdout 捕获 + 结果
     [rep] = roundtrip(port, [{"id": 3, "method": "call", "name": "execute_code", "arguments": {"code": "print('hello bridge')\nx = 1 + 1\nprint(x)"}}])
     check("execute_code stdout", rep["result"]["stdout"] == "hello bridge\n2\n", rep)
     check("execute_code not isError", not rep.get("isError"))
+
+    # execute_code --file：脚本落盘执行；code/file 互斥
+    script = os.path.join(tempfile.gettempdir(), "aic_bridge_selftest_script.py")
+    with open(script, "w", encoding="utf-8") as fh:
+        fh.write("print('from-file')\nprint(6 * 7)\n")
+    [rep] = roundtrip(port, [{"id": 30, "method": "call", "name": "execute_code", "arguments": {"file": script}}])
+    check("execute_code file", rep["result"]["stdout"] == "from-file\n42\n" and rep["result"]["source"] == script, rep)
+    [rep] = roundtrip(port, [{"id": 31, "method": "call", "name": "execute_code", "arguments": {"code": "print(1)", "file": script}}])
+    check("execute_code code+file rejected", rep.get("isError") is True, rep)
+    [rep] = roundtrip(port, [{"id": 32, "method": "call", "name": "execute_code", "arguments": {}}])
+    check("execute_code needs code or file", rep.get("isError") is True, rep)
+    # --entry：载入脚本后调用指定入口（不传则只载入）
+    entry_script = os.path.join(tempfile.gettempdir(), "aic_bridge_selftest_entry.py")
+    with open(entry_script, "w", encoding="utf-8") as fh:
+        fh.write("def build():\n    print('built')\n\n\ndef other():\n    print('other')\n")
+    [rep] = roundtrip(port, [{"id": 35, "method": "call", "name": "execute_code", "arguments": {"file": entry_script, "entry": "build"}}])
+    check("execute_code entry", rep["result"]["stdout"] == "built\n" and rep["result"]["entry"] == "build", rep)
+    [rep] = roundtrip(port, [{"id": 36, "method": "call", "name": "execute_code", "arguments": {"file": entry_script}}])
+    check("execute_code without entry loads only", rep["result"]["stdout"] == "" and rep["result"]["entry"] is None, rep)
+    [rep] = roundtrip(port, [{"id": 37, "method": "call", "name": "execute_code", "arguments": {"file": entry_script, "entry": "nope"}}])
+    check("execute_code bad entry rejected", rep.get("isError") is True, rep)
+    [rep] = roundtrip(port, [{"id": 38, "method": "call", "name": "execute_code", "arguments": {"entry": "build"}}])
+    check("execute_code entry without file rejected", rep.get("isError") is True, rep)
+    # render：缺 path / 目录不存在 必须显式报错（不做静默渲染）
+    [rep] = roundtrip(port, [{"id": 33, "method": "call", "name": "render", "arguments": {}}])
+    check("render requires path", rep.get("isError") is True and "path" in str(rep.get("result", {})), rep)
+    [rep] = roundtrip(port, [{"id": 34, "method": "call", "name": "render", "arguments": {"path": os.path.join(tempfile.gettempdir(), "no-such-dir-x", "a.png")}}])
+    check("render missing dir rejected", rep.get("isError") is True, rep)
 
     # execute_code：异常 → isError + traceback，stdout 保留
     [rep] = roundtrip(port, [{"id": 4, "method": "call", "name": "execute_code", "arguments": {"code": "print('before')\nraise RuntimeError('boom')"}}])

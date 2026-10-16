@@ -10,6 +10,15 @@
 
 - `blender`（0.2.0→0.2.1）：①`get_viewport_screenshot` 增可选 `out` 落盘参数——给了就只回 `{path, mime, bytes, max_size, ms}`（不再回 base64），调用方（agent）随后用 fs read 读该 PNG，host 端图片 read 走 `image_data` 进视觉通道（原 base64 形态只有程序调用方用得上，agent 看不见画面）；addon `ADDON_VERSION` 同步 0.2.1。②手册修正示例参数名（`--max_size`，命令面按 schema 原名映射，原 `--max-size` 示例实际被拒）并补「看图」一节 + `cli/selftest.py` 断言 `out` 在 schema 里。
 
+- `blender`（0.2.1→0.3.0）：
+  ①**新工具 `render`**：渲一帧 PNG 落盘（只回 `{path,bytes,res,samples,engine,clip,camera,ms}`，不回图，调用方 fs read 就看）；
+  支持临时 `camera{location,target,lens}` / `engine` / `res` / `samples` / `clip{start,end}`，渲完**一律还原**用户设置；
+  相机裁剪默认按场景尺度**自适应、只扩不缩**（小模型保持默认 100m，km 级大场景自动盖住）。真机验证：临时机位渲染/显式 clip 裁切/渲完还原全通过。
+  ②`execute_code` 增 `file`/`entry` 参数（读设备脚本执行；`entry` 指定载入后调用哪个入口函数，不传则只载入）——长脚本落盘后“改哪段跑哪段”，彻底避开 shell 引号；回执增 `source`/`entry`。
+  ③`ping` 补 `engine/resolution/camera`（判断渲染环境）。
+  ④手册重构：「脚本工作流」「看图：视口截图 vs 渲染」「坑（实测）」三节 + busy 措辞订正（busy 的调用已被丢弃、不会补执行）+ 无头选择表；
+  坑条目全部在 5.2.1 真机核过（相机 clip 实测 0.1/100m、ColorRamp 按 position 排序、按 type 取 world 节点等）。
+
 ## 0.2.0 — 2026-10-16
 
 **契约变更（结构级）**：技能包新增 `cli/` 执行端维度——`cli/manifest.json` 声明设备服务（协议 kind/别名/程序解析/stream 通道），源码随包入库；aic-pod 对内嵌集的 cli 清单注册 vsh 服务（vtools），二进制与构建产物仍不入库（契约测试收窄为拒 `provider/`、`cli/bin/` 与二进制扩展名）。

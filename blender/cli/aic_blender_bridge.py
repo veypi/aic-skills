@@ -46,7 +46,7 @@ import threading
 import time
 import traceback
 
-ADDON_VERSION = "0.2.1"
+ADDON_VERSION = "0.3.0"
 PROTOCOL = "vtools/tcp v1"
 DEFAULT_PORT = 9866
 MAX_LINE = 16 << 20
@@ -109,13 +109,22 @@ class _ToolFailure(dict):
 # ---------------------------------------------------------------- tools
 
 def _t_ping(_args):
-    return {
+    info = {
         "ok": True,
         "addon": ADDON_VERSION,
         "protocol": PROTOCOL,
         "blender": bpy.app.version_string if bpy else None,
         "file": bpy.data.filepath if bpy else None,
     }
+    if bpy is not None:
+        try:  # 渲染环境概览：agent 判断「现在在什么引擎/分辨率/机位」用
+            sc = bpy.context.scene
+            info["engine"] = sc.render.engine
+            info["resolution"] = "%dx%d" % (sc.render.resolution_x, sc.render.resolution_y)
+            info["camera"] = sc.camera.name if sc.camera else None
+        except Exception:
+            pass  # 无场景上下文时 ping 仍要能用（doctor L3 靠它）
+    return info
 
 
 def _t_scene_info(args):
@@ -170,8 +179,21 @@ def _t_object_info(args):
 
 def _t_execute_code(args):
     code = args.get("code")
+    path = (args.get("file") or "").strip()
+    entry = (args.get("entry") or "").strip()
+    if code and path:
+        raise ValueError("execute_code: 'code' 与 'file' 二选一")
+    if entry and not path:
+        raise ValueError("execute_code: 'entry' 只跟 'file' 一起用")
+    origin = "<aic>"
+    if path:
+        # 设备路径执行：长脚本先落盘（fs write），改一行只需重发路径——避开
+        # shell 引号与 JSON 转义两层碎玻璃；entry 决定这次跑哪一段。
+        with open(path, "r", encoding="utf-8") as fh:
+            code = fh.read()
+        origin = path
     if not code:
-        raise ValueError("execute_code requires 'code'")
+        raise ValueError("execute_code requires 'code' or 'file'")
     buf_out, buf_err = io.StringIO(), io.StringIO()
     g = {"bpy": bpy, "__name__": "__aic_exec__"}
     try:
@@ -187,12 +209,17 @@ def _t_execute_code(args):
     crashed = None
     with contextlib.redirect_stdout(buf_out), contextlib.redirect_stderr(buf_err):
         try:
-            exec(compile(code, "<aic>", "exec"), g)
+            exec(compile(code, origin, "exec"), g)
+            if entry:
+                fn = g.get(entry)
+                if not callable(fn):
+                    raise ValueError("entry %r 在脚本里不存在或不可调用" % entry)
+                fn()
         except Exception:
             crashed = traceback.format_exc()
     if crashed is not None:
         return _ToolFailure(stdout=buf_out.getvalue(), stderr=buf_err.getvalue(), traceback=crashed)
-    return {"stdout": buf_out.getvalue(), "stderr": buf_err.getvalue()}
+    return {"stdout": buf_out.getvalue(), "stderr": buf_err.getvalue(), "source": origin, "entry": entry or None}
 
 
 def _scale_png(path, max_size):
@@ -278,7 +305,167 @@ def _t_screenshot(args):
             pass
 
 
-# name → (fn, 是否主线程, schema)。ping/scene/object/screenshot/execute 全部要 bpy，
+# ---------------------------------------------------------------- render
+
+ENGINE_ALIASES = {
+    "eevee": "BLENDER_EEVEE",
+    "eevee_next": "BLENDER_EEVEE_NEXT",
+    "cycles": "CYCLES",
+    "workbench": "BLENDER_WORKBENCH",
+}
+
+
+def _parse_res(text, fallback):
+    if not text:
+        return fallback
+    s = str(text).lower().replace(" ", "")
+    if "x" not in s:
+        raise ValueError("res 形如 1280x720：%r" % (text,))
+    w, h = s.split("x", 1)
+    return int(w), int(h)
+
+
+def _set_samples(sc, samples):
+    """按当前引擎设采样（采样数挂在 scene.cycles / scene.eevee，不在 render 上）：
+    返回 (kind, 旧值) 供还原；samples 为空则返回 None。"""
+    if samples is None:
+        return None
+    n = int(samples)
+    engine = sc.render.engine
+    if "CYCLES" in engine:
+        old = sc.cycles.samples
+        sc.cycles.samples = n
+        return ("cycles", old)
+    if hasattr(sc, "eevee") and hasattr(sc.eevee, "taa_render_samples"):
+        old = sc.eevee.taa_render_samples
+        sc.eevee.taa_render_samples = n
+        return ("eevee", old)
+    raise ValueError("当前引擎 %s 不支持 samples 参数" % engine)
+
+
+def _restore_samples(sc, saved):
+    if not saved:
+        return
+    kind, old = saved
+    if kind == "cycles":
+        sc.cycles.samples = old
+    elif kind == "eevee":
+        sc.eevee.taa_render_samples = old
+
+
+def _scene_distances(sc, cam_location):
+    """场景可见网格相对相机的 (最近, 最远) 距离（bound_box 近似）。无网格 → (None, None)。"""
+    import mathutils
+    near = far = None
+    for o in sc.objects:
+        if o.type != "MESH" or o.hide_render:
+            continue
+        for corner in o.bound_box:
+            d = ((o.matrix_world @ mathutils.Vector(corner)) - cam_location).length
+            near = d if near is None else min(near, d)
+            far = d if far is None else max(far, d)
+    return near, far
+
+
+def _t_render(args):
+    """渲一帧落盘（返回 path 等元数据，不回图）。临时改的设置——引擎/分辨率/
+    采样/机位——渲染后一律还原：场景和渲染设置都是用户的。"""
+    path = (args.get("path") or "").strip()
+    if not path:
+        raise ValueError("render requires 'path'（PNG 落盘路径）")
+    parent = os.path.dirname(path)
+    if parent and not os.path.isdir(parent):
+        raise ValueError("输出目录不存在：%s（目录要已存在，先建好再渲）" % parent)
+    sc = bpy.context.scene
+    cam = sc.camera or next((o for o in sc.objects if o.type == "CAMERA"), None)
+    if cam is None:
+        raise RuntimeError("场景里没有相机：先用 execute_code 建一个（bpy.ops.object.camera_add(location=...)）")
+    r = sc.render
+    cam_args = args.get("camera") or {}
+    started = time.monotonic()
+    saved = {
+        "engine": r.engine,
+        "resolution_x": r.resolution_x,
+        "resolution_y": r.resolution_y,
+        "resolution_percentage": r.resolution_percentage,
+        "filepath": r.filepath,
+        "file_format": r.image_settings.file_format,
+        "cam_location": list(cam.location),
+        "cam_rotation": list(cam.rotation_euler),
+        "cam_lens": cam.data.lens,
+        "cam_clip_start": cam.data.clip_start,
+        "cam_clip_end": cam.data.clip_end,
+    }
+    saved_samples = None
+    result = None
+    try:
+        engine = (args.get("engine") or "").strip()
+        if engine:
+            r.engine = ENGINE_ALIASES.get(engine.lower(), engine)
+        w, h = _parse_res(args.get("res"), (1280, 720))
+        r.resolution_x, r.resolution_y = w, h
+        r.resolution_percentage = 100
+        r.image_settings.file_format = "PNG"
+        r.filepath = path
+        saved_samples = _set_samples(sc, args.get("samples"))
+        loc, target = cam_args.get("location"), cam_args.get("target")
+        if loc is not None:
+            cam.location = [float(v) for v in loc]
+        if cam_args.get("lens") is not None:
+            cam.data.lens = float(cam_args["lens"])
+        if target is not None:
+            import mathutils
+            direction = mathutils.Vector([float(v) for v in target]) - cam.location
+            cam.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()
+        clip = args.get("clip") or {}
+        clip_explicit = clip.get("start") is not None or clip.get("end") is not None
+        if clip.get("start") is not None:
+            cam.data.clip_start = float(clip["start"])
+        if clip.get("end") is not None:
+            cam.data.clip_end = float(clip["end"])
+        near, far = _scene_distances(sc, cam.location)
+        if far is not None and not clip_explicit:
+            # 自适应：只扩不缩——小模型继续用默认（盲目放大裁剪距离反而掉深度精度），
+            # km 级大场景自动盖住，不再出现“远处被硬切一刀”。
+            cam.data.clip_end = max(cam.data.clip_end, far * 1.05)
+            if near is not None and near > 0:
+                cam.data.clip_start = min(cam.data.clip_start, max(near * 0.5, 0.001))
+        used_engine = r.engine
+        bpy.ops.render.render(write_still=True)
+        result = {
+            "path": path,
+            "bytes": os.path.getsize(path) if os.path.exists(path) else 0,
+            "res": "%dx%d" % (w, h),
+            "samples": int(args["samples"]) if args.get("samples") is not None else None,
+            "engine": used_engine,
+            "clip": {
+                "start": round(cam.data.clip_start, 4),
+                "end": round(cam.data.clip_end, 3),
+                "auto": not clip_explicit,
+            },
+            "camera": {
+                "name": cam.name,
+                "location": [round(v, 4) for v in cam.location],
+                "lens": round(cam.data.lens, 3),
+            },
+            "ms": round((time.monotonic() - started) * 1000),
+        }
+    finally:
+        r.engine = saved["engine"]
+        r.resolution_x, r.resolution_y = saved["resolution_x"], saved["resolution_y"]
+        r.resolution_percentage = saved["resolution_percentage"]
+        r.filepath = saved["filepath"]
+        r.image_settings.file_format = saved["file_format"]
+        cam.location = saved["cam_location"]
+        cam.rotation_euler = saved["cam_rotation"]
+        cam.data.lens = saved["cam_lens"]
+        cam.data.clip_start = saved["cam_clip_start"]
+        cam.data.clip_end = saved["cam_clip_end"]
+        _restore_samples(sc, saved_samples)
+    return result
+
+
+# name → (fn, 是否主线程, schema)。ping/scene/object/screenshot/execute/render 全要 bpy，
 # 即全部主线程执行；selftest 用 SYNC 旁路。
 TOOLS = [
     {
@@ -301,8 +488,15 @@ TOOLS = [
     },
     {
         "name": "execute_code",
-        "description": "在 Blender 主线程执行 Python（预置 bpy/math/mathutils）；异常也回传 stdout/stderr/traceback",
-        "schema": {"type": "object", "properties": {"code": {"type": "string", "description": "要执行的 Python 代码"}}, "required": ["code"]},
+        "description": "在 Blender 主线程执行 Python（预置 bpy/math/mathutils）；异常也回传 stdout/stderr/traceback。长脚本先落盘再用 file 载入，避开 shell 引号与 JSON 转义",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "code": {"type": "string", "description": "要执行的 Python 代码（与 file 二选一）"},
+                "file": {"type": "string", "description": "设备本地脚本路径（与 code 二选一）；读该文件执行，适合长脚本与反复改"},
+                "entry": {"type": "string", "description": "脚本里的入口函数名（可选，仅跟 file 用）：载入后调用它；不传就只载入"},
+            },
+        },
         "fn": _t_execute_code,
     },
     {
@@ -316,6 +510,35 @@ TOOLS = [
             },
         },
         "fn": _t_screenshot,
+    },
+    {
+        "name": "render",
+        "description": "渲一帧 PNG 落盘（只回 path 等元数据，不回 base64：调用方接着 fs read 就看图）；可选临时改引擎/分辨率/采样/机位/裁剪面，渲完还原用户的设置（相机裁剪默认按场景尺度自适应，只扩不缩）",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "path": {"type": "string", "description": "输出 PNG 的设备本地路径（必填；父目录须已存在）"},
+                "res": {"type": "string", "description": "分辨率 WxH，默认 1280x720（迭代用小图更快）"},
+                "samples": {"type": "integer", "description": "采样数（Cycles.samples / EEVEE taa_render_samples）"},
+                "engine": {"type": "string", "description": "引擎：eevee/cycles/workbench 别名或原始 engine id"},
+                "camera": {
+                    "type": "object",
+                    "description": "临时机位（渲染后还原）：location/target/lens；target 是注视点（自动算朝向）",
+                    "properties": {
+                        "location": {"type": "array", "items": {"type": "number"}},
+                        "target": {"type": "array", "items": {"type": "number"}},
+                        "lens": {"type": "number"},
+                    },
+                },
+                "clip": {
+                    "type": "object",
+                    "description": "相机裁剪面 {start,end}（可选）；给了就以它为准，不给则自适应场景尺度（只扩不缩——小模型保持默认 100m，km 级大场景自动盖住）",
+                    "properties": {"start": {"type": "number"}, "end": {"type": "number"}},
+                },
+            },
+            "required": ["path"],
+        },
+        "fn": _t_render,
     },
 ]
 
@@ -513,7 +736,7 @@ def stop():
 bl_info = {
     "name": "AIC Blender Bridge",
     "author": "AIC",
-    "version": (0, 2, 0),
+    "version": (0, 3, 0),
     "blender": (4, 0, 0),
     "description": "vtools/tcp v1 工具服务（AIC 直连通道，认证首行）",
     "category": "System",
