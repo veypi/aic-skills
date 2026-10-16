@@ -12,15 +12,15 @@ import (
 
 func TestListAndOpen(t *testing.T) {
 	names := List()
-	if len(names) != 9 {
-		t.Fatalf("List = %v, want nine static skills", names)
+	if len(names) != 10 {
+		t.Fatalf("List = %v, want ten static skills", names)
 	}
 	for _, name := range []string{"create_skill", "vhtml", "office_studio"} {
 		if !slices.Contains(names, name) {
 			t.Errorf("resource package %s missing", name)
 		}
 	}
-	want := map[string]bool{"browser": true, "cua": true, "create_skill": true, "vhtml": true, "office_studio": true, "drawio": true, "hello": true, "ppt_studio": true, "video_studio": true}
+	want := map[string]bool{"browser": true, "cua": true, "blender": true, "create_skill": true, "vhtml": true, "office_studio": true, "drawio": true, "hello": true, "ppt_studio": true, "video_studio": true}
 	for _, n := range names {
 		if !want[n] {
 			t.Fatalf("unexpected builtin package %q in %v", n, names)
@@ -32,19 +32,21 @@ func TestListAndOpen(t *testing.T) {
 		if _, err := fs.Stat(dir, "SKILL.md"); err != nil {
 			t.Errorf("%s missing SKILL.md: %v", n, err)
 		}
-		for _, path := range []string{"cli/manifest.json", "provider", "cli/bin"} {
+		for _, path := range []string{"provider", "cli/bin"} {
 			if _, err := fs.Stat(dir, path); err == nil {
 				t.Fatalf("%s contains runtime artifact %s", n, path)
 			}
 		}
-		// Zip() 整目录打包：包内不得出现 zip / sqlite 等非静态内容（否则会随
-		// embed 进入构建产物，并挤占发布的 16MB 闸门）。
+		// Zip() 整目录打包：包内不得出现 zip / sqlite / 二进制等非静态内容
+		//（cli/ 只收源码——产物随 embed 进发布会挤占 16MB 闸门且不可执行）。
 		if err := fs.WalkDir(dir, ".", func(p string, d fs.DirEntry, err error) error {
 			if err != nil || d.IsDir() {
 				return err
 			}
-			if strings.HasSuffix(p, ".zip") || strings.HasSuffix(p, ".sqlite") {
-				t.Errorf("%s contains non-content artifact %s", n, p)
+			for _, ext := range []string{".zip", ".sqlite", ".exe", ".dll", ".so", ".dylib"} {
+				if strings.HasSuffix(p, ext) {
+					t.Errorf("%s contains non-content artifact %s", n, p)
+				}
 			}
 			return nil
 		}); err != nil {
@@ -58,10 +60,11 @@ func TestListAndOpen(t *testing.T) {
 
 func TestVersionFromFrontmatter(t *testing.T) {
 	for name, want := range map[string]string{
-		"browser":       "1.0.11",
-		"cua":           "1.0.9",
-		"create_skill":  "1.0.6",
-		"vhtml":         "0.2.0",
+		"browser":       "1.1.0",
+		"cua":           "1.1.0",
+		"blender":       "0.1.0",
+		"create_skill":  "1.0.7",
+		"vhtml":         "0.2.1",
 		"office_studio": "1.0.3",
 		"drawio":        "1.0.2",
 		"hello":         "1.0.0",

@@ -1,0 +1,24 @@
+{
+  "alias": "cua",
+  "service": {
+    "kind": "mcp-stdio",
+    "args": ["mcp"],
+    "no_sandbox": true,
+    "idle_timeout": "30m",
+    "env": {
+      "CUA_DRIVER_RS_UPDATE_CHECK": "false",
+      "CUA_DRIVER_RS_TELEMETRY_ENABLED": "false"
+    }
+  },
+  "programs": [
+    {
+      "sets": "command",
+      "default_command": "cua-driver",
+      "path_env": "AIC_CUA_DRIVER_PATH",
+      "bundle_env": "AIC_CUA_BUNDLE_DIR",
+      "bundle_dir": "cua",
+      "binary": {"darwin": "CuaDriver.app/Contents/MacOS/cua-driver", "windows": "cua-driver.exe", "other": "cua-driver"},
+      "mac_app_fallback": "/Applications/CuaDriver.app/Contents/MacOS/cua-driver"
+    }
+  ]
+}

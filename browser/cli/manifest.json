@@ -1,0 +1,38 @@
+{
+  "alias": "browser",
+  "service": {
+    "kind": "mcp-stdio",
+    "args": ["mcp", "--tools", "core,tabs"],
+    "cwd": "{workdir}",
+    "no_sandbox": true,
+    "idle_timeout": "30m",
+    "env": {
+      "AGENT_BROWSER_SESSION": "aic",
+      "AGENT_BROWSER_SOCKET_DIR": "{home}/.aic/browser/runtime",
+      "AGENT_BROWSER_PROFILE": "{home}/.aic/browser/profile",
+      "AGENT_BROWSER_HEADED": "false"
+    }
+  },
+  "programs": [
+    {
+      "sets": "command",
+      "default_command": "agent-browser",
+      "path_env": "AIC_AGENT_BROWSER_PATH",
+      "bundle_env": "AIC_AGENT_BROWSER_BUNDLE_DIR",
+      "bundle_dir": "agent-browser",
+      "binary": {"windows": "agent-browser.exe", "other": "agent-browser"}
+    },
+    {
+      "sets_env": "AGENT_BROWSER_EXECUTABLE_PATH",
+      "optional": true,
+      "path_env": "AIC_BROWSER_PATH",
+      "bundle_env": "AIC_BROWSER_BUNDLE_DIR",
+      "bundle_dir": "browser",
+      "bundle_subdir": "{os}-{arch}",
+      "os_map": {"windows": "win32"},
+      "arch_map": {"amd64": "x64"},
+      "binary": {"darwin": "Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing", "windows": "chrome.exe", "other": "chrome"}
+    }
+  ],
+  "stream": {"channel": "aic-browser"}
+}

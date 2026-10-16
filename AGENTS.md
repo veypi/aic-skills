@@ -5,26 +5,27 @@ is [README.md](README.md) (Chinese) / [README.en.md](README.en.md) (English).
 
 ## What this repo is
 
-The **official AIC skill content repository**. A skill is static content only: `SKILL.md`
-(required) plus optional `ui/`, `api/`, `tables/` and plain resources. The Go package embeds
-that content and ships it inside the platform (aic) and the device client (aic-pod); it
-contains **no runnable software** — no binaries, no CLI manifest, no provider/SDK layer.
+The **official AIC skill content repository**. A skill package is the plugin unit:
+`SKILL.md` (required, the AI manual) plus optional orthogonal parts — `ui/`, `api/`,
+`tables/` for the cloud, `cli/` for execution ends (aic-pod). The Go package embeds
+that content and ships it inside the platform (aic) and the device client (aic-pod).
 
 Boundary (contract truth: aic `docs/skill.md`):
 
 - Explanations, UI and cloud APIs are published and served by the platform; a skill has no
-  installed/enabled/process/service state.
-- CLIs and scripts run **natively** after the user installs them per the skill's own
-  instructions.
-- Stateful software is an **independent MCP service**; the Pod starts the official
-  `agent-browser mcp` / `cua-driver mcp` (versions pinned by the Desktop bundle) or connects
-  to entries from the device's `mcp.servers`.
+  installed/enabled/process/service state of its own.
+- `cli/` carries host-side program **source** and a `manifest.json` declaring the device
+  service (protocol/alias/program resolution/stream channel); aic-pod registers such services into
+  vsh at startup (vtools). **Only source is committed** — no binaries, no `cli/bin/`,
+  no provider build outputs.
 
 ## Layout
 
 - `<skill>/SKILL.md` — the only required file; frontmatter + body.
 - `<skill>/ui/` — optional cloud UI (`index.html` + modules), loaded at `/skills/cloud/{id}`.
 - `<skill>/api/`, `<skill>/tables/` — optional cloud API and tables.
+- `<skill>/cli/` — optional execution-end program: `manifest.json` (service declaration)
+  + program source. Consumed by aic-pod (vtools 注册); never executed on the cloud.
 - `builtin.go` — `List` / `Open` / `Version` / `Zip` / `Frontmatter` helpers over the embed.
 - `builtin_embed.go` — **the publication switch** (`//go:embed all:<dir> …`): a directory that
   is not listed is never published.
@@ -41,8 +42,8 @@ Boundary (contract truth: aic `docs/skill.md`):
   every content change that must reach existing installs.
 - The **module version** (`VERSION` + `CHANGELOG.md`, tag `vX.Y.Z`) is the Go dependency
   surface used by consumers (aic). Release = commit → tag → push → consumers bump `require`.
-- Never put runnable artifacts in a skill directory (`cli/manifest.json`, `provider/`,
-  `cli/bin`, binaries, `*.zip`): `builtin_test.go` fails on them, and the contract forbids them.
+- Never put build artifacts in a skill directory (`provider/`, `cli/bin`, binaries,
+  `*.zip`): `builtin_test.go` fails on them, and the contract forbids them.
 
 ## Writing skill content
 

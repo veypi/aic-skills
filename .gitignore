@@ -15,6 +15,7 @@
 !drawio/
 !ppt_studio/
 !video_studio/
+!blender/
 !builtin.go
 !builtin_embed.go
 !builtin_test.go

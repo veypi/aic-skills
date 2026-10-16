@@ -4,6 +4,16 @@
 
 两个版本面：**模块版本**（本文件 / tag `vX.Y.Z`，Go 依赖面）与**技能版本**（各 `SKILL.md` frontmatter 的 `version:`，平台定版按它决定是否覆盖）。内容更新 bump 技能版本；契约或结构变化 bump 模块版本。
 
+## 0.2.0 — 2026-10-16
+
+**契约变更（结构级）**：技能包新增 `cli/` 执行端维度——`cli/manifest.json` 声明设备服务（协议 kind/别名/程序解析/stream 通道），源码随包入库；aic-pod 对内嵌集的 cli 清单注册 vsh 服务（vtools），二进制与构建产物仍不入库（契约测试收窄为拒 `provider/`、`cli/bin/` 与二进制扩展名）。
+
+### 技能版本
+
+- `blender`（新增 0.1.0）：设备上的 GUI Blender 直连服务——`blender` vsh 命令（doctor/launch/install 生命周期动词 + ping/get_scene_info/get_object_info/execute_code/get_viewport_screenshot 五工具）；addon `cli/aic_blender_bridge.py` 说 vtools/tcp v1（纯 stdlib，主线程 timer 泵），`cli/selftest.py` 免 Blender 自测。
+- `browser`（1.0.11→1.1.0）：新增 `cli/manifest.json`（pod 内置默认项数据化，含 `aic-browser` stream 通道声明）；手册用法改直调（`browser <tool> --json`、标量参数自动成 flag）。
+- `cua`（1.0.9→1.1.0）：同上（无 stream）。
+
 ## 0.1.1 — 2026-10-10
 
 内容刷新与契约对齐（无结构变更）：同步 vhtml 指南、修正 create_skill 建技能链路与模板、UI 响应式（`@media`→`@container`）与**配色全部归到平台设计 token**；页面入口改为与包服务同段（对齐平台破坏性路由变更 `/skills/cloud/{id}`）。

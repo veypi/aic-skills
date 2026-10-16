@@ -1,0 +1,20 @@
+{
+  "alias": "blender",
+  "service": {"kind": "tcp", "url": "tcp://127.0.0.1:9866"},
+  "lifecycle": {
+    "exe_env": "AIC_BLENDER_EXE",
+    "exe_search": {
+      "darwin": {"roots": ["/Applications", "{home}/Applications", "/Volumes"], "glob": "Blender*.app/Contents/MacOS/Blender", "path_lookup": "blender"},
+      "windows": {"roots": ["C:/Program Files/Blender Foundation", "{programfiles}/Blender Foundation", "{localappdata}/Programs"], "glob": "Blender*/blender.exe", "path_lookup": "blender.exe"},
+      "linux": {"roots": [], "glob": "", "path_lookup": "blender"}
+    },
+    "port_env": "AIC_BLENDER_PORT",
+    "boot_asset": "cli/aic_blender_bridge.py",
+    "addons_dirs": {
+      "darwin": "{home}/Library/Application Support/Blender",
+      "linux": "{home}/.config/blender",
+      "windows": "{env:APPDATA}/Blender Foundation/Blender"
+    }
+  },
+  "verbs": ["doctor", "launch", "install"]
+}
