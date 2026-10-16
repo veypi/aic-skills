@@ -4,6 +4,12 @@
 
 两个版本面：**模块版本**（本文件 / tag `vX.Y.Z`，Go 依赖面）与**技能版本**（各 `SKILL.md` frontmatter 的 `version:`，平台定版按它决定是否覆盖）。内容更新 bump 技能版本；契约或结构变化 bump 模块版本。
 
+## Unreleased
+
+### 技能版本
+
+- `blender`（0.2.0→0.2.1）：①`get_viewport_screenshot` 增可选 `out` 落盘参数——给了就只回 `{path, mime, bytes, max_size, ms}`（不再回 base64），调用方（agent）随后用 fs read 读该 PNG，host 端图片 read 走 `image_data` 进视觉通道（原 base64 形态只有程序调用方用得上，agent 看不见画面）；addon `ADDON_VERSION` 同步 0.2.1。②手册修正示例参数名（`--max_size`，命令面按 schema 原名映射，原 `--max-size` 示例实际被拒）并补「看图」一节 + `cli/selftest.py` 断言 `out` 在 schema 里。
+
 ## 0.2.0 — 2026-10-16
 
 **契约变更（结构级）**：技能包新增 `cli/` 执行端维度——`cli/manifest.json` 声明设备服务（协议 kind/别名/程序解析/stream 通道），源码随包入库；aic-pod 对内嵌集的 cli 清单注册 vsh 服务（vtools），二进制与构建产物仍不入库（契约测试收窄为拒 `provider/`、`cli/bin/` 与二进制扩展名）。

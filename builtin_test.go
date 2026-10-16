@@ -62,7 +62,7 @@ func TestVersionFromFrontmatter(t *testing.T) {
 	for name, want := range map[string]string{
 		"browser":       "1.1.0",
 		"cua":           "1.1.0",
-		"blender":       "0.1.0",
+		"blender":       "0.2.1",
 		"create_skill":  "1.0.7",
 		"vhtml":         "0.2.1",
 		"office_studio": "1.0.3",

@@ -46,7 +46,7 @@ import threading
 import time
 import traceback
 
-ADDON_VERSION = "0.2.0"
+ADDON_VERSION = "0.2.1"
 PROTOCOL = "vtools/tcp v1"
 DEFAULT_PORT = 9866
 MAX_LINE = 16 << 20
@@ -230,6 +230,7 @@ def _scale_png(path, max_size):
 
 def _t_screenshot(args):
     max_size = int(args.get("max_size") or 560)
+    out_path = (args.get("out") or "").strip()
     started = time.monotonic()
     wm = bpy.context.window_manager
     win, area = bpy.context.window, None
@@ -255,13 +256,21 @@ def _t_screenshot(args):
             except Exception:
                 bpy.ops.screen.screenshot(filepath=path)
         data = _scale_png(path, max_size)
-        return {
+        result = {
             "mime": "image/png",
-            "image_base64": base64.b64encode(data).decode("ascii"),
             "bytes": len(data),
             "max_size": max_size,
             "ms": round((time.monotonic() - started) * 1000),
         }
+        if out_path:
+            # 落盘形态：调用端（agent）之后用 fs read 取图——host 端图片 read 走
+            # image_data 进视觉通道，比把 base64 灌进 stdout 实用得多。
+            with open(out_path, "wb") as fh:
+                fh.write(data)
+            result["path"] = out_path
+            return result
+        result["image_base64"] = base64.b64encode(data).decode("ascii")
+        return result
     finally:
         try:
             os.unlink(path)
@@ -298,8 +307,14 @@ TOOLS = [
     },
     {
         "name": "get_viewport_screenshot",
-        "description": "截一帧 3D 视口（base64 PNG；max_size 超边自动缩放，失败回原图）",
-        "schema": {"type": "object", "properties": {"max_size": {"type": "integer", "description": "最长边像素，默认 560", "default": 560}}},
+        "description": "截一帧 3D 视口（PNG；max_size 超边自动缩放，失败回原图）。给了 out 就落盘到该路径并回 {path}，不给则回 image_base64",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "max_size": {"type": "integer", "description": "最长边像素，默认 560", "default": 560},
+                "out": {"type": "string", "description": "PNG 落盘路径（可选；给了就不回 base64，供调用端自行读图）"},
+            },
+        },
         "fn": _t_screenshot,
     },
 ]

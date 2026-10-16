@@ -1,6 +1,6 @@
 ---
 name: blender
-version: 0.2.0
+version: 0.2.1
 description: 用 vsh 的 blender 命令直连设备上的 GUI Blender——看场景/视口截图/执行 Python；未安装或未运行时给分级指引，agent 可自助完成安装与拉起。
 keywords: [blender, 3d, bpy, 建模]
 ---
@@ -34,12 +34,22 @@ blender ping --json                         # 连通握手（addon/Blender 版�
 blender get_scene_info --json               # 场景概要（对象/材质/集合计数 + 清单）
 blender get_object_info --name Cube --json  # 单对象详情
 blender execute_code --code "import bpy; bpy.ops.mesh.primitive_cube_add()" --json
-blender get_viewport_screenshot --max-size 560 --json   # 视口帧（base64 PNG）
+blender get_viewport_screenshot --max_size 560 --json   # 视口帧（回 base64 PNG）
+blender get_viewport_screenshot --max_size 960 --out <设备本地路径>/v.png --json
+                                                        # 落盘（回 path）——随后 fs read 那个 PNG 就能看图
 ```
 
 调用门是 exec 规则 `mcp.blender`（拒绝时按提示 `grant cmd mcp.blender`）。
-标量参数直接映射为 flag；复杂参数走 `--input JSON`。`execute_code` 是万能
-通道——addon 只监听 loopback，请在可信环境使用。
+标量参数直接映射为 flag，**用 schema 原名**（`--max_size`，不是 `--max-size`；
+写错的报错会给出可映射名字）；复杂参数走 `--input JSON`。`execute_code` 是
+万能通道——addon 只监听 loopback，请在可信环境使用。
+
+## 看图（截图落盘）
+
+`get_viewport_screenshot` 的 base64 只有程序调用方用得上；agent 想真看见画面，
+加 `--out <设备本地路径>` 落盘，再用 fs read 读那个 PNG——host 端图片 read 会
+走 `image_data` 进视觉通道。没有 3D 视口（无 GUI 会话/纯后台）时报
+`no 3D viewport（GUI 会话才支持截图）`。
 
 ## 排错
 
@@ -49,7 +59,7 @@ blender get_viewport_screenshot --max-size 560 --json   # 视口帧（base64 PNG
 | `blender_not_running` | 9866 不通 | `blender launch`，或人工启动 Blender 后用 `blender install` + 启用 addon |
 | `addon_not_connected` | 端口通但握手失败 | addon 版本不匹配——`blender launch` 重挂（pod 升级后） |
 | `main-thread-busy` | Blender 主线程被渲染/模态占住 | 等它空下来再发；不排队重发 |
-| `blender launch` 等不到端口 | addon 挂载失败 | 读回执里的 statusFile 结论 |
+| `blender launch` 等不到端口 | addon 没在 60s 内握手 | 读回执里的 statusFile 结论；稍后再跑 `blender doctor` 复查（首次启动/冷缓存更慢） |
 
 ## 重活走无头
 

@@ -2,8 +2,9 @@
 
 跑法：python3 cli/selftest.py（在技能包根目录）。
 覆盖：认证握手（正确/错误/缺失/HTTP 报文首行）、协议帧收发（真实 socket
-回环）、tools 目录、call 成功/工具级失败/未知工具/未知方法/坏行跳过、
-execute_code 的 stdout 与 traceback、ping 版本字段、addon 幂等 start/stop。
+回环）、tools 目录（含截图 out 参数）、call 成功/工具级失败/未知工具/未知方法/
+坏行跳过、execute_code 的 stdout 与 traceback、ping 版本字段、addon 幂等
+start/stop。
 """
 
 import json
@@ -96,6 +97,8 @@ def main():
     names = [t["name"] for t in rep.get("tools", [])]
     check("tools lists five", names == ["ping", "get_scene_info", "get_object_info", "execute_code", "get_viewport_screenshot"], names)
     check("tools carry schema", all("inputSchema" in t for t in rep["tools"]))
+    shot = next(t for t in rep["tools"] if t["name"] == "get_viewport_screenshot")
+    check("screenshot schema carries out", "out" in shot["inputSchema"]["properties"], shot["inputSchema"])
 
     # ping
     [rep] = roundtrip(port, [{"id": 2, "method": "call", "name": "ping", "arguments": {}}])
