@@ -1,6 +1,6 @@
 ---
 name: create_skill
-version: 1.0.6
+version: 1.0.7
 nickname: 创建 Skill 指南
 description: 创建静态说明、云端 UI/API 技能；按实际需要附带脚本、原生 CLI 或独立 MCP 软件的安装说明。
 keywords: [skill, 创建, 技能, ui, api, mcp, 脚本, 模板, 发布]

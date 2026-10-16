@@ -55,4 +55,4 @@
 
 审核台的「试用」会把待审 zip 解压为**审核员自己的临时私有行**用于真实试用；审核决定（通过/拒绝）后统一清理。作者无需操作。
 
-下载内容使用 `skill download <ref> --output <archive.zip>` 或 `GET /api/skills/{id}/download`。下载不会执行脚本或启动服务；MCP 软件独立发行和配置。
+下载内容使用 `pull` 拉取（设备端），或云端 HTTP 入口 `GET /api/skills/{id}/download` 取得 ZIP。MCP 软件独立发行和配置；拉取与下载都不会执行脚本或启动服务。
