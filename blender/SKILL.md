@@ -1,6 +1,6 @@
 ---
 name: blender
-version: 0.1.0
+version: 0.2.0
 description: 用 vsh 的 blender 命令直连设备上的 GUI Blender——看场景/视口截图/执行 Python；未安装或未运行时给分级指引，agent 可自助完成安装与拉起。
 keywords: [blender, 3d, bpy, 建模]
 ---
@@ -9,7 +9,7 @@ keywords: [blender, 3d, bpy, 建模]
 
 设备上的 Blender 直连通道。`blender` 是 pod 内置服务（vtools 注册）：addon
 `cli/aic_blender_bridge.py` 在 Blender GUI 内起一个 127.0.0.1:9866 的
-vtools/tcp v1 服务，pod 侧零中转进程。
+vtools/tcp v1 服务（强制认证首行），pod 侧零中转进程。
 
 ## 运行依赖
 

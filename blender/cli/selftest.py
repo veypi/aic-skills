@@ -1,9 +1,9 @@
 """selftest for aic_blender_bridge —— 不需要真 Blender（stub bpy + SYNC 旁路）。
 
 跑法：python3 cli/selftest.py（在技能包根目录）。
-覆盖：协议帧收发（真实 socket 回环）、tools 目录、call 成功/工具级失败/
-未知工具/未知方法/坏行跳过、execute_code 的 stdout 与 traceback、
-ping 版本字段、addon 幂等 start/stop。
+覆盖：认证握手（正确/错误/缺失/HTTP 报文首行）、协议帧收发（真实 socket
+回环）、tools 目录、call 成功/工具级失败/未知工具/未知方法/坏行跳过、
+execute_code 的 stdout 与 traceback、ping 版本字段、addon 幂等 start/stop。
 """
 
 import json
@@ -21,6 +21,8 @@ sys.modules["bpy"] = bpy
 
 os.environ["AIC_BRIDGE_SYNC"] = "1"
 os.environ["AIC_BLENDER_PORT"] = "0"  # 占位；实际端口用随机空闲端口
+os.environ["AIC_BLENDER_TOKEN"] = "selftest-token"
+TOKEN = "selftest-token"
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import aic_blender_bridge as bridge
@@ -44,11 +46,15 @@ def free_port():
     return p
 
 
-def roundtrip(port, messages):
-    """一条连接顺序发多条消息，收回全部应答。"""
+def roundtrip(port, messages, token=TOKEN):
+    """一条连接：先认证首行，再顺序发多条消息，收回全部应答。"""
     conn = socket.create_connection(("127.0.0.1", port), timeout=5)
     try:
         rf = conn.makefile("rb")
+        conn.sendall(json.dumps({"auth": token}).encode() + b"\n")
+        ack = json.loads(rf.readline(17 << 20))
+        if not ack.get("ok"):
+            raise RuntimeError("auth rejected: %r" % ack)
         out = []
         for m in messages:
             conn.sendall(json.dumps(m).encode() + b"\n")
@@ -65,6 +71,25 @@ def main():
     port = bridge.start()
     check("start returns port", port == bridge.DEFAULT_PORT)
     check("start idempotent", bridge.start() == port)
+
+    # 认证握手：错误 token / 无 auth / HTTP 报文首行一律拒绝并断连
+    def raw_first_line(payload):
+        conn = socket.create_connection(("127.0.0.1", port), timeout=5)
+        try:
+            conn.sendall(payload + b"\n")
+            rf = conn.makefile("rb")
+            line = rf.readline(17 << 20)
+            rest = rf.readline(17 << 20)  # 拒绝后应断连：EOF
+            return json.loads(line) if line else None, rest
+        finally:
+            conn.close()
+
+    rep, rest = raw_first_line(json.dumps({"auth": "wrong"}).encode())
+    check("wrong token rejected", rep is not None and rep.get("ok") is False and rest == b"", rep)
+    rep, _ = raw_first_line(json.dumps({"id": 1, "method": "tools"}).encode())
+    check("missing auth rejected", rep is not None and rep.get("ok") is False, rep)
+    rep, _ = raw_first_line(b"POST / HTTP/1.1")
+    check("http first line rejected", rep is not None and rep.get("ok") is False, rep)
 
     # tools 目录
     [rep] = roundtrip(port, [{"id": 1, "method": "tools"}])
@@ -100,10 +125,12 @@ def main():
     [rep] = roundtrip(port, [{"id": 8, "method": "call", "name": "ping"}])
     check("missing arguments tolerated", rep.get("result", {}).get("ok") is True, rep)
 
-    # 坏行跳过 + 后续正常
+    # 坏行跳过 + 后续正常（认证后）
     conn = socket.create_connection(("127.0.0.1", port), timeout=5)
-    conn.sendall(b"{not json}\n" + json.dumps({"id": 9, "method": "tools"}).encode() + b"\n")
+    conn.sendall(json.dumps({"auth": TOKEN}).encode() + b"\n")
     rf = conn.makefile("rb")
+    json.loads(rf.readline(17 << 20))  # auth ack
+    conn.sendall(b"{not json}\n" + json.dumps({"id": 9, "method": "tools"}).encode() + b"\n")
     rep = json.loads(rf.readline(17 << 20))
     conn.close()
     check("bad line skipped, next answered", rep.get("id") == 9 and "tools" in rep, rep)

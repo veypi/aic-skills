@@ -5,7 +5,10 @@
   - boot 脚本挂载：pod 的 `blender launch` 以 `blender --python boot.py` 拉起，
     boot 脚本 runpy 加载本文件并调用 start()（不动用户 Blender 配置）
 
-协议（行分隔 JSON，单条 ≤16MiB；与 aic-pod libs/vtools/tcp.go 对偶）：
+协议（vtools/tcp v1，通用规范见 aic-pod docs/host-vtools.md §1.1；行分隔
+JSON，单条 ≤16MiB；与 aic-pod libs/vtools/tcp.go 对偶）：
+  → {"auth":"<token>"}                        认证首行（必需）
+  ← {"ok":true}  /  {"ok":false,"error":"…"}（失败即断连）
   → {"id":1,"method":"tools"}
   ← {"id":1,"tools":[{"name","description","inputSchema"}]}
   → {"id":2,"method":"call","name":"execute_code","arguments":{"code":"..."}}
@@ -17,18 +20,25 @@
 （bpy.app.timers）。主线程被渲染/模态占住时，排队超时直接报
 main-thread-busy —— 不把命令堆到永远。
 
-execute_code 是有意的万能通道：会在 Blender 进程里跑任意 Python。
-服务只监听 127.0.0.1；aic-pod 侧另有 exec 规则门（mcp.blender）。
+execute_code 是有意的万能通道：会在 Blender 进程里跑任意 Python。服务只监听
+127.0.0.1 且强制认证首行——首行不是合法 auth 的连接（含浏览器页面发往
+localhost 的 HTTP/WebSocket 报文）一律拒绝，aic-pod 侧另有 exec 规则门
+（mcp.blender）。token 取 env AIC_BLENDER_TOKEN（pod launch 透传）→
+~/.aic/blender/bridge_token（0600，O_EXCL 先建者赢，pod 与 addon 共读同一
+文件）。威胁模型：防浏览器/跨用户本机进程；同 uid 恶意进程能读 token 文件，
+不在此模型内。
 """
 
 from __future__ import annotations
 
 import base64
 import contextlib
+import hmac
 import io
 import json
 import os
 import queue
+import secrets
 import socket
 import sys
 import tempfile
@@ -36,11 +46,12 @@ import threading
 import time
 import traceback
 
-ADDON_VERSION = "0.1.0"
+ADDON_VERSION = "0.2.0"
 PROTOCOL = "vtools/tcp v1"
 DEFAULT_PORT = 9866
 MAX_LINE = 16 << 20
 QUEUE_WAIT_S = 10.0  # 主线程排队上限：超时 = main-thread-busy
+TOKEN_ENV = "AIC_BLENDER_TOKEN"
 
 try:
     import bpy
@@ -49,6 +60,36 @@ except ImportError:  # selftest 等无 Blender 环境（stub 注入）
 
 # AIC_BRIDGE_SYNC=1：队列旁路，原地执行（selftest / 调试；不要在 Blender 里用）
 SYNC = os.environ.get("AIC_BRIDGE_SYNC") == "1"
+
+
+def _token_file():
+    return os.path.join(os.path.expanduser("~"), ".aic", "blender", "bridge_token")
+
+
+def _resolve_token():
+    """认证 token：env（pod launch 透传）→ token 文件 → 自生成写文件
+    （O_EXCL 先建者赢；pod 侧读同一文件）。"""
+    tok = os.environ.get(TOKEN_ENV, "").strip()
+    if tok:
+        return tok
+    path = _token_file()
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            tok = f.read().strip()
+            if tok:
+                return tok
+    except OSError:
+        pass
+    tok = secrets.token_hex(24)
+    os.makedirs(os.path.dirname(path), mode=0o700, exist_ok=True)
+    try:
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    except FileExistsError:
+        with open(path, "r", encoding="utf-8") as f:  # 并发创建：读赢家
+            return f.read().strip()
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        f.write(tok + "\n")
+    return tok
 
 
 class _Busy(Exception):
@@ -334,10 +375,24 @@ def _reply_call(req):
     return reply
 
 
-def _client(conn):
+def _client(conn, token):
     # 每连接单线程读写：读循环与应答都在本线程，无需写锁。
     try:
         rf = conn.makefile("rb")
+        # 认证首行（vtools/tcp v1）：{"auth": token}。不是合法 auth 的连接
+        #（含浏览器发往 localhost 的 HTTP/WebSocket 报文）拒绝并断连。
+        line = rf.readline(MAX_LINE + 2)
+        if not line:
+            return
+        try:
+            hello = json.loads(line)
+            ok = hmac.compare_digest(str(hello.get("auth") or ""), token)
+        except ValueError:
+            ok = False
+        if not ok:
+            conn.sendall(b'{"ok":false,"error":"auth failed"}\n')
+            return
+        conn.sendall(b'{"ok":true}\n')
         while True:
             line = rf.readline(MAX_LINE + 2)
             if not line:
@@ -393,6 +448,7 @@ def start():
     with _server_lock:
         if _server is not None:
             return _port
+        token = _resolve_token()
         srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         _port = port()
@@ -409,14 +465,14 @@ def start():
                     continue
                 except OSError:
                     return  # stop() 关闭了 socket
-                threading.Thread(target=_client, args=(conn,), daemon=True).start()
+                threading.Thread(target=_client, args=(conn, token), daemon=True).start()
 
         _thread = threading.Thread(target=loop, name="aic-blender-bridge", daemon=True)
         _thread.start()
     if bpy is not None and not SYNC:
         bpy.app.timers.register(_pump, persistent=True)
     sys.modules.setdefault("aic_blender_bridge", sys.modules[__name__])
-    print("AIC Blender Bridge %s listening on 127.0.0.1:%d" % (ADDON_VERSION, _port))
+    print("AIC Blender Bridge %s listening on 127.0.0.1:%d（auth 首行已启用）" % (ADDON_VERSION, _port))
     return _port
 
 
@@ -442,9 +498,9 @@ def stop():
 bl_info = {
     "name": "AIC Blender Bridge",
     "author": "AIC",
-    "version": (0, 1, 0),
+    "version": (0, 2, 0),
     "blender": (4, 0, 0),
-    "description": "vtools/tcp v1 工具服务（AIC 直连通道）",
+    "description": "vtools/tcp v1 工具服务（AIC 直连通道，认证首行）",
     "category": "System",
 }
 
