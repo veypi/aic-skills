@@ -4,7 +4,9 @@
 
 两个版本面：**模块版本**（本文件 / tag `vX.Y.Z`，Go 依赖面）与**技能版本**（各 `SKILL.md` frontmatter 的 `version:`，平台定版按它决定是否覆盖）。内容更新 bump 技能版本；契约或结构变化 bump 模块版本。
 
-## Unreleased
+## 0.2.1 — 2026-10-19
+
+仅技能内容更新（模块契约不变）：blender 0.2.0→0.3.0（`render` 工具、`execute_code --file/--entry`、`get_viewport_screenshot out` 落盘、手册重构）。发此版是为 aic-pod v0.9.2 内嵌集取到新内容（pod 经 Go module 嵌入技能包，未发版则 CI 只能拿到旧内容）。
 
 ### 技能版本
 
