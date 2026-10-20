@@ -24,7 +24,6 @@
     },
     {
       "sets_env": "AGENT_BROWSER_EXECUTABLE_PATH",
-      "optional": true,
       "path_env": "AIC_BROWSER_PATH",
       "bundle_env": "AIC_BROWSER_BUNDLE_DIR",
       "bundle_dir": "browser",
