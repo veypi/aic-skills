@@ -16,6 +16,7 @@
 !ppt_studio/
 !video_studio/
 !blender/
+!play_with_ai/
 !builtin.go
 !builtin_embed.go
 !builtin_test.go

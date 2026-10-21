@@ -17,6 +17,7 @@ it inside the platform (aic) and the device client (aic-pod).
 | `drawio` | 1.0.2 | Prose + UI: DrawIO diagram workspace |
 | `ppt_studio` | 1.0.2 | Prose + UI: slide studio |
 | `video_studio` | 1.0.2 | Prose + UI: video studio |
+| `play_with_ai` | 1.0.0 | Prose + UI: multi-game table for playing against AI (gomoku / xiangqi) |
 | `vhtml` | 0.2.0 | Prose: the vhtml frontend framework guide |
 | `hello` | 1.0.0 | Example: a plain native CLI |
 

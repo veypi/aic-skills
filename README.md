@@ -16,6 +16,7 @@ Go embed 只嵌入这些静态内容，随平台（aic）与设备端（aic-pod�
 | `drawio` | 1.0.2 | 说明 + UI：DrawIO 绘图工作台 |
 | `ppt_studio` | 1.0.2 | 说明 + UI：PPT 工坊 |
 | `video_studio` | 1.0.2 | 说明 + UI：视频工坊 |
+| `play_with_ai` | 1.0.0 | 说明 + UI：与 AI 对弈的多游戏台（五子棋 / 象棋） |
 | `vhtml` | 0.2.0 | 说明：vhtml 前端框架指南 |
 | `hello` | 1.0.0 | 示例：普通原生 CLI |
 

@@ -4,6 +4,16 @@
 
 两个版本面：**模块版本**（本文件 / tag `vX.Y.Z`，Go 依赖面）与**技能版本**（各 `SKILL.md` frontmatter 的 `version:`，平台定版按它决定是否覆盖）。内容更新 bump 技能版本；契约或结构变化 bump 模块版本。
 
+## 0.3.0 — 2026-10-22
+
+新增官方技能 `play_with_ai`（1.0.0）：与 AI 对弈的多游戏台（自 test_skills/play_with_ai 试验版重写并升级）。
+
+### 技能版本
+
+- `play_with_ai`（新增 1.0.0）：**三层结构**——①游戏核心（`ui/games/<id>.js`：纯规则，不感知执行者与人数）②公共组件（`ui/core/`：席位与执行者抽象、统一执行入口 `perform(seatId, action, executor)`、存档、AI 选手推送、指令层）③页面（人类交互适配 + 渲染）。人类点击与 AI 指令走**同一个执行入口**，席位数量由游戏自己声明（框架不设上限，最低两人），扩展新游戏只需加一个核心文件并在 `ui/games/index.js` 注册一行。
+  内置**五子棋**（15×15）与**象棋**（9×10：车炮马相仕帅兵全套规则、马腿/塞象眼/炮架/过河/照面/应将/将死困毙判定）。指令（窗口级命名空间，**不加前缀**）：`games` / `start` / `status` / `moves` / `rules` / `play` / `resign` / `reset`。AI 认领席位后独占该方行动权，回合轮到自己时经 `$ai` 推送通知（正文自然语言、完整局面走 system_reminder）。存档落页面本地 OPFS `/.games/<game>.json`（当前局 + 席位归属 + 历史归档 cap 50），刷新自动恢复。
+  配套 `references/game-authoring.md`（游戏核心契约）与 `ui/tests/`（node --test：22 例，覆盖象棋规则与公共组件的人机统一入口）。
+
 ## 0.2.1 — 2026-10-19
 
 仅技能内容更新（模块契约不变）：blender 0.2.0→0.3.0（`render` 工具、`execute_code --file/--entry`、`get_viewport_screenshot out` 落盘、手册重构）。发此版是为 aic-pod v0.9.2 内嵌集取到新内容（pod 经 Go module 嵌入技能包，未发版则 CI 只能拿到旧内容）。

@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>与 AI 对弈</title>
+  <style>
+    /* 页面底色/字体由 OS 统一提供（body 只写布局）；颜色用平台设计 token
+       —— 见 create_skill references/page-ui-manual.md §6 */
+    body {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      container-type: inline-size;
+    }
+
+    .bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-color);
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      padding: 5px 12px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-color);
+      background: var(--bg-color-tertiary);
+      color: var(--text-color-secondary);
+      font-size: var(--font-size-sm);
+      cursor: pointer;
+      transition: background var(--transition-fast);
+    }
+
+    .chip.on {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+      color: var(--color-primary-text);
+    }
+
+    .btn {
+      padding: 6px 14px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-color);
+      background: var(--bg-color-tertiary);
+      color: var(--text-color);
+      font-size: var(--font-size-sm);
+      cursor: pointer;
+      transition: background var(--transition-fast);
+    }
+
+    .btn:hover {
+      border-color: var(--border-color-hover);
+    }
+
+    .btn.primary {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+      color: var(--color-primary-text);
+    }
+
+    .badge {
+      padding: 2px 10px;
+      border-radius: var(--radius-full);
+      font-size: var(--font-size-xs);
+      background: var(--bg-color-tertiary);
+      color: var(--text-color-secondary);
+    }
+
+    .badge.playing {
+      background: color-mix(in srgb, var(--color-primary) 16%, transparent);
+      color: var(--color-primary);
+    }
+
+    .badge.over {
+      background: color-mix(in srgb, var(--color-warning) 18%, transparent);
+      color: var(--color-warning);
+    }
+
+    .spacer {
+      flex: 1;
+    }
+
+    .main {
+      flex: 1;
+      display: flex;
+      gap: 16px;
+      padding: 16px;
+      min-height: 0;
+    }
+
+    .board-wrap {
+      flex: 1;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    canvas {
+      display: block;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      cursor: pointer;
+    }
+
+    .side {
+      width: 300px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+      min-height: 0;
+    }
+
+    .card {
+      background: var(--bg-color-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .ttl {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-semibold);
+      color: var(--text-color-secondary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .srow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: var(--font-size-sm);
+    }
+
+    .k {
+      color: var(--text-color-tertiary);
+      min-width: 3.5em;
+    }
+
+    .who {
+      color: var(--text-color-secondary);
+    }
+
+    .who.ai {
+      color: var(--color-primary);
+    }
+
+    .acting {
+      color: var(--color-success);
+      font-size: var(--font-size-xs);
+    }
+
+    .mini {
+      margin-left: auto;
+      padding: 2px 8px;
+      font-size: var(--font-size-xs);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      background: var(--bg-color-tertiary);
+      color: var(--text-color-secondary);
+      cursor: pointer;
+    }
+
+    .mini:hover {
+      border-color: var(--border-color-hover);
+      color: var(--text-color);
+    }
+
+    .moves {
+      max-height: 220px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: var(--font-size-sm);
+    }
+
+    .mv {
+      display: flex;
+      gap: 8px;
+      padding: 2px 4px;
+      border-radius: var(--radius-sm);
+    }
+
+    .mv:last-child {
+      background: var(--bg-color-tertiary);
+    }
+
+    .mv .n {
+      width: 2.2em;
+      text-align: right;
+      color: var(--text-color-tertiary);
+    }
+
+    .mv .t {
+      margin-left: auto;
+      color: var(--text-color-tertiary);
+      font-size: var(--font-size-xs);
+    }
+
+    .empty {
+      text-align: center;
+      color: var(--text-color-tertiary);
+      font-size: var(--font-size-xs);
+      padding: 10px 0;
+    }
+
+    .arch {
+      display: flex;
+      gap: 8px;
+      padding: 5px 8px;
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-xs);
+      cursor: pointer;
+    }
+
+    .arch:hover {
+      background: color-mix(in srgb, var(--text-color) 8%, transparent);
+    }
+
+    .muted {
+      margin-left: auto;
+      color: var(--text-color-tertiary);
+    }
+
+    .hint {
+      font-size: var(--font-size-xs);
+      color: var(--text-color-tertiary);
+      line-height: 1.6;
+    }
+
+    @container (max-width: 760px) {
+      .main {
+        flex-direction: column;
+        overflow-y: auto;
+      }
+
+      .side {
+        width: auto;
+        overflow: visible;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="bar">
+    <div class="games">
+      <button v-for="g in gameList" :class="['chip', { on: g.id === gameId }]" @click="switchGame(g.id)">{{ g.name }}</button>
+    </div>
+    <span class="badge" :class="phase">{{ phaseText }}</span>
+    <div class="spacer"></div>
+    <button v-if="phase === 'idle'" class="btn primary" @click="humanStart()">开始对局</button>
+    <button v-if="phase === 'playing'" class="btn" @click="humanStop()">结束对局</button>
+    <button v-if="phase === 'over'" class="btn primary" @click="humanStop()">再来一局</button>
+  </header>
+
+  <div class="main">
+    <div class="board-wrap" ref="boardWrap">
+      <canvas ref="board" :width="canvasW" :height="canvasH" :style="{ width: canvasW + 'px', height: canvasH + 'px' }"
+        @click="onClick"></canvas>
+    </div>
+
+    <aside class="side">
+      <div class="card">
+        <div class="ttl">
+          <span>{{ gameName }}</span>
+          <span class="badge" :class="phase">{{ phaseText }}</span>
+        </div>
+        <div v-for="s in seats" class="srow">
+          <span class="k">{{ s.name }}</span>
+          <span class="who" :class="s.kind">{{ s.who }}</span>
+          <span v-if="s.acting" class="acting">行动中</span>
+          <button v-if="s.kind === 'open'" class="mini" @click="claimSeat(s.id)">我来</button>
+          <button v-if="s.kind === 'human'" class="mini" @click="releaseSeat(s.id)">放手</button>
+        </div>
+        <div class="srow">
+          <span class="k">手数</span>
+          <span>{{ moveCount }}</span>
+        </div>
+        <div class="hint">
+          席位空着 = 人类代打；AI 用 start 指令绑定席位后独占该方行动权。人类与 AI 走同一套行动接口。
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ttl"><span>棋谱</span></div>
+        <div class="moves" ref="moves">
+          <div v-if="!moves.length" class="empty">尚未落子</div>
+          <div v-for="m in moves" class="mv">
+            <span class="n">{{ m.n }}.</span>
+            <span>{{ seatLabel(m.seatId) }}</span>
+            <span>{{ m.text }}</span>
+            <span class="t">{{ fmtTime(m.t) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ttl">
+          <span>对局历史</span>
+          <span>{{ archives.length ? archives.length + ' 局' : '' }}</span>
+        </div>
+        <div class="arch-list">
+          <div v-if="!archives.length" class="empty">暂无历史对局</div>
+          <div v-for="a in archives" class="arch" @click="openView(a.id)">
+            <span>{{ fmtDay(a.ended_at) }}</span>
+            <span>{{ a.result }}</span>
+            <span class="muted">{{ a.moves }} 手</span>
+          </div>
+        </div>
+        <div v-if="viewingId" class="srow">
+          <span class="k">正在回看历史对局</span>
+          <button class="mini" @click="closeView()">返回当前局</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script setup>
+    // ===== 公共组件（席位/执行者/统一执行入口/存档/AI 选手/指令层） =====
+    import { GAMES } from './games/index.js'
+    import { createStore } from './core/store.js'
+    import { createAI } from './core/ai.js'
+    import { createManager } from './core/manager.js'
+    import { createCommands } from './core/commands.js'
+
+    store = createStore({ fs: $mod.$fs })
+    ai = createAI({ ai: $mod.$ai })
+    manager = createManager({ games: GAMES, store, ai })
+    commands = createCommands({ manager, games: GAMES })
+
+    // ===== $data =====
+    gameList = GAMES.map((g) => ({ id: g.id, name: g.name }))
+    gameId = manager.currentId()
+    gameName = GAMES[0]?.name || ''
+    phase = 'idle'
+    phaseText = '待开局'
+    seats = []
+    acting = []
+    moves = []
+    archives = []
+    moveCount = 0
+    selected = null
+    candidates = []
+    viewingId = ''
+    geom = { cell: 24, pad: 20, w: 320, h: 320 }
+    canvasW = 320
+    canvasH = 320
+
+    seatLabel = (id) => {
+      const s = seats.find((x) => x.id === id)
+      return s ? s.name : id
+    }
+    fmtTime = (t) => {
+      const d = new Date(t)
+      return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')
+    }
+    fmtDay = (t) => {
+      const d = new Date(t)
+      return `${d.getMonth() + 1}/${d.getDate()} ${fmtTime(t)}`
+    }
+
+    // ===== 视图同步 =====
+    sync = () => {
+      const s = manager.snapshot()
+      gameId = s.gameId
+      gameName = s.gameName
+      phase = s.phase
+      seats = s.seats
+      acting = s.acting
+      moves = s.moves
+      archives = s.archives
+      moveCount = s.moveCount
+      const win = s.winner ? s.seats.find((x) => x.id === s.winner) : null
+      phaseText = s.phase === 'idle' ? '待开局' : s.phase === 'playing' ? '对局中' : win ? `${win.name}胜` : '已结束'
+    }
+
+    // ===== 画布布局（按窗口尺寸自适应） =====
+    layout = () => {
+      const wrap = $refs.boardWrap
+      if (!wrap) return
+      const game = manager.current().game
+      const r = game.paddingRatio ?? 0.8
+      const cols = game.board.cols
+      const rows = game.board.rows
+      const aw = Math.max(120, wrap.clientWidth)
+      const ah = Math.max(120, wrap.clientHeight)
+      const cell = Math.max(6, Math.min(aw / (2 * r + cols - 1), ah / (2 * r + rows - 1)))
+      const pad = cell * r
+      geom = {
+        cell,
+        pad,
+        w: Math.round(2 * pad + (cols - 1) * cell),
+        h: Math.round(2 * pad + (rows - 1) * cell),
+      }
+      canvasW = geom.w
+      canvasH = geom.h
+    }
+
+    // ===== 绘制 =====
+    draw = () => {
+      const cv = $refs.board
+      if (!cv) return
+      const game = manager.current().game
+      const snap = manager.snapshot()
+      const arch = viewingId ? snap.archives.find((a) => a.id === viewingId) : null
+      const st = arch ? arch.state : snap.state
+      const g = cv.getContext('2d')
+      g.clearRect(0, 0, canvasW, canvasH)
+      game.draw(g, st, geom)
+      if (arch) return
+      // 选子高亮 + 合法目标点
+      g.strokeStyle = 'rgba(80,130,255,0.9)'
+      g.lineWidth = 2
+      for (const a of candidates) {
+        g.beginPath()
+        g.arc(geom.pad + a.to.x * geom.cell, geom.pad + a.to.y * geom.cell, Math.max(3, geom.cell * 0.12), 0, Math.PI * 2)
+        g.stroke()
+      }
+      if (selected) {
+        g.beginPath()
+        g.arc(geom.pad + selected.x * geom.cell, geom.pad + selected.y * geom.cell, geom.cell * 0.46, 0, Math.PI * 2)
+        g.stroke()
+      }
+    }
+
+    // ===== 人类交互（与 AI 指令最终都走 session.perform） =====
+    humanSeat = () => {
+      const snap = manager.snapshot()
+      return snap.acting.find((id) => {
+        const seat = snap.seats.find((x) => x.id === id)
+        return seat && seat.kind !== 'ai'
+      }) || ''
+    }
+
+    onClick = (e) => {
+      const cv = $refs.board
+      if (!cv || viewingId) return
+      const rect = cv.getBoundingClientRect()
+      const scale = cv.width / (rect.width || cv.width)
+      const game = manager.current().game
+      const cell = game.cellAt(geom, (e.clientX - rect.left) * scale, (e.clientY - rect.top) * scale)
+      if (!cell) return
+      const seatId = humanSeat()
+      if (!seatId) return // 轮到 AI：等它的回合
+      const snap = manager.snapshot()
+      const res = game.pickAt(snap.state, seatId, cell, selected)
+      if (!res) {
+        selected = null
+        candidates = []
+        draw()
+        return
+      }
+      if (res.select) {
+        selected = cell
+        candidates = res.candidates
+        draw()
+        return
+      }
+      if (res.action) {
+        selected = null
+        candidates = []
+        try {
+          manager.current().perform(seatId, res.action, { kind: 'human' })
+        } catch (err) {
+          console.warn('play_with_ai move failed:', err)
+        }
+      }
+    }
+
+    switchGame = async (id) => {
+      manager.switchGame(id)
+      selected = null
+      candidates = []
+      viewingId = ''
+      await manager.current().ready
+      sync()
+      layout()
+      draw()
+    }
+
+    humanStart = () => {
+      manager.current().begin()
+      sync()
+      draw()
+    }
+
+    humanStop = () => {
+      manager.current().reset()
+      selected = null
+      candidates = []
+      viewingId = ''
+      sync()
+      draw()
+    }
+
+    claimSeat = (id) => {
+      try {
+        manager.current().bindHuman(id)
+        sync()
+        draw()
+      } catch (err) {
+        console.warn('play_with_ai claim failed:', err)
+      }
+    }
+
+    releaseSeat = (id) => {
+      manager.current().releaseSeat(id)
+      sync()
+      draw()
+    }
+
+    openView = (id) => {
+      viewingId = id
+      selected = null
+      candidates = []
+      draw()
+    }
+
+    closeView = () => {
+      viewingId = ''
+      draw()
+    }
+
+    // ===== pageDesc：AI 指令面（窗口级命名空间，{win_id}.{cmd}） =====
+    pageDesc = {
+      desc: commands.desc(),
+      commands: commands.commands(),
+    }
+
+    manager.onChange(() => {
+      sync()
+      draw()
+      pageDesc = {
+        desc: commands.desc(),
+        commands: commands.commands(),
+      }
+    })
+  </script>
+
+  <script>
+    // 挂载：等存档载入 → 布局 → 绘制（跨块共享走 $data：manager/sync/draw 均为 setup 里的裸赋值）
+    ro = null
+    ;(async () => {
+      await manager.current().ready
+      sync()
+      layout()
+      draw()
+    })()
+
+    // 容器尺寸变化（窗口缩放/编排）→ 重排 + 重绘
+    if (typeof ResizeObserver !== 'undefined' && $node) {
+      ro = new ResizeObserver(() => {
+        layout()
+        draw()
+      })
+      ro.observe($node)
+    }
+  </script>
+
+  <script dispose>
+    if (ro) {
+      ro.disconnect()
+      ro = null
+    }
+    ai.dispose()
+  </script>
+</body>
+
+</html>
