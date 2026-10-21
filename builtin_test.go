@@ -70,7 +70,7 @@ func TestVersionFromFrontmatter(t *testing.T) {
 		"hello":         "1.0.0",
 		"ppt_studio":    "1.0.2",
 		"video_studio":  "1.0.2",
-		"play_with_ai":  "1.0.0",
+		"play_with_ai":  "1.0.1",
 	} {
 		if !slices.Contains(List(), name) {
 			want = ""

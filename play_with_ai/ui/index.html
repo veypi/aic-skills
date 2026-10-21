@@ -94,12 +94,18 @@
       flex: 1;
       min-width: 0;
       min-height: 0;
+      position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
+    /* 画布绝对定位：不参与容器尺寸计算，容器尺寸变化不会反过来改画布（无反馈循环） */
     canvas {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
       display: block;
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-md);
@@ -268,8 +274,7 @@
 
   <div class="main">
     <div class="board-wrap" ref="boardWrap">
-      <canvas ref="board" :width="canvasW" :height="canvasH" :style="{ width: canvasW + 'px', height: canvasH + 'px' }"
-        @click="onClick"></canvas>
+      <canvas ref="board" @click="onClick"></canvas>
     </div>
 
     <aside class="side">
@@ -356,8 +361,6 @@
     candidates = []
     viewingId = ''
     geom = { cell: 24, pad: 20, w: 320, h: 320 }
-    canvasW = 320
-    canvasH = 320
 
     seatLabel = (id) => {
       const s = seats.find((x) => x.id === id)
@@ -395,18 +398,20 @@
       const r = game.paddingRatio ?? 0.8
       const cols = game.board.cols
       const rows = game.board.rows
-      const aw = Math.max(120, wrap.clientWidth)
-      const ah = Math.max(120, wrap.clientHeight)
+      const aw = wrap.clientWidth
+      const ah = wrap.clientHeight
+      if (!aw || !ah) return // 容器还没尺寸（隐藏/未布局）
       const cell = Math.max(6, Math.min(aw / (2 * r + cols - 1), ah / (2 * r + rows - 1)))
       const pad = cell * r
-      geom = {
+      const next = {
         cell,
         pad,
         w: Math.round(2 * pad + (cols - 1) * cell),
         h: Math.round(2 * pad + (rows - 1) * cell),
       }
-      canvasW = geom.w
-      canvasH = geom.h
+      // 尺寸没变就不重排（避免 ResizeObserver 与绘制互相触发）
+      if (next.w === geom.w && next.h === geom.h) return
+      geom = next
     }
 
     // ===== 绘制 =====
@@ -417,8 +422,16 @@
       const snap = manager.snapshot()
       const arch = viewingId ? snap.archives.find((a) => a.id === viewingId) : null
       const st = arch ? arch.state : snap.state
+      // 位图与 CSS 尺寸在这里同步设置：不用响应式绑定（DOM 更新是异步的，
+      // 会与同步绘制错位 → 画布比棋盘大一圈）
+      const w = Math.max(1, Math.round(geom.w))
+      const h = Math.max(1, Math.round(geom.h))
+      if (cv.width !== w) cv.width = w
+      if (cv.height !== h) cv.height = h
+      cv.style.width = w + 'px'
+      cv.style.height = h + 'px'
       const g = cv.getContext('2d')
-      g.clearRect(0, 0, canvasW, canvasH)
+      g.clearRect(0, 0, w, h)
       game.draw(g, st, geom)
       if (arch) return
       // 选子高亮 + 合法目标点

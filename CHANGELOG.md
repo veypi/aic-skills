@@ -12,7 +12,8 @@
 
 - `play_with_ai`（新增 1.0.0）：**三层结构**——①游戏核心（`ui/games/<id>.js`：纯规则，不感知执行者与人数）②公共组件（`ui/core/`：席位与执行者抽象、统一执行入口 `perform(seatId, action, executor)`、存档、AI 选手推送、指令层）③页面（人类交互适配 + 渲染）。人类点击与 AI 指令走**同一个执行入口**，席位数量由游戏自己声明（框架不设上限，最低两人），扩展新游戏只需加一个核心文件并在 `ui/games/index.js` 注册一行。
   内置**五子棋**（15×15）与**象棋**（9×10：车炮马相仕帅兵全套规则、马腿/塞象眼/炮架/过河/照面/应将/将死困毙判定）。指令（窗口级命名空间，**不加前缀**）：`games` / `start` / `status` / `moves` / `rules` / `play` / `resign` / `reset`。AI 认领席位后独占该方行动权，回合轮到自己时经 `$ai` 推送通知（正文自然语言、完整局面走 system_reminder）。存档落页面本地 OPFS `/.games/<game>.json`（当前局 + 席位归属 + 历史归档 cap 50），刷新自动恢复。
-  配套 `references/game-authoring.md`（游戏核心契约）与 `ui/tests/`（node --test：22 例，覆盖象棋规则与公共组件的人机统一入口）。
+  配套 `references/game-authoring.md`（游戏核心契约）与 `ui/tests/`（node --test：29 例，覆盖象棋规则、公共组件的人机统一入口与绘图几何不变量）。
+- `play_with_ai`（1.0.0→1.0.1）：①**存档路径修正**——页面 `$fs` 走完整树路径（`/cloud/...`、`/page/...`、`/{host_id}/...`），原先的 `/.games/...` 会被解析成非法 endpoint（`fs: invalid endpoint: .games`），改为 `/page/.games/<game>.json`；②**画布尺寸与绘制同步**——canvas 的 `width/height` 改由绘制函数命令式设置（响应式绑定是异步 DOM 更新，会与同步绘制错位 → 画布比棋盘大一圈），画布改为绝对定位不参与容器尺寸计算（断开尺寸反馈循环）。
 
 ## 0.2.1 — 2026-10-19
 

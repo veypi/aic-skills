@@ -79,7 +79,7 @@
   然后结算、记谱、存档、通知下一方。人类与 AI 的差别只体现在 `executor` 上。
 - **回合调度**：`game.actors(state)` 给出本轮待行动席位，公共组件给其中的 AI 席位推送通知
   （正文是自然语言，完整局面放 `reminders`）。
-- **存档**：每个游戏一份整档 `/.games/<id>.json`（当前局 + 席位归属 + 历史归档，cap 50）。
+- **存档**：每个游戏一份整档 `/page/.games/<id>.json`（当前局 + 席位归属 + 历史归档，cap 50）。
 - **指令层**：`games / start / status / moves / rules / play / resign / reset`，与游戏无关。
 
 ## 自测

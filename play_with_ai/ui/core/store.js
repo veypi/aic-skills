@@ -1,6 +1,9 @@
 // 存档组件：每个游戏一份整档（当前局 + 历史归档），落在页面本地 OPFS。
 // 存档跟随浏览器（换设备不可见）；换端共享请另存到云端用户空间。
 //
+// 路径约定：$fs 走**完整树路径**——页面本地是 /page/...（不是裸 /.games），
+// 云端用户空间是 /cloud/u/{uid}/...，设备是 /{host_id}/...。
+//
 // 整档结构：
 // {
 //   game: 'gomoku',
@@ -15,7 +18,7 @@
 //   history: [ {id, state, moves, winner, result, created_at, ended_at} ]
 // }
 
-export function createStore({ fs, dir = '/.games', historyCap = 50, now = () => Date.now() }) {
+export function createStore({ fs, dir = '/page/.games', historyCap = 50, now = () => Date.now() }) {
   const pathOf = (gameId) => `${dir}/${gameId}.json`
 
   async function load(gameId) {
