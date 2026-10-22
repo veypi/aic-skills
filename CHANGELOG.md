@@ -4,6 +4,10 @@
 
 两个版本面：**模块版本**（本文件 / tag `vX.Y.Z`，Go 依赖面）与**技能版本**（各 `SKILL.md` frontmatter 的 `version:`，平台定版按它决定是否覆盖）。内容更新 bump 技能版本；契约或结构变化 bump 模块版本。
 
+## 0.3.1 — 2026-10-22
+
+仅技能内容更新（模块契约不变）：`vhtml` 0.4.0→0.4.1——`addSlotOverride` 契约同步 vhtml 框架新语义：①片段落点 = **平台根绝对**（注册期解析，缓存键/释放键/解析源三者统一）；②纯结构闸门按 vhtml **真实指令面**（`v:`/`v-else-if`/`vbind`/`vslot`/内联 `on*`/`iframe` 等；`v-model`/`v-bind`/`v-slot`/`v-cloak` 在 vhtml 中并不存在）；③片段失败记住失败态 + 错误占位（`.vhtml-slot-error`），不静默回落；④槽名白名单 `/^[a-zA-Z0-9_-]*$/`；⑤片段内嵌套组件按**宿主模块**解析。
+
 ## 0.3.0 — 2026-10-22
 
 新增官方技能 `play_with_ai`（1.0.0）：与 AI 对弈的多游戏台（自 test_skills/play_with_ai 试验版重写并升级）。
