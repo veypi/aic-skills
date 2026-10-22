@@ -107,3 +107,35 @@ test('存档写入与恢复', async () => {
   assert.equal(snap.moveCount, 1)
   assert.equal(snap.seats.find((x) => x.id === 'black').kind, 'ai')
 })
+
+test('存档结构对不上时不崩：丢弃旧局，按新局继续（ready 正常 resolve）', async () => {
+  // 旧试验版的档：current 上没有 state 字段（局面摊在 board/turn 上）
+  const store = {
+    historyCap: 50,
+    load: async () => ({
+      game: 'gomoku',
+      current: { id: 'g-old', board: new Array(225).fill(0), turn: 1, phase: 'playing' },
+      history: [],
+    }),
+    save: async () => {},
+  }
+  const session = createSession({ game: gomoku, store, ai: fakeAI(), now: () => 1700000000000 })
+  await session.ready // 旧代码在这里抛「Cannot use 'in' operator ... in undefined」
+  const snap = session.snapshot()
+  assert.equal(snap.phase, 'idle')
+  assert.equal(snap.moveCount, 0)
+  assert.equal(snap.state.cells.length, 225)
+})
+
+test('存档读坏了（load 抛错）也不崩页面', async () => {
+  const store = {
+    historyCap: 50,
+    load: async () => {
+      throw new Error('fs boom')
+    },
+    save: async () => {},
+  }
+  const session = createSession({ game: gomoku, store, ai: fakeAI(), now: () => 1700000000000 })
+  await session.ready
+  assert.equal(session.snapshot().phase, 'idle')
+})

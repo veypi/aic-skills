@@ -62,29 +62,42 @@ export function createSession({ game, store, ai, now = () => Date.now() }) {
 
   // ---- 载入 ----
 
+  // 局面结构对不上（规则改过 / 旧档格式不同）就丢弃旧局，避免脏数据。
+  // 注意：c.state 可能是 undefined（旧档没有 state 字段）——直接 `k in c.state`
+  // 会抛「Cannot use 'in' operator」，整页启动脚本挂掉 → 白屏。
+  function sameShape(state) {
+    if (!state || typeof state !== 'object' || Array.isArray(state)) return false
+    const probe = game.newState()
+    return Object.keys(probe).every((k) => k in state) && Object.keys(state).every((k) => k in probe)
+  }
+
   async function load() {
-    const saved = store ? await store.load(game.id) : null
-    if (saved && saved.current) {
-      const c = saved.current
-      // 局面结构对不上（游戏规则改过）就丢弃旧局，避免脏数据
-      const probe = game.newState()
-      const sameShape = Object.keys(probe).every((k) => k in c.state) && Object.keys(c.state).every((k) => k in probe)
-      if (sameShape) {
-        doc = {
-          game: game.id,
-          current: {
-            id: c.id || freshCurrent().id,
-            state: c.state,
-            executors: c.executors || {},
-            phase: c.phase || 'idle',
-            moves: Array.isArray(c.moves) ? c.moves : [],
-            resigned: Array.isArray(c.resigned) ? c.resigned : [],
-            created_at: c.created_at || now(),
-            updated_at: c.updated_at || now(),
-          },
-          history: Array.isArray(saved.history) ? saved.history : [],
+    try {
+      const saved = store ? await store.load(game.id) : null
+      if (saved && saved.current) {
+        const c = saved.current
+        if (sameShape(c.state)) {
+          doc = {
+            game: game.id,
+            current: {
+              id: c.id || freshCurrent().id,
+              state: c.state,
+              executors: c.executors || {},
+              phase: c.phase || 'idle',
+              moves: Array.isArray(c.moves) ? c.moves : [],
+              resigned: Array.isArray(c.resigned) ? c.resigned : [],
+              created_at: c.created_at || now(),
+              updated_at: c.updated_at || now(),
+            },
+            history: Array.isArray(saved.history) ? saved.history : [],
+          }
+        } else {
+          console.warn(`play_with_ai: 存档局面结构对不上（${game.id}），已丢弃旧局`)
         }
       }
+    } catch (e) {
+      // 存档坏了也不能让页面起不来：记一笔，按新局继续
+      console.warn('play_with_ai load failed:', e)
     }
     ready = Promise.resolve(doc)
     emitChange()
@@ -355,6 +368,8 @@ export function createSession({ game, store, ai, now = () => Date.now() }) {
           symbol: s.symbol,
           kind: ex ? ex.kind : 'open',
           who: ex ? (ex.kind === 'ai' ? 'AI' : '人类') : '空位',
+          agentId: ex?.agentId || '',
+          sessionId: ex?.sessionId || '',
           acting: list.includes(s.id),
         }
       }),

@@ -156,6 +156,10 @@
 
     .who {
       color: var(--text-color-secondary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
     }
 
     .who.ai {
@@ -285,7 +289,7 @@
         </div>
         <div v-for="s in seats" class="srow">
           <span class="k">{{ s.name }}</span>
-          <span class="who" :class="s.kind">{{ s.who }}</span>
+          <span class="who" :class="s.kind" :title="seatTitle(s)">{{ seatWho(s) }}</span>
           <span v-if="s.acting" class="acting">行动中</span>
           <button v-if="s.kind === 'open'" class="mini" @click="claimSeat(s.id)">我来</button>
           <button v-if="s.kind === 'human'" class="mini" @click="releaseSeat(s.id)">放手</button>
@@ -353,6 +357,7 @@
     phase = 'idle'
     phaseText = '待开局'
     seats = []
+    seatInfo = {} // seatId → {agentName, model, title}（AI 席位的展示信息）
     acting = []
     moves = []
     archives = []
@@ -366,6 +371,20 @@
       const s = seats.find((x) => x.id === id)
       return s ? s.name : id
     }
+    // AI 席位显示「agent 名字 · 会话模型」（拿不到时回落短 id）
+    seatWho = (s) => {
+      if (s.kind === 'open') return '空位'
+      if (s.kind === 'human') return '人类'
+      const info = seatInfo[s.id] || {}
+      const name = info.agentName || (s.agentId ? s.agentId.slice(0, 8) : 'AI')
+      const model = info.model ? info.model.slice(0, 24) : ''
+      return model ? `${name} · ${model}` : name
+    }
+    seatTitle = (s) => {
+      if (s.kind !== 'ai') return ''
+      const info = seatInfo[s.id] || {}
+      return [info.agentName, info.model, info.title].filter(Boolean).join(' · ')
+    }
     fmtTime = (t) => {
       const d = new Date(t)
       return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')
@@ -373,6 +392,17 @@
     fmtDay = (t) => {
       const d = new Date(t)
       return `${d.getMonth() + 1}/${d.getDate()} ${fmtTime(t)}`
+    }
+
+    // 拉取 AI 席位的展示信息（agent 名字 + 会话模型），只经平台 $ai 资源
+    refreshSeatInfo = async () => {
+      const snap = manager.snapshot()
+      const next = {}
+      for (const s of snap.seats) {
+        if (s.kind !== 'ai' || !s.agentId) continue
+        next[s.id] = await ai.describe({ kind: 'ai', agentId: s.agentId, sessionId: s.sessionId })
+      }
+      seatInfo = next
     }
 
     // ===== 视图同步 =====
@@ -556,6 +586,7 @@
     manager.onChange(() => {
       sync()
       draw()
+      refreshSeatInfo()
       pageDesc = {
         desc: commands.desc(),
         commands: commands.commands(),
@@ -571,6 +602,7 @@
       sync()
       layout()
       draw()
+      refreshSeatInfo()
     })()
 
     // 容器尺寸变化（窗口缩放/编排）→ 重排 + 重绘

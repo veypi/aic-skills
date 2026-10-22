@@ -4,9 +4,11 @@
 // 完整局面放在 reminders（system_reminder 注入，不污染对话正文）。
 //
 // 平台契约：$ai.open({agentId}) → client.attach(sessionId) → client.send({content, reminders})。
+// 展示信息（agent 名字 / 会话模型）同样只经平台 $ai 资源（agents / sessions），不走 fetch。
 
 export function createAI({ ai: aiService } = {}) {
   const clients = new Map() // `${agentId}:${sessionId}` → client
+  const infos = new Map() // `${agentId}:${sessionId}` → {agentName, model, title}
 
   async function push(executor, { content, reminders } = {}) {
     if (!aiService || !executor || executor.kind !== 'ai') return false
@@ -24,6 +26,38 @@ export function createAI({ ai: aiService } = {}) {
     return true
   }
 
+  // 展示信息：agent 名字 + 会话模型（供席位面板显示「谁在坐」）
+  async function describe(executor) {
+    const empty = { agentName: '', model: '', title: '' }
+    if (!aiService || !executor || executor.kind !== 'ai') return empty
+    const agentId = executor.agentId || ''
+    const sessionId = executor.sessionId || ''
+    const key = `${agentId}:${sessionId}`
+    if (infos.has(key)) return infos.get(key)
+    const info = { agentName: '', model: '', title: '' }
+    if (agentId) {
+      try {
+        const agent = await aiService.agents.load(agentId)
+        info.agentName = agent?.name || ''
+      } catch (_) {
+        /* agent 读不到：留空，界面回落到短 id */
+      }
+    }
+    if (sessionId) {
+      try {
+        const session =
+          aiService.sessions.peek({ sessionId }) ||
+          (agentId ? await aiService.sessions.load({ agentId, sessionId }) : null)
+        info.model = session?.model || ''
+        info.title = session?.title || ''
+      } catch (_) {
+        /* 会话读不到：留空 */
+      }
+    }
+    if (info.agentName || info.model) infos.set(key, info)
+    return info
+  }
+
   function dispose() {
     for (const c of clients.values()) {
       try {
@@ -33,7 +67,8 @@ export function createAI({ ai: aiService } = {}) {
       }
     }
     clients.clear()
+    infos.clear()
   }
 
-  return { push, dispose }
+  return { push, describe, dispose }
 }
