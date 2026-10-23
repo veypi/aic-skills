@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>create · 让 AIC 按你的方式工作</title>
+  <style>
+    body { height: 100%; display: flex; flex-direction: column; container-type: inline-size; overflow: hidden; }
+
+    .bar { display: flex; align-items: center; gap: 10px; padding: 12px 22px; border-bottom: 1px solid var(--border-color); }
+    .bar .logo { display: flex; align-items: center; gap: 8px; font-weight: var(--font-weight-semibold); }
+    .bar .logo i { font-style: normal; font-size: 16px; }
+    .bar .sp { flex: 1; }
+
+    .main { flex: 1; overflow: auto; padding: 0 22px 56px; }
+    .wrap { max-width: 960px; margin: 0 auto; }
+
+    /* ---------- hero ---------- */
+    .hero { position: relative; text-align: center; padding: 54px 0 34px; }
+    .hero .glow { position: absolute; left: 50%; top: -60px; width: 620px; height: 320px; transform: translateX(-50%);
+                  pointer-events: none; border-radius: 50%;
+                  background: radial-gradient(closest-side, color-mix(in srgb, var(--color-primary) 16%, transparent), transparent); }
+    .hero .eyebrow { position: relative; display: inline-flex; align-items: center; gap: 7px; padding: 4px 14px;
+                     border-radius: var(--radius-full); font-size: var(--font-size-xs); font-weight: var(--font-weight-medium);
+                     background: color-mix(in srgb, var(--color-primary) 12%, transparent); color: var(--color-primary); }
+    .hero h1 { position: relative; margin: 16px 0 12px; font-size: 34px; line-height: 1.25; font-weight: var(--font-weight-semibold); letter-spacing: .01em; }
+    .hero p { position: relative; margin: 0 auto 26px; max-width: 46ch; color: var(--text-color-secondary); font-size: var(--font-size-md); line-height: 1.8; }
+
+    .cta { position: relative; display: inline-flex; align-items: center; gap: 9px; padding: 11px 24px;
+           border: 0; border-radius: var(--radius-full); background: var(--color-primary); color: var(--color-primary-text);
+           font: inherit; font-weight: var(--font-weight-medium); cursor: pointer;
+           box-shadow: var(--shadow-md); transition: background var(--transition-fast), transform var(--transition-fast); }
+    .cta:hover { background: var(--color-primary-hover); transform: translateY(-1px); }
+    .cta .arrow { font-size: 15px; }
+    .hero .fine { position: relative; margin: 14px 0 0; font-size: var(--font-size-xs); color: var(--text-color-tertiary); }
+
+    /* ---------- 对话气泡 ---------- */
+    .chat { max-width: 620px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+    .bubble { display: flex; gap: 10px; align-items: flex-start; }
+    .bubble .ava { flex: 0 0 auto; width: 28px; height: 28px; border-radius: var(--radius-full);
+                   display: flex; align-items: center; justify-content: center; font-size: 14px;
+                   background: var(--bg-color-tertiary); }
+    .bubble.me { flex-direction: row-reverse; }
+    .bubble.me .ava { background: color-mix(in srgb, var(--color-primary) 16%, transparent); }
+    .bubble .say { padding: 11px 15px; border-radius: var(--radius-lg); background: var(--bg-color-secondary);
+                   border: 1px solid var(--border-color); font-size: var(--font-size-sm); line-height: 1.7; max-width: 78%; }
+    .bubble.me .say { background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+                      border-color: color-mix(in srgb, var(--color-primary) 26%, transparent); }
+    .bubble .say b { font-weight: var(--font-weight-semibold); }
+
+    /* ---------- 三角 ---------- */
+    .tri { margin-top: 46px; border: 1px solid var(--border-color); border-radius: var(--radius-lg);
+           background: var(--bg-color-secondary); padding: 6px 10px 2px; box-shadow: var(--shadow-sm); }
+    .tri .scroll { overflow-x: auto; }
+    .tri svg { display: block; width: 100%; min-width: 560px; height: auto; }
+
+    .links { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 12px; }
+    .links span { padding: 5px 14px; border-radius: var(--radius-full); font-size: var(--font-size-xs);
+                  background: var(--bg-color-tertiary); color: var(--text-color-secondary); }
+    .links span b { color: var(--text-color); font-weight: var(--font-weight-medium); }
+
+    /* ---------- 三端能加什么 ---------- */
+    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 34px; align-items: start; }
+    .card { border: 1px solid var(--border-color); border-radius: var(--radius-lg); background: var(--bg-color-secondary);
+            padding: 18px; transition: transform var(--transition-fast), box-shadow var(--transition-fast); }
+    .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .card .head { display: flex; align-items: center; gap: 11px; margin-bottom: 10px; }
+    .card .ic { display: inline-flex; width: 40px; height: 40px; align-items: center; justify-content: center;
+                border-radius: var(--radius-lg); font-size: 19px; font-style: normal; flex: 0 0 auto; }
+    .card.cloud .ic { background: color-mix(in srgb, var(--color-info) 16%, transparent); }
+    .card.ui .ic { background: color-mix(in srgb, var(--color-primary) 16%, transparent); }
+    .card.dev .ic { background: color-mix(in srgb, var(--color-success) 16%, transparent); }
+    .card h3 { margin: 0; font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); }
+    .card .role { margin: 0 0 6px; color: var(--text-color-secondary); font-size: var(--font-size-sm); line-height: 1.7; }
+    .card .eg { margin: 0 0 12px; color: var(--text-color-tertiary); font-size: var(--font-size-xs); line-height: 1.7; }
+    .card .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .card .tags span { padding: 3px 10px; border-radius: var(--radius-full); font-size: var(--font-size-xs);
+                       background: var(--bg-color-tertiary); color: var(--text-color-secondary); }
+
+    /* ---------- 收尾 ---------- */
+    .outro { margin-top: 40px; text-align: center; }
+    .outro h2 { margin: 0 0 8px; font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); }
+    .outro p { margin: 0 0 18px; color: var(--text-color-secondary); }
+
+    @container (max-width: 760px) {
+      .cards { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 27px; }
+      .bubble .say { max-width: 92%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <div class="logo"><i>🧰</i><span>create</span></div>
+    <div class="sp"></div>
+  </div>
+
+  <div class="main">
+    <div class="wrap">
+
+      <div class="hero">
+        <div class="glow"></div>
+        <span class="eyebrow">AIC 扩展</span>
+        <h1>让 AIC 按你的方式工作</h1>
+        <p>想做什么，说一声。界面、数据应用、桌面布置、设备上的新命令——AI 都能给你做出来。</p>
+        <button class="cta" @click="goChat()">开始做一个 <span class="arrow">→</span></button>
+        <p class="fine">不用懂代码，也不用知道 AIC 内部怎么搭</p>
+      </div>
+
+      <div class="chat">
+        <div class="bubble me">
+          <div class="ava">🙂</div>
+          <div class="say">我想做一个能记录读书笔记的应用，能搜、能存，最好也能把我剪下来的网页存进去。</div>
+        </div>
+        <div class="bubble">
+          <div class="ava">🤖</div>
+          <div class="say">收到，我分三步做：<b>云端</b>建一张笔记表和增删查接口、<b>界面</b>做一个能搜的页面、再加一条<b>设备</b>命令把剪下的网页存进来。</div>
+        </div>
+      </div>
+
+      <div class="tri">
+        <div class="scroll">
+          <svg viewBox="0 0 760 372" role="img" aria-label="云端、界面、设备三端关系">
+            <path d="M312 92 L176 254" stroke="var(--border-color-hover)" stroke-width="1.5" fill="none" />
+            <path d="M448 92 L584 254" stroke="var(--border-color-hover)" stroke-width="1.5" fill="none" />
+            <path d="M252 292 L508 292" stroke="var(--border-color-hover)" stroke-width="1.5" fill="none" />
+
+            <g>
+              <rect x="122" y="158" width="112" height="24" rx="12" fill="var(--bg-color)" stroke="var(--border-color)" />
+              <text x="178" y="175" text-anchor="middle" font-size="11.5" fill="var(--text-color-tertiary)">HTTP</text>
+            </g>
+            <g>
+              <rect x="526" y="158" width="112" height="24" rx="12" fill="var(--bg-color)" stroke="var(--border-color)" />
+              <text x="582" y="175" text-anchor="middle" font-size="11.5" fill="var(--text-color-tertiary)">命令</text>
+            </g>
+            <g>
+              <rect x="324" y="280" width="112" height="24" rx="12" fill="var(--bg-color)" stroke="var(--border-color)" />
+              <text x="380" y="297" text-anchor="middle" font-size="11.5" fill="var(--text-color-tertiary)">实时连接</text>
+            </g>
+
+            <g>
+              <rect x="272" y="16" width="216" height="76" rx="14" fill="var(--bg-color-tertiary)" stroke="var(--border-color)" />
+              <text x="298" y="46" font-size="16" fill="var(--text-color)">☁️</text>
+              <text x="324" y="46" font-size="14.5" font-weight="600" fill="var(--text-color)">云端</text>
+              <text x="298" y="68" font-size="11.5" fill="var(--text-color-tertiary)">帮你把东西存住</text>
+              <text x="298" y="83" font-size="11.5" fill="var(--text-color-tertiary)">文件 · 数据表 · 说明书</text>
+            </g>
+            <g>
+              <rect x="56" y="254" width="196" height="76" rx="14" fill="var(--bg-color-tertiary)" stroke="var(--border-color)" />
+              <text x="80" y="284" font-size="16" fill="var(--text-color)">🖥️</text>
+              <text x="106" y="284" font-size="14.5" font-weight="600" fill="var(--text-color)">界面</text>
+              <text x="80" y="306" font-size="11.5" fill="var(--text-color-tertiary)">跟你面对面</text>
+              <text x="80" y="321" font-size="11.5" fill="var(--text-color-tertiary)">页面 · 组件 · 桌面布置</text>
+            </g>
+            <g>
+              <rect x="508" y="254" width="196" height="76" rx="14" fill="var(--bg-color-tertiary)" stroke="var(--border-color)" />
+              <text x="532" y="284" font-size="16" fill="var(--text-color)">⌨️</text>
+              <text x="558" y="284" font-size="14.5" font-weight="600" fill="var(--text-color)">设备</text>
+              <text x="532" y="306" font-size="11.5" fill="var(--text-color-tertiary)">替你动手</text>
+              <text x="532" y="321" font-size="11.5" fill="var(--text-color-tertiary)">命令 · 脚本 · 后台服务</text>
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      <div class="links">
+        <span>云端 <b>↔</b> 界面 · HTTP</span>
+        <span>云端 <b>↔</b> 设备 · 命令</span>
+        <span>界面 <b>↔</b> 设备 · 实时连接</span>
+      </div>
+
+      <div class="cards">
+        <div class="card cloud">
+          <div class="head"><i class="ic">☁️</i><h3>云端</h3></div>
+          <p class="role">帮你把东西存住，关掉浏览器也在。</p>
+          <p class="eg">你的笔记表、剪藏的网页、给 AI 看的说明书，都放这儿。</p>
+          <div class="tags"><span>文件</span><span>数据表</span><span>说明书</span><span>接口</span></div>
+        </div>
+        <div class="card ui">
+          <div class="head"><i class="ic">🖥️</i><h3>界面</h3></div>
+          <p class="role">你看到、点到、跟 AI 说话的地方。</p>
+          <p class="eg">笔记列表页、搜索框、桌面上那道侧栏，都是界面。</p>
+          <div class="tags"><span>页面</span><span>组件</span><span>桌面布置</span></div>
+        </div>
+        <div class="card dev">
+          <div class="head"><i class="ic">⌨️</i><h3>设备</h3></div>
+          <p class="role">在你自己的电脑和手机上替你动手。</p>
+          <p class="eg">一条命令把剪下的网页存进笔记，这就是设备上的活。</p>
+          <div class="tags"><span>命令</span><span>脚本</span><span>后台服务</span></div>
+        </div>
+      </div>
+
+      <div class="outro">
+        <h2>想做点什么？</h2>
+        <p>说一句就行，剩下的 AI 来做。</p>
+        <button class="cta" @click="goChat()">开始做一个 <span class="arrow">→</span></button>
+      </div>
+
+    </div>
+  </div>
+
+  <script setup>
+    // 带着 skill 标记去对话：开头的 /skills:<id> 会被输入框解析成 skill 引用，
+    // 发送时手册随消息内联（<skill_ref>）。本包是内建包，注册表 id = 包名。
+    chatHref = '/?user_prompt=' + encodeURIComponent(
+      '/skills:create 我想做一个能记录读书笔记的应用，能搜、能存，最好也能把我剪下来的网页存进去。'
+    )
+
+    // 按钮而不是链接：包页面里的 <a> 会被路由器拦下并按包作用域重写路径，
+    // 绝对路径跳不出去。直接走平台开窗（$os.open），开不出就退回新标签页。
+    goChat = () => {
+      const os = $mod?.$os
+      if (os?.open) { os.open(chatHref); return }
+      window.open(chatHref, '_blank')
+    }
+  </script>
+</body>
+</html>

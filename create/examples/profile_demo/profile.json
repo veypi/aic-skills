@@ -1,0 +1,17 @@
+{
+  "v": 1,
+  "base": "default",
+  "rules": [
+    { "kind": "alias", "match": "/ai/box.html", "url": "/ai/mybox.html" },
+    { "kind": "slot", "component": "/ai/panel.html", "slot": "aside", "url": "/fs/cloud/u/admin/slot.html", "mode": "override" },
+    { "kind": "dock", "edge": "auto", "url": "/os/chrome.html" }
+  ],
+  "layout": {
+    "v": 5,
+    "tree": { "k": "leaf", "id": "w-demo" },
+    "activeId": "w-demo",
+    "windows": [
+      { "id": "w-demo", "surface": "route", "position": "tile", "url": "/a/coder", "name": "对话", "minimized": false }
+    ]
+  }
+}

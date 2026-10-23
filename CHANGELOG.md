@@ -4,22 +4,55 @@
 
 两个版本面：**模块版本**（本文件 / tag `vX.Y.Z`，Go 依赖面）与**技能版本**（各 `SKILL.md` frontmatter 的 `version:`，平台定版按它决定是否覆盖）。内容更新 bump 技能版本；契约或结构变化 bump 模块版本。
 
-## 0.3.1 — 2026-10-22
+## 0.3.0 — 2026-10-24
 
-仅技能内容更新（模块契约不变）：`vhtml` 0.4.0→0.4.1——`addSlotOverride` 契约同步 vhtml 框架新语义：①片段落点 = **平台根绝对**（注册期解析，缓存键/释放键/解析源三者统一）；②纯结构闸门按 vhtml **真实指令面**（`v:`/`v-else-if`/`vbind`/`vslot`/内联 `on*`/`iframe` 等；`v-model`/`v-bind`/`v-slot`/`v-cloak` 在 vhtml 中并不存在）；③片段失败记住失败态 + 错误占位（`.vhtml-slot-error`），不静默回落；④槽名白名单 `/^[a-zA-Z0-9_-]*$/`；⑤片段内嵌套组件按**宿主模块**解析。
+> 说明：v0.2.1 之后本仓一直未打 tag（0.3.0/0.3.1 两段内容只在 main 上未发布），
+> 本版一次性发布：play_with_ai 新增 + vhtml 0.4.1 + `create` 改名与重写。
 
-## 0.3.0 — 2026-10-22
+**破坏性变更**：内建包 `create_skill` 更名为 **`create`**（目录、embed 清单、注册表 id 同步改）。
+它已不是“创建技能”的指南，而是 **AIC 扩展作者手册**——覆盖云端 / 界面 / 设备三端的扩展形态。
+（旧内建行 `create_skill` 由平台启动时一次性退役清理。）
 
-新增官方技能 `play_with_ai`（1.0.0）：与 AI 对弈的多游戏台（自 test_skills/play_with_ai 试验版重写并升级）。
+### `create`（新，1.0.0）
 
-### 技能版本
+- **SKILL.md**：决策流程手册——三端速查表（负责 / 持久化 / 交互协议 / 能加什么 / 读哪篇）→ 六步流程
+  （① 把需求拆成三端清单 ② 选内容物与落位 ③ 只读要动的那几端分篇 ④ 建容器：建行→授权→写文件
+  ⑤ 按该端协议实现 ⑥ 验收）→ 红线 8 条 → 平台动作速查 → 按端验收清单 → 分篇索引。
+- **references/ 八篇**（按端命名）：`model`（三端模型 + 需求→组合对照表 + 跨层说明）、
+  `cloud-package`（技能包：结构 / frontmatter / 建行写包 / 寻址）、`cloud-data`（表声明 / sqlx 接口 /
+  用户隔离 / SQL 规范）、`ui-component`（vhtml 页面与组件：文件形态 / 语法 / 样式 token / 页面指令）、
+  `ui-profile`（桌面档案：三类规则 / 硬约束 / 生效语义 / 档案命令面）、`device-cli`（设备命令三种形态 /
+  manifest 字段 / 源码与产物边界）、`materials`（共享服务 / 三个通道 / 身份边界）、
+  `publishing`（私有→广场 / 审核要点 / fork / 下架）。
+- **templates/**：技能包骨架（SKILL.md + 界面 + api + tables）、桌面档案四件（空档 + alias / slot / dock）、
+  设备命令骨架（manifest + 程序源码 + 安装说明模板）、普通脚本。
+- **examples/**：新增 `profile_demo`（三类规则各一条 + 坑位说明）与 `device_tool`（设备命令示例包）；
+  保留 `hello` / `notes` / `todo_min`。
+- **ui/index.html**：给人看的扩展能力介绍页（三端关系图 + 一段真实对话 + 各端能加什么 +
+  一键带 skill 标记开对话）；给 AI 的实现手册在同包 SKILL.md 与 references。
 
-- `play_with_ai`（新增 1.0.0）：**三层结构**——①游戏核心（`ui/games/<id>.js`：纯规则，不感知执行者与人数）②公共组件（`ui/core/`：席位与执行者抽象、统一执行入口 `perform(seatId, action, executor)`、存档、AI 选手推送、指令层）③页面（人类交互适配 + 渲染）。人类点击与 AI 指令走**同一个执行入口**，席位数量由游戏自己声明（框架不设上限，最低两人），扩展新游戏只需加一个核心文件并在 `ui/games/index.js` 注册一行。
+### `play_with_ai`（新增，1.0.0）
+
+与 AI 对弈的多游戏台（自 test_skills/play_with_ai 试验版重写并升级）。**三层结构**——①游戏核心（`ui/games/<id>.js`：纯规则，不感知执行者与人数）②公共组件（`ui/core/`：席位与执行者抽象、统一执行入口 `perform(seatId, action, executor)`、存档、AI 选手推送、指令层）③页面（人类交互适配 + 渲染）。人类点击与 AI 指令走**同一个执行入口**，席位数量由游戏自己声明（框架不设上限，最低两人），扩展新游戏只需加一个核心文件并在 `ui/games/index.js` 注册一行。
   内置**五子棋**（15×15）与**象棋**（9×10：车炮马相仕帅兵全套规则、马腿/塞象眼/炮架/过河/照面/应将/将死困毙判定）。指令（窗口级命名空间，**不加前缀**）：`games` / `start` / `status` / `moves` / `rules` / `play` / `resign` / `reset`。AI 认领席位后独占该方行动权，回合轮到自己时经 `$ai` 推送通知（正文自然语言、完整局面走 system_reminder）。存档落页面本地 OPFS `/page/.games/<game>.json`（当前局 + 席位归属 + 历史归档 cap 50），刷新自动恢复。
   配套 `references/game-authoring.md`（游戏核心契约）与 `ui/tests/`（node --test：48 例，覆盖象棋规则、公共组件的人机统一入口、绘图几何不变量、存档路径与旧档迁移）。
+
 - `play_with_ai`（1.0.0→1.0.1）：①**存档路径修正**——页面 `$fs` 走完整树路径（`/cloud/...`、`/page/...`、`/{host_id}/...`），原先的 `/.games/...` 会被解析成非法 endpoint（`fs: invalid endpoint: .games`，**写盘从未成功 → 刷新即丢局**），改为 `/page/.games/<game>.json`；②**画布尺寸与绘制同步**——canvas 的 `width/height` 改由绘制函数命令式设置（响应式绑定是异步 DOM 更新，会与同步绘制错位 → 画布比棋盘大一圈），画布改为绝对定位不参与容器尺寸计算（断开尺寸反馈循环）。
 - `play_with_ai`（1.0.1→1.0.2）：席位面板的 AI 席位不再只显示「AI」，改为显示 **agent 名字 · 会话模型**（`$ai.agents.load` / `$ai.sessions.load`，仍只经平台 `$ai` 资源、不走 fetch）；读不到时回落到短 id。
 - `play_with_ai`（1.0.2→1.0.3）：**旧档不再炸页面**——旧试验版（test_skills/play_with_ai）把局面直接摊在 `current` 上（**没有 `state` 字段**），新版按 `current.state` 取局面 → 读到旧档时形状校验抛 `Cannot use 'in' operator ... in undefined`，`ready` 被 reject → 页面启动脚本挂掉 → 整页白屏。现在：①整档带**格式版本号 `v`**，读档先验结构，对不上就**丢弃旧局重新开始**（记 warn，不再让页面起不来）；②旧试验版的五子棋档**一次性迁移**成新格式（棋子/回合/上一手/席位归属/棋谱都保留），不丢用户手上的局；③`load()` 整体包 try/catch，存档读坏了也照常开新局。
+
+### `vhtml`（0.4.0 → 0.4.1）
+
+`addSlotOverride` 契约同步 vhtml 框架新语义：①片段落点 = **平台根绝对**（注册期解析，缓存键/释放键/
+解析源三者统一）；②纯结构闸门按 vhtml **真实指令面**（`v:`/`v-else-if`/`vbind`/`vslot`/内联 `on*`/
+`iframe` 等；`v-model`/`v-bind`/`v-slot`/`v-cloak` 在 vhtml 中并不存在）；③片段失败记住失败态 +
+错误占位（`.vhtml-slot-error`），不静默回落；④槽名白名单 `/^[a-zA-Z0-9_-]*$/`；⑤片段内嵌套组件
+按**宿主模块**解析。
+
+### 其他
+
+- `vhtml` 的 frontmatter 版本此前未同步到 `builtin_test.go` 期望表（测试红），本轮校准；
+  README 中各包版本号与实际 frontmatter 对齐（此前多包版本过期、`blender` 缺行）。
 
 ## 0.2.1 — 2026-10-19
 

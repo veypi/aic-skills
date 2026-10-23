@@ -9,15 +9,16 @@ Go embed 只嵌入这些静态内容，随平台（aic）与设备端（aic-pod�
 
 | 技能 | 版本 | 形态 |
 | --- | --- | --- |
-| `browser` | 1.0.11 | 说明 + UI：设备侧官方 `agent-browser`（0.38.2）MCP 的用法与实时画面 |
-| `cua` | 1.0.9 | 说明 + UI：官方 `cua-driver`（0.33.2）MCP 的远程查看与控制 |
-| `create_skill` | 1.0.6 | 手册 + 模板：怎么写一个技能（静态说明 + 可选云 UI/API） |
+| `browser` | 1.1.2 | 说明 + UI：设备侧官方 `agent-browser`（0.38.2）MCP 的用法与实时画面 |
+| `cua` | 1.1.0 | 说明 + UI：官方 `cua-driver`（0.33.2）MCP 的远程查看与控制 |
+| `blender` | 0.3.0 | 说明：设备上的 Blender 直连（看场景 / 渲染 / 执行 Python） |
+| `create` | 1.0.0 | 手册 + 模板 + 介绍页：AIC 扩展作者手册（云端/界面/设备三端）与给人看的扩展能力介绍页 |
 | `office_studio` | 1.0.3 | 说明 + UI：Office 文档工作台 |
 | `drawio` | 1.0.2 | 说明 + UI：DrawIO 绘图工作台 |
 | `ppt_studio` | 1.0.2 | 说明 + UI：PPT 工坊 |
 | `video_studio` | 1.0.2 | 说明 + UI：视频工坊 |
-| `play_with_ai` | 1.0.0 | 说明 + UI：与 AI 对弈的多游戏台（五子棋 / 象棋） |
-| `vhtml` | 0.2.0 | 说明：vhtml 前端框架指南 |
+| `play_with_ai` | 1.0.3 | 说明 + UI：与 AI 对弈的多游戏台（五子棋 / 象棋） |
+| `vhtml` | 0.5.0 | 说明：vhtml 前端框架指南 |
 | `hello` | 1.0.0 | 示例：普通原生 CLI |
 
 [`builtin_embed.go`](builtin_embed.go) 的 embed 列表是**唯一的发布面**——目录存在但不在列表里

@@ -59,7 +59,7 @@ Boundary (contract truth: aic `docs/skill.md`):
   for in-page navigation. The fs-tool package path stays `/skills/{id}/...` (a different
   segment from the URL). **Never hardcode platform hosts or ports** in skill content or UI.
 - Shared page services (`$auth`, `$ai`, `$hosts`, `$skills`, `$account`, `$catalog`, `$fs`,
-  `$pageExec`) are documented by `create_skill`; keep `create_skill` aligned whenever a
+  `$pageExec`) are documented by `create`; keep `create` aligned whenever a
   contract changes — it is what other authors copy.
 - When the Pod's tool surface changes (e.g. upstream MCP pins), update `browser/`/`cua/`
   prose and their skill `version:` in the same change.

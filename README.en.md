@@ -10,15 +10,16 @@ it inside the platform (aic) and the device client (aic-pod).
 
 | Skill | Version | Shape |
 | --- | --- | --- |
-| `browser` | 1.0.11 | Prose + UI: using the device-side official `agent-browser` (0.38.2) MCP, with a live view |
-| `cua` | 1.0.9 | Prose + UI: remote view and control through the official `cua-driver` (0.33.2) MCP |
-| `create_skill` | 1.0.6 | Guide + templates: how to author a skill (static prose + optional cloud UI/API) |
+| `browser` | 1.1.2 | Prose + UI: using the device-side official `agent-browser` (0.38.2) MCP, with a live view |
+| `cua` | 1.1.0 | Prose + UI: remote view and control through the official `cua-driver` (0.33.2) MCP |
+| `blender` | 0.3.0 | Prose: direct bridge to Blender on the device (inspect / render / run Python) |
+| `create` | 1.0.0 | Guide + templates + intro page: the AIC extension authoring manual (cloud / page / host) and a human-facing capability page |
 | `office_studio` | 1.0.3 | Prose + UI: office document workspace |
 | `drawio` | 1.0.2 | Prose + UI: DrawIO diagram workspace |
 | `ppt_studio` | 1.0.2 | Prose + UI: slide studio |
 | `video_studio` | 1.0.2 | Prose + UI: video studio |
-| `play_with_ai` | 1.0.0 | Prose + UI: multi-game table for playing against AI (gomoku / xiangqi) |
-| `vhtml` | 0.2.0 | Prose: the vhtml frontend framework guide |
+| `play_with_ai` | 1.0.3 | Prose + UI: multi-game table for playing against AI (gomoku / xiangqi) |
+| `vhtml` | 0.5.0 | Prose: the vhtml frontend framework guide |
 | `hello` | 1.0.0 | Example: a plain native CLI |
 
 The `//go:embed` list in [`builtin_embed.go`](builtin_embed.go) is the **only publication

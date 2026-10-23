@@ -1,0 +1,21 @@
+{
+  "alias": "mytool",
+  "service": {
+    "kind": "mcp-stdio",
+    "args": ["mcp"],
+    "cwd": "{workdir}",
+    "idle_timeout": "30m",
+    "env": { "MYTOOL_HOME": "{home}/.mytool" }
+  },
+  "programs": [
+    {
+      "sets": "command",
+      "default_command": "mytool",
+      "path_env": "AIC_MYTOOL_PATH",
+      "bundle_env": "AIC_MYTOOL_BUNDLE_DIR",
+      "bundle_dir": "mytool",
+      "binary": { "windows": "mytool.exe", "other": "mytool" }
+    }
+  ],
+  "stream": { "channel": "aic-mytool" }
+}

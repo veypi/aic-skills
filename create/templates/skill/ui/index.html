@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>example</title>
+  <style>
+    /* 页面底色/字体由平台提供（body 只写布局）；颜色一律用平台 token，亮暗主题自动适配 */
+    body { height: 100%; display: flex; flex-direction: column; container-type: inline-size; }
+    .bar { display: flex; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border-color); }
+    .bar input { flex: 1; min-width: 0; padding: 6px 10px; border-radius: var(--radius-lg);
+                 border: 1px solid var(--border-color); background: var(--bg-color-secondary); color: var(--text-color); }
+    .bar button { padding: 6px 14px; border-radius: var(--radius-lg); border: 1px solid transparent;
+                  background: var(--color-primary); color: var(--color-primary-text); cursor: pointer;
+                  transition: background var(--transition-fast); }
+    .bar button:hover { background: var(--color-primary-hover); }
+    .list { flex: 1; overflow: auto; padding: 10px 12px; }
+    .item { display: flex; gap: 10px; align-items: center; padding: 8px 10px; margin-bottom: 8px;
+            border: 1px solid var(--border-color); border-radius: var(--radius-lg); background: var(--bg-color-secondary); }
+    .item .title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .item .qty { font-size: var(--font-size-xs); padding: 1px 8px; border-radius: var(--radius-full);
+                 background: color-mix(in srgb, var(--color-primary) 14%, transparent); color: var(--color-primary); }
+    .del { border: 0; background: none; color: var(--text-color-tertiary); cursor: pointer; }
+    .del:hover { color: var(--color-danger); }
+    .empty { text-align: center; color: var(--text-color-tertiary); padding: 36px 0; }
+    .err { color: var(--color-danger); padding: 0 12px; }
+
+    /* 窗口变窄时收起次要元素（@container = 按窗口宽度；不要用 @media） */
+    @container (max-width: 560px) { .item .qty { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <input v:value="title" placeholder="要做什么？" @keyup.enter="add()" />
+    <button @click="add()">添加</button>
+  </div>
+  <div class="err" v-if="error">{{ error }}</div>
+  <div class="list">
+    <div class="empty" v-if="!items.length">还没有内容</div>
+    <div class="item" v-for="it in items">
+      <span class="title">{{ it.title }}</span>
+      <span class="qty">{{ it.qty }}</span>
+      <button class="del" @click="remove(it)">删除</button>
+    </div>
+  </div>
+
+  <script setup>
+    // ===== $data =====
+    items = []
+    title = ''
+    error = ''
+
+    // ===== 数据读写 =====
+    // 包内 API 用相对地址（api/xxx）——前缀自动补，与部署 id 无关
+    load = async () => {
+      error = ''
+      try {
+        const r = await $fetch('api/list')
+        items = r.rows || []
+      } catch (e) { error = e.message }
+    }
+
+    add = async () => {
+      const t = String(title || '').trim()
+      if (!t) return
+      error = ''
+      try {
+        await $fetch('api/add', { method: 'POST', body: { title: t, qty: 1 } })
+        title = ''
+        await load()
+      } catch (e) { error = e.message }
+    }
+
+    remove = async (it) => {
+      error = ''
+      try {
+        await $fetch('api/remove', { method: 'POST', body: { id: it.id } })
+        await load()
+      } catch (e) { error = e.message }
+    }
+
+    // ===== pageDesc：页面指令（外部 AI 经 {窗口ID}.{cmd} 调用）=====
+    pageDesc = {
+      desc: 'example 页面（模板）',
+      commands: [
+        {
+          name: 'list', desc: '列出全部条目', help: '无参数。返回 {"ok","rows"}',
+          handler: async () => {
+            await load()
+            return { content: JSON.stringify({ ok: true, rows: items.length }) }
+          },
+        },
+        {
+          name: 'add', desc: '新增一条', help: '--title <标题>（必填）',
+          handler: async (argv) => {
+            const i = argv.indexOf('--title')
+            const t = i >= 0 ? argv[i + 1] : ''
+            if (!t) return { content: '缺少 --title' }
+            await add2(t)
+            return { content: '已添加 ' + t }
+          },
+        },
+      ],
+    }
+
+    add2 = async (t) => {
+      await $fetch('api/add', { method: 'POST', body: { title: t, qty: 1 } })
+      await load()
+    }
+
+    mount = () => load()
+  </script>
+  <script>mount()</script>
+</body>
+</html>
