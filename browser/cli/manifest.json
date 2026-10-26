@@ -2,7 +2,7 @@
   "alias": "browser",
   "service": {
     "kind": "mcp-stdio",
-    "args": ["mcp", "--tools", "core,tabs"],
+    "args": ["mcp", "--tools", "core,tabs,mobile,state"],
     "cwd": "{workdir}",
     "no_sandbox": true,
     "idle_timeout": "30m",

@@ -2,6 +2,6 @@
   "v": 1,
   "base": "default",
   "rules": [
-    { "kind": "dock", "edge": "auto", "url": "/os/chrome.html" }
+    { "kind": "dock", "edge": "auto", "url": "/os/dock.html" }
   ]
 }

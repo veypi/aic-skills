@@ -74,8 +74,7 @@ grant fs /skills/{skill_id}
 | --- | --- |
 | 包首页（裸入口） | `/skills/cloud/{id}` → 加载 `ui/index.html` |
 | 包内子页 | `/skills/cloud/{id}/{page}`（写 `page` 不写 `page.html`） |
-| 包详情 | `/skills_detail/cloud/{id}` |
-| 包管理 | `/skills_admin/cloud/{id}` |
+| 包详情 / 管理 | `/skills/detail/cloud/{id}`（按 role 分派；成员 `/members`，数据 `/data`） |
 | HTTP 包服务（API/静态资源） | 与页面**同段**：`/skills/cloud/{id}/...`，用 `url_prefix` 拼 |
 | 包内 API（页面里调用） | **相对地址**：`$fetch('api/todos')`——前缀自动补，与部署 id 无关 |
 | 包目录（fs 工具） | `/skills/{id}/...` |

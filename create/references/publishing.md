@@ -15,7 +15,7 @@
 
 ## 2. 发布流程
 
-1. 管理页 `/skills_admin/cloud/{id}` 发起，或
+1. 管理页 `/skills/detail/cloud/{id}` 发起，或
    `POST /api/skills/releases {source, name?, version}`（source = 私有行 id/name）。
 2. 契约校验：frontmatter `name` 必须等于注册表行 name；内容按静态包校验路径、体积、元数据。
 3. 打包：服务端流式打包私有行目录（**不含运行库**）；**16MB 闸门**——压缩后超限立即失败。

@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | `alias` | 把 `/ai/box.html` 换成 `/ai/mybox.html` | 键带 `.html` = 精确替换；目标也必须是平台组件 |
 | `slot` | 给 `/ai/panel.html` 的 `aside` 插槽填自己的片段 | 片段必须**纯结构**（无脚本/无数据绑定）且放**本人空间** |
-| `dock` | 侧栏用 `/os/chrome.html`，停靠边自适应 | dock 目标不受"保留名单"限制 |
+| `dock` | 侧栏用 `/os/dock.html`，停靠边自适应 | dock 目标不受"保留名单"限制 |
 
 `layout` 段记的是窗口排布（窗口树 + 窗口记录）——改它立即生效；改 `rules` 需要 reload。
 

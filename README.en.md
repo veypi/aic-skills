@@ -13,13 +13,13 @@ it inside the platform (aic) and the device client (aic-pod).
 | `browser` | 1.1.2 | Prose + UI: using the device-side official `agent-browser` (0.38.2) MCP, with a live view |
 | `cua` | 1.1.0 | Prose + UI: remote view and control through the official `cua-driver` (0.33.2) MCP |
 | `blender` | 0.3.0 | Prose: direct bridge to Blender on the device (inspect / render / run Python) |
-| `create` | 1.0.0 | Guide + templates + intro page: the AIC extension authoring manual (cloud / page / host) and a human-facing capability page |
+| `create` | 1.0.2 | Guide + templates + intro page: the AIC extension authoring manual (cloud / page / host) and a human-facing capability page |
 | `office_studio` | 1.0.3 | Prose + UI: office document workspace |
 | `drawio` | 1.0.2 | Prose + UI: DrawIO diagram workspace |
-| `ppt_studio` | 1.0.2 | Prose + UI: slide studio |
+| `ppt_studio` | 1.0.3 | Prose + UI: slide studio |
 | `video_studio` | 1.0.2 | Prose + UI: video studio |
 | `play_with_ai` | 1.0.3 | Prose + UI: multi-game table for playing against AI (gomoku / xiangqi) |
-| `vhtml` | 0.5.0 | Prose: the vhtml frontend framework guide |
+| `vhtml` | 0.5.1 | Prose: the vhtml frontend framework guide |
 | `hello` | 1.0.0 | Example: a plain native CLI |
 
 The `//go:embed` list in [`builtin_embed.go`](builtin_embed.go) is the **only publication
@@ -37,8 +37,9 @@ switch** — a directory that is not listed is never published.
   `mcp.servers`.
 - Skill pages and package resources share **one segment**: `/skills/cloud/{id}` (mirrors
   `/fs/cloud` — the bare entry loads the package's `ui/index.html`, the same segment serves
-  the package); subpages `/skills/cloud/{id}/{page}`, detail `/skills_detail/cloud/{id}`,
-  admin `/skills_admin/cloud/{id}`. Locate resources through `url_prefix` / `$mod.scoped` and
+  the package); subpages `/skills/cloud/{id}/{page}`; detail and management live at
+  `/skills/detail/cloud/{id}` (role-dispatched; members `/members`, data `/data`). Locate resources
+  through `url_prefix` / `$mod.scoped` and
   **never hardcode platform hosts**. Note the fs-tool path stays `/skills/{id}/...` (a
   different segment from the URL — do not mix them).
 
@@ -69,7 +70,8 @@ cd cua/ui && npm test
 - **Skill version**: the `version:` field in each `SKILL.md` — the content version the platform
   compares when deciding whether to overwrite already-seeded content.
 
-Contributor and AI-agent notes (contracts and invariants) live in [AGENTS.md](AGENTS.md).
+Contributor and AI-agent notes (contracts and invariants) live in [AGENTS.md](AGENTS.md);
+the documentation map is [docs/index.md](docs/index.md).
 
 ## License
 

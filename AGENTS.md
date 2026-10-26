@@ -10,7 +10,7 @@ The **official AIC skill content repository**. A skill package is the plugin uni
 `tables/` for the cloud, `cli/` for execution ends (aic-pod). The Go package embeds
 that content and ships it inside the platform (aic) and the device client (aic-pod).
 
-Boundary (contract truth: aic `docs/skill.md`):
+Boundary (contract truth: aic `docs/reference/skill.md`):
 
 - Explanations, UI and cloud APIs are published and served by the platform; a skill has no
   installed/enabled/process/service state of its own.
@@ -20,6 +20,11 @@ Boundary (contract truth: aic `docs/skill.md`):
   no provider build outputs.
 
 ## Layout
+
+- Documentation follows the unified ivec layout: only `README.md` / `README.en.md` /
+  `CHANGELOG.md` / `AGENTS.md` at the root, plus [docs/index.md](docs/index.md) as the map.
+  Skill manuals stay inside their package (`<skill>/SKILL.md`, `<skill>/references/`) —
+  they are published content, not repo docs, and are never moved into `docs/`.
 
 - `<skill>/SKILL.md` — the only required file; frontmatter + body.
 - `<skill>/ui/` — optional cloud UI (`index.html` + modules), loaded at `/skills/cloud/{id}`.
@@ -53,8 +58,9 @@ Boundary (contract truth: aic `docs/skill.md`):
   (framework guide, English).
 - Page/resource addressing: the page entry and the HTTP package service share **one
   segment** — `/skills/cloud/{id}` (mirrors `/fs/cloud`): the bare entry loads `ui/index.html`,
-  subpages are `/skills/cloud/{id}/{page}`, detail is `/skills_detail/cloud/{id}`, admin is
-  `/skills_admin/cloud/{id}`. Use the `url_prefix` returned by `skill search/load` for
+  subpages are `/skills/cloud/{id}/{page}`; detail and management live at
+  `/skills/detail/cloud/{id}` (role-dispatched; members `/members`, data `/data`). Use the
+  `url_prefix` returned by `skill search/load` for
   API/static resources, `$mod.scoped` for HTTP package paths, `$router` / `$mod.router_prefix`
   for in-page navigation. The fs-tool package path stays `/skills/{id}/...` (a different
   segment from the URL). **Never hardcode platform hosts or ports** in skill content or UI.

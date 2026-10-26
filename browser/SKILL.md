@@ -1,6 +1,6 @@
 ---
 name: browser
-version: 1.1.1
+version: 1.1.2
 description: 使用设备上的官方 agent-browser MCP 操作浏览器，UI 提供同一浏览器的实时画面和人工交互。
 ui:
   - path: index.html
@@ -10,7 +10,7 @@ ui:
 
 # Browser
 
-Pod 的 `browser` 别名直接启动官方 `agent-browser mcp --tools core,tabs`（内置默认项由本包 `cli/manifest.json` 声明），当前发行固定 0.38.2。工具名称、参数、描述、schema 和完整结果均来自上游，以 `browser`（工具目录）与 `browser <tool> --help` 为准。技能提供手册、云端 UI 与服务清单。
+Pod 的 `browser` 别名直接启动官方 `agent-browser mcp --tools core,tabs,mobile,state`（内置默认项由本包 `cli/manifest.json` 声明），当前发行固定 0.38.2。工具名称、参数、描述、schema 和完整结果均来自上游，以 `browser`（工具目录）与 `browser <tool> --help` 为准。技能提供手册、云端 UI 与服务清单。
 
 ## 运行依赖
 
@@ -21,6 +21,16 @@ Desktop 附带 agent-browser 原生二进制和 Chrome for Testing；首次调�
 默认以设备权限启动；MCP 调用和实时流都经过 `mcp.browser` 命令权限门。浏览器可访问的设备资源由上游及操作系统管理。
 
 设备所有者可在 `~/.aic/config.yaml` 的 `mcp.servers.browser` 设置 `disabled: true`，或用完整 command/url 配置替换默认项。替换项不继承默认启动参数和权限；内建实时 UI 仅连接默认 agent-browser 实例。
+
+## 工具面
+
+MCP 工具集 = 上游 profile `core,tabs,mobile,state`：
+
+- `core` 日常自动化（导航、快照、交互、等待、截图、eval），`tabs` 标签页/窗口/frame/dialog。
+- `mobile` 视口与设备模拟：`agent_browser_set_viewport`、`set_device`、`set_geo`、`set_media`，以及 touch/swipe。**实时画面的比例由视口决定**：视口被改窄画面即呈竖屏，改回宽屏用 `browser agent_browser_set_viewport --help` 看参数。
+- `state` 浏览器侧状态：`cookies_*`、`storage_*`、`auth_*`（登录档案）、`state_save`/`state_load`（登录态快照）、`session_*`。
+
+注意：`auth_*` 与 `state_save` 把凭据/登录态**明文写入设备磁盘**（`$HOME/.aic/browser` 下），同机 AI 可再读回；只在受控设备启用。
 
 ## 使用
 

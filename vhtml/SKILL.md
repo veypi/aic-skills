@@ -1,6 +1,6 @@
 ---
 name: vhtml
-version: 0.5.0
+version: 0.5.1
 nickname: vhtml 前端指南
 description: Develop and troubleshoot pages and components with the browser-only vhtml framework. Use for vhtml templates, reactive state and list identity, lifecycle and resource cleanup, routing, module context, i18n, or rendering performance. Explains framework usage and its boundaries for application authors.
 keywords: [vhtml, 前端, 组件, 响应式, 列表标识, 生命周期, 路由, 模块上下文, i18n, 渲染性能]
@@ -205,7 +205,7 @@ The backend marks a module using `vhtml-scoped` and the presence of `vhtml-unsaf
 
 Unsafe code runs in a separate QuickJS realm. Its window/self/globalThis and builtins belong to that realm. fetch, XMLHttpRequest, WebSocket, EventSource and navigator.sendBeacon are framework facades: `/api/x` becomes `{scoped}/api/x`; `@`, out-of-scope URLs and redirects are rejected. Imports work inside the module. `$node` and `$refs` provide module-local HTML/SVG DOM, Canvas 2D/WebGL, styles, events and size observers. ownerDocument/defaultView return the module virtual document/window. UMD libraries can load from module-local script URLs (once per module); ECharts 6 Canvas/SVG, Chart.js 4, D3 7, Three.js WebGL2, jQuery, Axios and utility libraries have browser fixtures. SVG fragment references use module-local IDs; GPU objects use private handles. Raw browser objects remain unavailable. DOM and CSS stay shared with the host; no Shadow DOM or iframe is used. CSS inheritance, native ID/form associations and passive loading through host styles are not strict isolation guarantees. Dispose library instances with `$scope.addCleanup`. Use static property paths for two-way bindings.
 
-Do not expect native document, storage, Worker, iframe, SVG foreignObject/SMIL, external SVG documents, synchronous XHR or arbitrary host services. Templates and dynamic resources pass through the rendering policy. See the framework repository's `docs/module-sandbox.md` for the supported capability set and explicit limits. Deploy the entire generated `dist/` directory, including lazy runtime chunks.
+Do not expect native document, storage, Worker, iframe, SVG foreignObject/SMIL, external SVG documents, synchronous XHR or arbitrary host services. Templates and dynamic resources pass through the rendering policy. See the framework repository's `docs/architecture/module-sandbox.md` for the supported capability set and explicit limits. Deploy the entire generated `dist/` directory, including lazy runtime chunks.
 
 ## Bindings
 

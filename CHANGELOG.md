@@ -4,6 +4,31 @@
 
 两个版本面：**模块版本**（本文件 / tag `vX.Y.Z`，Go 依赖面）与**技能版本**（各 `SKILL.md` frontmatter 的 `version:`，平台定版按它决定是否覆盖）。内容更新 bump 技能版本；契约或结构变化 bump 模块版本。
 
+## 0.3.1 — 2026-10-27
+
+### `browser`（1.1.1 → 1.1.2）
+
+- MCP 工具集从 `core,tabs` 扩为 `core,tabs,mobile,state`（`cli/manifest.json` 同步）：
+  `mobile` 提供视口与设备模拟（实时画面比例随视口变化），`state` 提供 cookies /
+  storage / auth / `state_save` / `session_*`。手册新增「工具面」一节，并提醒
+  `auth_*` 与 `state_save` 会把凭据/登录态明文写入设备磁盘。
+
+### `create`（1.0.0 → 1.0.2）
+
+- 文档寻址同步到现行前端路由：技能详情与管理统一 `/skills/detail/cloud/{id}`（成员 `/members`、数据 `/data`；`/skills_admin` 已不存在），桌面档案示例窗口地址 `/a/coder` → `/agents/coder`，dock 示例 `/os/chrome.html` → `/os/dock.html`。
+
+### `vhtml`（0.5.0 → 0.5.1）
+
+- 框架仓文档架构统一，模块沙箱指针改指 `docs/architecture/module-sandbox.md`。
+
+### 模块与文档
+
+- 模块版本 0.3.0 → 0.3.1；新增 [docs/index.md](docs/index.md) 文档地图（技能手册仍留在
+  各包目录，不进 `docs/`）。
+- README / README.en 的技能版本表与 frontmatter 对齐（create 1.0.2、ppt_studio 1.0.3、
+  vhtml 0.5.1）；`builtin_test.go` 版本期望同步修正（create 此前漏 bump 期望）。
+- AGENTS 的契约指针改指 aic `docs/reference/skill.md`。
+
 ## 0.3.0 — 2026-10-24
 
 > 说明：v0.2.1 之后本仓一直未打 tag（0.3.0/0.3.1 两段内容只在 main 上未发布），

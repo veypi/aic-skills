@@ -30,13 +30,13 @@ URL 形态：`?profile=` 缺省 = 读 `default` 正式档；`?profile=none` = �
   "rules": [
     { "kind": "alias", "match": "/ai/box.html", "url": "/ai/mybox.html" },
     { "kind": "slot",  "component": "/ai/box.html", "slot": "", "url": "/fs/cloud/u/admin/slot.html", "mode": "override" },
-    { "kind": "dock",  "edge": "auto", "url": "/os/chrome.html" }
+    { "kind": "dock",  "edge": "auto", "url": "/os/dock.html" }
   ],
   "layout": {
     "v": 5,
     "tree": { "k": "split", "dir": "row", "ratio": 0.5, "a": { "k": "leaf", "id": "w-1" }, "b": { "k": "leaf", "id": "w-2" } },
     "activeId": "w-1",
-    "windows": [ { "id": "w-1", "surface": "route", "position": "tile", "url": "/a/coder", "name": "对话", "minimized": false } ]
+    "windows": [ { "id": "w-1", "surface": "route", "position": "tile", "url": "/agents/coder", "name": "对话", "minimized": false } ]
   }
 }
 ```
