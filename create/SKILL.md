@@ -1,6 +1,6 @@
 ---
 name: create
-version: 1.0.2
+version: 1.0.3
 nickname: create 技能包
 description: AIC 扩展作者手册——把一句人话需求拆成云端/界面/设备三端的实际改动：技能包与数据、界面与页面指令、桌面档案规则、设备命令与常驻服务；含判定流程、字段契约、红线与验收。
 keywords: [create, 扩展, 技能包, 界面, 档案, 规则, 设备, 命令, 服务, 模板]
@@ -21,7 +21,7 @@ AIC 的扩展落在三个端上，每端有自己的持久化机制和交互协�
 |---|---|---|---|---|---|
 | ☁️ 云端 | 存储与服务 | UFS 文件 + 每个包自己的数据表 | HTTP 接口（同源，cookie 身份） | 技能包（说明书/接口/表）、用户空间文件 | `cloud-package.md` `cloud-data.md` |
 | 🖥️ 界面 | 交互与呈现 | 云端固化（技能包文件、用户文件、桌面档案）＋ 页面缓存与临时（本地存储、页面本地文件） | 页面指令（AI 可直接操作页面）+ 页面内事件 | 界面（.html 页面或组件）、桌面档案规则 | `ui-component.md` `ui-profile.md` |
-| ⌨️ 设备 | 执行 | 设备本机配置与状态（`~/.aic`、MCP 配置），内容从云端取 | 命令行（vsh）、MCP 工具（参数走 stdin） | 脚本、原生命令、常驻服务 | `device-cli.md` |
+| ⌨️ 设备 | 执行 | 设备本机配置与状态（`~/.aic`、服务配置），内容从云端取 | 命令行（vsh）与服务命令（MCP/TCP 等，复杂参数走 stdin） | 脚本、原生命令、常驻服务 | `device-cli.md` |
 
 **多数需求横跨多端**（"带数据的应用" = 云端包 ＋ 界面页 ＋ 可选设备命令）。别只做一端就交。
 
@@ -74,7 +74,7 @@ AIC 的扩展落在三个端上，每端有自己的持久化机制和交互协�
 
 ## 2. 红线（违反会被平台拒绝或静默失效）
 
-1. **档案规则的目标只能指向平台自带目录**（`/ai/` `/os/` `/page/` `/layout/` `/local/` `/log/` `/assets/`）；
+1. **档案规则的目标只能指向平台自带目录**（`/ai/` `/os/` `/page/` `/layout/` `/shared/` `/widgets/` `/assets/`）；
    档内禁 `..` 段（不静默改写，直接报错）。
 2. **外壳与管理页不可被替换**（`/os/` `/layout/` `/vb` `/page/admin`——键和目标都算）。
 3. **插槽片段必须纯结构**：禁脚本、禁数据绑定、禁 iframe/内联 `on*`，且只放本人空间。
@@ -93,7 +93,7 @@ AIC 的扩展落在三个端上，每端有自己的持久化机制和交互协�
 | 读写用户文件 | fs 工具，路径 `/u/{uid}/...` |
 | 操作桌面档案 | `exec 1host=page` → `profile list` / `save <name>` / `apply <name>` / `revert` / `inspect` |
 | 开窗口 | `exec 1host=page` → `open <url>` / `list` / `close <win_id>` / `reload` |
-| 调设备命令 | `exec 1host=<设备ID>` → `mcp tools <alias>` / `mcp describe <alias> <tool>` / `mcp call <alias> <tool> --input '{...}'` |
+| 调设备命令 | `exec 1host=<设备ID>` → `<alias>` 列工具 / `<alias> <tool> --help` 看参数 / `<alias> <tool> --input '{...}' --json` 调用（`mcp ...` 仅调试直通） |
 | 页面调设备 | `$hosts.openTools(hostId)` → `execCall(script, {stdin})` → 用完 `close()` |
 
 ## 4. 验收清单
@@ -113,7 +113,7 @@ AIC 的扩展落在三个端上，每端有自己的持久化机制和交互协�
 | `cloud-data.md` | 表声明、sqlx 接口、用户隔离、SQL 规范 | 要存数据 |
 | `ui-component.md` | 完整 HTML 文档、vhtml 语法、样式 token、页面指令 | 要写界面 |
 | `ui-profile.md` | 三类规则、硬约束、生效语义、档案命令面 | 要改桌面 |
-| `device-cli.md` | 三种形态、manifest 字段、源码与产物边界 | 要动设备 |
+| `device-cli.md` | 命令与服务形态、manifest 字段、真实 MCP/Streamer 契约、源码与产物边界 | 要动设备 |
 | `materials.md` | 共享服务、页面/设备通道、身份边界 | 要调平台能力或设备 |
 | `publishing.md` | 发布流程、审核要点、fork、下架 | 用户说"发布出去" |
 

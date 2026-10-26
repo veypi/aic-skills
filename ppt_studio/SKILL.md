@@ -1,6 +1,6 @@
 ---
 name: ppt_studio
-version: 1.0.3
+version: 1.0.4
 nickname: PPT 工坊
 description: 幻灯片工作室：以本地 /ppt/ JSON 文件驱动的方式创建、编辑、预览与全屏演示 PPT，支持逐页语音讲解脚本
 keywords: [ppt, slides, 幻灯片, 演示, 演讲, 讲解, deck, 演示文稿]
@@ -20,7 +20,7 @@ ui:
 ## 操作方式
 
 1. 打开页面：`open /skills/cloud/{skill_id}`（`skill_id` 取自 skill 列表；`url_prefix` 同前缀，用于资源与 API）
-2. 探测指令：`exec 1host=page {win_id}.list`（返回全部 `ppt_*` 指令清单）
+2. 探测指令：使用 `open` 返回的 `events` 查看 `ppt_*`；需要重新查看时执行不带窗口前缀的 `list`
 3. 内容创建/修改：用 **fs 工具（1host=page）** 直接读写 `/ppt/...` 路径（与页面同一本地存储）：
    - 每套 PPT 一个目录，核心文件固定 `index.json`，如 `/ppt/产品发布会/index.json`
    - 页数多时用分页拆分：`slides` 数组写相对引用字符串（如 `"slides/slide_1.json"`），每页一个 `slides/slide_N.json`（**推荐**，改一页只动一个文件）

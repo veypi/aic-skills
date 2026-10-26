@@ -13,7 +13,7 @@ test('discovery keeps upstream page IDs scoped to their device and uses ordinary
   })});
   const rows = await directory.refresh();
   assert.deepEqual(rows.map(r => [r.id,r.pages[0]]), ['a','b'].map(id => [id,{tabId:'t1',url:'about:blank',active:true}]));
-  assert.deepEqual(calls,Array(2).fill(['mcp call browser agent_browser_tab_list --input - --json',{stdin:'{}'}]));
+  assert.deepEqual(calls,Array(2).fill(['browser agent_browser_tab_list --input - --json',{stdin:'{}'}]));
   await directory.close(); assert.deepEqual(closed.sort(),['a','b']);
 });
 test('slow device discovery does not block other devices; late connections close after disposal', async () => {
@@ -130,7 +130,7 @@ test('tool names, parameters and complete MCP result survive exec without transl
   const result = {content:[{type:'text',text:'upstream'},{type:'image',mimeType:'image/png',data:'AAAA'}],structuredContent:{response:{data:{tabs:[]}}},isError:false,_meta:{upstream:true}};
   const args = {url:'https://example.test/$(echo no); a b'};
   const connection = {execCall:async (script,options) => {
-    assert.equal(script,'mcp call browser agent_browser_open --input - --json');
+    assert.equal(script,'browser agent_browser_open --input - --json');
     assert.deepEqual(JSON.parse(options.stdin),args);
     return response(result);
   }};

@@ -45,7 +45,7 @@ async function fixture(t) {
         if (command === 'mcp describe cua get_desktop_state --json') {
           return {content: JSON.stringify({name: 'get_desktop_state', inputSchema: {properties: {session: {}, max_image_dimension: {}}}}), attrs: {exit_code: '0'}};
         }
-        const name = command.split(' ')[3], args = JSON.parse(options.stdin);
+        const name = command.split(' ')[1], args = JSON.parse(options.stdin);
         calls.push({hostId, name, args});
         let result;
         if (name.startsWith('get_')) result = await (captures.shift()?.promise || screenshot());

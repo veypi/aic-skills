@@ -12,6 +12,7 @@
 | `$auth` | 用户/会话身份：`$auth.users.get(id)`（同步返回响应式对象）、`$auth.user` |
 | `$ai` | agent 与会话：`$ai.agents.get(id)`、`await $ai.agents.load(id, {force:true})`、`$ai.open({agentId})` |
 | `$hosts` | 设备连接：`await $hosts.openTools(hostId)` 得到连接句柄，`execCall(script, {stdin})` 调设备命令，用完 `close()` |
+| `$os` | 窗口与打开协议：`$mod.$os.open(url)` 打开应用或 `/fs/...` 文件；不要直接用包内绝对链接跳出去 |
 | `$skills` | 技能目录（查自己的/广场的技能） |
 | `$account` | 账户概况（`$account.get()` / `load(options)`） |
 | `$catalog` | 只读目录（`tools` / `modelSchemas` / `quotaProviders`） |
@@ -36,13 +37,12 @@
 |---|---|---|---|
 | HTTP | 页面 ↔ 云端 | 同源请求（cookie 身份） | `$fetch('api/todos')`、`curl /api/skills` |
 | 页面指令 | AI ↔ 页面 | 页面声明 `pageDesc.commands`，AI 按命令名调用 | `{窗口ID}.{命令名}` |
-| 设备命令 | AI/页面 ↔ 设备 | 命令行（vsh）/ MCP 工具，参数走 stdin | `mcp call browser take_snapshot --input '{...}'` |
+| 设备命令 | AI/页面 ↔ 设备 | vsh 服务命令（MCP/TCP 等），复杂参数走 stdin | `browser agent_browser_snapshot --json` |
 
 **身份**：来自已认证连接，**不能通过工具参数覆盖** user_id、owner 或审批事实；
 云端 API 的 user_id/skill_id 由服务端重写。
 
-**取消**：UI 与 AI 都用原生 exec 取消；设备侧把取消传给 MCP 服务，保留共享连接，
-写入不自动重放。
+**取消**：UI 与 AI 都用原生 exec 取消；设备侧按 Provider 能力传递取消，写入不自动重放。
 
 ## 4. 页面指令的发现与投递
 
@@ -78,7 +78,7 @@ saveBlob = (name, blob) => {
 
 - 设备服务使用 `mcp.<alias>` 命令权限，拒绝时按现有 grant 流程申请。
 - 官方 browser/CUA 以设备权限运行；**原生 fs 规则不隔离浏览器/桌面操作**。
-- 第三方服务默认运行在设备沙箱内；`no_sandbox` 需要显式声明并谨慎开启。
+- 第三方服务默认运行在设备沙箱内；`no_sandbox` 只能由设备所有者在配置中显式设置，技能或工具参数不能借此提权。
 - 页面/云端都不接入 MCP 协议；MCP 仅在 Pod 内部。
 
 ## 7. 调试

@@ -50,7 +50,7 @@ function fixture(t, {hosts = [enabledHost('desktop')], load, onCall, beforeFrame
           if (command === 'mcp describe cua get_desktop_state --json') {
             return {content: JSON.stringify({name: 'get_desktop_state', inputSchema: {properties: {session: {}, max_image_dimension: {}}}}), attrs: {exit_code: '0'}};
           }
-          const tool = command.split(' ')[3], args = JSON.parse(options.stdin);
+          const tool = command.split(' ')[1], args = JSON.parse(options.stdin);
           calls.push({hostId, tool, args});
           const override = await onCall?.({hostId, tool, args});
           if (override) return {content: JSON.stringify(override), attrs: {exit_code: '0'}};

@@ -178,7 +178,7 @@ export function createSession({ game, store, ai, now = () => Date.now() }) {
     c.phase = 'playing'
     c.updated_at = now()
     changed()
-    notify()
+    watchNotification(notify())
     return target
   }
 
@@ -238,8 +238,8 @@ export function createSession({ game, store, ai, now = () => Date.now() }) {
     c.moves.push({ n: c.moves.length + 1, seatId, action, text: game.formatAction(action), t: now() })
     c.updated_at = now()
     changed()
-    if (res.over) notifyAll(res.note || '对局结束。')
-    else notify()
+    if (res.over) watchNotification(notifyAll(res.note || '对局结束。'))
+    else watchNotification(notify())
     return res
   }
 
@@ -255,11 +255,11 @@ export function createSession({ game, store, ai, now = () => Date.now() }) {
       c.phase = 'over'
       c.state = { ...c.state, over: true, winner: alive[0] || null }
       changed()
-      notifyAll(`对局结束：${seatName(seatId)}认输，${alive[0] ? seatName(alive[0]) : '无人'}获胜。`)
+      watchNotification(notifyAll(`对局结束：${seatName(seatId)}认输，${alive[0] ? seatName(alive[0]) : '无人'}获胜。`))
     } else {
       c.updated_at = now()
       changed()
-      notifyAll(`${seatName(seatId)}认输，对局继续。`)
+      watchNotification(notifyAll(`${seatName(seatId)}认输，对局继续。`))
     }
     return c
   }
@@ -292,33 +292,45 @@ export function createSession({ game, store, ai, now = () => Date.now() }) {
     // 告知被解绑的 AI：这一局结束了
     for (const ex of exs) {
       if (!ex || ex.kind !== 'ai') continue
-      ai.push(ex, { content: '对局已被结束（未完成，已归档）。', reminders: [finalText] }).catch(() => {})
+      watchNotification(ai.push(ex, { content: '对局已被结束（未完成，已归档）。', reminders: [finalText] }))
     }
     return doc.current
   }
 
   // ---- 通知（AI 选手） ----
 
+  // 对局动作不能被通知投递阻塞；但失败必须可见，且不能变成未捕获 rejection。
+  function watchNotification(p) {
+    Promise.resolve(p).then(ok => {
+      if (ok === false) console.warn('play_with_ai: AI 通知投递失败')
+    }).catch(e => console.warn('play_with_ai: AI 通知投递异常', e))
+  }
+
   async function notify() {
     const c = cur()
-    if (!c || c.phase === 'over') return
+    if (!c || c.phase === 'over') return true
+    let ok = true
     for (const seatId of actors()) {
       const ex = c.executors[seatId]
       if (!ex || ex.kind !== 'ai') continue
-      await ai.push(ex, {
+      const delivered = await ai.push(ex, {
         content: `轮到你了（${seatName(seatId)}）——请行动。`,
         reminders: [text() + `\n用 play <走法> 行动（如 ${game.moveExample}）。`],
       })
+      if (!delivered) ok = false
     }
+    return ok
   }
 
   async function notifyAll(content) {
     const c = cur()
-    if (!c) return
+    if (!c) return true
+    let ok = true
     for (const ex of Object.values(c.executors)) {
       if (!ex || ex.kind !== 'ai') continue
-      await ai.push(ex, { content, reminders: [text()] })
+      if (!(await ai.push(ex, { content, reminders: [text()] }))) ok = false
     }
+    return ok
   }
 
   // ---- 对外视图 ----

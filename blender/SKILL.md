@@ -1,6 +1,6 @@
 ---
 name: blender
-version: 0.3.0
+version: 0.3.1
 description: 用 vsh 的 blender 命令直连设备上的 GUI Blender——看场景/渲染出图/执行 Python；未安装或未运行时给分级指引，agent 可自助完成安装与拉起。
 keywords: [blender, 3d, bpy, 建模, 渲染]
 ---

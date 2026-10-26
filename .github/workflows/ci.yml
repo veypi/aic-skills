@@ -28,7 +28,7 @@ jobs:
             exit 1
           fi
       - run: go vet ./...
-      - run: go test ./...
+      - run: go test ./...  # 含两个 MCP 示例的 initialize + tools/call 契约测试
 
   skill-ui:
     name: skill UI tests

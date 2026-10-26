@@ -21,7 +21,7 @@
 
 - [x] 打开 / 编辑 / 保存闭环：Univer presets `0.25.1`（表格 UI + 公式 + 数字格式）
       + `@mertdeveci55/univer-import-export 0.2.1`（xlsx 序列化，exceljs 底座）
-- [x] 平台打开协议：filebinds 登记 `xlsx,xls` → `/skills/local/office_studio/excel`
+- [x] 平台打开协议：filebinds 登记 `xlsx,xls` → `/skills/cloud/office_studio/excel`
 - [x] AI 指令面：`open` / `status` / `read_range`（含公式）/ `cell_info` / `set_range` /
       `set_cell`（值或公式）/ `save`（写回或另存）——全部经真实平台验证
 - [x] 引擎资源加速：bundle 16.19MB（gzip 3.67MB）经 jsDelivr（`gh/veypi/aic-skills`）分发（2026-09-14 起迁至独立资产分支 `office_assets`），

@@ -70,7 +70,7 @@
 ## 5. 平台能力（共享服务）
 
 平台壳向页面注入这些共享服务（可直接用，也可经 `$mod` 读同名服务）：`$fs` `$auth` `$ai`
-`$hosts` `$skills` `$account` `$catalog` `$pageExec`。细节见 [materials.md](materials.md)。
+`$hosts` `$os` `$skills` `$account` `$catalog` `$pageExec`。细节见 [materials.md](materials.md)。
 
 包内 API 用 `$fetch('api/xxx')`——相对地址会自动补上包服务前缀。包外资源用 `$mod.scoped`
 前缀或相对路径；**不要手拼前缀、不要写死技能 id**（fork/换部署会 404）。
@@ -134,7 +134,7 @@ pageDesc = {
 10. 同页 query 变化不会重建组件 → 监听 `$router.onChange(...)` 自己刷新。
 11. 运行时创建的元素用相对路径 → 不会被加前缀，用 `$mod.scoped + '/x.png'`。
 12. 自带 `env.js` → 平台有固定出口，不生效；逻辑别写 env.js。
-13. 包页面里的 `<a href="/绝对路径">` → 会被路由器拦下并按包作用域重写，跳不出去；改用按钮 + `$os.open(url)`。
+13. 包页面里的 `<a href="/绝对路径">` → 会被路由器拦下并按包作用域重写，跳不出去；改用按钮 + `$mod.$os.open(url)`。
 
 ## 9. 验收
 

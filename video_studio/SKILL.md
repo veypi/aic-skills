@@ -1,6 +1,6 @@
 ---
 name: video_studio
-version: 1.0.2
+version: 1.0.3
 nickname: 视频工坊
 description: 浏览器内一站式视频制作：AI 文件驱动编辑 + 可视化舞台/时间轴，真实 3D 场景、关键帧动画、逐字弹簧、素材拖拽剪辑、AI 配音（TTS），WebCodecs 硬编直接导出 MP4
 keywords: [video, 视频, 剪辑, 动画, 3D, MP4, 配音, TTS, 时间轴, WebCodecs]
@@ -17,7 +17,7 @@ ui:
 ## 打开与操控
 
 1. 打开页面：`open /skills/cloud/{skill_id}`（`skill_id` 取自 skill 列表；HTTP API 与资源用返回的 `url_prefix`，同前缀）
-2. 探测指令：`exec 1host=page {win_id}.list`（返回全部 `*_video` / `gen_voice` / `run_js` 指令清单）
+2. 探测指令：使用 `open` 返回的 `events` 查看 `*_video` / `gen_voice` / `run_js`；需要重新查看时执行不带窗口前缀的 `list`
 3. 项目文件读写：用 **fs 工具（1host=page）** 直接读写 `/video/...` 路径（与页面同一浏览器本地存储）
 4. 页面操作（新建/打开/播放/重载/截图/配音）走 `exec 1host=page {win_id}.<cmd>`，argv 形如 `["--name","my-video"]`
 
@@ -28,7 +28,7 @@ ui:
 - 每个项目一个目录：`index.json`（video/1 文档，含全部场景，默认单一文件；场景多时可拆分，见下文「场景子 json」）
 - 素材（图片/音频）放 `assets/` 子目录，文档中 `src` 写**相对路径**（如 `assets/bg.mp3`、`assets/logo.png`）；左侧「素材」tab 可查看/上传/删除素材——**拖拽素材到中间舞台（落点插入）或底部时间轴（插入当前场景中心），或双击素材**即可直接生成元素（图片→image、视频→media video、音频→media audio）；单击素材项复制相对引用路径
 - 导出由**用户点击顶部「导出」按钮**完成（弹层可选：格式 MP4(H.264+AAC) / WebM(VP9+Opus) / WebM(VP8+Opus) / WAV(仅音频)，分辨率 原始/1080p/720p/480p/自定义，帧率 原始/24/25/30/60，质量 低/中/高；产物自动存 `/video/exports/{标题}.{扩展名}` 并触发浏览器下载；AI 不触发导出）
-- 外部素材可尝试 `exec 1host=page curl -o /video/{项目}/assets/... <url>` 下载，但**受浏览器 CORS 限制经常失败**（页面 fetch 非白名单域会被浏览器拦截）——失败时不要反复重试，改为**把下载链接发给用户，让用户自行下载后通过左侧「素材」tab 上传**（页面会保留文件名存入 `assets/`）
+- 外部素材：**把下载链接发给用户，请用户下载后通过左侧「素材」tab 上传**（页面会保留文件名存入 `assets/`）。page curl 只允许同源 HTTP，且不支持 `-o` 写文件，不能用来下载外部素材；不要再走这条无效路径
 
 ## 典型工作流
 
@@ -38,7 +38,7 @@ ui:
 2. `{win_id}.new_video --name x-主题 --title "标题"` 创建项目
 3. 读写项目文件用**标准 fs 工具**（1host=page）：`fs.read {"1host":"page","path":"/video/x-主题/index.json"}` 读骨架 → `fs.write` 写完整文档（JSON 用 2 空格缩进展开）
 4. 改完 `index.json` 或素材后调 `{win_id}.reload_video` 让页面刷新画面（保持当前帧）
-5. 需要配图/配乐：先尝试 page curl 下载（CORS 经常失败）；失败则把素材链接发给用户请其下载后上传「素材」tab——上传完成后 AI 写相对路径引用（`assets/封面.png`），再 `reload_video` 刷新画面
+5. 需要配图/配乐：把素材链接发给用户，请其下载后上传「素材」tab——上传完成后 AI 写相对路径引用（`assets/封面.png`），再 `reload_video` 刷新画面。不要用 page curl 下载外部素材
 6. `{win_id}.run_video --name x-主题` 预览播放
 7. 删除文件/项目：删除请走页面端 `exec 1host=page rm <路径>`（页面端内置 `rm`；fs 工具本身没有删除动作）；清理项目 = 删 `/video/{name}` 目录
 8. 完成：提醒用户点击页面顶部「导出」按钮自行导出（导出由用户操作，AI 不触发）

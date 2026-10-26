@@ -4,6 +4,7 @@ package aicskills
 import (
 	"archive/zip"
 	"bytes"
+	"encoding/json"
 	"io/fs"
 	"slices"
 	"strings"
@@ -60,17 +61,17 @@ func TestListAndOpen(t *testing.T) {
 
 func TestVersionFromFrontmatter(t *testing.T) {
 	for name, want := range map[string]string{
-		"browser":       "1.1.2",
-		"cua":           "1.1.0",
-		"blender":       "0.3.0",
-		"create":        "1.0.2",
+		"browser":       "1.1.3",
+		"cua":           "1.1.1",
+		"blender":       "0.3.1",
+		"create":        "1.0.3",
 		"vhtml":         "0.5.1",
-		"office_studio": "1.0.3",
-		"drawio":        "1.0.2",
-		"hello":         "1.0.0",
-		"ppt_studio":    "1.0.3",
-		"video_studio":  "1.0.2",
-		"play_with_ai":  "1.0.3",
+		"office_studio": "1.0.4",
+		"drawio":        "1.0.3",
+		"hello":         "1.0.1",
+		"ppt_studio":    "1.0.4",
+		"video_studio":  "1.0.3",
+		"play_with_ai":  "1.0.4",
 	} {
 		if !slices.Contains(List(), name) {
 			want = ""
@@ -118,5 +119,70 @@ func TestZipRoundTrip(t *testing.T) {
 	name, version = Frontmatter([]byte("---\nui:\n  version: 9.9.9\nname: top\n---\n"))
 	if name != "top" || version != "" {
 		t.Errorf("nested frontmatter = %q %q", name, version)
+	}
+}
+
+func readSkillFile(t *testing.T, dir fs.FS, path string) string {
+	t.Helper()
+	data, err := fs.ReadFile(dir, path)
+	if err != nil {
+		t.Fatalf("read %s: %v", path, err)
+	}
+	return string(data)
+}
+
+func TestCreateDataTemplateUsesExplicitRowid(t *testing.T) {
+	dir, err := Open("create")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var schema struct {
+		Fields []struct {
+			Name string `json:"name"`
+		} `json:"fields"`
+	}
+	if err := json.Unmarshal([]byte(readSkillFile(t, dir, "templates/skill/tables/items.json")), &schema); err != nil {
+		t.Fatal(err)
+	}
+	hasID := false
+	for _, field := range schema.Fields {
+		hasID = hasID || field.Name == "id"
+	}
+	list := readSkillFile(t, dir, "templates/skill/api/get.list.sqlx")
+	remove := readSkillFile(t, dir, "templates/skill/api/post.remove.sqlx")
+	if !hasID {
+		if !strings.Contains(list, "rowid as id") || !strings.Contains(remove, "rowid = :id") {
+			t.Fatalf("schema has no id; SQL must expose/use rowid explicitly:\n%s\n%s", list, remove)
+		}
+	}
+	if !strings.Contains(list, "limit 200") {
+		t.Fatalf("list query must stay bounded: %s", list)
+	}
+}
+
+func TestCreateDeviceExamplesUseRealMCP(t *testing.T) {
+	dir, err := Open("create")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, root := range []string{"templates/device", "examples/device_tool"} {
+		main := readSkillFile(t, dir, root+"/cli/main.go")
+		for _, want := range []string{"github.com/modelcontextprotocol/go-sdk/mcp", "mcp.NewServer", "mcp.StdioTransport"} {
+			if !strings.Contains(main, want) {
+				t.Errorf("%s is not a real MCP stdio service: missing %q", root, want)
+			}
+		}
+		if strings.Contains(main, "io.ReadAll(os.Stdin)") {
+			t.Errorf("%s regressed to a one-shot stdin CLI", root)
+		}
+		manifest := readSkillFile(t, dir, root+"/cli/manifest.json")
+		if strings.Contains(manifest, `"stream"`) {
+			t.Errorf("%s declares stream without a Streamer provider", root)
+		}
+		readSkillFile(t, dir, root+"/cli/go.mod.example")
+		test := readSkillFile(t, dir, root+"/cli/main_test.go")
+		if !strings.Contains(test, "TestMCPInitializeAndPing") {
+			t.Errorf("%s lacks the SDK initialize + ping contract test", root)
+		}
 	}
 }

@@ -2,8 +2,8 @@
   "v": 1,
   "base": "default",
   "rules": [
-    { "kind": "alias", "match": "/ai/box.html", "url": "/ai/mybox.html" },
-    { "kind": "slot", "component": "/ai/panel.html", "slot": "aside", "url": "/fs/cloud/u/admin/slot.html", "mode": "override" },
+    { "kind": "alias", "match": "/ai/box.html", "url": "/ai/box.html" },
+    { "kind": "slot", "component": "/ai/box.html", "slot": "footer", "url": "/fs/cloud/u/admin/slot.html", "mode": "override" },
     { "kind": "dock", "edge": "auto", "url": "/os/dock.html" }
   ],
   "layout": {

@@ -34,7 +34,7 @@ function fixture(t, handle, options = {}) {
           return encode(await (optionsForSchema?.(hostId, options) ||
             {name: 'get_desktop_state', inputSchema: {type: 'object', properties: {session: {}, max_image_dimension: {}}}}));
         }
-        const match = command.match(/^mcp call cua ([a-z_]+) --input - --json( --image-preview 1280x720)?$/);
+        const match = command.match(/^cua ([a-z_]+) --input - --json( --image-preview 1280x720)?$/);
         assert.ok(match, 'CUA uses the fixed exec command and JSON stdin');
         const call = {hostId, name: match[1], args: JSON.parse(options.stdin), options, preview: !!match[2]};
         calls.push(call);
@@ -566,7 +566,7 @@ test('explicitly truncated command output reports bounded metadata and is never 
     }};
     await assert.rejects(cuaCall(connection, 'get_desktop_state'), error => {
       assert.equal(error.code, 'output_truncated');
-      assert.match(error.message, /mcp call cua get_desktop_state/);
+      assert.match(error.message, /cua get_desktop_state/);
       assert.match(error.message, new RegExp(`stdout ${new TextEncoder().encode(content).byteLength} bytes, exit 0`));
       assert.match(error.message, /reported truncated/);
       assert.equal(error.message.includes('PRIVATE_SCREENSHOT'), false);
@@ -605,7 +605,7 @@ test('other invalid responses disclose only UTF-8 size and status and never repl
     return {content, attrs: {exit_code: '0', truncated: 'false'}};
   }}, 'type_text', {text: 'may already have been typed'}), error => {
     assert.equal(error.code, 'invalid_response');
-    assert.match(error.message, /mcp call cua type_text/);
+    assert.match(error.message, /cua type_text/);
     assert.match(error.message, new RegExp(`stdout ${new TextEncoder().encode(content).byteLength} bytes, exit 0`));
     assert.match(error.message, /may be incomplete or truncated/);
     assert.equal(error.message.includes('8 MiB'), false);
@@ -651,7 +651,7 @@ test('invalid JSON failures retain useful stderr and stable status instead of ec
     return {content: 'PRIVATE RAW OUTPUT', attrs: {exit_code: '127', stderr: 'cua-driver is unavailable'}};
   }}, 'press_key', {key: 'return'}), error => {
     assert.equal(error.code, 'invalid_response');
-    assert.match(error.message, /mcp call cua press_key/);
+    assert.match(error.message, /cua press_key/);
     assert.match(error.message, /exit 127/);
     assert.match(error.message, /cua-driver is unavailable/);
     assert.equal(error.message.includes('PRIVATE RAW OUTPUT'), false);
@@ -685,7 +685,7 @@ test('only screenshot calls opt into a device-side 720p preview and forwarding o
   await cuaCall({execCall: async (command, options) => {
     commands.push({command, options}); return encode({});
   }}, 'get_desktop_state');
-  assert.equal(commands[0].command, 'mcp call cua get_desktop_state --input - --json', 'ordinary callers retain unmodified output');
+  assert.equal(commands[0].command, 'cua get_desktop_state --input - --json', 'ordinary callers retain unmodified output');
 });
 
 test('preview frame keeps original driver capture identity and separate pre-preview image dimensions', async t => {

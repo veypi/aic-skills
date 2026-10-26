@@ -28,8 +28,8 @@ URL 形态：`?profile=` 缺省 = 读 `default` 正式档；`?profile=none` = �
   "v": 1,
   "base": "default",
   "rules": [
-    { "kind": "alias", "match": "/ai/box.html", "url": "/ai/mybox.html" },
-    { "kind": "slot",  "component": "/ai/box.html", "slot": "", "url": "/fs/cloud/u/admin/slot.html", "mode": "override" },
+    { "kind": "alias", "match": "/ai/box.html", "url": "/ai/box.html" },
+    { "kind": "slot",  "component": "/ai/box.html", "slot": "footer", "url": "/fs/cloud/u/admin/slot.html", "mode": "override" },
     { "kind": "dock",  "edge": "auto", "url": "/os/dock.html" }
   ],
   "layout": {
@@ -44,6 +44,9 @@ URL 形态：`?profile=` 缺省 = 读 `default` 正式档；`?profile=none` = �
 - `rules[]` = **替换类规则**（alias / slot / dock）：改动需要 reload 才生效。
 - `layout` = **布局档**（窗口树 + 窗口记录）：改动立即生效（live）。
 - `base` 只在临时档里有意义（它从哪个正式档复制而来）。
+
+示例里的恒等 alias 是安全占位，用来验证规则链，不会替换组件。真正替换时，`url` 必须指向**现存且接口兼容**
+的平台组件；通过目录白名单只代表允许装载，不代表任意两个组件都能互换。slot 的宿主与槽名也必须实际存在。
 
 ## 3. 三类规则
 
@@ -74,7 +77,7 @@ URL 形态：`?profile=` 缺省 = 读 `default` 正式档；`?profile=none` = �
 - 片段里**禁止数据绑定**（`{{ }}`、`:x`、`v-x` 等）与**主动内容**（内联 `on*`、
   `iframe` / `object` / `embed` / `form`、`javascript:` / `data:text/html` 链接）；
 - `<style>` 按片段自身作用域注入，**`unscoped` 不生效**；禁 `@import`、外链 `url(http…)`；
-- 片段可以放本人空间（`/u/{uid}/...`、`/public/{uid}/...`）——**只放本人空间**。
+- 片段只放本人空间：云端私有文件写完整组件 URL `/fs/cloud/u/{uid}/...`，公共资源用 `/public/{uid}/...`；裸 `/u/{uid}/...` 是 fs 工具路径，不能用于这里的 `url`。
 
 优先级：宿主插槽同时有"父级投影"和"片段"时，`override` 模式片段优先，`soft` 模式投影优先。
 
@@ -88,7 +91,7 @@ URL 形态：`?profile=` 缺省 = 读 `default` 正式档；`?profile=none` = �
 ## 4. 硬约束（越界必被拒）
 
 1. **目标白名单**：`alias` / `dock` 的 `url` 只能指向**平台自带目录**
-   （`/ai/`、`/os/`、`/page/`、`/layout/`、`/local/`、`/log/`、`/assets/`）。
+   （`/ai/`、`/os/`、`/page/`、`/layout/`、`/shared/`、`/widgets/`、`/assets/`）。
    slot 片段的 `url` 只能指向**本人空间**。
    ——这条决定了"用户自写的组件不能顶替平台组件"。
 2. **URL 归一化后判定**：白名单按 URL 语义归一化后的落点判断，档案里**禁止 `..` 段**

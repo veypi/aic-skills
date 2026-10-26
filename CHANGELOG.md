@@ -2,7 +2,35 @@
 
 版本号见 [VERSION](VERSION)，遵循 SemVer：破坏性变更进位 minor。
 
-两个版本面：**模块版本**（本文件 / tag `vX.Y.Z`，Go 依赖面）与**技能版本**（各 `SKILL.md` frontmatter 的 `version:`，平台定版按它决定是否覆盖）。内容更新 bump 技能版本；契约或结构变化 bump 模块版本。
+两个版本面：**模块版本**（本文件 / tag `vX.Y.Z`，Go 依赖面）与**技能版本**（各 `SKILL.md` frontmatter 的 `version:`，进入 `skills.builtin` 指纹）。内容更新 bump 技能版本以触发自动定版；事件执行时无条件整包覆盖，不做版本大小比较。契约或结构变化 bump 模块版本。
+
+## 0.3.2 — 2026-10-27
+
+### 运行时修复
+
+- `play_with_ai`（1.0.3 → 1.0.4）：对齐 `$ai.attach/send` 失败语义；attach 退挂后不再向新会话误发通知，send 返回 `ok:false` 不再伪装成功，通知异常有日志处理；新增成功/attach 失败/send 失败测试。
+- `browser`（1.1.2 → 1.1.3）、`cua`（1.1.0 → 1.1.1）：UI 工具调用迁到正式 `<alias> <tool>` 服务命令；CUA 仅 schema 探测保留 `mcp describe` 调试通道，测试夹具同步。
+
+### `create`（1.0.2 → 1.0.3）
+
+- 数据模板显式使用 `rowid AS id` / `rowid = :id`，修掉无 `id` 列却查询/删除的坏模板；数据手册同步真实字段类型、主键、get/post、SQLite 与 DDL 作者红线。
+- 设备示例改为官方 MCP Go SDK 的真实 stdio 服务，含官方 SDK 依赖声明（`go.mod.example`）、`ping` handler 与 SDK client/server initialize + tools/call 测试；删除普通示例中无 Streamer 支撑的 `stream` 声明。
+- 设备手册以 `<alias> <tool>` 为主，说明 `stream.channel` → 真实 `vtools.Streamer` → RTC 的现行契约、冲突/权限边界及普通 MCP/TCP 不自动获得流。
+- profile 白名单改 `/shared/` `/widgets/`，slot 私有路径改 `/fs/cloud/u/{uid}/...`；示例改安全恒等 alias 与真实 `footer` 插槽，并提示组件接口兼容。
+- 发布版本改“未消耗的新值”，补齐压缩前后两个 16MiB 闸门；技能发现改 `skills` 工具，`$os`、服务命令与旧注释指针同步。
+
+### 其它技能手册
+
+- `drawio`（1.0.2 → 1.0.3）：页面命令路径改 `/cloud/u/...`，窗口探测改 `open.events` / 根 `list`。
+- `ppt_studio`（1.0.3 → 1.0.4）、`video_studio`（1.0.2 → 1.0.3）：修正窗口探测；Video 删除 page curl 跨源下载与 `-o` 落盘的无效工作流，PPT 旧页面地址同步。
+- `hello`（1.0.0 → 1.0.1）：补取消与写权限探针说明，修正 usage 命令名。
+- `blender`（0.3.0 → 0.3.1）、`office_studio`（1.0.3 → 1.0.4）：清理移动后的文档/路由注释。
+
+### 模块与工程
+
+- 模块版本 0.3.1 → 0.3.2；README 中英补齐 `cli/`、manifest、MCP/TCP 与 aic+aic-pod 消费链，Go 获取示例改 `@latest`。
+- 内建定版说明改为 `skills.builtin` 外层指纹闸 + 执行时全量覆盖；版本表与 `builtin_test.go` 全部同步。
+- CI 在根 Go 测试中覆盖两个 MCP 示例的 initialize + tools/call 契约，防止“能编译但无法握手”及嵌套 module 被 go:embed 跳过的回归。
 
 ## 0.3.1 — 2026-10-27
 

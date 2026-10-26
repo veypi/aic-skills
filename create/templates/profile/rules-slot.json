@@ -2,6 +2,6 @@
   "v": 1,
   "base": "default",
   "rules": [
-    { "kind": "slot", "component": "/ai/box.html", "slot": "", "url": "/fs/cloud/u/admin/slot.html", "mode": "override" }
+    { "kind": "slot", "component": "/ai/box.html", "slot": "footer", "url": "/fs/cloud/u/admin/slot.html", "mode": "override" }
   ]
 }

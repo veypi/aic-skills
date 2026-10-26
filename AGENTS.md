@@ -15,9 +15,10 @@ Boundary (contract truth: aic `docs/reference/skill.md`):
 - Explanations, UI and cloud APIs are published and served by the platform; a skill has no
   installed/enabled/process/service state of its own.
 - `cli/` carries host-side program **source** and a `manifest.json` declaring the device
-  service (protocol/alias/program resolution/stream channel); aic-pod registers such services into
-  vsh at startup (vtools). **Only source is committed** — no binaries, no `cli/bin/`,
-  no provider build outputs.
+  service (protocol/alias/program resolution and, for real streaming providers, the RTC channel);
+  aic-pod registers such services into vsh at startup (vtools). A `stream.channel` declaration is
+  only valid with an actual `vtools.Streamer` implementation; ordinary MCP/TCP providers do not gain
+  streaming from JSON alone. **Only source is committed** — no binaries, no `cli/bin/`, no provider build outputs.
 
 ## Layout
 
@@ -41,14 +42,17 @@ Boundary (contract truth: aic `docs/reference/skill.md`):
 - Adding a skill = create `<name>/SKILL.md` with `name: <name>` **equal to the directory name**
   and a numeric `version:`, add `<name>` to the `//go:embed` list, and update the expected
   list/versions in `builtin_test.go`.
-- `version:` is the **content version**: the platform's built-in seeding compares the embedded
-  version with the row version (simplified numeric dotted comparison) and only overwrites on a
-  strictly newer value; a missing/empty or non-numeric version never overwrites. Bump it on
-  every content change that must reach existing installs.
+- `version:` is the **content version** and part of aic's `skills.builtin` maintenance-event
+  fingerprint (package name + embedded version). A changed fingerprint triggers seeding; a forced
+  rerun is also available. Once the event runs, every embedded package is replaced and its row metadata
+  fully refreshed **without comparing version ordering**. This repository keeps numeric dotted versions;
+  bump the affected skill on every content change so automatic seeding sees the change.
 - The **module version** (`VERSION` + `CHANGELOG.md`, tag `vX.Y.Z`) is the Go dependency
-  surface used by consumers (aic). Release = commit → tag → push → consumers bump `require`.
+  surface used by consumers (aic and aic-pod). Release = commit → tag → push → consumers bump `require`.
 - Never put build artifacts in a skill directory (`provider/`, `cli/bin`, binaries,
   `*.zip`): `builtin_test.go` fails on them, and the contract forbids them.
+- Do not put a nested `go.mod` inside a skill: `go:embed` skips nested module directories.
+  Keep test dependencies in the repository root module and ship `go.mod.example` for standalone templates.
 
 ## Writing skill content
 
@@ -60,7 +64,7 @@ Boundary (contract truth: aic `docs/reference/skill.md`):
   segment** — `/skills/cloud/{id}` (mirrors `/fs/cloud`): the bare entry loads `ui/index.html`,
   subpages are `/skills/cloud/{id}/{page}`; detail and management live at
   `/skills/detail/cloud/{id}` (role-dispatched; members `/members`, data `/data`). Use the
-  `url_prefix` returned by `skill search/load` for
+  `url_prefix` returned by the `skills` tool's `search` / `load` actions for
   API/static resources, `$mod.scoped` for HTTP package paths, `$router` / `$mod.router_prefix`
   for in-page navigation. The fs-tool package path stays `/skills/{id}/...` (a different
   segment from the URL). **Never hardcode platform hosts or ports** in skill content or UI.
@@ -79,12 +83,17 @@ go test ./...         # embed list / metadata / versions / zip round-trip
 
 cd browser/ui && npm test     # zero-dependency: node --test (+ register hook)
 cd cua/ui && npm test
+cd play_with_ai/ui && npm test
+
+# The root Go suite also covers both real MCP examples (initialize + tools/call).
+GOWORK=off go test ./...
 ```
 
 - Go 1.27 (see `go.mod`). Node 22+ for the UI tests; they need **no** `npm install`.
 - If `proxy.golang.org` is unreachable (this network), use
   `GOPROXY=https://goproxy.cn,direct`.
-- CI (`.github/workflows/ci.yml`) runs gofmt/vet/test plus every `*/ui` `npm test`.
+- CI (`.github/workflows/ci.yml`) runs gofmt/vet/test (including both MCP example contract
+  suites) and every `*/ui` `npm test`.
 
 ## Docs & language
 
@@ -97,5 +106,5 @@ cd cua/ui && npm test
 
 Short imperative subjects scoped to one change (e.g. `feat(cua): …`, `docs: …`). To release:
 update `VERSION`, add the `CHANGELOG.md` section, commit, tag `vX.Y.Z`, push, then bump the
-`require` in consumers (aic) — local development there uses the root `go.work` instead of
+`require` in consumers (aic and aic-pod) — local development there uses the root `go.work` instead of
 `replace` directives.

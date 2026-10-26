@@ -17,13 +17,20 @@ export function createAI({ ai: aiService } = {}) {
     if (!sessionId || !agentId) return false
     const key = `${agentId}:${sessionId}`
     let client = clients.get(key)
-    if (!client) {
-      client = aiService.open({ agentId })
-      clients.set(key, client)
+    try {
+      if (!client) {
+        client = aiService.open({ agentId })
+        clients.set(key, client)
+      }
+      if (client.state.id !== sessionId) await client.attach(sessionId)
+      // attach 失败会静默退挂；此时 send 会在空 sid 上新建会话，绝不能继续。
+      if (client.state.id !== sessionId) return false
+      const result = await client.send({ content, reminders })
+      return result?.ok === true
+    } catch (e) {
+      console.warn('play_with_ai: AI 通知投递异常', e)
+      return false
     }
-    if (client.state.id !== sessionId) await client.attach(sessionId)
-    await client.send({ content, reminders })
-    return true
   }
 
   // 展示信息：agent 名字 + 会话模型（供席位面板显示「谁在坐」）

@@ -2,6 +2,6 @@
   "v": 1,
   "base": "default",
   "rules": [
-    { "kind": "alias", "match": "/ai/box.html", "url": "/ai/mybox.html" }
+    { "kind": "alias", "match": "/ai/box.html", "url": "/ai/box.html" }
   ]
 }

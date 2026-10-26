@@ -37,7 +37,7 @@ func main() {
 		}
 	case "probe-write":
 		if len(args) < 2 {
-			fmt.Fprintln(os.Stderr, "usage: hello-process probe-write <path>")
+			fmt.Fprintln(os.Stderr, "usage: hello probe-write <path>")
 			os.Exit(2)
 		}
 		err := os.WriteFile(args[1], []byte("probe\n"), 0o644)

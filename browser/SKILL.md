@@ -1,6 +1,6 @@
 ---
 name: browser
-version: 1.1.2
+version: 1.1.3
 description: 使用设备上的官方 agent-browser MCP 操作浏览器，UI 提供同一浏览器的实时画面和人工交互。
 ui:
   - path: index.html
@@ -63,6 +63,6 @@ UI 通过 `$hosts.openTools(hostId)` 的 RTC 连接执行 `execCall("browser <to
 
 上游不允许直接关闭最后一个标签页。UI 关闭最后一页时，先调用 `agent_browser_tab_new` 创建空白页，再用 `agent_browser_tab_close` 关闭原页；其余标签页正常关闭。AI 直接调用 MCP 时仍遵循上游限制。
 
-实时画面和人工输入走同一 RTC 连接上的内建 Browser 通道。Pod 只把 agent-browser 原生 WebSocket 消息双向转发，UI 绘制完帧再回传上游 ACK；不新增 CDP 连接、MCP 工具或页面身份。标签页标识直接使用上游 `tabId`。
+实时画面和人工输入走同一 RTC 连接上的内建 Browser 通道。通道名由本包 `cli/manifest.json` 的 `stream.channel` 提供，当前与前端默认同为 `aic-browser`；定制通道时前端也必须显式使用相同 channel，所有者覆盖默认服务时不继承内置流声明。Pod 只把 agent-browser 原生 WebSocket 消息双向转发，UI 绘制完帧再回传上游 ACK；不新增 CDP 连接、MCP 工具或页面身份。标签页标识直接使用上游 `tabId`。
 
 画面跟随上游当前活动标签页。关闭 UI 释放观看连接，AI 仍可操作；关闭 Pod 时用上游 CLI 关闭其专用运行目录中的 daemon。重新进入 UI 或点击刷新可重连。人工和 AI 同时输入遵循上游行为，没有额外接管锁。实时画面是 JPEG 帧流，当前限制 15 fps，不包含音频；支持鼠标、滚轮、键盘、中文输入和向远端粘贴文本。远端剪贴板读取及本地文件拖放不在此 UI 中提供。

@@ -1,0 +1,5 @@
+module example.com/aic-skill-device-template
+
+go 1.27.0
+
+require github.com/modelcontextprotocol/go-sdk v1.7.0

@@ -298,7 +298,7 @@
   }
 
   // ===== 路由参数（单值 query.path；new=1 = 新建模式）=====
-  // 注意：本页路由 /skills/local/office_studio/excel 的通配段会把 "excel" 落到
+  // 注意：本页路由 /skills/cloud/{skill_id}/excel 的通配段会把 "excel" 落到
   // $router.params.path，那不是文件参数——只认 query.path，且做 fs 形态校验。
   const looksLikeFsPath = (p) => /^\/(fs\/)?(cloud|page)\//.test(p) || /^\/(fs\/)?[a-f0-9]{32}\//.test(p)
   const routeTask = () => {

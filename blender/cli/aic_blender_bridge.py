@@ -5,7 +5,7 @@
   - boot 脚本挂载：pod 的 `blender launch` 以 `blender --python boot.py` 拉起，
     boot 脚本 runpy 加载本文件并调用 start()（不动用户 Blender 配置）
 
-协议（vtools/tcp v1，通用规范见 aic-pod docs/host-vtools.md §1.1；行分隔
+协议（vtools/tcp v1，通用规范见 aic-pod docs/reference/host-vtools.md §1.1；行分隔
 JSON，单条 ≤16MiB；与 aic-pod libs/vtools/tcp.go 对偶）：
   → {"auth":"<token>"}                        认证首行（必需）
   ← {"ok":true}  /  {"ok":false,"error":"…"}（失败即断连）

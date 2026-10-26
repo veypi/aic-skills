@@ -35,7 +35,7 @@ curl {url_prefix}/api/todo_add -X POST -H 'Content-Type: application/json' -d '{
 
 ## 页面与指令
 
-打开：`open /skills/cloud/{skill_id}`，skill_id 取自 `skill search/load`；HTTP 数据面仍使用返回的 `url_prefix`（同前缀）。
+打开：`open /skills/cloud/{skill_id}`，skill_id 取自 `skills` 工具的 `search/load`；HTTP 数据面仍使用返回的 `url_prefix`（同前缀）。
 
 | 指令 | 说明 |
 | --- | --- |

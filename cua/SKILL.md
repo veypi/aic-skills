@@ -1,6 +1,6 @@
 ---
 name: cua
-version: 1.1.0
+version: 1.1.1
 description: 通过设备上的官方 CuaDriver MCP 操作应用、原生窗口和浏览器。
 ui:
   - path: index.html
@@ -30,7 +30,7 @@ cua get_window_state --help      # 按 inputSchema 渲染参数表
 
 `--input -` 从 stdin 读取 JSON。命令输出标准 MCP 结果，包含上游 `content`、可选 `structuredContent` 和 `isError`。图片保留为 MCP image 内容，不转换为自定义观察对象。
 
-UI `/skills/cloud/cua` 经 `$hosts.openTools(hostId)` 的 `execCall` 调用同一命令面（`cua <tool> --json`），支持选择设备、主显示器桌面或应用窗口。截图调用添加 `--image-preview 1280x720`，Pod 在输出前等比缩入 1280×720，转为不超过 600 KiB 的 JPEG，小图不放大；普通 MCP 调用默认保留原图。空闲时每次完成后间隔 1 秒刷新，窗口截图关闭辅助功能树遍历；这不是连续视频流。查看端使用独立随机 `session`，不会覆盖 AI 工作会话中的观察引用。
+UI `/skills/cloud/cua` 经 `$hosts.openTools(hostId)` 的 `execCall` 调用同一命令面（`cua <tool> --json`），支持选择设备、主显示器桌面或应用窗口。截图调用添加 `--image-preview 1280x720`，Pod 在输出前等比缩入 1280×720，转为不超过 600 KiB 的 JPEG，小图不放大；普通 MCP 调用默认保留原图。工具调用使用正式 `cua <tool>`；仅 schema/能力探测使用 `mcp describe` 的调试输出。空闲时每次完成后间隔 1 秒刷新，窗口截图关闭辅助功能树遍历；这不是连续视频流。查看端使用独立随机 `session`，不会覆盖 AI 工作会话中的观察引用。
 
 窗口列表只保留可见、非最小化且有有效尺寸的候选，不逐个截图探测。若选中后发现窗口已最小化或没有渲染内容，移出列表、清空画面并暂停刷新；恢复窗口后可刷新列表或重试，不自动激活或恢复窗口。桌面截图参数读取当前设备 `cua get_desktop_state --help` 的实际 schema，只有明确支持时才传 `max_image_dimension`，每次重连重新读取。
 

@@ -47,8 +47,8 @@ async function cuaCommand(connection, command, options) {
   const content = typeof out.content === 'string' ? out.content : '';
   let bytes;
   const outputBytes = () => bytes ??= new TextEncoder().encode(content).byteLength;
-  const match = command.match(/^mcp (call|describe) cua ([a-zA-Z0-9_]+)/);
-  const label = match ? `mcp ${match[1]} cua ${match[2]}` : 'CUA command';
+  const match = command.match(/^((?:mcp (?:call|describe) )?)cua ([a-zA-Z0-9_]+)/);
+  const label = match ? `${match[1]}cua ${match[2]}` : 'CUA command';
   const rawExit = String(out.attrs?.exit_code ?? 'unknown');
   const exitCode = /^-?\d{1,10}$/.test(rawExit) ? rawExit : 'unknown';
   const context = () => `${label} (stdout ${outputBytes()} bytes, exit ${exitCode})`;
@@ -90,7 +90,7 @@ export async function cuaCall(connection, name, args = {}, options = {}) {
   if (!/^[a-zA-Z0-9_]+$/.test(name)) throw new Error('Invalid CUA command');
   const {imagePreview = false, ...execOptions} = options;
   const preview = imagePreview === true ? ' --image-preview 1280x720' : '';
-  return cuaCommand(connection, `mcp call cua ${name} --input - --json${preview}`, {
+  return cuaCommand(connection, `cua ${name} --input - --json${preview}`, {
     ...execOptions, stdin: JSON.stringify(args),
   });
 }

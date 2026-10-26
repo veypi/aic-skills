@@ -1,17 +1,38 @@
-# 设备侧命令模板
+# 设备 MCP 服务模板
 
-三种形态，按需要选：
+这是一个**真实可运行的 MCP stdio 服务**：官方 Go SDK 负责 initialize、tools/list 和 tools/call；
+`cli/manifest.json` 描述 Pod 如何解析程序并注册服务。它不是一次性 stdin JSON CLI。
 
-| 形态 | 用在 | 放哪 |
-| --- | --- | --- |
-| 普通脚本 | 一次性执行、无状态 | `scripts/`（附件，平台不执行，用户自己跑） |
-| 原生 CLI | 用户能自己装的独立程序 | 正文写清安装/依赖/路径/调用 |
-| 常驻服务 | 需要保持连接、窗口、快照等状态 | `cli/manifest.json` + `cli/` 源码 |
+## 构建
 
-**只入库源码**：`cli/bin/`、二进制、压缩包、构建产物一律不进包。
+```sh
+cd cli
+# 独立复制到没有父 go.mod 的目录时，先执行：
+# cp go.mod.example go.mod && GOWORK=off go mod tidy
+GOWORK=off go build -o ../mytool .
+cd ..
+```
 
-**现状提醒**：`cli/manifest.json` 的自动注册**只对官方内建包生效**；用户自己发布/安装的包，
-设备端目前没有自动安装与注册链路——所以给普通用户的正确做法是：正文写清安装步骤，源码随包附上。
+本仓由根 go.mod 统一提供 SDK 依赖；不要在技能目录里放嵌套 go.mod（go:embed 会跳过该目录）。
 
-把 `cli/main.go` 换成你自己的程序（读 stdin 的 JSON，往 stdout 输出 JSON），
-再按 `cli/manifest.json` 声明服务别名、启动方式、程序解析规则。
+## 注册与调用（设备上下文）
+
+```sh
+# 首次注册需要设备策略允许 mcp；路径必须是设备上的绝对路径
+mcp add mytool /absolute/path/to/mytool
+
+# 正式服务命令面
+mytool
+mytool ping --help
+mytool ping --json
+```
+
+服务授权仍走 `mcp.<alias>`（本例 `mcp.mytool`）；是否需 `grant cmd` 取决于设备策略。
+
+## 边界
+
+- `cli/` 只入库源码与清单，不放 `cli/bin/`、二进制、压缩包或构建产物。
+- 自动读取包内清单目前只对官方内嵌包生效；普通用户包用上面的 `mcp add` 或设备配置注册。
+- 本例是普通 MCP Provider，**没有实现 `vtools.Streamer`，所以不能声明 `stream.channel`**。
+  RTC 流要求真实 Streamer 实现；长任务输出仍走 exec 日志与 `bg`。
+- 需要普通原生 CLI 时看根技能 `hello`，不要把一次性 stdin JSON 程序声明成 MCP 服务。

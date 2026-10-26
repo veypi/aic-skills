@@ -1,1 +1,1 @@
-delete from items where user_id = :user_id and id = :id
+delete from items where user_id = :user_id and rowid = :id

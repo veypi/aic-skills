@@ -116,7 +116,7 @@ func Zip(name string) ([]byte, error) {
 // 无缩进 `key: value`；不引 yaml 依赖，只取两个标量键）。宽松提取，仅供
 // 内嵌场景取版本真相（本包 Version）；aic 侧
 // 完整契约走 skillhub parseSkillMD（yaml KnownFields 严格解析），两端各取
-// 所需——frontmatter 字段契约真相 = aic docs/skill.md §1。
+// 所需——frontmatter 字段契约真相 = aic docs/reference/skill.md §1。
 func Frontmatter(doc []byte) (name, version string) {
 	lines := strings.Split(string(doc), "\n")
 	if len(lines) == 0 || strings.TrimSpace(lines[0]) != "---" {

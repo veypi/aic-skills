@@ -1,6 +1,6 @@
 ---
 name: drawio
-version: 1.0.2
+version: 1.0.3
 nickname: DrawIO 绘图台
 description: 浏览器内 drawio 图表绘制与编辑工作台：形状/连线/样式编辑、.drawio 文件读写（统一文件视图）、PNG/SVG 导出；AI 可直接编写 .drawio XML 并用页面指令打开编辑
 keywords: [drawio, 绘图, 画图, 图表, 流程图, 架构图, 思维导图, uml, erd, diagram]
@@ -35,11 +35,11 @@ maxgraph——drawio 上游 mxGraph 的官方现代版）。文件经**统一 $f
 ## 操作方式（AI 标准流程）
 
 1. 打开页面：`open /skills/cloud/{skill_id}`（`skill_id` 取自 skill 列表；`url_prefix` 同前缀，用于资源与 API）
-2. 探测指令：`exec 1host=page {win_id}.list`（返回全部 `drawio_*` 指令清单）
+2. 探测指令：使用 `open` 返回的 `events` 查看 `drawio_*`；需要重新查看时执行不带窗口前缀的 `list`
 3. 出图：fs 工具直接写 `.drawio` 文件（默认目录 `/u/{uid}/drawio/`；**先读
    `references/xml-authoring.md`**，本文末尾有快速骨架）
-4. 展示/刷新：`drawio_open --path <文件路径>`——写完文件页面**不会自动感知**，必须调它
-   （用户手动改过文件的场景同理）
+4. 展示/刷新：`drawio_open --path <页面 $fs 路径>`——写完文件页面**不会自动感知**，必须调它
+   （用户手动改过文件的场景同理）。云端文件在 fs 工具里是 `/u/{uid}/...`，传给页面指令时改成 `/cloud/u/{uid}/...`
 5. 导出成图：`drawio_export --format png|svg --path <输出路径>`
 6. 页面是用户的编辑舞台：用户可随时改图并保存；你 fs 读文件即拿到最新内容
 
@@ -47,13 +47,13 @@ maxgraph——drawio 上游 mxGraph 的官方现代版）。文件经**统一 $f
 
 1. 读 `references/diagram-types.md` 选图形套路 + 本文速记规则
 2. fs 写 `/u/{uid}/drawio/xx-架构图.drawio`（JSON 无关；就是 XML 文本，2 空格缩进）
-3. `drawio_open --path ...` 打开给用户看
+3. `drawio_open --path /cloud/u/{uid}/drawio/xx-架构图.drawio` 打开给用户看
 4. 一两句话总结；后续用户说「改成 YY」→ fs 读 → 改 → 写回 → `drawio_open` 刷新
 
 ## 指令表
 
 返回统一为 `{content: "<JSON 字符串>"}`：成功 `{ok: true, ...}`，失败 `{ok: false, error}`。
-argv 形如 `["--path", "/u/admin/drawio/x.drawio"]`（`--key val` 成对）。
+argv 形如 `["--path", "/cloud/u/admin/drawio/x.drawio"]`（`--key val` 成对）。指令的 `--path` / `--dir` 都使用页面 `$fs` 完整树路径，不要直接照抄 fs 工具的云端物理路径。
 
 | 指令 | 说明 | 参数 | 返回 |
 | --- | --- | --- | --- |

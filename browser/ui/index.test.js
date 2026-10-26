@@ -23,7 +23,7 @@ function fixture(t, connections, query = {}) {
   const connection = (id, url = 'about:blank') => ({
     id,
     execCall: async (script, options) => {
-      const tool = script.split(' ')[3];
+      const tool = script.split(' ')[1];
       calls.push({id, tool, input:JSON.parse(options.stdin)});
       const data = tool === 'agent_browser_tab_list'
         ? {tabs:[{tabId:`tab-${id}`, active:true, url}]} : {hasDialog:false};
@@ -67,7 +67,7 @@ function sharedBrowser(pages, before = () => {}) {
   const browser = {
     id:'mbp', tabs:pages, calls:[],
     async execCall(script, options) {
-      const tool = script.split(' ')[3], input = JSON.parse(options.stdin);
+      const tool = script.split(' ')[1], input = JSON.parse(options.stdin);
       browser.calls.push({tool, input});
       const override = await before(tool, input, browser);
       if (override) return override;

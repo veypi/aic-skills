@@ -16,9 +16,9 @@
 }
 ```
 
-- 字段名小写 snake_case；类型用 `string` / `int` / `float` / `bool` 这类基础名。
+- 字段名小写 snake_case；类型只可用 `string` / `text` / `number` / `int` / `bool` / `json` / `time`。
 - **每张表都要有 `user_id` 字段**——行级隔离靠它（接口里用 `user_id = :user_id` 过滤）。
-- 主键由平台生成，不要自增列。
+- 平台**不生成隐式业务主键**。需要 `id` 时可显式使用 SQLite `rowid AS id`，或自行声明 `id`、加唯一索引并在应用层生成值（见 `examples/todo_min`）；不要使用自增列。
 
 ## 2. 接口声明
 
@@ -26,7 +26,7 @@
 
 ```sql
 -- api/get.list.sqlx
-select title, qty from items where user_id = :user_id order by rowid
+select rowid as id, title, qty from items where user_id = :user_id order by rowid limit 200
 ```
 
 ```sql
@@ -34,7 +34,7 @@ select title, qty from items where user_id = :user_id order by rowid
 insert into items (user_id, title, qty) values (:user_id, :title, :qty)
 ```
 
-- 方法段是 HTTP 方法（`get` / `post` / …），名字段是接口名。
+- 方法段目前只接受 `get` 或 `post`，名字段是接口名；其它文件名不会注册成 API。
 - **`user_id` 由服务端注入**（取当前登录身份），客户端不能覆盖——身份不可伪造。
 - 查询必须带 `user_id = :user_id` 过滤；全表拉取要加 LIMIT。
 - 返回形态：查询返回 `{ rows: [...] }`；写入返回受影响行数/空对象。
@@ -60,10 +60,10 @@ curl {url_prefix}/api/add -X POST -H 'Content-Type: application/json' -d '{"titl
 
 ## 4. SQL 书写规范
 
-- 只写**三种数据库都能跑的交集语法**（小写 snake_case、参数绑定、禁自增列、禁方言专用 upsert 与函数）。
-- **禁字符串拼接 SQL**（`:name` 绑定是唯一传参方式）。
-- 禁多语句、禁 DDL（表结构由平台按声明建）。
-- 字段与表名用小写下划线；查询字段要明确列出（不要 `select *`）。
+- 当前运行时是**每个技能包自己的 SQLite 库**，不是 sqlite/MySQL/PG 三库执行面；SQL 按这一真实边界书写。
+- **禁字符串拼接 SQL**（`:name` 绑定是唯一传参方式）；字段与表名用小写下划线，查询字段明确列出（不要 `select *`）。
+- 禁多语句；表结构走声明式 additive 迁移，**不要在 sqlx 里写 DDL**——这是作者与审核红线，不要依赖运行时是否恰好拦截。
+- 不使用自增列；需要行句柄时显式写 `rowid`，需要业务主键时按 §1 自行声明并生成。
 
 ## 5. 常见坑
 
@@ -72,7 +72,7 @@ curl {url_prefix}/api/add -X POST -H 'Content-Type: application/json' -d '{"titl
 3. `select *` → 表结构变了就炸。
 4. 一次拉全表 → 慢且危险，加 LIMIT。
 5. 接口名里带中文或空格 → 寻址麻烦，用小写短横线。
-6. 在 SQL 里写 `now()` 之类的方言函数 → 换库就挂；时间戳由客户端传字符串或用通用表达式。
+6. 依赖数据库时钟或方言函数会让接口行为难测；时间值优先由调用方用参数显式传入。
 
 ## 6. 验收
 

@@ -58,3 +58,55 @@ test('describe：非 AI 席位/无 agent 时返回空', async () => {
   assert.deepEqual(await ai.describe({ kind: 'human' }), { agentName: '', model: '', title: '' })
   assert.deepEqual(await ai.describe(null), { agentName: '', model: '', title: '' })
 })
+
+function fakePushService({ attach, send } = {}) {
+  const calls = []
+  const client = {
+    state: { id: '' },
+    attach: async (sessionId) => {
+      calls.push(['attach', sessionId])
+      if (attach) await attach(client, sessionId)
+      else client.state.id = sessionId
+    },
+    send: async (msg) => {
+      calls.push(['send', msg])
+      return send ? send(client, msg) : { ok: true }
+    },
+    dispose: () => {},
+  }
+  return { calls, client, open: () => client }
+}
+
+test('push：附着原会话并检查发送成功', async () => {
+  const svc = fakePushService()
+  const ai = createAI({ ai: svc })
+  const ok = await ai.push(
+    { kind: 'ai', agentId: 'a1', sessionId: 's1' },
+    { content: '轮到你了', reminders: ['局面'] },
+  )
+  assert.equal(ok, true)
+  assert.deepEqual(svc.calls.map(c => c[0]), ['attach', 'send'])
+  assert.equal(svc.calls[1][1].content, '轮到你了')
+})
+
+test('push：attach 静默退挂后不得向新会话发送', async () => {
+  const svc = fakePushService({ attach: () => {} })
+  const ai = createAI({ ai: svc })
+  const ok = await ai.push(
+    { kind: 'ai', agentId: 'a1', sessionId: 's1' },
+    { content: '不应投递' },
+  )
+  assert.equal(ok, false)
+  assert.deepEqual(svc.calls.map(c => c[0]), ['attach'])
+})
+
+test('push：send 返回 ok:false 时不能伪装成功', async () => {
+  const svc = fakePushService({ send: () => ({ ok: false, err: new Error('send failed') }) })
+  const ai = createAI({ ai: svc })
+  const ok = await ai.push(
+    { kind: 'ai', agentId: 'a1', sessionId: 's1' },
+    { content: '轮到你了' },
+  )
+  assert.equal(ok, false)
+  assert.deepEqual(svc.calls.map(c => c[0]), ['attach', 'send'])
+})

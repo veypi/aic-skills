@@ -2,7 +2,7 @@
   "alias": "mytool",
   "service": {
     "kind": "mcp-stdio",
-    "args": ["mcp"],
+    "args": [],
     "cwd": "{workdir}",
     "idle_timeout": "30m",
     "env": { "MYTOOL_HOME": "{home}/.mytool" }
@@ -16,6 +16,5 @@
       "bundle_dir": "mytool",
       "binary": { "windows": "mytool.exe", "other": "mytool" }
     }
-  ],
-  "stream": { "channel": "aic-mytool" }
+  ]
 }

@@ -222,7 +222,7 @@ ui/
 
 ## vhtml 版（skill 操控面）
 
-`index.html` 是 skill 页面（`/skills/ppt_studio/ui/index.html`）：顶栏（样例/文件/模式/演示）
+`index.html` 是 skill 页面（`/skills/cloud/{skill_id}`）：顶栏（样例/文件/模式/演示）
 
 - 编辑工具栏（`<ppt-toolbar>`，仅 edit 模式显示）+ PPT 舞台（`<ppt-stage>`）+ 右侧
 属性面板（`<ppt-panel>`，仅 edit 模式显示）。要点：
