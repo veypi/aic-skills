@@ -4,6 +4,13 @@
 
 两个版本面：**模块版本**（本文件 / tag `vX.Y.Z`，Go 依赖面）与**技能版本**（各 `SKILL.md` frontmatter 的 `version:`，进入 `skills.builtin` 指纹）。内容更新 bump 技能版本以触发自动定版；事件执行时无条件整包覆盖，不做版本大小比较。契约或结构变化 bump 模块版本。
 
+## 0.3.3 — 2026-10-27
+
+### `create`（1.0.3 → 1.0.4）
+
+- `references/cloud-data.md` 新增 §4「owner 直连（调试与数据修复）」：`POST /api/skills/{skill_id}/tables_sqlx` 原始 SQL（body `sql` + `args`/`params` 二选一、单语句 + 首词白名单、只读 1000 行截断、写操作返 `affected`/`last_insert_id`），以及 `/api/skills/{id}/tables/{table}[/{rowid}]` 结构化行后台；明确管理面 owner-only 与「禁止从 `ui/` 调用」的红线，写清与包内 `.sqlx`（黑名单、用户端、`user_id` 隔离）的分工；原 SQL 规范/常见坑/验收顺延为 §5–§7。
+- 分篇索引与 §1 的 `rowid` 条目同步指向该节，补建包后「查数据 / 修数据」的落地手段（之前手册只覆盖写 `.sqlx`，owner 看不到自己的表）。
+
 ## 0.3.2 — 2026-10-27
 
 ### 运行时修复

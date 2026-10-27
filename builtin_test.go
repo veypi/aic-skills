@@ -64,7 +64,7 @@ func TestVersionFromFrontmatter(t *testing.T) {
 		"browser":       "1.1.3",
 		"cua":           "1.1.1",
 		"blender":       "0.3.1",
-		"create":        "1.0.3",
+		"create":        "1.0.4",
 		"vhtml":         "0.5.1",
 		"office_studio": "1.0.4",
 		"drawio":        "1.0.3",

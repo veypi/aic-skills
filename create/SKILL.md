@@ -1,6 +1,6 @@
 ---
 name: create
-version: 1.0.3
+version: 1.0.4
 nickname: create 技能包
 description: AIC 扩展作者手册——把一句人话需求拆成云端/界面/设备三端的实际改动：技能包与数据、界面与页面指令、桌面档案规则、设备命令与常驻服务；含判定流程、字段契约、红线与验收。
 keywords: [create, 扩展, 技能包, 界面, 档案, 规则, 设备, 命令, 服务, 模板]
@@ -110,7 +110,7 @@ AIC 的扩展落在三个端上，每端有自己的持久化机制和交互协�
 |---|---|---|
 | `model.md` | 三端模型、需求→组合对照表、跨层说明 | 判断不清归属时；需要向用户解释方案时 |
 | `cloud-package.md` | 技能包结构、frontmatter、建行写包、寻址 | 要建包或往包里加文件 |
-| `cloud-data.md` | 表声明、sqlx 接口、用户隔离、SQL 规范 | 要存数据 |
+| `cloud-data.md` | 表声明、sqlx 接口、用户隔离、SQL 规范、owner 调试直连 | 要存数据或查/修数据 |
 | `ui-component.md` | 完整 HTML 文档、vhtml 语法、样式 token、页面指令 | 要写界面 |
 | `ui-profile.md` | 三类规则、硬约束、生效语义、档案命令面 | 要改桌面 |
 | `device-cli.md` | 命令与服务形态、manifest 字段、真实 MCP/Streamer 契约、源码与产物边界 | 要动设备 |

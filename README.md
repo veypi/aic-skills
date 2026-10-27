@@ -12,7 +12,7 @@ Go embed 携带静态内容与设备程序源码，随平台（aic）与设备�
 | `browser` | 1.1.3 | 说明 + UI：设备侧官方 `agent-browser`（0.38.2）MCP 的用法与实时画面 |
 | `cua` | 1.1.1 | 说明 + UI：官方 `cua-driver`（0.33.2）MCP 的远程查看与控制 |
 | `blender` | 0.3.1 | 说明：设备上的 Blender 直连（看场景 / 渲染 / 执行 Python） |
-| `create` | 1.0.3 | 手册 + 模板 + 介绍页：AIC 扩展作者手册（云端/界面/设备三端）与给人看的扩展能力介绍页 |
+| `create` | 1.0.4 | 手册 + 模板 + 介绍页：AIC 扩展作者手册（云端/界面/设备三端）与给人看的扩展能力介绍页 |
 | `office_studio` | 1.0.4 | 说明 + UI：Office 文档工作台 |
 | `drawio` | 1.0.3 | 说明 + UI：DrawIO 绘图工作台 |
 | `ppt_studio` | 1.0.4 | 说明 + UI：PPT 工坊 |
