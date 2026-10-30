@@ -1,28 +1,23 @@
-/*
-!LICENSE
-!README.md
-!README.en.md
-!CHANGELOG.md
-!AGENTS.md
-!VERSION
-!.github/
-!browser/
-!cua/
-!hello/
-!create/
-!vhtml/
-!office_studio/
-!drawio/
-!ppt_studio/
-!video_studio/
-!blender/
-!play_with_ai/
-!builtin.go
-!builtin_embed.go
-!builtin_test.go
-!go.mod
-!go.sum
+# 仓库只放源码与文档：设备侧编译产物、依赖缓存与运行数据一律不入库。
+# （旧规则是「先忽略一切、再逐条白名单」，新包与新目录要手工改规则，
+#   包目录内的产物也会漏进来；改为按「产物类型」忽略。）
 
-*.sqlite
+# 系统与编辑器残留
+.DS_Store
+*.swp
+
+# 依赖与缓存
+node_modules/
+
+# 设备侧编译产物：云端包只带源码（builtin_test 也拒收二进制）
+/browser/bin/
+/browser/src/aic-browser
+*.exe
+*.dll
+*.so
+*.dylib
+
+# 打包与运行数据
 *.zip
+*.sqlite
 temp_*
