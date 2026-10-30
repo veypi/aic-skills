@@ -37,6 +37,10 @@ type service struct {
 	castStatSent         int                         // 自检：发给订阅者的帧数
 	castStatWritten      int                         // 自检：已写到 socket 的帧数
 	castStatWrittenBytes int                         // 自检：已写到 socket 的字节数
+	castStatAcks         int                         // 自检：页面确认的帧数
+	castStatAckFailed    int                         // 自检：ack Chrome 失败次数
+	castStatDropped      int                         // 自检：订阅者不消费而丢弃的帧数
+	castStatEvicted      int                         // 自检：摘掉的僵尸订阅者数
 }
 
 // pendingDialog 是页面上待应答的 JS 对话框（alert / confirm / prompt）。

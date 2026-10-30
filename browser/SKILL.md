@@ -1,6 +1,6 @@
 ---
 name: browser
-version: 1.2.0
+version: 1.2.1
 description: 用设备上的 Chrome 实时查看与操作网页：CDP 通道供 AI 驱动浏览器，UI 提供同一浏览器的实时画面与人工交互。
 ui:
   - path: index.html
@@ -81,7 +81,7 @@ MCP 工具（`browser <tool> --input '{...}' --json`，标量参数自动映射�
 | `click` / `fill` | 按引用点击 / 填值 |
 | `screenshot` | 截图（PNG） |
 | `dialog_status` / `dialog_answer` | 页面上 JS 对话框（alert/confirm/prompt）的查询与应答 |
-| `cast_stats` | 画面链路只读自检（会话、订阅者数、收/发帧数） |
+| `cast_stats` | 画面链路只读自检（会话、订阅者数、收/发帧数、页面 ack 数、ack 失败数、丢弃帧数、被摘除的僵尸订阅者数） |
 
 页面级工具接受可选 `target_id`；UI 始终显式传递，避免并行操作抢改共享 session。
 AI 可先 `attach` 选定当前页后省略。元素引用取自最近一次快照；先看 schema 再传参。
@@ -125,3 +125,13 @@ echo '{"url":"https://example.com/"}' | browser navigate --input - --json
 5. 移除设备包：`commands uninstall browser`（该包的命令定义级配置随包清除）。
 6. 视口比例固定为 `BROWSER_WINDOW_SIZE`；不做移动端模拟。
 7. 不做远端剪贴板读取与本地文件拖放。
+
+## 画面链路的三个硬约束（2026-10-30 实测后定）
+
+1. **ack Chrome 绝不能在 CDP 读循环里同步发**：CDP 响应只能由读循环读出来，
+   在读循环里等响应就是自锁（每帧卡满 5 秒超时，画面从 60fps 掉到 0.2fps）。
+   `ackCastFrame` 走后台 goroutine。
+2. **每个订阅者只保最新一帧**（队列深度 1，满了丢旧的）：慢订阅者不拖住链路，
+   画面宁可跳帧也不堆积。
+3. **僵尸订阅者会被摘掉**：一直给它帧、它却 30 秒不确认，就当它死了、关掉连接。
+   流的维护归 pod——链路断就关流；页面重新活跃时自己新建流。

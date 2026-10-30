@@ -277,7 +277,16 @@ export class BrowserViewer {
   async draw(frame) {
     if (!frame) return;
     // 拿到的是裸 JPEG 字节：直接进 Blob，不用 base64 也不用 JSON。
-    const bitmap = await createImageBitmap(new Blob([frame.jpeg], { type: 'image/jpeg' }));
+    let bitmap;
+    try {
+      bitmap = await createImageBitmap(new Blob([frame.jpeg], { type: 'image/jpeg' }));
+    } catch (error) {
+      // 解码失败也要确认：否则这一帧一直挂着，设备侧要等超时才放行下一帧，
+      // 整条画面链路会卡成 0.2fps（2026-10-30 实测）。
+      this.changed({ error: `decode_failed: ${error?.message || error}` });
+      this.ack(frame.seq);
+      return;
+    }
     try {
       if (this.closed) return;
       this.canvas.width = bitmap.width;
@@ -517,6 +526,8 @@ export class BrowserSession {
     if (this.viewer && !this.viewer.closed && this.viewerConnection === connection) return;
     this.stopViewer();
     this.viewerConnection = connection;
+    // 流断过之后重新建流（页面活着就自己建）：上一次的错误提示先清掉。
+    this.state.status = '';
     this.viewer = new BrowserViewer(this.canvas, this.keyboard, {
       connection, changed: event => this.onStream(event),
     });

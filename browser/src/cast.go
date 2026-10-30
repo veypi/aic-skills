@@ -26,6 +26,9 @@ const (
 	// castAckTimeout 是安全阀：页面一直没确认（比如 UI 出错）时也要放行下一帧，
 	// 不能让画面彻底停住。正常情况下 ack 只需一个来回。
 	castAckTimeout = 3 * time.Second
+	// castPeerIdleTimeout 是僵尸订阅者的判定时长：一直给它帧、它却从不确认，
+	// 就当它已经死了，摘掉，别让它拖住整条链路。
+	castPeerIdleTimeout = 30 * time.Second
 )
 
 // castPending 是一帧在途的确认状态。
@@ -91,23 +94,34 @@ func (s *service) peerAcked(p *browserStreamPeer, seq uint64) {
 	}
 	pending.acked[p] = true
 	delete(s.castPending, seq)
+	s.castStatAcks++
 	s.castMu.Unlock()
+	p.markAcked()
 	s.ackCastFrame(pending)
 }
 
 // ackCastFrame 告诉 Chrome「这帧已经处理完」，它才会推下一帧。
+//
+// 必须异步发：b.Call 等的是 CDP 响应，而响应只能由 CDP 读循环读出来。
+// 在读循环里同步等就是自锁——每帧卡满 5 秒超时，画面从 60fps 掉到 0.2fps
+// （2026-10-30 实测）。这里起后台 goroutine 发，读循环继续跑。
 func (s *service) ackCastFrame(pending *castPending) {
 	b := s.currentBrowser()
 	if b == nil {
 		return
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if _, err := b.Call(ctx, "Page.screencastFrameAck", map[string]any{
-		"sessionId": pending.chromeID,
-	}, pending.pageSession); err != nil {
-		log.Printf("browser: screencast ack failed: %v", err)
-	}
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if _, err := b.Call(ctx, "Page.screencastFrameAck", map[string]any{
+			"sessionId": pending.chromeID,
+		}, pending.pageSession); err != nil {
+			s.castMu.Lock()
+			s.castStatAckFailed++
+			s.castMu.Unlock()
+			log.Printf("browser: screencast ack failed: %v", err)
+		}
+	}()
 }
 
 // onCastFrame 处理 Page.screencastFrame 事件：base64 解成裸 JPEG，转给订阅者。
@@ -174,7 +188,10 @@ func (s *service) onCastFrame(frameSessionID string, params json.RawMessage) {
 	}
 	for _, p := range peers {
 		if !p.offerFrame(castFrame{seq: seq, image: image}) {
-			// 帧没排上（队列满）：算它看过了，否则收不到 ack，Chrome 会停推。
+			// 订阅者不消费：算它看过了（否则 Chrome 停推），并记账。
+			s.castMu.Lock()
+			s.castStatDropped++
+			s.castMu.Unlock()
 			s.peerAcked(p, seq)
 			continue
 		}
@@ -182,8 +199,31 @@ func (s *service) onCastFrame(frameSessionID string, params json.RawMessage) {
 		s.castStatSent++
 		s.castMu.Unlock()
 	}
+	// 僵尸订阅者：有帧在推却一直不确认——摘掉它，别让它拖住所有人。
+	s.evictIdlePeers()
 	// 安全阀：页面迟迟不确认也要放行下一帧。
 	time.AfterFunc(castAckTimeout, func() { s.expireCast(seq) })
+}
+
+// evictIdlePeers 摘掉「有帧在推却不确认」的僵尸订阅者。
+//
+// 僵尸订阅者（页面已经关了但连接还在、或对端不再读）会让每帧都走「帧没排上」
+// 那条分支；那条分支会顺手 ack Chrome，链路看似还在转，实际每帧都在等超时。
+// 宁可丢掉这个订阅者，也不能让它拖住所有人。
+func (s *service) evictIdlePeers() {
+	s.castMu.Lock()
+	stale := make([]*browserStreamPeer, 0, len(s.castPeers))
+	for p := range s.castPeers {
+		if p.idleTooLong(castPeerIdleTimeout) {
+			stale = append(stale, p)
+		}
+	}
+	s.castStatEvicted += len(stale)
+	s.castMu.Unlock()
+	for _, p := range stale {
+		log.Printf("browser: evict idle stream peer")
+		p.close()
+	}
 }
 
 // expireCast 帧超时未确认：放行它，别让画面停住。

@@ -10,6 +10,8 @@ import (
 	"log"
 	"net"
 	"sync"
+	"sync/atomic"
+	"time"
 )
 
 // browser/stream-v2 是本包私有协议：设备↔页面全程二进制。
@@ -117,7 +119,41 @@ type browserStreamPeer struct {
 	conn    net.Conn
 	reader  *bufio.Reader
 	writeMu sync.Mutex
-	frames  chan castFrame // 待发的画面帧
+	frames  chan castFrame // 待发的画面帧（只保最新一帧）
+	lastAck atomic.Int64   // 最近一次页面确认（Unix 纳秒）
+	lastFit atomic.Int64   // 最近一次给过它帧（Unix 纳秒）
+}
+
+// markAcked 记一次页面确认：用来判断订阅者是不是还活着。
+func (p *browserStreamPeer) markAcked() {
+	p.lastAck.Store(time.Now().UnixNano())
+}
+
+// markFitted 记一次「给过它一帧」。
+func (p *browserStreamPeer) markFitted() {
+	p.lastFit.Store(time.Now().UnixNano())
+}
+
+// idleTooLong 判断订阅者是不是已经不再确认（有帧在推却一直不 ack）。
+//
+// 只有「刚给过它帧、它却一直不确认」才算僵尸：静态页面没有帧、没有确认，
+// 不能因为没确认就把它摘了。
+func (p *browserStreamPeer) idleTooLong(timeout time.Duration) bool {
+	fitted := p.lastFit.Load()
+	if fitted == 0 || time.Since(time.Unix(0, fitted)) > 5*time.Second {
+		return false // 最近没给它帧：没有帧自然没有确认
+	}
+	acked := p.lastAck.Load()
+	if acked == 0 {
+		return false // 刚连上：给它一个机会
+	}
+	return time.Since(time.Unix(0, acked)) > timeout
+}
+
+// close 关掉这条连接：写失败或被判定为僵尸时用。关掉后读循环收到 EOF，
+// 订阅者会被摘除（removePeer）。
+func (p *browserStreamPeer) close() {
+	_ = p.conn.Close()
 }
 
 func (p *browserStreamPeer) sendControl(value any) error {
@@ -137,9 +173,20 @@ func (p *browserStreamPeer) sendFrame(seq uint64, jpeg []byte) error {
 	return writeEnvelope(p.conn, msgFrame, seq, jpeg)
 }
 
-// offerFrame 把一帧排进发送队列。队列满了就丢这一帧（返回 false）：
-// 宁可少一帧，也不要堵住 Chrome 的事件通道。
+// offerFrame 把一帧排进发送队列。队列里只保最新一帧：
+// 慢订阅者不拖住链路，画面宁可跳帧也不堆积。
 func (p *browserStreamPeer) offerFrame(frame castFrame) bool {
+	p.markFitted()
+	select {
+	case p.frames <- frame:
+		return true
+	default:
+	}
+	// 队列已满：丢掉旧帧，换成最新的。
+	select {
+	case <-p.frames:
+	default:
+	}
 	select {
 	case p.frames <- frame:
 		return true
@@ -181,9 +228,10 @@ func (p *browserStreamPeer) run(parent context.Context) {
 	}()
 
 	// 订阅画面：设备用 screencast 推帧，一帧在途，页面 ack 之后才推下一帧。
-	p.frames = make(chan castFrame, 4)
+	p.frames = make(chan castFrame, 1)
 	p.service.addPeer(p)
 	defer p.service.removePeer(p)
+	p.markAcked() // 建连时间当基准：之后一直没确认才算僵尸
 	log.Printf("browser: stream peer connected")
 
 	// 绑定页面会话（没有就绑第一个页面目标），并起一路 screencast。
@@ -217,6 +265,8 @@ func (p *browserStreamPeer) writeFrames(ctx context.Context) {
 		case frame := <-p.frames:
 			if err := p.sendFrame(frame.seq, frame.image); err != nil {
 				log.Printf("browser: send frame failed: %v", err)
+				// 写失败就是死连接：关掉它，让读循环收口、订阅者被摘除。
+				p.close()
 				return
 			}
 			p.service.countWritten(len(frame.image))

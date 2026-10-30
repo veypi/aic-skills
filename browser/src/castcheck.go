@@ -25,12 +25,18 @@ func (s *service) toolCastStats(ctx context.Context, _ *mcp.CallToolRequest, _ s
 	sent := s.castStatSent
 	written := s.castStatWritten
 	writtenBytes := s.castStatWrittenBytes
+	acks := s.castStatAcks
+	ackFailed := s.castStatAckFailed
+	dropped := s.castStatDropped
+	evicted := s.castStatEvicted
 	s.castMu.Unlock()
 	payload, _ := json.Marshal(map[string]any{
 		"session": session, "castSession": castSession,
 		"peers": peers, "framesReceived": received,
 		"framesSent": sent, "framesWritten": written,
 		"writtenBytes": writtenBytes, "bytes": bytes,
+		"pageAcks": acks, "ackFailed": ackFailed,
+		"dropped": dropped, "evicted": evicted,
 	})
 	return textResult(json.RawMessage(payload)), nil, nil
 }
