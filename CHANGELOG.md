@@ -4,6 +4,22 @@
 
 两个版本面：**模块版本**（本文件 / tag `vX.Y.Z`，Go 依赖面）与**技能版本**（各 `SKILL.md` frontmatter 的 `version:`，进入 `skills.builtin` 指纹）。内容更新 bump 技能版本以触发自动定版；事件执行时无条件整包覆盖，不做版本大小比较。契约或结构变化 bump 模块版本。
 
+## 0.3.4 — 2026-10-30
+
+### `browser`（1.1.3 → 1.2.0）
+
+- 官方 `browser` 包整体换成自带的 Chrome CDP 通道：删除 agent-browser MCP（`agent_browser_*` 工具面）与其 `cli/manifest.json`（vtools pack 声明），改为根 `manifest.json`（统一 commands：`browser` → `bin/browser`；`streams.view` → `BROWSER_STREAM_ADDR`）+ `src/` 源码 + 新 `ui/` 界面。
+- 工具面换成 `cdp` / `targets` / `attach` / `eval` / `navigate` / `snapshot` / `click` / `fill` / `screenshot` / `dialog_status` / `dialog_answer` / `cast_stats`；页面级工具统一走 `target_id`，UI 动作串行，attach 幂等。
+- 实时画面改私有二进制协议 `browser/stream-v2`（裸 JPEG 帧 + 视口归一化输入坐标），平台只转发字节、不解析载荷；i18n key 由 `browser2.*` 收敛为 `browser.*`。
+- 设备侧配置面统一走命令定义级配置（`commands config browser …`）：Chrome 路径 `AIC_BROWSER_PATH`、视口 `BROWSER_WINDOW_SIZE`、安全源 `BROWSER_SECURE_ORIGINS` 等；应用配置文件改 `~/.aic/browser/config.env`。
+
+### 模块与工程
+
+- 模块版本 0.3.3 → 0.3.4；根模块新增 `github.com/gorilla/websocket` 依赖（browser 源码随根模块构建与测试）。
+- `.gitignore` 改写：从「忽略一切 + 逐条白名单」改为按产物类型忽略（设备编译产物、依赖缓存、打包与运行数据），新增包目录不再需要手工改规则。
+- `AGENTS.md` 契约同步：`src/` + 根 `manifest.json` 的设备执行面、`commands install` 安装流、包内不留嵌套 `go.mod`（`go:embed` 跳过嵌套模块目录，否则发布出去的包没有源码）。
+- 仓库文档地图 `docs/index.md` 纳入版本控制（此前被白名单规则挡在仓外，AGENTS.md 里的指针是死链）。
+
 ## 0.3.3 — 2026-10-27
 
 ### `create`（1.0.3 → 1.0.4）

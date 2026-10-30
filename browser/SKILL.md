@@ -1,7 +1,7 @@
 ---
 name: browser
-version: 1.1.3
-description: 使用设备上的官方 agent-browser MCP 操作浏览器，UI 提供同一浏览器的实时画面和人工交互。
+version: 1.2.0
+description: 用设备上的 Chrome 实时查看与操作网页：CDP 通道供 AI 驱动浏览器，UI 提供同一浏览器的实时画面与人工交互。
 ui:
   - path: index.html
     desc: 设备窗口列表、导航与实时键鼠交互
@@ -10,59 +10,118 @@ ui:
 
 # Browser
 
-Pod 的 `browser` 别名直接启动官方 `agent-browser mcp --tools core,tabs,mobile,state`（内置默认项由本包 `cli/manifest.json` 声明），当前发行固定 0.38.2。工具名称、参数、描述、schema 和完整结果均来自上游，以 `browser`（工具目录）与 `browser <tool> --help` 为准。技能提供手册、云端 UI 与服务清单。
+设备侧是一个自带的 Chrome（`browser` 程序）：它既是 MCP 工具服务，也提供实时画面流。
+UI 与 AI 共享同一个浏览器实例和同一个页面，人工与 AI 可以同时操作。
 
-## 运行依赖
+## 安装与构建
 
-Desktop 附带 agent-browser 原生二进制和 Chrome for Testing；首次调用由 Pod 的 MCP manager 启动服务，AI 与 UI 共享上游 daemon 和浏览器。无需 Browser 专用 Node 运行时。
+```sh
+# 下载、解包并注册，运行期生效，无需重启 pod/aic
+commands install browser
 
-独立 CLI 按 [agent-browser 安装说明](https://github.com/vercel-labs/agent-browser#installation) 安装 0.38.2 和 Chrome。可用 `AIC_AGENT_BROWSER_PATH`、`AIC_BROWSER_PATH` 指定程序位置。运行目录固定为 `$HOME/.aic/browser/runtime`，浏览器资料位于 `$HOME/.aic/browser/profile`，不跟随单次 shell 的 cwd/env 改变。
+# 在设备安装目录编译（云端包只保存源码，不保存二进制）
+cd ~/.aic/packages/browser/src
+cp go.mod.example go.mod
+go mod tidy
+mkdir -p ../bin
+go build -o ../bin/browser .
+```
 
-默认以设备权限启动；MCP 调用和实时流都经过 `mcp.browser` 命令权限门。浏览器可访问的设备资源由上游及操作系统管理。
+## 配置：命令定义级配置（统一面）
 
-设备所有者可在 `~/.aic/config.yaml` 的 `mcp.servers.browser` 设置 `disabled: true`，或用完整 command/url 配置替换默认项。替换项不继承默认启动参数和权限；内建实时 UI 仅连接默认 agent-browser 实例。
+应用配置与沙箱策略是同一张表里的同一件事——「这条命令定义的运行配置」。
+写面只有 `commands config`，按**定义身份**存储（与 alias 同名替换无关）：
+
+```sh
+# 应用配置（环境变量）：AI 可直接写
+commands config browser AIC_BROWSER_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+commands config browser BROWSER_SECURE_ORIGINS="http://localhost:4000"
+
+# 免沙箱：Chrome 自身沙箱在 pod 沙箱里起不来（ERR_ABORTED）。
+# 这是提权项——平台会话需人工批准（未批准会被明确拒绝），本机 owner 直接执行不需要。
+commands config browser --no-sandbox
+
+# 查看 / 撤销
+commands config browser
+commands config browser --unset BROWSER_SECURE_ORIGINS
+commands config browser --sandbox
+```
+
+包也会读 `~/.aic/browser/config.env`（同名键值，仅在环境变量未设置时生效）——
+那是 owner 的可选便捷项，不是平台的配置面。
+
+配置后：
+
+```sh
+grant cmd browser
+browser
+browser navigate --input - --json
+```
+
+## 设备侧程序
+
+源码在 `src/`（Go，只入库源码；二进制与构建产物不入库）。程序两种形态：
+
+- **stdio（默认）**：MCP 工具服务；同时在 `BROWSER_STREAM_ADDR` 指定的地址上开一个
+  TCP 流，供实时画面使用。
+- **`--http <addr>`**：自带 HTTP MCP 服务（进程已在设备上、Pod 只做代理时用）。
 
 ## 工具面
 
-MCP 工具集 = 上游 profile `core,tabs,mobile,state`：
+MCP 工具（`browser <tool> --input '{...}' --json`，标量参数自动映射为同名 flag）：
 
-- `core` 日常自动化（导航、快照、交互、等待、截图、eval），`tabs` 标签页/窗口/frame/dialog。
-- `mobile` 视口与设备模拟：`agent_browser_set_viewport`、`set_device`、`set_geo`、`set_media`，以及 touch/swipe。**实时画面的比例由视口决定**：视口被改窄画面即呈竖屏，改回宽屏用 `browser agent_browser_set_viewport --help` 看参数。
-- `state` 浏览器侧状态：`cookies_*`、`storage_*`、`auth_*`（登录档案）、`state_save`/`state_load`（登录态快照）、`session_*`。
+| 工具 | 用途 |
+| --- | --- |
+| `cdp` | 原始 CDP 命令（任何 CDP 域都能调，AI 的主要通道） |
+| `targets` | 列出浏览器目标（页面、worker）及其 id、类型、标题、URL |
+| `attach` | 绑定页面目标为后续命令的会话（重复 attach 复用 session） |
+| `eval` | 在目标页面执行 JavaScript |
+| `navigate` | 导航到 URL（默认等待文档加载完成；`wait:false` 只发起导航） |
+| `snapshot` | 无障碍树 + 元素引用（`e1`、`e2`…），供 click/fill 用 |
+| `click` / `fill` | 按引用点击 / 填值 |
+| `screenshot` | 截图（PNG） |
+| `dialog_status` / `dialog_answer` | 页面上 JS 对话框（alert/confirm/prompt）的查询与应答 |
+| `cast_stats` | 画面链路只读自检（会话、订阅者数、收/发帧数） |
 
-注意：`auth_*` 与 `state_save` 把凭据/登录态**明文写入设备磁盘**（`$HOME/.aic/browser` 下），同机 AI 可再读回；只在受控设备启用。
+页面级工具接受可选 `target_id`；UI 始终显式传递，避免并行操作抢改共享 session。
+AI 可先 `attach` 选定当前页后省略。元素引用取自最近一次快照；先看 schema 再传参。
 
-## 使用
-
-在目标设备的 exec 中：
-
-```sh
-browser                                        # 工具目录
-browser agent_browser_open --url https://example.com --json
-browser agent_browser_tab_list --json
-browser agent_browser_snapshot --json
-browser agent_browser_click --selector "@e1" --json
-browser agent_browser_click --help             # 按 inputSchema 渲染参数表
-```
-
-标量参数自动映射为同名 flag；复杂对象走 `--input JSON`（`--input -` 从 stdin 读取）。调试直通保留：`mcp tools|describe|call browser ...`。
-
-切换标签页使用上游返回的 `tabId`，例如：
+复杂参数走 stdin：
 
 ```sh
-browser agent_browser_tab_switch --input '{"tab":"t1"}' --json
+echo '{"url":"https://example.com/"}' | browser navigate --input - --json
 ```
 
-元素引用取自最新快照；先查看实际 schema 再填参数。工具作用于上游当前活动标签页，人工与 AI 共享该选择。上游提供什么工具，命令就透传什么工具，不另外注册别名或平台 fs/exec 工具。
+## 实时画面
 
-外层 `exec.1host` 选择设备。`--json` 返回完整 MCP 结果，包含 `content`、`structuredContent`、`isError` 等字段。大截图可用上游 `agent_browser_screenshot.path` 保存，再通过原生 fs 读取。
+- **推帧**：CDP `Page.startScreencast`，Chrome 合成器出帧即推；页面静止时不产帧（正常语义）。
+- **背压**：页面画完才回 ack，设备再 ack Chrome，Chrome 才推下一帧 → 端到端只有一帧在途，
+  缓冲不会堆积；页面慢就掉帧，不会拖垮链路。实测动画页面 60fps、每帧约 6KB。
+- **帧格式**：裸 JPEG 字节，私有协议 `browser/stream-v2` 全二进制
+  （`[u8 kind][u32 payloadLen][u64 seq][payload]`），链路上没有 base64、没有 JSON。
+- 人工输入与画面共用同一条流：坐标是视口归一化值 `[0,1]`，支持鼠标、滚轮、键盘、中文输入。
+- 没有人观看时设备停止 screencast（避免持续合成占满 CPU）。
 
-## UI 和实时交互
+## 配置面
 
-UI 通过 `$hosts.openTools(hostId)` 的 RTC 连接执行 `execCall("browser <tool> --input - --json", {stdin: JSON.stringify(args)})`，调用上游标签页、导航和弹窗工具。界面沿用单行导航栏、按设备分组的可折叠窗口列表、窗口旁的新建/关闭、空白页入口和居中的实时画面；快照和截图仍可由 AI 使用上游 MCP 调用。
+| 文件键或 env | 作用 |
+| --- | --- |
+| `AIC_BROWSER_PATH` | Chrome 可执行文件路径（兼容 `AGENT_BROWSER_EXECUTABLE_PATH`） |
+| `BROWSER_SECURE_ORIGINS` | 逗号/换行分隔的 http origin，绕开 Chrome 自动 HTTPS 升级 |
+| `BROWSER_WINDOW_SIZE` | 视口尺寸，默认 `1280x720`（720p）；影响截图帧的比例 |
+| `BROWSER_PROFILE` | Chrome 资料目录 |
+| `BROWSER_HEADLESS` | `0`/`false` = 有头 |
+| `BROWSER_PROXY` | Chrome 代理地址 |
+| `BROWSER_CHROME_ARGS` | 额外 Chrome 参数 |
 
-上游不允许直接关闭最后一个标签页。UI 关闭最后一页时，先调用 `agent_browser_tab_new` 创建空白页，再用 `agent_browser_tab_close` 关闭原页；其余标签页正常关闭。AI 直接调用 MCP 时仍遵循上游限制。
+`BROWSER_STREAM_ADDR` 由 pod 在启动时注入，包内 UI 的流名为 `view`，无需手工配置。
 
-实时画面和人工输入走同一 RTC 连接上的内建 Browser 通道。通道名由本包 `cli/manifest.json` 的 `stream.channel` 提供，当前与前端默认同为 `aic-browser`；定制通道时前端也必须显式使用相同 channel，所有者覆盖默认服务时不继承内置流声明。Pod 只把 agent-browser 原生 WebSocket 消息双向转发，UI 绘制完帧再回传上游 ACK；不新增 CDP 连接、MCP 工具或页面身份。标签页标识直接使用上游 `tabId`。
+## 注意
 
-画面跟随上游当前活动标签页。关闭 UI 释放观看连接，AI 仍可操作；关闭 Pod 时用上游 CLI 关闭其专用运行目录中的 daemon。重新进入 UI 或点击刷新可重连。人工和 AI 同时输入遵循上游行为，没有额外接管锁。实时画面是 JPEG 帧流，当前限制 15 fps，不包含音频；支持鼠标、滚轮、键盘、中文输入和向远端粘贴文本。远端剪贴板读取及本地文件拖放不在此 UI 中提供。
+1. 内网 http 站点若被 Chrome 自动升级到 https，将 origin 写入 `BROWSER_SECURE_ORIGINS`。
+2. 浏览器服务通常需要 `commands config browser --no-sandbox`，否则 Chrome 自身沙箱无法初始化。
+3. 服务调用与流权限统一为 `grant cmd browser`。
+4. 更新设备包：`commands update browser`；更新后按本文重新构建。
+5. 移除设备包：`commands uninstall browser`（该包的命令定义级配置随包清除）。
+6. 视口比例固定为 `BROWSER_WINDOW_SIZE`；不做移动端模拟。
+7. 不做远端剪贴板读取与本地文件拖放。

@@ -10,7 +10,7 @@ program source, and ships it inside the platform (aic) and the device client (ai
 
 | Skill | Version | Shape |
 | --- | --- | --- |
-| `browser` | 1.1.3 | Prose + UI: using the device-side official `agent-browser` (0.38.2) MCP, with a live view |
+| `browser` | 1.2.0 | Prose + UI: the device-side Chrome CDP channel (AI tools + live view + human input) |
 | `cua` | 1.1.1 | Prose + UI: remote view and control through the official `cua-driver` (0.33.2) MCP |
 | `blender` | 0.3.1 | Prose: direct bridge to Blender on the device (inspect / render / run Python) |
 | `create` | 1.0.4 | Guide + templates + intro page: the AIC extension authoring manual (cloud / page / host) and a human-facing capability page |

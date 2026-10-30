@@ -7,18 +7,19 @@ is [README.md](README.md) (Chinese) / [README.en.md](README.en.md) (English).
 
 The **official AIC skill content repository**. A skill package is the plugin unit:
 `SKILL.md` (required, the AI manual) plus optional orthogonal parts — `ui/`, `api/`,
-`tables/` for the cloud, `cli/` for execution ends (aic-pod). The Go package embeds
-that content and ships it inside the platform (aic) and the device client (aic-pod).
+`tables/` for the cloud, `src/` + a root `manifest.json` for execution ends (aic-pod).
+The Go package embeds that content and ships it inside the platform (aic) and the device client (aic-pod).
 
 Boundary (contract truth: aic `docs/reference/skill.md`):
 
 - Explanations, UI and cloud APIs are published and served by the platform; a skill has no
   installed/enabled/process/service state of its own.
-- `cli/` carries host-side program **source** and a `manifest.json` declaring the device
-  service (protocol/alias/program resolution and, for real streaming providers, the RTC channel);
-  aic-pod registers such services into vsh at startup (vtools). A `stream.channel` declaration is
-  only valid with an actual `vtools.Streamer` implementation; ordinary MCP/TCP providers do not gain
-  streaming from JSON alone. **Only source is committed** — no binaries, no `cli/bin/`, no provider build outputs.
+- The root `manifest.json` declares the device execution surface: `schema`, `commands`
+  (run / protocol / idle_timeout) and `streams` (command + `address_env`). The device installs
+  the package (`commands install <skill_id>`), builds the program from `src/`, and registers the
+  command; a stream is an opaque bidirectional TCP byte relay — the platform never parses
+  the payload, the package owns its protocol. **Only source is committed** — no binaries,
+  no build outputs.
 
 ## Layout
 
@@ -30,8 +31,8 @@ Boundary (contract truth: aic `docs/reference/skill.md`):
 - `<skill>/SKILL.md` — the only required file; frontmatter + body.
 - `<skill>/ui/` — optional cloud UI (`index.html` + modules), loaded at `/skills/cloud/{id}`.
 - `<skill>/api/`, `<skill>/tables/` — optional cloud API and tables.
-- `<skill>/cli/` — optional execution-end program: `manifest.json` (service declaration)
-  + program source. Consumed by aic-pod (vtools 注册); never executed on the cloud.
+- `<skill>/src/` — optional device program source; the root `manifest.json` points at the
+  built program (`bin/<name>`). Consumed by aic-pod; never executed on the cloud.
 - `builtin.go` — `List` / `Open` / `Version` / `Zip` / `Frontmatter` helpers over the embed.
 - `builtin_embed.go` — **the publication switch** (`//go:embed all:<dir> …`): a directory that
   is not listed is never published.
@@ -49,10 +50,12 @@ Boundary (contract truth: aic `docs/reference/skill.md`):
   bump the affected skill on every content change so automatic seeding sees the change.
 - The **module version** (`VERSION` + `CHANGELOG.md`, tag `vX.Y.Z`) is the Go dependency
   surface used by consumers (aic and aic-pod). Release = commit → tag → push → consumers bump `require`.
-- Never put build artifacts in a skill directory (`provider/`, `cli/bin`, binaries,
-  `*.zip`): `builtin_test.go` fails on them, and the contract forbids them.
-- Do not put a nested `go.mod` inside a skill: `go:embed` skips nested module directories.
-  Keep test dependencies in the repository root module and ship `go.mod.example` for standalone templates.
+- Never put build artifacts in a skill directory (binaries, `*.zip`, `*.sqlite`):
+  `builtin_test.go` fails on them, and the contract forbids them.
+- Do not put a nested `go.mod` inside a skill: `go:embed` skips nested module directories,
+  so the published package would ship without its source. Keep the source in the repository
+  root module and ship `src/go.mod.example` so the device can build it standalone
+  (`cp go.mod.example go.mod && go mod tidy && go build -o ../bin/<name> .`).
 
 ## Writing skill content
 

@@ -2,7 +2,10 @@ module github.com/veypi/aic-skills
 
 go 1.27.0
 
-require github.com/modelcontextprotocol/go-sdk v1.7.0
+require (
+	github.com/gorilla/websocket v1.5.3
+	github.com/modelcontextprotocol/go-sdk v1.7.0
+)
 
 require (
 	github.com/google/jsonschema-go v0.4.3 // indirect

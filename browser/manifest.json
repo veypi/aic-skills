@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "commands": {
+    "browser": {
+      "run": ["bin/browser"],
+      "protocol": "mcp",
+      "idle_timeout": "30m"
+    }
+  },
+  "streams": {
+    "view": {
+      "command": "browser",
+      "address_env": "BROWSER_STREAM_ADDR"
+    }
+  }
+}
