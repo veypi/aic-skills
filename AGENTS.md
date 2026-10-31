@@ -8,7 +8,9 @@ is [README.md](README.md) (Chinese) / [README.en.md](README.en.md) (English).
 The **official AIC skill content repository**. A skill package is the plugin unit:
 `SKILL.md` (required, the AI manual) plus optional orthogonal parts — `ui/`, `api/`,
 `tables/` for the cloud, `src/` + a root `manifest.json` for execution ends (aic-pod).
-The Go package embeds that content and ships it inside the platform (aic) and the device client (aic-pod).
+The Go package embeds the cloud-side content and ships it inside the platform (aic); the
+device fetches packages with `commands install <id>` and builds them from `src/` — aic-pod no
+longer depends on this Go module.
 
 Boundary (contract truth: aic `docs/reference/skill.md`):
 
@@ -32,7 +34,7 @@ Boundary (contract truth: aic `docs/reference/skill.md`):
 - `<skill>/ui/` — optional cloud UI (`index.html` + modules), loaded at `/skills/cloud/{id}`.
 - `<skill>/api/`, `<skill>/tables/` — optional cloud API and tables.
 - `<skill>/src/` — optional device program source; the root `manifest.json` points at the
-  built program (`bin/<name>`). Consumed by aic-pod; never executed on the cloud.
+  built program (`bin/<name>`). Built on the device from this source; never executed on the cloud.
 - `builtin.go` — `List` / `Open` / `Version` / `Zip` / `Frontmatter` helpers over the embed.
 - `builtin_embed.go` — **the publication switch** (`//go:embed all:<dir> …`): a directory that
   is not listed is never published.
@@ -49,7 +51,7 @@ Boundary (contract truth: aic `docs/reference/skill.md`):
   fully refreshed **without comparing version ordering**. This repository keeps numeric dotted versions;
   bump the affected skill on every content change so automatic seeding sees the change.
 - The **module version** (`VERSION` + `CHANGELOG.md`, tag `vX.Y.Z`) is the Go dependency
-  surface used by consumers (aic and aic-pod). Release = commit → tag → push → consumers bump `require`.
+  surface used by the platform consumer (aic). Release = commit → tag → push → consumer bumps `require`.
 - Never put build artifacts in a skill directory (binaries, `*.zip`, `*.sqlite`):
   `builtin_test.go` fails on them, and the contract forbids them.
 - Do not put a nested `go.mod` inside a skill: `go:embed` skips nested module directories,
@@ -74,7 +76,7 @@ Boundary (contract truth: aic `docs/reference/skill.md`):
 - Shared page services (`$auth`, `$ai`, `$hosts`, `$skills`, `$account`, `$catalog`, `$fs`,
   `$pageExec`) are documented by `create`; keep `create` aligned whenever a
   contract changes — it is what other authors copy.
-- When the Pod's tool surface changes (e.g. upstream MCP pins), update `browser/`/`cua/`
+- When the device tool surface changes (e.g. upstream MCP pins), update `browser/`/`cua/`
   prose and their skill `version:` in the same change.
 
 ## Build, test, verify
@@ -109,5 +111,5 @@ GOWORK=off go test ./...
 
 Short imperative subjects scoped to one change (e.g. `feat(cua): …`, `docs: …`). To release:
 update `VERSION`, add the `CHANGELOG.md` section, commit, tag `vX.Y.Z`, push, then bump the
-`require` in consumers (aic and aic-pod) — local development there uses the root `go.work` instead of
+`require` in the consumer (aic) — local development there uses the root `go.work` instead of
 `replace` directives.

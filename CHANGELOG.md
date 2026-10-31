@@ -4,18 +4,95 @@
 
 两个版本面：**模块版本**（本文件 / tag `vX.Y.Z`，Go 依赖面）与**技能版本**（各 `SKILL.md` frontmatter 的 `version:`，进入 `skills.builtin` 指纹）。内容更新 bump 技能版本以触发自动定版；事件执行时无条件整包覆盖，不做版本大小比较。契约或结构变化 bump 模块版本。
 
+## 未发布
+
+### `cua`（1.1.1 → 1.1.2）与 `blender`（0.3.1 → 0.3.2）：变成普通第三方包
+
+- **pod 不再有任何 cua/blender 专属代码与配置**：两个包与 browser 同形态——
+  根 `manifest.json`（统一 commands）+ 包内 Go 程序，pod 只按通用机制拉起。
+  旧的 `cli/manifest.json` 维度（内嵌 packs 注册）废弃删除。
+- `cua`：新增 `src/` 启动器，负责定位官方 cua-driver（`AIC_CUA_DRIVER_PATH` →
+  bundle（`AIC_CUA_BUNDLE_DIR` 或可执行文件旁 `cua/`）→ PATH → macOS
+  `/Applications/CuaDriver.app`）并以 `mcp` 运行，stdio 直通、退出码透传。
+- `blender`：新增 `src/` Go MCP 服务，把 addon 的 vtools/tcp 桥接成 MCP 工具
+  （schema 原样透传；`image_base64` 结果转成 MCP 图片内容）。
+  `doctor`/`launch`/`install` 从 pod 的私有动词改为普通 MCP 工具，调用形式不变；
+  addon 未连接时工具目录只有生命周期工具，launch 成功自动补齐。
+  `launch` 拉起的 GUI 脱离服务进程组（pod 重启服务不再杀掉用户的 Blender）。
+
+### 本轮修复（2026-10-31 review 后）
+
+- `browser`（1.2.5 → 1.2.7）：UI fps 读数修复（`draw()` 成功绘制才自增
+  `frameCount`，此前恒 0）；视口尺寸缓存按页面 session key 化（切页后 2 秒
+  窗口内不再按上一页宽高换算坐标）；attach 模式 CDP 端点解析带 10s 超时、
+  path/query 明确报错（不再静默改写）；启动前只在端口不可达时删
+  `DevToolsActivePort`（活实例明确报错，不打断别人的 Chrome）；RTT 采样在
+  ack 与发送记账竞争下不再丢样本；补回包头 round-trip / 拆包重组测试与 fps
+  UI 用例；profile 用例兼容 Windows（HOME + USERPROFILE）。
+  **关闭标签链路**：UI 等被关 target 从列表消失再选下一页（closeTarget 异步
+  生效，旧快照 attach 死 id 曾报 `No target with given id found`）；没有选中
+  页不再开画面流；服务端监听 `Target.targetDestroyed`，清 target 映射与当前
+  绑定 session、停掉挂在死页面上的 cast；attach 死 target 的错误翻成可行动
+  提示。
+- `blender`（0.3.2 → 0.3.3）：图片结果 base64 双重编码修复（`ImageContent.Data`
+  存解码后的原始字节，非法 base64 降级为文本错误）；addon 往返 5 分钟 I/O
+  超时 + 拨号 10s 超时（Blender 卡死不再挂死服务）；addon 自述非法 schema
+  跳过并记日志（SDK 对非 object schema 会 panic）；空 bridge token 明确报错。
+- `cua`（1.1.2 → 1.1.3）：bundle 目录查找改包根 `cua/`（原候选是启动器自身，
+  死规则）；被信号杀死时退出码归一为 1（不再是 255）。
+- `cua` / `blender`：补 `src/go.mod.example` 与 SKILL.md「安装与构建」
+  「免沙箱」小节（此前设备侧无从构建）；权限档名改别名口径
+  （`grant cmd <alias>`，不再写 `mcp.cua` / `mcp.blender`）。
+- `create`（1.0.4 → 1.0.5）：设备手册、模板与 `device_tool` 示例迁到包根
+  `manifest.json` + `src/` 新契约（`commands install` + 设备侧构建），旧
+  `cli/manifest.json` 写法全部清除；`device_tool` 0.1.1 → 0.1.2。
+- 仓文档同步到包形态：`README.md` / `README.en.md`（技能 = `SKILL.md` + `ui/`/`api/`/`tables/`
+  + 可选 `manifest.json` + `src/`；设备侧不再共用 embed，靠 `commands install` 拉包自建；
+  版本表同步为 browser 1.2.7 / cua 1.1.3 / blender 0.3.3 / create 1.0.5）、
+  `AGENTS.md`（pod 不再依赖本仓 Go 模块，发布面只余云端静态内容）、
+  `blender/cli/aic_blender_bridge.py` 注释（命令门改为别名口径 `grant cmd blender`）。
+
 ## 0.3.5 — 2026-10-30
 
-### `browser`（1.2.0 → 1.2.1）
+### `browser`（1.2.0 → 1.2.5）
 
 - **修掉画面链路的 CDP 自锁**（实测：画面从 60fps 掉到 0.2fps）：ack Chrome 原来在
   CDP 读循环里同步发，而 CDP 响应只能由读循环读出来 → 每帧卡满 5 秒超时。
   `ackCastFrame` 改走后台 goroutine。
+- **多订阅者的确认记账修正**（实测：多开 tab 时 5 秒摘掉 251 个订阅者、页面反复断流
+  滚不动）：先确认的订阅者把 pending 删了，后确认的进不来 → 活跃时间不更新 →
+  被误判成僵尸。现在任何确认都记账，僵尸摘除也只摘一次。
 - **每个订阅者只保最新一帧**（队列深度 4 → 1，满了丢旧的）：慢订阅者不拖住链路，
   画面宁可跳帧也不堆积。
 - **僵尸订阅者会被摘掉**：一直给它帧、它却 30 秒不确认就关掉连接（写失败也立即关）。
-- **UI 解码失败也要 ack**：一帧坏数据不再把整条链路卡住；流断后页面自己新建流。
-- `cast_stats` 增加可观测字段：`pageAcks` / `ackFailed` / `dropped` / `evicted`。
+- **UI：解码失败也要 ack**（一帧坏数据不再把整条链路卡住）；**页面隐藏时放掉流**、
+  回到前台自己建新流（多开 tab 时隐藏页不再白解 60fps 的帧）。
+- `cast_stats` 增加可观测字段：`pageAcks` / `ackFailed` / `dropped` / `evicted` /
+  `ackRttMs`（页面确认往返的平均耗时）。
+- **header 上的画面自测读数**：实时帧率 + 输入往返延迟（毫秒）。画面是停是动、
+  滚动卡在哪一段，看数字就行。
+- **UI 不再每帧重设 canvas 尺寸**：重设 `canvas.width/height` 会清空并重新分配
+  画布，每帧都做会把页面拖卡；只在尺寸真变了时才设。
+- **设备侧视口尺寸带 2 秒缓存**：鼠标事件要拿视口换算坐标，滚动时每秒上百个
+  事件，每个事件都发一次 CDP 去问视口会把输入管道堵住。
+- **可接入用户自己的浏览器**：`BROWSER_CDP_URL`（`host:port` / `http://…` /
+  `ws://…`，前两种自动问 `/json/version` 换 WebSocket）。设了就 attach 而不再
+  本地启动 Chrome，`Close` 只断连不杀对方进程（`Browser.cmd == nil` 分支）。
+  启动前清掉固定资料目录里过期的 `DevToolsActivePort`（进程组 SIGKILL 后残留，
+  否则会去 dial 上一个实例的死端口）。
+- **资料目录与窗口显示改由环境变量定，默认固定 profile**：`BROWSER_PROFILE`
+  默认 `~/.aic/chrome-profile`（展开 `~`、自动建目录）——不再每次起临时目录，
+  登录态与站点权限跨重启保留。`BROWSER_HEADLESS` 默认 `1`（不显示窗口），设
+  `0`/`false` 弹出可见窗口，人工可直接在同一个浏览器里操作。启动日志打印实际
+  生效的 profile 与 headless。
+- **滚动 2 秒延迟的根因：输入在读循环里串行同步派发**（实测：30/s 时往返 28ms，
+  120/s 时 p50 1 秒、max 2 秒，帧率同时从 60 掉到 42）。一次
+  `Input.dispatchMouseEvent` 在 Chrome 忙时要几十毫秒，事件来得比派发快就无限
+  排队，还把同一读循环里的画面确认一起堵住。现在读循环只入队，独立
+  `dispatchLoop` 派发，队列里的连续事件合并（滚轮累加 delta、移动只保最新，
+  离散事件按序保留不丢），队列上限 64。输入回执带事件号 `id`，页面按 id 算真实
+  往返（合并后回执与发送不再一一对应，先入先出的对账会算出假延迟）。
+  修复后实测：实发 800/s、92% 合并时往返 p50 17ms / max 22ms，帧率稳 60。
 
 ### 模块与工程
 

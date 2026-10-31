@@ -1,8 +1,9 @@
 # aic-skills
 
 The official AIC **skill content repository**. A skill is `SKILL.md` plus optional `ui/`,
-`api/`, `tables/`, `cli/` and plain resources; the Go embed carries static content and device
-program source, and ships it inside the platform (aic) and the device client (aic-pod).
+`api/`, `tables/` and plain resources; device-side capabilities add a root `manifest.json` plus
+`src/`. The Go embed carries cloud static content only (shipped with the platform, aic); device
+program source lives in the package and is built on the device — the pod no longer embeds this repo.
 
 [中文](README.md) | **English**
 
@@ -10,10 +11,10 @@ program source, and ships it inside the platform (aic) and the device client (ai
 
 | Skill | Version | Shape |
 | --- | --- | --- |
-| `browser` | 1.2.0 | Prose + UI: the device-side Chrome CDP channel (AI tools + live view + human input) |
-| `cua` | 1.1.1 | Prose + UI: remote view and control through the official `cua-driver` (0.33.2) MCP |
-| `blender` | 0.3.1 | Prose: direct bridge to Blender on the device (inspect / render / run Python) |
-| `create` | 1.0.4 | Guide + templates + intro page: the AIC extension authoring manual (cloud / page / host) and a human-facing capability page |
+| `browser` | 1.2.7 | Prose + UI + device service: a Go service inside the package driving its own Chrome over CDP (AI tools + live view + human input) |
+| `cua` | 1.1.3 | Prose + UI + device launcher: remote view and control through the official `cua-driver` (0.33.2) MCP |
+| `blender` | 0.3.3 | Prose + device service: a Go service inside the package bridging to Blender on the device over vtools/tcp (inspect / render / run Python) |
+| `create` | 1.0.5 | Guide + templates + intro page: the AIC extension authoring manual (cloud / page / host) and a human-facing capability page |
 | `office_studio` | 1.0.4 | Prose + UI: office document workspace |
 | `drawio` | 1.0.3 | Prose + UI: DrawIO diagram workspace |
 | `ppt_studio` | 1.0.4 | Prose + UI: slide studio |
@@ -29,11 +30,12 @@ switch** — a directory that is not listed is never published.
 
 - Prose, UI and cloud APIs are published and served by the platform; a skill has no
   installed / enabled / process / service state.
-- Ordinary CLIs and scripts run **natively** after user installation; `cli/` may instead carry
-  a device-service `manifest.json` plus program source. No binaries, build outputs or provider / SDK layer are committed.
-- Stateful software is registered through **vtools** as a device service command: Browser/CUA use MCP,
-  while Blender uses vtools/tcp. The Pod reads official embedded manifests at startup; third-party services
-  come from device `mcp.servers`, and automatic installation/registration for user packages is not available yet.
+- Ordinary CLIs and scripts run **natively** after user installation; a device-service package
+  instead carries a root `manifest.json` (declaring `commands` / `streams`) plus `src/` program
+  source. No binaries, build outputs or provider / SDK layer are committed.
+- Stateful software is registered as a vsh root command through device-side **commands install**:
+  browser/cua/blender behave like any other package (each ships its own service or launcher),
+  while host-registered services come from device `mcp.servers`.
 - Skill pages and package resources share **one segment**: `/skills/cloud/{id}` (mirrors
   `/fs/cloud` — the bare entry loads the package's `ui/index.html`, the same segment serves
   the package); subpages `/skills/cloud/{id}/{page}`; detail and management live at
@@ -49,7 +51,8 @@ the package and creates the row (`id` = package name, owner `system`, public). I
 sorted package-name + embedded-`version` list; a changed fingerprint triggers the event, and an administrator
 can also force a rerun. **The run does not compare row versions**: it atomically replaces every embedded package
 and fully refreshes row metadata. Bump a skill's version for every content change so the fingerprint changes.
-Devices share the same embed — nothing to download.
+Devices no longer share that embed: a device fetches a package with `commands install <id>` and
+builds `bin/<name>` itself, as described in the package's SKILL.md.
 
 ```sh
 go get github.com/veypi/aic-skills@latest
