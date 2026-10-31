@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "commands": {
+    "cua": {
+      "run": ["bin/cua"],
+      "protocol": "mcp",
+      "idle_timeout": "30m"
+    }
+  }
+}

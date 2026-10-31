@@ -1,6 +1,6 @@
 ---
 name: cua
-version: 1.1.1
+version: 1.1.3
 description: 通过设备上的官方 CuaDriver MCP 操作应用、原生窗口和浏览器。
 ui:
   - path: index.html
@@ -9,11 +9,37 @@ ui:
 
 # CUA
 
-Pod 直接连接官方 `cua-driver mcp`（内置默认项由本包 `cli/manifest.json` 声明）。工具名、描述、参数、结果全部来自上游；技能提供手册、云端 UI 与服务清单。
+Pod 经统一 commands 机制拉起本包自带启动器（`src/`，Go）：启动器负责定位官方
+`cua-driver` 并以 `mcp` 运行（stdio 直通）。工具名、描述、参数、结果全部来自上游；
+pod 对 cua 没有任何专属代码与配置——本包与普通第三方包同等待遇，只是官方预装。
+
+## 安装与构建
+
+```sh
+# 下载、解包并注册，运行期生效，无需重启 pod/aic
+commands install cua
+
+# 在设备安装目录编译（云端包只保存源码，不保存二进制）
+cd ~/.aic/packages/cua/src
+cp go.mod.example go.mod
+go mod tidy
+mkdir -p ../bin
+go build -o ../bin/cua .
+```
+
+## 免沙箱
+
+服务默认在 pod 沙箱里运行，而桌面自动化需要设备级权限（辅助功能/屏幕录制
+身份、CuaDriver 自己的状态目录），需要设备 owner 授予免沙箱：
+
+```sh
+# 提权项：平台会话需人工批准（未批准会被明确拒绝），本机 owner 直接执行不需要
+commands config cua --no-sandbox
+```
 
 Desktop 随包提供 CuaDriver 0.33.2，默认注册为 `cua`，第一次调用时启动。CLI 可安装官方 CuaDriver，或通过 `AIC_CUA_DRIVER_PATH` 指定可执行文件。macOS 按上游安装布局把官方 CuaDriver.app 安装到 `/Applications/CuaDriver.app`（可复制 Desktop 的 resources/cua/darwin/CuaDriver.app）；仅把 app 放在资源目录不会完成系统安装。官方 MCP 会按应用名启动 daemon，客户端与安装的驱动版本应一致。升级后先用 `cua-driver stop` 停止旧 daemon。macOS 使用 CuaDriver.app 的辅助功能和屏幕录制授权身份；使用 `cua-driver permissions grant` 引导授权，`cua-driver doctor` 诊断。
 
-调用设备在 exec 外层通过 `1host` 选择。`mcp.cua` 命令授权允许使用该设备服务；工具内部的权限与路径限制由 CuaDriver 执行。原生 fs 的路径规则不等同于对桌面自动化的隔离。
+调用设备在 exec 外层通过 `1host` 选择。命令别名 `cua` 的授权（`grant cmd cua`）允许使用该设备服务；工具内部的权限与路径限制由 CuaDriver 执行。原生 fs 的路径规则不等同于对桌面自动化的隔离。
 
 ```sh
 cua                              # 工具目录
@@ -38,6 +64,6 @@ UI `/skills/cloud/cua` 经 `$hosts.openTools(hostId)` 的 `execCall` 调用同�
 
 截图经 RTC 工具响应分块传输，总上限保持 16 MiB；预览能力需同步更新 AIC 前端及 Pod，技能升级通过 AIC 后端内置包发布。UI 不维护 MCP 连接或工具注册，不提供音频、任意显示器选择或浏览器以外的连续视频推流。
 
-设备所有者可通过 `mcp.servers.cua` 完整替换默认 command/url，或设置 `disabled: true`。覆盖配置不继承内置服务的进程权限。版本随 Pod 发布固定升级，技能包不维护本地安装状态。
+设备所有者可用 `commands config cua` 调整运行配置（环境变量、`--no-sandbox` 等）。技能包不维护本地安装状态。
 
 官方说明：https://cua.ai/docs/cua-driver

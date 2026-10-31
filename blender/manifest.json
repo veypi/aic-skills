@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "commands": {
+    "blender": {
+      "run": ["bin/blender"],
+      "protocol": "mcp",
+      "idle_timeout": "30m"
+    }
+  }
+}

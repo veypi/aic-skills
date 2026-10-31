@@ -1,0 +1,3 @@
+module example.com/aic-cua
+
+go 1.27.0

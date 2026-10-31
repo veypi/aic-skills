@@ -1,15 +1,40 @@
 ---
 name: blender
-version: 0.3.1
+version: 0.3.3
 description: 用 vsh 的 blender 命令直连设备上的 GUI Blender——看场景/渲染出图/执行 Python；未安装或未运行时给分级指引，agent 可自助完成安装与拉起。
 keywords: [blender, 3d, bpy, 建模, 渲染]
 ---
 
 # Blender
 
-设备上的 Blender 直连通道。`blender` 是 pod 内置服务（vtools 注册）：addon
+设备上的 Blender 直连通道。本包自带 Go 服务（`src/`，MCP stdio）：addon
 `cli/aic_blender_bridge.py` 在 Blender GUI 内起一个 127.0.0.1:9866 的
-vtools/tcp v1 服务（强制认证首行），pod 侧零中转进程。
+vtools/tcp v1 服务（强制认证首行），本包把它桥接成 MCP 工具。pod 经统一
+commands 机制拉起本服务，对 Blender 没有专属代码与配置。
+
+## 安装与构建
+
+```sh
+# 下载、解包并注册，运行期生效，无需重启 pod/aic
+commands install blender
+
+# 在设备安装目录编译（云端包只保存源码，不保存二进制）
+cd ~/.aic/packages/blender/src
+cp go.mod.example go.mod
+go mod tidy
+mkdir -p ../bin
+go build -o ../bin/blender .
+```
+
+## 免沙箱
+
+服务默认在 pod 沙箱里运行，写不了自己的状态目录（`~/.aic/blender`：bridge
+token、启动回执都在这里），需要设备 owner 授予免沙箱：
+
+```sh
+# 提权项：平台会话需人工批准（未批准会被明确拒绝），本机 owner 直接执行不需要
+commands config blender --no-sandbox
+```
 
 ## 运行依赖
 
@@ -18,9 +43,12 @@ vtools/tcp v1 服务（强制认证首行），pod 侧零中转进程。
   `winget install BlenderFoundation.Blender` / Linux 发行版包管理器），AI 可
   在获得 `grant cmd brew`（或对应包管理器）后自行安装；装在非标准位置时用
   `AIC_BLENDER_EXE` 指定。
-- addon 由 pod 内嵌分发：`blender launch` 用 boot 脚本挂载（**不动用户 Blender
-  配置**）；`blender install` 把 addon 写进 Blender addons 目录供手动启用
+- addon 由本包分发：`blender launch` 用 boot 脚本挂载（**不动用户 Blender
+  配置**，且 GUI 进程脱离本服务进程组——pod 重启服务不会关掉你的 Blender）；
+  `blender install` 把 addon 写进 Blender addons 目录供手动启用
  （适合常驻用户自己的 Blender 会话）。
+- `doctor` / `launch` / `install` 与 `ping` 一样都是 MCP 工具；addon 未连接时
+  工具目录只有这三个生命周期工具，launch 成功后自动补齐 addon 工具。
 
 ## 使用
 
@@ -44,7 +72,7 @@ blender render --path <设备路径>/r.png --res 1280x720 --samples 24 --json
 blender render --path <设备路径>/r.png --input '{"camera":{"location":[8,-8,6],"target":[0,0,0],"lens":50}}' --json
 ```
 
-调用门是 exec 规则 `mcp.blender`（拒绝时按提示 `grant cmd mcp.blender`）。
+调用门是命令别名本身（拒绝时按提示 `grant cmd blender`）。
 标量参数直接映射为 flag，**用 schema 原名**（`--max_size`、`--path`，**不是**
 `--max-size`；写错的报错会给出可映射名字）；复杂参数（`camera`/`clip`）走
 `--input JSON`。
@@ -129,7 +157,7 @@ blender -b --factory-startup --python script.py    # 需 grant cmd blender
 
 | | GUI addon（`execute_code` / `render`） | 无头 `blender -b --python` |
 |---|---|---|
-| 审批 | 免（`mcp.blender` 规则） | 需 `grant cmd blender` |
+| 审批 | `grant cmd blender`（服务别名门） | `grant cmd blender`（原生程序门） |
 | 适合 | 迭代调试、改用户现有工程、要让用户看见 GUI | 长批渲染、批量导出、CI、不打扰用户 GUI |
 | 代价 | 阻塞主线程（排队 >10s 即 busy）、占着用户 GUI | 另起进程、看不到 GUI |
 

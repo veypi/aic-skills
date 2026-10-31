@@ -22,8 +22,8 @@ main-thread-busy —— 不把命令堆到永远。
 
 execute_code 是有意的万能通道：会在 Blender 进程里跑任意 Python。服务只监听
 127.0.0.1 且强制认证首行——首行不是合法 auth 的连接（含浏览器页面发往
-localhost 的 HTTP/WebSocket 报文）一律拒绝，aic-pod 侧另有 exec 规则门
-（mcp.blender）。token 取 env AIC_BLENDER_TOKEN（pod launch 透传）→
+localhost 的 HTTP/WebSocket 报文）一律拒绝，aic-pod 侧另有命令别名门
+（grant cmd blender）。token 取 env AIC_BLENDER_TOKEN（pod launch 透传）→
 ~/.aic/blender/bridge_token（0600，O_EXCL 先建者赢，pod 与 addon 共读同一
 文件）。威胁模型：防浏览器/跨用户本机进程；同 uid 恶意进程能读 token 文件，
 不在此模型内。
