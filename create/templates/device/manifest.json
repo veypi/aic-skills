@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "commands": {
+    "mytool": {
+      "run": ["bin/mytool"],
+      "protocol": "mcp",
+      "idle_timeout": "30m"
+    }
+  }
+}

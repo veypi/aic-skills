@@ -37,7 +37,7 @@
 |---|---|---|---|
 | HTTP | 页面 ↔ 云端 | 同源请求（cookie 身份） | `$fetch('api/todos')`、`curl /api/skills` |
 | 页面指令 | AI ↔ 页面 | 页面声明 `pageDesc.commands`，AI 按命令名调用 | `{窗口ID}.{命令名}` |
-| 设备命令 | AI/页面 ↔ 设备 | vsh 服务命令（MCP/TCP 等），复杂参数走 stdin | `browser agent_browser_snapshot --json` |
+| 设备命令 | AI/页面 ↔ 设备 | vsh 服务命令（MCP/TCP 等），复杂参数走 stdin | `browser snapshot --json` |
 
 **身份**：来自已认证连接，**不能通过工具参数覆盖** user_id、owner 或审批事实；
 云端 API 的 user_id/skill_id 由服务端重写。

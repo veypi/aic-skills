@@ -22,8 +22,8 @@ example/
   ui/langs.json         可选：包内文案（i18n）
   api/get.list.sqlx     可选：云端接口（方法.名字.sqlx）
   tables/items.json     可选：数据表声明
-  cli/manifest.json     可选：设备服务声明
-  cli/main.go           可选：设备程序源码（产物永不入库）
+  manifest.json         可选：设备服务声明（commands/streams，包根）
+  src/main.go           可选：设备程序源码（产物永不入库）
   references/usage.md   可选：更细的补充文档
   scripts/example.sh    可选：普通脚本附件
 ```

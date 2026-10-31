@@ -33,7 +33,7 @@ func TestListAndOpen(t *testing.T) {
 		if _, err := fs.Stat(dir, "SKILL.md"); err != nil {
 			t.Errorf("%s missing SKILL.md: %v", n, err)
 		}
-		for _, path := range []string{"provider", "cli/bin"} {
+		for _, path := range []string{"provider", "bin", "cli/bin"} {
 			if _, err := fs.Stat(dir, path); err == nil {
 				t.Fatalf("%s contains runtime artifact %s", n, path)
 			}
@@ -61,10 +61,10 @@ func TestListAndOpen(t *testing.T) {
 
 func TestVersionFromFrontmatter(t *testing.T) {
 	for name, want := range map[string]string{
-		"browser":       "1.2.0",
-		"cua":           "1.1.1",
-		"blender":       "0.3.1",
-		"create":        "1.0.4",
+		"browser":       "1.2.7",
+		"cua":           "1.1.3",
+		"blender":       "0.3.3",
+		"create":        "1.0.5",
 		"vhtml":         "0.5.1",
 		"office_studio": "1.0.4",
 		"drawio":        "1.0.3",
@@ -166,7 +166,7 @@ func TestCreateDeviceExamplesUseRealMCP(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, root := range []string{"templates/device", "examples/device_tool"} {
-		main := readSkillFile(t, dir, root+"/cli/main.go")
+		main := readSkillFile(t, dir, root+"/src/main.go")
 		for _, want := range []string{"github.com/modelcontextprotocol/go-sdk/mcp", "mcp.NewServer", "mcp.StdioTransport"} {
 			if !strings.Contains(main, want) {
 				t.Errorf("%s is not a real MCP stdio service: missing %q", root, want)
@@ -175,12 +175,12 @@ func TestCreateDeviceExamplesUseRealMCP(t *testing.T) {
 		if strings.Contains(main, "io.ReadAll(os.Stdin)") {
 			t.Errorf("%s regressed to a one-shot stdin CLI", root)
 		}
-		manifest := readSkillFile(t, dir, root+"/cli/manifest.json")
-		if strings.Contains(manifest, `"stream"`) {
-			t.Errorf("%s declares stream without a Streamer provider", root)
+		manifest := readSkillFile(t, dir, root+"/manifest.json")
+		if strings.Contains(manifest, `"streams"`) {
+			t.Errorf("%s declares streams without a real streaming service", root)
 		}
-		readSkillFile(t, dir, root+"/cli/go.mod.example")
-		test := readSkillFile(t, dir, root+"/cli/main_test.go")
+		readSkillFile(t, dir, root+"/src/go.mod.example")
+		test := readSkillFile(t, dir, root+"/src/main_test.go")
 		if !strings.Contains(test, "TestMCPInitializeAndPing") {
 			t.Errorf("%s lacks the SDK initialize + ping contract test", root)
 		}
