@@ -1,6 +1,6 @@
 ---
 name: browser
-version: 1.2.7
+version: 1.2.8
 description: 用设备上的 Chrome 实时查看与操作网页：CDP 通道供 AI 驱动浏览器，UI 提供同一浏览器的实时画面与人工交互。
 ui:
   - path: index.html
@@ -49,6 +49,11 @@ commands config browser --sandbox
 
 包也会读 `~/.aic/browser/config.env`（同名键值，仅在环境变量未设置时生效）——
 那是 owner 的可选便捷项，不是平台的配置面。
+
+**AIC Desktop 自带 Chrome**：桌面版启动后端时会注入 `AIC_BROWSER_PATH`（随包
+Chrome for Testing 的**可执行文件路径**，不是目录）。换浏览器用
+`commands config browser AIC_BROWSER_PATH=…` 覆盖（命令定义级配置优先于继承环境）。
+独立 CLI / Docker 不带浏览器，需自装 Chrome 并同样用 `commands config` 指定。
 
 配置后：
 

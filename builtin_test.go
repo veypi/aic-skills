@@ -61,7 +61,7 @@ func TestListAndOpen(t *testing.T) {
 
 func TestVersionFromFrontmatter(t *testing.T) {
 	for name, want := range map[string]string{
-		"browser":       "1.2.7",
+		"browser":       "1.2.8",
 		"cua":           "1.1.3",
 		"blender":       "0.3.3",
 		"create":        "1.0.5",

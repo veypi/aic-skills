@@ -46,6 +46,10 @@
 - `create`（1.0.4 → 1.0.5）：设备手册、模板与 `device_tool` 示例迁到包根
   `manifest.json` + `src/` 新契约（`commands install` + 设备侧构建），旧
   `cli/manifest.json` 写法全部清除；`device_tool` 0.1.1 → 0.1.2。
+- `browser`（1.2.7 → 1.2.8）：手册补「AIC Desktop 自带 Chrome」——桌面版启动后端时注入
+  `AIC_BROWSER_PATH`（随包 Chrome for Testing 的**可执行文件路径**，不是目录）；
+  换浏览器用 `commands config browser AIC_BROWSER_PATH=…` 覆盖（命令定义级配置优先于
+  继承环境）；独立 CLI / Docker 需自装 Chrome。
 - 仓文档同步到包形态：`README.md` / `README.en.md`（技能 = `SKILL.md` + `ui/`/`api/`/`tables/`
   + 可选 `manifest.json` + `src/`；设备侧不再共用 embed，靠 `commands install` 拉包自建；
   版本表同步为 browser 1.2.7 / cua 1.1.3 / blender 0.3.3 / create 1.0.5）、

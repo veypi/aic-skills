@@ -11,7 +11,7 @@ program source lives in the package and is built on the device — the pod no lo
 
 | Skill | Version | Shape |
 | --- | --- | --- |
-| `browser` | 1.2.7 | Prose + UI + device service: a Go service inside the package driving its own Chrome over CDP (AI tools + live view + human input) |
+| `browser` | 1.2.8 | Prose + UI + device service: a Go service inside the package driving its own Chrome over CDP (AI tools + live view + human input) |
 | `cua` | 1.1.3 | Prose + UI + device launcher: remote view and control through the official `cua-driver` (0.33.2) MCP |
 | `blender` | 0.3.3 | Prose + device service: a Go service inside the package bridging to Blender on the device over vtools/tcp (inspect / render / run Python) |
 | `create` | 1.0.5 | Guide + templates + intro page: the AIC extension authoring manual (cloud / page / host) and a human-facing capability page |
