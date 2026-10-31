@@ -5,7 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
+	"net"
+	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -25,6 +29,9 @@ type launchOptions struct {
 	SecureOrigins stringList
 	ExtraArgs     stringList
 	WindowSize    string // 视口尺寸，如 "1280x720"（默认 720p）
+	// CDPURL 非空时接入已经在运行的浏览器（BROWSER_CDP_URL），不起本地进程；
+	// 上面的启动参数只在自启动模式生效。
+	CDPURL string
 }
 
 // Browser 持有一个 Chrome 进程与一条 DevTools Protocol 连接。
@@ -94,18 +101,47 @@ func buildChromeArgs(opts launchOptions, profile string) []string {
 	return append(args, opts.ExtraArgs...)
 }
 
+// defaultBrowserProfile 是默认的 Chrome 资料目录。
+//
+// 用固定目录而不是临时目录：登录态、cookies、站点权限都活在资料目录里，
+// 临时目录意味着每次重启浏览器都从零开始。可用 BROWSER_PROFILE / --profile 改。
+const defaultBrowserProfile = "~/.aic/chrome-profile"
+
+// resolveProfileDir 展开 ~ 并建好资料目录（exec 不会替我们展开 ~）。
+func resolveProfileDir(dir string) (string, error) {
+	dir = strings.TrimSpace(dir)
+	if dir == "" {
+		dir = defaultBrowserProfile
+	}
+	if dir == "~" || strings.HasPrefix(dir, "~/") {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return "", fmt.Errorf("resolve home directory: %w", err)
+		}
+		dir = filepath.Join(home, strings.TrimPrefix(dir, "~"))
+	}
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return "", fmt.Errorf("create chrome profile dir: %w", err)
+	}
+	return dir, nil
+}
+
 // Launch 启动 Chrome 并连上它的 DevTools 端点。
 func Launch(ctx context.Context, opts launchOptions) (*Browser, error) {
 	if strings.TrimSpace(opts.ChromePath) == "" {
 		return nil, errors.New("chrome path is required: pass -chrome or set AIC_BROWSER_PATH")
 	}
-	profile := opts.ProfileDir
-	if profile == "" {
-		dir, err := os.MkdirTemp("", "browser-profile-")
-		if err != nil {
-			return nil, fmt.Errorf("create profile dir: %w", err)
-		}
-		profile = dir
+	profile, err := resolveProfileDir(opts.ProfileDir)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("browser: chrome profile=%s headless=%v", profile, opts.Headless)
+	// 固定资料目录下，上一实例留下的 DevToolsActivePort 是过期端点：不删掉就会
+	// 在新 Chrome 写出端点之前读到旧端口，去 dial 一个已经死掉的地址。但文件
+	// 也可能属于活着的实例（profile 被另一个 Chrome 占用）：先探端口，只在
+	// 确认不可达时才删。
+	if err := removeStaleDevToolsPort(profile); err != nil {
+		return nil, err
 	}
 	cmd := exec.Command(opts.ChromePath, buildChromeArgs(opts, profile)...)
 	// Chrome 的 stderr 保留尾巴：它在沙箱里起不来时，日志是唯一的死因线索。
@@ -128,6 +164,104 @@ func Launch(ctx context.Context, opts launchOptions) (*Browser, error) {
 	b := &Browser{cmd: cmd, conn: conn, pending: map[int64]chan cdpResponse{}, stderr: tail}
 	go b.readLoop()
 	return b, nil
+}
+
+// Connect 接入一个已经在运行的浏览器（BROWSER_CDP_URL）。
+//
+// 与 Launch 相对：不起本地进程，Close 只断开连接，绝不动用户的浏览器进程。
+// 用户的 Chrome 必须自己带着 --remote-debugging-port 启动（Chrome 136+ 还要求
+// 非默认 --user-data-dir，默认资料目录的调试开关会被直接忽略）。
+func Connect(ctx context.Context, rawURL string) (*Browser, error) {
+	wsURL, err := resolveCDPURL(ctx, rawURL)
+	if err != nil {
+		return nil, err
+	}
+	conn, _, err := websocket.DefaultDialer.DialContext(ctx, wsURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("dial devtools %s: %w", wsURL, err)
+	}
+	b := &Browser{conn: conn, pending: map[int64]chan cdpResponse{}}
+	go b.readLoop()
+	log.Printf("browser: attached to %s", wsURL)
+	return b, nil
+}
+
+// removeStaleDevToolsPort 清理 profile 里的过期 DevToolsActivePort。文件指向
+// 的端口仍在应答说明它是活实例的端点：宁可报错也不删（删了会让那个实例的
+// 后续 attach 失败）。
+func removeStaleDevToolsPort(profile string) error {
+	path := filepath.Join(profile, "DevToolsActivePort")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	line, _, _ := strings.Cut(string(data), "\n")
+	port := strings.TrimSpace(line)
+	if port != "" {
+		conn, err := net.DialTimeout("tcp", "127.0.0.1:"+port, 500*time.Millisecond)
+		if err == nil {
+			_ = conn.Close()
+			return fmt.Errorf("browser: profile %s is in use by a running Chrome (DevTools port %s); attach to it with BROWSER_CDP_URL or use another profile", profile, port)
+		}
+	}
+	return os.Remove(path)
+}
+
+// resolveCDPURL 把用户给的地址规整成浏览器级 WebSocket 端点：
+//   - ws(s)://… 原样使用（用户已给出完整端点）；
+//   - http(s)://host:port 或裸 host:port → 问 /json/version 拿 webSocketDebuggerUrl。
+func resolveCDPURL(ctx context.Context, raw string) (string, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return "", errors.New("cdp url is required")
+	}
+	if strings.HasPrefix(raw, "ws://") || strings.HasPrefix(raw, "wss://") {
+		return raw, nil
+	}
+	if !strings.Contains(raw, "://") {
+		raw = "http://" + raw
+	}
+	u, err := url.Parse(raw)
+	if err != nil {
+		return "", fmt.Errorf("parse cdp url: %w", err)
+	}
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return "", fmt.Errorf("unsupported cdp url scheme %q", u.Scheme)
+	}
+	// /json/version 是固定端点：用户给的 path/query 没有意义，静默改写会掩盖
+	// 写错的地址，明确报错。
+	if (u.Path != "" && u.Path != "/") || u.RawQuery != "" || u.Fragment != "" {
+		return "", fmt.Errorf("cdp url must be host:port only, got %q", u.String())
+	}
+	u.Path, u.RawQuery, u.Fragment = "/json/version", "", ""
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
+	if err != nil {
+		return "", err
+	}
+	// 不用 http.DefaultClient（无 Timeout）：MCP 调用 ctx 通常无 deadline，
+	// 对端 accept 但不应答会把整个 browser 服务同步卡死。
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("query %s: %w", u, err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("query %s: %s", u, resp.Status)
+	}
+	var meta struct {
+		WebSocketDebuggerURL string `json:"webSocketDebuggerUrl"`
+	}
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&meta); err != nil {
+		return "", fmt.Errorf("decode %s: %w", u, err)
+	}
+	if meta.WebSocketDebuggerURL == "" {
+		return "", fmt.Errorf("%s returned no webSocketDebuggerUrl", u)
+	}
+	return meta.WebSocketDebuggerURL, nil
 }
 
 // tailBuffer 保留写入内容的最后若干字节（Chrome 日志可能很大）。
@@ -245,6 +379,18 @@ func (b *Browser) readLoop() {
 			if msg.Method == "Target.detachedFromTarget" {
 				b.forgetSession(session)
 			}
+			if msg.Method == "Target.targetDestroyed" {
+				var p struct {
+					TargetID string `json:"targetId"`
+				}
+				if json.Unmarshal(msg.Params, &p) == nil {
+					if destroyed := b.onTargetDestroyed(p.TargetID); destroyed != "" {
+						// 用销毁前的 session 分发：service 据此停掉挂在死页面上的画面。
+						b.dispatchEvent(msg.Method, destroyed, msg.Params)
+						continue
+					}
+				}
+			}
 			b.dispatchEvent(msg.Method, session, msg.Params)
 			continue // 事件：交给处理器，不进等待队列
 		}
@@ -335,6 +481,20 @@ func (b *Browser) TargetSession(targetID string) string {
 }
 
 // forgetSession 使关闭/分离的会话立即失效，并清除它的当前页身份。
+// onTargetDestroyed 清理已销毁 target 的本地状态并返回它曾经的 session。
+// 不清理的话：targetSessions 残留会让后续 attach 打到死 target（No target
+// with given id found）；当前绑定 session 残留会让 pageSession 复用死 session。
+func (b *Browser) onTargetDestroyed(targetID string) string {
+	b.eventMu.Lock()
+	session := b.targetSessions[targetID]
+	b.eventMu.Unlock()
+	if session == "" {
+		return ""
+	}
+	b.forgetSession(session) // 就绪标记、target 映射与当前绑定 session 一并清
+	return session
+}
+
 func (b *Browser) forgetSession(session string) {
 	if session == "" {
 		return

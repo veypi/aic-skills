@@ -117,6 +117,29 @@ func TestAttachTargetReusesReadySession(t *testing.T) {
 	}
 }
 
+// 页面销毁后：映射与当前绑定 session 必须清掉，空 target 的页面级调用重新
+// 走选页路径，而不是复用死 session（No target with given id found 的来源）。
+func TestTargetDestroyedClearsSessionAndMapping(t *testing.T) {
+	b, fake := newFakeBrowser(t)
+	s := &service{}
+	session, err := s.attachTarget(context.Background(), b, "page-a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := b.onTargetDestroyed("page-a"); got != session {
+		t.Fatalf("destroyed session = %q, want %q", got, session)
+	}
+	if b.TargetSession("page-a") != "" || b.Session() != "" || b.SessionReady(session) {
+		t.Fatal("destroyed target left stale session state")
+	}
+	if _, err := s.pageSession(context.Background(), b, ""); err != nil {
+		t.Fatal(err)
+	}
+	if fake.attachCount != 2 {
+		t.Fatalf("attach count = %d, want 2 (re-attach after destroy)", fake.attachCount)
+	}
+}
+
 func TestAttachTargetConcurrentCallsShareOneSession(t *testing.T) {
 	b, fake := newFakeBrowser(t)
 	s := &service{}

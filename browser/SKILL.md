@@ -1,6 +1,6 @@
 ---
 name: browser
-version: 1.2.1
+version: 1.2.7
 description: 用设备上的 Chrome 实时查看与操作网页：CDP 通道供 AI 驱动浏览器，UI 提供同一浏览器的实时画面与人工交互。
 ui:
   - path: index.html
@@ -109,8 +109,9 @@ echo '{"url":"https://example.com/"}' | browser navigate --input - --json
 | `AIC_BROWSER_PATH` | Chrome 可执行文件路径（兼容 `AGENT_BROWSER_EXECUTABLE_PATH`） |
 | `BROWSER_SECURE_ORIGINS` | 逗号/换行分隔的 http origin，绕开 Chrome 自动 HTTPS 升级 |
 | `BROWSER_WINDOW_SIZE` | 视口尺寸，默认 `1280x720`（720p）；影响截图帧的比例 |
-| `BROWSER_PROFILE` | Chrome 资料目录 |
-| `BROWSER_HEADLESS` | `0`/`false` = 有头 |
+| `BROWSER_PROFILE` | Chrome 资料目录，默认 `~/.aic/chrome-profile`（固定目录，登录态跨重启保留；`~` 会展开，目录自动创建） |
+| `BROWSER_HEADLESS` | 默认 `1` = 不显示窗口；`0`/`false` = 弹出可见窗口，可直接人工操作 |
+| `BROWSER_CDP_URL` | 接入**已经在运行**的浏览器：`host:port` / `http://…` / `ws://…`（前两种会自动问 `/json/version` 换 WebSocket）。设了就不起本地 Chrome，关闭只断连、绝不杀对方进程；`BROWSER_PROFILE`/`BROWSER_HEADLESS` 等启动项在此模式下无效 |
 | `BROWSER_PROXY` | Chrome 代理地址 |
 | `BROWSER_CHROME_ARGS` | 额外 Chrome 参数 |
 
@@ -125,6 +126,13 @@ echo '{"url":"https://example.com/"}' | browser navigate --input - --json
 5. 移除设备包：`commands uninstall browser`（该包的命令定义级配置随包清除）。
 6. 视口比例固定为 `BROWSER_WINDOW_SIZE`；不做移动端模拟。
 7. 不做远端剪贴板读取与本地文件拖放。
+8. 同一个资料目录同一时刻只能有一个 Chrome 实例：不要拿 `BROWSER_PROFILE` 指向的目录
+   再手动开一个 Chrome（会被 SingletonLock 挡住，表现为 DevTools 端点一直等不到）。
+   想人工操作同一个浏览器，用 `BROWSER_HEADLESS=0` 让服务自己把窗口显示出来。
+9. `BROWSER_CDP_URL` 接入自己的浏览器时，那个浏览器必须是你自己带
+   `--remote-debugging-port=9222` 启动的；Chrome 136+ 对**默认资料目录**直接忽略
+   调试开关，必须同时给一个非默认 `--user-data-dir`（官方安全策略，防被接管盗号）。
+   接入后 AI 能读到那些页面的内容并按你的登录态操作，只在你明确要这样时才配置。
 
 ## 画面链路的三个硬约束（2026-10-30 实测后定）
 

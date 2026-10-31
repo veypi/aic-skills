@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { BrowserSession } from './browser.js';
+import { BrowserSession, BrowserViewer } from './browser.js';
 
 function makeWorld(hostIds = ['mbp']) {
   const devices = new Map();
@@ -132,6 +132,35 @@ test('closing the selected page attaches the fallback before URL navigation', as
   session.dispose();
 });
 
+// closeTarget 异步生效：旧快照里还含正在关闭的页面时，不能拿它去 attach
+// （线上报错 No target with given id found 的来源）。
+test('closePage waits for the closing target to disappear before attaching next', async () => {
+  const { hosts, devices } = makeWorld();
+  const session = new BrowserSession(hosts);
+  await ready(session);
+  const first = session.state.selectedPageId;
+  await session.createPage('mbp');
+  await session.selectWindow('mbp', first);
+  const device = devices.get('mbp');
+  const original = device.call.bind(device);
+  // 模拟异步关闭：150ms 后 target 才从列表消失（第一次刷新仍看得到它）。
+  device.call = async (tool, args) => {
+    if (tool === 'cdp' && args.method === 'Target.closeTarget') {
+      const id = args.params.targetId;
+      setTimeout(() => { device.pages = device.pages.filter(p => p.id !== id); }, 150);
+      return {};
+    }
+    return original(tool, args);
+  };
+  const attaches = [];
+  device.onCall = (tool, args) => { if (tool === 'attach') attaches.push(args.target_id); };
+  await session.closePage('mbp', first);
+  assert.ok(!attaches.includes(first), `must not attach the closing target: ${JSON.stringify(attaches)}`);
+  assert.notEqual(session.state.selectedPageId, first);
+  assert.ok(session.state.selectedPageId, 'fallback page must be selected');
+  session.dispose();
+});
+
 test('non-selected cross-device close keeps the current host and target', async () => {
   const { hosts, devices } = makeWorld(['mbp', 'linux']);
   const session = new BrowserSession(hosts);
@@ -146,4 +175,36 @@ test('non-selected cross-device close keeps the current host and target', async 
   assert.equal(devices.get('mbp').current, selected);
   assert.equal(devices.get('linux').pages.some(p => p.id === linuxTarget), false);
   session.dispose();
+});
+
+// fps 读数：收到帧并成功绘制后必须自增（曾经只有初始化与清零，fps 恒 0）。
+test('viewer counts drawn frames for fps', async () => {
+  const oldDocument = globalThis.document;
+  const oldBitmap = globalThis.createImageBitmap;
+  globalThis.document = { hidden: false, addEventListener() {}, removeEventListener() {} };
+  globalThis.createImageBitmap = async () => ({ width: 8, height: 8, close() {} });
+  const events = [];
+  const canvas = {
+    width: 0, height: 0,
+    getContext: () => ({ drawImage() {} }),
+    addEventListener() {}, removeEventListener() {},
+  };
+  const keyboard = { value: '', addEventListener() {}, removeEventListener() {}, focus() {} };
+  const connection = {
+    openStream: () => ({ ready: Promise.resolve(), send: () => true, close: async () => {} }),
+  };
+  try {
+    const viewer = new BrowserViewer(canvas, keyboard, { connection, changed: e => events.push(e) });
+    // kind 1 = FRAME（协议头见 browser.js 顶部）；payload 被 mock 的解码器忽略。
+    viewer.receive(viewer.packet(1, 7, new Uint8Array([1, 2, 3])));
+    await new Promise(resolve => setTimeout(resolve, 0));
+    assert.equal(viewer.frameCount, 1, 'drawn frame must increment frameCount');
+    viewer.frameWindowStart = performance.now() - 1000;
+    viewer.reportFps();
+    assert.ok(events.some(e => e.fps > 0), `fps must be reported: ${JSON.stringify(events)}`);
+    viewer.close();
+  } finally {
+    globalThis.document = oldDocument;
+    globalThis.createImageBitmap = oldBitmap;
+  }
 });

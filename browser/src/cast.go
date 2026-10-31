@@ -36,6 +36,8 @@ type castPending struct {
 	chromeID    int64  // Chrome 的 screencast session id
 	pageSession string // 产生这一帧的页面会话
 	acked       map[*browserStreamPeer]bool
+	sentAt      time.Time // 写出这一帧的时刻（算确认往返用）
+	ackedAt     time.Time // 首个确认先于发送记账到达时的确认时刻（补 RTT 样本用）
 }
 
 // castFrame 是待发给某个订阅者的一帧。
@@ -82,6 +84,11 @@ func (s *service) removePeer(p *browserStreamPeer) {
 // 任一订阅者确认就 ack Chrome 推下一帧：不等所有订阅者——否则一个不确认的
 // 订阅者（比如页面没打开）会把整条画面链路饿死。
 func (s *service) peerAcked(p *browserStreamPeer, seq uint64) {
+	// 任何确认都算这个订阅者活着：哪怕这一帧已经被别的订阅者确认过、pending
+	// 已经被删掉，也要更新它的活跃时间。否则多订阅者（多开 tab）时先确认的那个
+	// 把 pending 删了，后确认的永远不更新活跃时间 → 被误判成僵尸，每帧被摘
+	// 一次（2026-10-30 实测：5 秒摘了 251 次，页面反复断流、滚不动）。
+	p.markAcked()
 	s.castMu.Lock()
 	pending, ok := s.castPending[seq]
 	if !ok {
@@ -93,11 +100,40 @@ func (s *service) peerAcked(p *browserStreamPeer, seq uint64) {
 		return
 	}
 	pending.acked[p] = true
-	delete(s.castPending, seq)
 	s.castStatAcks++
+	if !pending.sentAt.IsZero() {
+		s.castStatAckRTT += int64(time.Since(pending.sentAt))
+		s.castStatAckRTTSamples++
+		delete(s.castPending, seq)
+	} else {
+		// 与 markFrameSent 竞争：确认先到时先记下确认时刻，pending 留给
+		// 发送侧补 RTT 样本后摘除（先删会让这一帧丢一个样本）。
+		pending.ackedAt = time.Now()
+	}
 	s.castMu.Unlock()
-	p.markAcked()
 	s.ackCastFrame(pending)
+}
+
+// markFrameSent 记下这一帧写给订阅者的时刻：页面确认回来时就能算出
+// 「设备→页面→设备」这一圈的真实耗时（滚动卡不卡就看它）。
+func (s *service) markFrameSent(seq uint64) {
+	s.castMu.Lock()
+	defer s.castMu.Unlock()
+	pending, ok := s.castPending[seq]
+	if !ok || !pending.sentAt.IsZero() {
+		return
+	}
+	pending.sentAt = time.Now()
+	if !pending.ackedAt.IsZero() {
+		// 确认先于发送记账到达：现在补齐这一帧的 RTT 样本再摘除。
+		rtt := pending.sentAt.Sub(pending.ackedAt)
+		if rtt < 0 {
+			rtt = 0
+		}
+		s.castStatAckRTT += int64(rtt)
+		s.castStatAckRTTSamples++
+		delete(s.castPending, seq)
+	}
 }
 
 // ackCastFrame 告诉 Chrome「这帧已经处理完」，它才会推下一帧。
@@ -214,7 +250,11 @@ func (s *service) evictIdlePeers() {
 	s.castMu.Lock()
 	stale := make([]*browserStreamPeer, 0, len(s.castPeers))
 	for p := range s.castPeers {
+		if p.evicted.Load() {
+			continue // 已摘过：等它自己从表里退出去，不重复计数
+		}
 		if p.idleTooLong(castPeerIdleTimeout) {
+			p.evicted.Store(true)
 			stale = append(stale, p)
 		}
 	}
@@ -313,6 +353,18 @@ func (s *service) countWritten(n int) {
 	defer s.castMu.Unlock()
 	s.castStatWritten++
 	s.castStatWrittenBytes += n
+}
+
+// onTargetDestroyed 页面销毁时清掉挂在它上面的画面状态。session 已死，不必
+// 再发 stopScreencast；订阅者由 UI 在没有选中页时自行关闭。
+func (s *service) onTargetDestroyed(session string) {
+	s.castMu.Lock()
+	defer s.castMu.Unlock()
+	if s.castSession != session {
+		return
+	}
+	s.castSession = ""
+	s.castPending = map[uint64]*castPending{}
 }
 
 // resetCast 浏览器重启后清掉旧的画面状态。

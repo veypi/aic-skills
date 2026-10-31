@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -29,7 +30,13 @@ func (s *service) toolCastStats(ctx context.Context, _ *mcp.CallToolRequest, _ s
 	ackFailed := s.castStatAckFailed
 	dropped := s.castStatDropped
 	evicted := s.castStatEvicted
+	ackRTT := s.castStatAckRTT
+	ackRTTSamples := s.castStatAckRTTSamples
 	s.castMu.Unlock()
+	avgAckRTT := float64(0)
+	if ackRTTSamples > 0 {
+		avgAckRTT = float64(ackRTT) / float64(ackRTTSamples) / float64(time.Millisecond)
+	}
 	payload, _ := json.Marshal(map[string]any{
 		"session": session, "castSession": castSession,
 		"peers": peers, "framesReceived": received,
@@ -37,6 +44,7 @@ func (s *service) toolCastStats(ctx context.Context, _ *mcp.CallToolRequest, _ s
 		"writtenBytes": writtenBytes, "bytes": bytes,
 		"pageAcks": acks, "ackFailed": ackFailed,
 		"dropped": dropped, "evicted": evicted,
+		"ackRttMs": avgAckRTT, "ackRttSamples": ackRTTSamples,
 	})
 	return textResult(json.RawMessage(payload)), nil, nil
 }

@@ -25,22 +25,34 @@ type service struct {
 	dialog   *pendingDialog // 页面上挂着的 JS 对话框
 
 	// 画面推送：CDP screencast 推帧，页面 ack 之后才推下一帧。
-	castMu               sync.Mutex
-	castSession          string                      // 当前开着 screencast 的页面会话
-	castSeq              uint64                      // 帧序号
-	castPeers            map[*browserStreamPeer]bool // 订阅画面的流连接
-	castPending          map[uint64]*castPending     // 在途帧的确认状态
-	castViewportW        float64                     // 最近一帧的视口宽（CSS 像素）
-	castViewportH        float64                     // 最近一帧的视口高（CSS 像素）
-	castStatFrames       int                         // 自检：收到的帧数
-	castStatBytes        int                         // 自检：收到的字节数
-	castStatSent         int                         // 自检：发给订阅者的帧数
-	castStatWritten      int                         // 自检：已写到 socket 的帧数
-	castStatWrittenBytes int                         // 自检：已写到 socket 的字节数
-	castStatAcks         int                         // 自检：页面确认的帧数
-	castStatAckFailed    int                         // 自检：ack Chrome 失败次数
-	castStatDropped      int                         // 自检：订阅者不消费而丢弃的帧数
-	castStatEvicted      int                         // 自检：摘掉的僵尸订阅者数
+	castMu                sync.Mutex
+	castSession           string                      // 当前开着 screencast 的页面会话
+	castSeq               uint64                      // 帧序号
+	castPeers             map[*browserStreamPeer]bool // 订阅画面的流连接
+	castPending           map[uint64]*castPending     // 在途帧的确认状态
+	castViewportW         float64                     // 最近一帧的视口宽（CSS 像素）
+	castViewportH         float64                     // 最近一帧的视口高（CSS 像素）
+	castStatFrames        int                         // 自检：收到的帧数
+	castStatBytes         int                         // 自检：收到的字节数
+	castStatSent          int                         // 自检：发给订阅者的帧数
+	castStatWritten       int                         // 自检：已写到 socket 的帧数
+	castStatWrittenBytes  int                         // 自检：已写到 socket 的字节数
+	castStatAcks          int                         // 自检：页面确认的帧数
+	castStatAckFailed     int                         // 自检：ack Chrome 失败次数
+	castStatDropped       int                         // 自检：订阅者不消费而丢弃的帧数
+	castStatEvicted       int                         // 自检：摘掉的僵尸订阅者数
+	castStatAckRTT        int64                       // 自检：页面确认往返的总耗时（纳秒）
+	castStatAckRTTSamples int                         // 自检：往返耗时样本数
+
+	// 视口尺寸缓存：鼠标事件要拿视口尺寸换算坐标，而滚动时每秒上百个事件，
+	// 每个事件都发一次 CDP 去问视口会把输入管道堵住（滚动卡顿）。视口只会在
+	// 尺寸变化时变，缓存一小会儿就够。
+	viewportMu      sync.Mutex
+	viewportSession string // 缓存按页面 key 化：切页后不能用上一页的宽高换算坐标
+	viewportW       float64
+	viewportH       float64
+	viewportAt      time.Time
+	viewportValid   bool
 }
 
 // pendingDialog 是页面上待应答的 JS 对话框（alert / confirm / prompt）。
@@ -153,7 +165,15 @@ func (s *service) ensure(ctx context.Context) (*Browser, error) {
 		_ = s.browser.Close()
 		s.browser = nil
 	}
-	b, err := Launch(ctx, s.opts)
+	// 用户给了 CDP 地址就接入他自己的浏览器（不起本地进程，Close 只断连）；
+	// 否则自己懒启动一个 Chrome。
+	var b *Browser
+	var err error
+	if s.opts.CDPURL != "" {
+		b, err = Connect(ctx, s.opts.CDPURL)
+	} else {
+		b, err = Launch(ctx, s.opts)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -177,6 +197,9 @@ func (s *service) ensure(ctx context.Context) (*Browser, error) {
 		case "Page.screencastFrame":
 			// 实时帧：Chrome 合成器推过来的，不是轮询截图。
 			s.onCastFrame(sessionID, params)
+		case "Target.targetDestroyed":
+			// 画面挂在刚销毁的页面上：清掉它的 cast 状态。
+			s.onTargetDestroyed(sessionID)
 		}
 	})
 	s.browser = b

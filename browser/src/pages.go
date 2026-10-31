@@ -29,6 +29,10 @@ func (s *service) attachTarget(ctx context.Context, b *Browser, targetID string)
 			"targetId": targetID, "flatten": true,
 		}, "")
 		if err != nil {
+			// 页面已关闭（常见于关闭标签后拿旧列表 attach）：给可行动的错误。
+			if strings.Contains(err.Error(), "No target with given id found") {
+				return "", fmt.Errorf("target %s not found (already closed?); run targets to refresh the page list", targetID)
+			}
 			return "", err
 		}
 		var payload struct {

@@ -31,6 +31,25 @@
     border-bottom: 1px solid var(--border-color);
   }
 
+  /* 画面自测读数：帧率与输入往返延迟 */
+  .live-stats {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: none;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-color, inherit);
+    background: var(--border-color);
+    opacity: .85;
+  }
+
+  .live-delay {
+    opacity: .7;
+  }
+
   button {
     font: inherit;
     color: inherit;
@@ -501,6 +520,10 @@
       @keydown.enter="navigate" @keydown.esc="resetAddress"
       v-if="selectedDevice()" :disabled="!selected() || busy" :placeholder="$t('browser.address')"
       :aria-label="$t('browser.address')" autocomplete="off" spellcheck="false">
+    <span class="live-stats" v-if="fps || inputMs" :title="$t('browser.live_stats')">
+      <span v-if="fps">{{fps}} fps</span>
+      <span v-if="inputMs" class="live-delay">{{inputMs}} ms</span>
+    </span>
     <button class="icon-button new-tab" v-if="selectedDevice()" @click="createWindow(selectedDevice().id)"
       :disabled="busy" :title="$t('browser.new_tab')" :aria-label="$t('browser.new_tab')">
       <i class="fa-solid fa-plus" aria-hidden="true"></i>
@@ -610,6 +633,8 @@
   refreshing = false
   sidebarOpen = true
   status = ''
+  fps = 0
+  inputMs = 0
 
   addressFocused = false
   let lastStatus = ''
@@ -631,6 +656,8 @@
     busy = state.busy
     refreshing = state.refreshing
     status = state.status
+    fps = state.fps || 0
+    inputMs = state.inputMs || 0
   }
 
   session = new BrowserSession($hosts, state => {

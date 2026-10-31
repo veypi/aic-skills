@@ -169,6 +169,13 @@ export class BrowserViewer {
     this.listeners = [];
     this.move = null;
     this.moveTimer = null;
+    // 帧率与输入延迟的自测：帧率是端到端收到的帧率，输入延迟是
+    // 「发出输入→设备回执」的往返毫秒数（滚动卡不卡就看它）。
+    this.frameCount = 0
+    this.frameWindowStart = performance.now()
+    this.lastFps = -1
+    this.inputSeq = 0
+    this.inputSentAt = new Map()
     this.stream = connection.openStream({
       command: 'browser',
       name: 'view',
@@ -179,7 +186,28 @@ export class BrowserViewer {
         this.changed({ error: error?.message || 'disconnected' });
       },
     });
+    // 页面不活跃就放掉流：隐藏的 tab 不用让设备给它推帧（多开 tab 时这是
+    // 页面卡顿的主因），页面回来时自己建新的流。
+    this.onVisibility = () => {
+      if (document.hidden) this.close();
+    };
+    document.addEventListener('visibilitychange', this.onVisibility);
     this.bind();
+    this.fpsTimer = setInterval(() => this.reportFps(), 500);
+  }
+
+  // reportFps 每 500ms 算一次收到的帧率：画面是停是动、掉不掉帧，一眼可见。
+  reportFps() {
+    if (this.closed) return
+    const now = performance.now()
+    const elapsed = (now - this.frameWindowStart) / 1000
+    if (elapsed < 0.25) return
+    const fps = Math.round(this.frameCount / elapsed)
+    this.frameCount = 0
+    this.frameWindowStart = now
+    if (fps === this.lastFps) return
+    this.lastFps = fps
+    this.changed({ fps })
   }
 
   async ready() {
@@ -200,10 +228,18 @@ export class BrowserViewer {
 
   send(message) {
     if (this.closed) return false;
-    const body = encoder.encode(JSON.stringify(message));
+    // 每个输入带一个事件号：设备合并连续事件后，回执不再与发送一一对应，
+    // 只能按事件号算真实往返。
+    const id = ++this.inputSeq;
+    const body = encoder.encode(JSON.stringify({ ...message, id }));
     if (!this.stream.send(this.packet(KIND_INPUT, 0, body))) {
       this.changed({ error: 'send_failed' });
       return false;
+    }
+    this.inputSentAt.set(id, performance.now());
+    // 被合并掉的事件不会有回执：表要有界，最老的直接丢。
+    if (this.inputSentAt.size > 256) {
+      this.inputSentAt.delete(this.inputSentAt.keys().next().value);
     }
     return true;
   }
@@ -254,7 +290,17 @@ export class BrowserViewer {
       return;
     }
     if (message.type === 'input') {
-      this.changed({ ack: message });
+      const id = message.id || 0;
+      const sent = id ? this.inputSentAt.get(id) : 0;
+      const inputMs = sent ? Math.round(performance.now() - sent) : 0;
+      // 比它早的事件要么已回执、要么被合并掉了，都不用再留。
+      if (id) {
+        for (const key of this.inputSentAt.keys()) {
+          if (key > id) break;
+          this.inputSentAt.delete(key);
+        }
+      }
+      this.changed({ ack: message, inputMs });
     } else if (message.type === 'error') {
       this.changed({ error: message.error || 'device_error' });
     }
@@ -289,9 +335,13 @@ export class BrowserViewer {
     }
     try {
       if (this.closed) return;
-      this.canvas.width = bitmap.width;
-      this.canvas.height = bitmap.height;
+      // 尺寸不变就不要重设：重设 canvas.width/height 会清空并重新分配
+      // 画布，每帧都做会把页面拖卡。
+      if (this.canvas.width !== bitmap.width) this.canvas.width = bitmap.width;
+      if (this.canvas.height !== bitmap.height) this.canvas.height = bitmap.height;
       this.canvas.getContext('2d').drawImage(bitmap, 0, 0);
+      // fps 读数的数据源：只数真正画出来的帧（解码失败的不算）。
+      this.frameCount++;
       // live 只报一次：每帧都报会把整页拉进响应式重渲染（渲染开销比解码还大）。
       if (!this.reportedLive) {
         this.reportedLive = true;
@@ -394,6 +444,11 @@ export class BrowserViewer {
     if (this.closed) return;
     this.closed = true;
     if (this.moveTimer) clearTimeout(this.moveTimer);
+    if (this.fpsTimer) { clearInterval(this.fpsTimer); this.fpsTimer = null; }
+    if (this.onVisibility) {
+      document.removeEventListener('visibilitychange', this.onVisibility);
+      this.onVisibility = null;
+    }
     for (const remove of this.listeners) remove();
     this.listeners = [];
     this.stream.close();
@@ -410,6 +465,7 @@ export class BrowserSession {
     this.state = {
       devices: [], selectedHostId: '', selectedPageId: '', pageUrl: '',
       live: false, dialog: null, dialogText: '', busy: false, refreshing: false, status: '',
+      fps: 0, inputMs: 0,
     };
     this.directory = new BrowserDirectory(hosts, rows => this.onRows(rows));
     this.pageByHost = new Map();
@@ -507,6 +563,16 @@ export class BrowserSession {
     }
   }
 
+  // 等被关闭的 target 从 targets 列表消失（至多 ~2s；beforeunload 拖住时
+  // 按现状继续，不阻塞后续操作）。
+  async waitTargetGone(hostId, pageId) {
+    for (let i = 0; i < 20; i++) {
+      await this.refreshPages(hostId);
+      if (!this.device(hostId)?.pages.some(p => p.id === pageId)) return;
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  }
+
   async refreshPages(hostId) {
     const pages = await this.directory.listPages(hostId);
     this.state.devices = this.state.devices.map(row => row.id === hostId ? { ...row, pages } : row);
@@ -518,11 +584,18 @@ export class BrowserSession {
     this.canvas = canvas;
     this.keyboard = keyboard;
     this.syncViewer();
+    // 页面回到前台：自己建新的流（隐藏时那条已经放掉了）。
+    this.onVisibility = () => {
+      if (!document.hidden) this.syncViewer();
+    };
+    document.addEventListener('visibilitychange', this.onVisibility);
   }
 
   syncViewer() {
     const connection = this.connection();
     if (!this.canvas || !keyboardReady(this) || !connection) { this.stopViewer(); return; }
+    // 没有选中页（全部标签已关）不开流：设备不该对着死页面推帧。
+    if (!this.state.selectedPageId) { this.stopViewer(); return; }
     if (this.viewer && !this.viewer.closed && this.viewerConnection === connection) return;
     this.stopViewer();
     this.viewerConnection = connection;
@@ -537,16 +610,30 @@ export class BrowserSession {
     if (this.viewer) { this.viewer.close(); this.viewer = null; }
     this.viewerConnection = null;
     this.state.live = false;
+    this.state.fps = 0;
+    this.state.inputMs = 0;
   }
 
   onStream(event) {
+    // 帧率与输入延迟：header 上的自测读数。
+    let dirty = false;
+    if (event.fps !== undefined && event.fps !== this.state.fps) {
+      this.state.fps = event.fps;
+      dirty = true;
+    }
+    if (event.inputMs !== undefined && event.inputMs !== this.state.inputMs) {
+      this.state.inputMs = event.inputMs;
+      dirty = true;
+    }
     if (event.live) { this.state.live = true; this.changed(this.state); return; }
     if (event.error) {
       this.state.live = false;
       this.state.status = String(event.error);
       this.stopViewer();
       this.changed(this.state);
+      return;
     }
+    if (dirty) this.changed(this.state);
   }
 
   // 动作不丢弃：快速 A→B 会依次完成，最终一定是 B。异常进入统一状态，
@@ -640,7 +727,9 @@ export class BrowserSession {
   closePage(hostId, pageId) {
     return this.act(async () => {
       await this.cdp('Target.closeTarget', { targetId: pageId }, '', hostId);
-      await this.refreshPages(hostId);
+      // closeTarget 异步生效：getTargets 可能还返回正在关闭的页面，立刻拿
+      // 旧列表去 attach 会报 No target with given id found。先等它从列表消失。
+      await this.waitTargetGone(hostId, pageId);
       if (hostId === this.state.selectedHostId && pageId === this.state.selectedPageId) {
         const next = this.device(hostId)?.pages[0];
         if (next) {
@@ -740,6 +829,10 @@ export class BrowserSession {
   dispose() {
     this.closed = true;
     if (this.timer) { clearTimeout(this.timer); this.timer = null; }
+    if (this.onVisibility) {
+      document.removeEventListener('visibilitychange', this.onVisibility);
+      this.onVisibility = null;
+    }
     this.stopViewer();
     this.directory.close();
   }

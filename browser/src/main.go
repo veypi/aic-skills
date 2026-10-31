@@ -36,9 +36,13 @@ func main() {
 	}
 	opts := launchOptions{
 		ChromePath: firstEnv("AIC_BROWSER_PATH", "AGENT_BROWSER_EXECUTABLE_PATH"),
+		// 资料目录默认 ~/.aic/chrome-profile（固定目录，登录态跨重启保留）；
+		// BROWSER_PROFILE 可改。默认不显示窗口，BROWSER_HEADLESS=0 弹出可见窗口。
 		ProfileDir: firstEnv("BROWSER_PROFILE"),
 		Proxy:      firstEnv("BROWSER_PROXY"),
 		Headless:   true,
+		// 用户自己的浏览器：给了 CDP 地址就接入它，不再本地启动 Chrome。
+		CDPURL: firstEnv("BROWSER_CDP_URL"),
 		// 视口默认 720p（1280x720）；可用 BROWSER_WINDOW_SIZE 改。
 		WindowSize: firstEnv("BROWSER_WINDOW_SIZE", "BROWSER_VIEWPORT"),
 	}
@@ -52,8 +56,9 @@ func main() {
 	opts.ExtraArgs = splitEnvList(firstEnv("BROWSER_CHROME_ARGS"))
 
 	flag.StringVar(&opts.ChromePath, "chrome", opts.ChromePath, "path to the Chrome/Chromium binary")
-	flag.StringVar(&opts.ProfileDir, "profile", opts.ProfileDir, "Chrome profile directory (default: a temporary directory)")
-	flag.BoolVar(&opts.Headless, "headless", opts.Headless, "run Chrome headless")
+	flag.StringVar(&opts.ProfileDir, "profile", opts.ProfileDir, "Chrome profile directory (default "+defaultBrowserProfile+")")
+	flag.BoolVar(&opts.Headless, "headless", opts.Headless, "run Chrome headless (default true; BROWSER_HEADLESS=0 shows the window)")
+	flag.StringVar(&opts.CDPURL, "cdp", opts.CDPURL, "attach to a running browser by CDP address (host:port, http://… or ws://…); no local Chrome is started")
 	flag.StringVar(&opts.Proxy, "proxy", opts.Proxy, "proxy URL for Chrome")
 	flag.StringVar(&opts.WindowSize, "window-size", opts.WindowSize, "viewport size, for example 1280x720")
 	flag.Var(&opts.SecureOrigins, "secure-origin", "treat this http origin as secure (repeatable)")

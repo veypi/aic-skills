@@ -90,6 +90,7 @@ func readEnvelope(r io.Reader) (byte, uint64, []byte, error) {
 // 事件名沿用上游 agent-browser 的流协议（input_mouse / input_keyboard）。
 type browserStreamInput struct {
 	Type                  string  `json:"type"`
+	ID                    uint64  `json:"id,omitempty"` // 页面给的事件号：回执原样带回，延迟按它算
 	EventType             string  `json:"eventType,omitempty"`
 	X                     float64 `json:"x,omitempty"`
 	Y                     float64 `json:"y,omitempty"`
@@ -108,10 +109,101 @@ type browserStreamInput struct {
 // browserStreamControl 是设备发给页面的控制消息（JSON 正文）。
 type browserStreamControl struct {
 	Type  string  `json:"type"`
+	ID    uint64  `json:"id,omitempty"` // 被派发输入的事件号（合并后回执不再一一对应）
 	Error string  `json:"error,omitempty"`
 	Event string  `json:"event,omitempty"`
 	X     float64 `json:"x,omitempty"`
 	Y     float64 `json:"y,omitempty"`
+}
+
+// browserInputQueue 是人工输入的待发队列：读循环只负责入队，派发在另一路。
+//
+// 不能在读循环里同步派发：一次 Input.dispatchMouseEvent 在 Chrome 忙时要几十
+// 毫秒，而触控板滚动一秒来上百个事件，串行派发只会让队列无限堆积（2026-10-30
+// 实测：120/s 时输入往返 p50 1 秒、max 2 秒），还会把同一读循环里的画面确认
+// 一起堵住，帧率跟着掉。
+//
+// 连续事件必须合并而不是排队：滚轮累加 delta（滚动总量不丢），移动只保最新。
+// 离散事件（点击、按键、文本）按顺序保留，不合并、不丢弃。
+type browserInputQueue struct {
+	mu    sync.Mutex
+	items []browserStreamInput
+	wake  chan struct{}
+}
+
+func newBrowserInputQueue() *browserInputQueue {
+	return &browserInputQueue{wake: make(chan struct{}, 1)}
+}
+
+// continuousInput 报告这个事件能不能与上一个同类事件合并。
+func continuousInput(in browserStreamInput) bool {
+	return in.Type == "input_mouse" && (in.EventType == "mouseMoved" || in.EventType == "mouseWheel")
+}
+
+// inputQueueLimit 是队列上限：Chrome 卡死时也不能让输入无限堆积。
+const inputQueueLimit = 64
+
+func (q *browserInputQueue) push(in browserStreamInput) {
+	q.mu.Lock()
+	if n := len(q.items); n > 0 {
+		last := &q.items[n-1]
+		if last.Type == in.Type && last.EventType == in.EventType && continuousInput(in) {
+			if in.EventType == "mouseWheel" {
+				dx, dy := last.DeltaX+in.DeltaX, last.DeltaY+in.DeltaY
+				*last = in
+				last.DeltaX, last.DeltaY = dx, dy
+			} else {
+				*last = in
+			}
+			q.mu.Unlock()
+			q.signal()
+			return
+		}
+	}
+	q.items = append(q.items, in)
+	if len(q.items) > inputQueueLimit {
+		// 先丢最老的连续事件；全是离散事件才丢最老的一条（并留下日志）。
+		index := 0
+		for i, item := range q.items {
+			if continuousInput(item) {
+				index = i
+				break
+			}
+		}
+		log.Printf("browser: input queue full, drop %s:%s", q.items[index].Type, q.items[index].EventType)
+		q.items = append(q.items[:index], q.items[index+1:]...)
+	}
+	q.mu.Unlock()
+	q.signal()
+}
+
+func (q *browserInputQueue) signal() {
+	select {
+	case q.wake <- struct{}{}:
+	default:
+	}
+}
+
+// pop 取下一条待派发的输入；ctx 结束时返回 false。
+func (q *browserInputQueue) pop(ctx context.Context) (browserStreamInput, bool) {
+	for {
+		q.mu.Lock()
+		if len(q.items) > 0 {
+			in := q.items[0]
+			q.items = q.items[1:]
+			if len(q.items) == 0 {
+				q.items = nil
+			}
+			q.mu.Unlock()
+			return in, true
+		}
+		q.mu.Unlock()
+		select {
+		case <-ctx.Done():
+			return browserStreamInput{}, false
+		case <-q.wake:
+		}
+	}
 }
 
 type browserStreamPeer struct {
@@ -119,9 +211,11 @@ type browserStreamPeer struct {
 	conn    net.Conn
 	reader  *bufio.Reader
 	writeMu sync.Mutex
-	frames  chan castFrame // 待发的画面帧（只保最新一帧）
-	lastAck atomic.Int64   // 最近一次页面确认（Unix 纳秒）
-	lastFit atomic.Int64   // 最近一次给过它帧（Unix 纳秒）
+	inputs  *browserInputQueue // 待派发的人工输入（连续事件已合并）
+	frames  chan castFrame     // 待发的画面帧（只保最新一帧）
+	lastAck atomic.Int64       // 最近一次页面确认（Unix 纳秒）
+	lastFit atomic.Int64       // 最近一次给过它帧（Unix 纳秒）
+	evicted atomic.Bool        // 已被判定为僵尸并关掉
 }
 
 // markAcked 记一次页面确认：用来判断订阅者是不是还活着。
@@ -242,8 +336,11 @@ func (p *browserStreamPeer) run(parent context.Context) {
 		}
 	}
 
-	// 帧的发送与输入的读取各自一路；切页由 attachTarget 同步切换画面。
+	// 帧的发送、输入的派发、包的读取各走一路：任何一路慢都不能堵住另外两路。
+	// 切页由 attachTarget 同步切换画面。
+	p.inputs = newBrowserInputQueue()
 	go p.writeFrames(ctx)
+	go p.dispatchLoop(ctx)
 
 	errCh := make(chan error, 1)
 	go func() { errCh <- p.readInputs(ctx) }()
@@ -269,6 +366,7 @@ func (p *browserStreamPeer) writeFrames(ctx context.Context) {
 				p.close()
 				return
 			}
+			p.service.markFrameSent(frame.seq)
 			p.service.countWritten(len(frame.image))
 		}
 	}
@@ -289,18 +387,33 @@ func (p *browserStreamPeer) readInputs(ctx context.Context) error {
 			if err := json.Unmarshal(payload, &input); err != nil {
 				continue
 			}
-			if err := p.dispatchInput(ctx, input); err != nil {
-				_ = p.sendControl(browserStreamControl{Type: "error", Error: err.Error()})
-				continue
-			}
-			// 回执：UI 侧据此显示“输入已到达设备”，点击不再是无反馈等待。
-			_ = p.sendControl(browserStreamControl{
-				Type: "input", Event: input.Type + ":" + input.EventType,
-				X: input.X, Y: input.Y,
-			})
+			// 只入队，不在这里派发：同步等 CDP 会让高频输入（滚动）堆成秒级
+			// 延迟，还会堵住上面的画面确认。
+			p.inputs.push(input)
 		default:
 			// 未知类型：忽略（协议向前兼容）。
 		}
+	}
+}
+
+// dispatchLoop 逐条派发输入。连续事件在队列里已被合并，所以这里总是处理
+// 「最新」的输入：Chrome 慢只会让滚动步长变大，不会让延迟越滚越大。
+func (p *browserStreamPeer) dispatchLoop(ctx context.Context) {
+	for {
+		input, ok := p.inputs.pop(ctx)
+		if !ok {
+			return
+		}
+		if err := p.dispatchInput(ctx, input); err != nil {
+			_ = p.sendControl(browserStreamControl{Type: "error", Error: err.Error()})
+			continue
+		}
+		// 回执带上输入的事件号：合并后回执与发送不再一一对应，页面按 id
+		// 算真实往返，不能用先入先出去猜。
+		_ = p.sendControl(browserStreamControl{
+			Type: "input", ID: input.ID, Event: input.Type + ":" + input.EventType,
+			X: input.X, Y: input.Y,
+		})
 	}
 }
 
@@ -319,7 +432,18 @@ func (p *browserStreamPeer) dispatchInput(ctx context.Context, input browserStre
 }
 
 // viewportSize 取当前页面视口尺寸（CSS 像素）。
+//
+// 带缓存：鼠标事件要拿它换算坐标，滚动时每秒上百个事件，每个事件都发一次
+// CDP 去问视口会把输入管道堵死。视口只会在尺寸变化时变，缓存 2 秒足够。
 func (s *service) viewportSize(ctx context.Context, b *Browser, session string) (float64, float64, error) {
+	s.viewportMu.Lock()
+	if s.viewportValid && s.viewportSession == session && time.Since(s.viewportAt) < viewportCacheTTL {
+		width, height := s.viewportW, s.viewportH
+		s.viewportMu.Unlock()
+		return width, height, nil
+	}
+	s.viewportMu.Unlock()
+
 	raw, err := b.Call(ctx, "Runtime.evaluate", map[string]any{
 		"expression": "({width:innerWidth,height:innerHeight})", "returnByValue": true,
 	}, session)
@@ -337,8 +461,16 @@ func (s *service) viewportSize(ctx context.Context, b *Browser, session string) 
 	if err := json.Unmarshal(raw, &viewport); err != nil {
 		return 0, 0, err
 	}
-	return viewport.Result.Value.Width, viewport.Result.Value.Height, nil
+	width, height := viewport.Result.Value.Width, viewport.Result.Value.Height
+	s.viewportMu.Lock()
+	s.viewportW, s.viewportH, s.viewportAt, s.viewportValid = width, height, time.Now(), true
+	s.viewportSession = session
+	s.viewportMu.Unlock()
+	return width, height, nil
 }
+
+// viewportCacheTTL 是视口缓存的有效期。
+const viewportCacheTTL = 2 * time.Second
 
 // streamMouse 派发鼠标事件：坐标是视口归一化值 [0,1]。
 func (s *service) streamMouse(ctx context.Context, in browserStreamInput) error {
