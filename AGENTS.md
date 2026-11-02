@@ -6,22 +6,24 @@ is [README.md](README.md) (Chinese) / [README.en.md](README.en.md) (English).
 ## What this repo is
 
 The **official AIC skill content repository**. A skill package is the plugin unit:
-`SKILL.md` (required, the AI manual) plus optional orthogonal parts — `ui/`, `api/`,
-`tables/` for the cloud, `src/` + a root `manifest.json` for execution ends (aic-pod).
-The Go package embeds the cloud-side content and ships it inside the platform (aic); the
-device fetches packages with `commands install <id>` and builds them from `src/` — aic-pod no
-longer depends on this Go module.
+`SKILL.md` (required, the AI manual) plus optional orthogonal parts — a root
+`manifest.json`, `ui/`, `api/`, `tables/` for the cloud, and `src/` for execution ends (aic-pod).
+The Go package embeds the package content and ships it inside the platform (aic); aic-pod
+depends on this module only to distribute the official preinstalled packages (browser/cua),
+versioning them onto the device at startup. Other packages are fetched by the device with
+`commands install <id>` and built from `src/` when they ship their own program.
 
 Boundary (contract truth: aic `docs/reference/skill.md`):
 
 - Explanations, UI and cloud APIs are published and served by the platform; a skill has no
   installed/enabled/process/service state of its own.
-- The root `manifest.json` declares the device execution surface: `schema`, `commands`
-  (run / protocol / idle_timeout) and `streams` (command + `address_env`). The device installs
-  the package (`commands install <skill_id>`), builds the program from `src/`, and registers the
-  command; a stream is an opaque bidirectional TCP byte relay — the platform never parses
-  the payload, the package owns its protocol. **Only source is committed** — no binaries,
-  no build outputs.
+- The root `manifest.json` uses schema 1: `ui.pages` maps page IDs (package-relative paths
+  without `.html`) to `{desc}`, and `host` maps service aliases to
+  `{run, url, protocol, idle_timeout}` with optional nested `streams` (`{address_env}` only).
+  The device installs the package (`commands install <skill_id>`; browser/cua are preinstalled by the pod)
+  and, when present, builds the program from `src/`, and registers the command; a stream is an opaque bidirectional TCP byte relay — the platform
+  never parses the payload, the package owns its protocol. **Only source is committed** — no
+  binaries, no build outputs.
 
 ## Layout
 
@@ -31,6 +33,7 @@ Boundary (contract truth: aic `docs/reference/skill.md`):
   they are published content, not repo docs, and are never moved into `docs/`.
 
 - `<skill>/SKILL.md` — the only required file; frontmatter + body.
+- `<skill>/manifest.json` — optional schema-1 package declaration (`ui.pages` and/or `host`).
 - `<skill>/ui/` — optional cloud UI (`index.html` + modules), loaded at `/skills/cloud/{id}`.
 - `<skill>/api/`, `<skill>/tables/` — optional cloud API and tables.
 - `<skill>/src/` — optional device program source; the root `manifest.json` points at the
@@ -62,7 +65,12 @@ Boundary (contract truth: aic `docs/reference/skill.md`):
 ## Writing skill content
 
 - Frontmatter fields: `name` (required, == dir), `version` (required for published skills),
-  `nickname`, `description`, `keywords`, `icon`, `ui` (list of `{path, desc, handles?}`).
+  `nickname`, `description`, `keywords`, `icon` — nothing else. Page/component/opener
+  declarations live in root `manifest.json` (schema 1): `ui.pages` (page id → `ui/<id>.html`),
+  `ui.components`, `ui.openers`; device commands in `host`. There is no launcher section:
+  `ui.pages` automatically become launcher subpages. The authoritative parser is
+  `manifest/` (shared by aic and aic-pod); `manifest_contract_test.go` runs it over every
+  builtin package and create template.
 - Chinese is the authoring language for user-facing skill content; `vhtml/` is the exception
   (framework guide, English).
 - Page/resource addressing: the page entry and the HTTP package service share **one

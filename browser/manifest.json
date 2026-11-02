@@ -1,16 +1,22 @@
 {
   "schema": 1,
-  "commands": {
+  "ui": {
+    "pages": {
+      "index": {
+        "desc": "设备窗口列表、导航与实时键鼠交互"
+      }
+    }
+  },
+  "host": {
     "browser": {
       "run": ["bin/browser"],
       "protocol": "mcp",
-      "idle_timeout": "30m"
-    }
-  },
-  "streams": {
-    "view": {
-      "command": "browser",
-      "address_env": "BROWSER_STREAM_ADDR"
+      "idle_timeout": "30m",
+      "streams": {
+        "view": {
+          "address_env": "BROWSER_STREAM_ADDR"
+        }
+      }
     }
   }
 }

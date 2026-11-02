@@ -1,16 +1,14 @@
 ---
 name: hello
+version: 0.1.0
 nickname: Hello 示例
 description: 最小技能界面示例（当前 v6.1 格式）：计数器页面 + 三条 pageDesc 指令，演示 vhtml 页面骨架（@container 窗口响应式）与 AI 指令闭环
 keywords: [示例, ui, pageDesc, vhtml, 计数器]
-ui:
-  - path: index.html
-    desc: 主界面（计数器）
 ---
 
 # hello（最小界面示例）
 
-最小可用形态：只有 `SKILL.md` + `ui/index.html`，无数据面。
+最小可用形态：`SKILL.md` + `manifest.json`（`ui.pages`）+ `ui/index.html`，无数据面。
 演示两件事：vhtml 页面骨架（含 `@container` 窗口响应式）+ pageDesc 指令（AI 经 `{win_id}.{cmd}` 操控页面）。
 
 > **复制改造**：`exec 1host=page` → `curl /api/skills -X POST -H 'Content-Type: application/json' -d '{"name":"{你的名字}"}'` 建行，再 `grant fs /skills/{id}` 后把本目录内容写进 `/skills/{id}/`（fs 工具路径）；同步修改 frontmatter 的 `name`、`nickname`/`description`。

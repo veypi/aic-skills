@@ -1,13 +1,10 @@
 ---
 name: play_with_ai
-version: 1.0.4
+version: 1.0.5
 nickname: 与 AI 对弈
 description: 与 AI 对弈的多游戏游乐场：当前内置五子棋与象棋。AI 经窗口指令绑定席位获得行动权、按回合行棋，局面变化自动推送到会话
 keywords: [game, 游戏, 对弈, 下棋, 五子棋, gomoku, 象棋, chess, play]
 icon: fa-solid fa-chess
-ui:
-  - path: index.html
-    desc: 对弈台（游戏切换 + 棋盘 + 席位面板 + 棋谱 + 对局历史）
 ---
 
 # 与 AI 对弈（play_with_ai）

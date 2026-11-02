@@ -22,7 +22,7 @@ example/
   ui/langs.json         可选：包内文案（i18n）
   api/get.list.sqlx     可选：云端接口（方法.名字.sqlx）
   tables/items.json     可选：数据表声明
-  manifest.json         可选：设备服务声明（commands/streams，包根）
+  manifest.json         可选：schema 1 包声明（ui.pages / host，包根）
   src/main.go           可选：设备程序源码（产物永不入库）
   references/usage.md   可选：更细的补充文档
   scripts/example.sh    可选：普通脚本附件
@@ -30,7 +30,7 @@ example/
 
 各部分**正交可选**，只有 `SKILL.md` 必需。
 
-## 3. SKILL.md 的 frontmatter
+## 3. SKILL.md 与根 manifest.json
 
 | 字段 | 说明 |
 | --- | --- |
@@ -40,7 +40,25 @@ example/
 | `description` | 一句话说明"什么时候用"——这是 AI 检索技能的主要依据 |
 | `keywords` | 关键词列表 |
 | `icon` | 图标类名（平台自带图标集，如 `fa-solid fa-layer-group`） |
-| `ui` | 页面清单：`[{ path: index.html, desc: 页面说明, handles: [http, https] }]` |
+
+UI 页面清单放在包根 `manifest.json`，不再写 frontmatter `ui`：
+
+```json
+{
+  "schema": 1,
+  "ui": {
+    "pages": {
+      "index": { "desc": "主界面" },
+      "editor": { "desc": "编辑器，对应 ui/editor.html" }
+    }
+  }
+}
+```
+
+`ui.pages` 的 key 是不带 `.html` 的包内页面路径，值当前只有 `desc`。设备服务在同一文件的
+`host` 中声明，详见 [device-cli.md](device-cli.md)。`launcher` 段已删除——pages 自动成为 launcher 中该技能的子页面，无需单独声明；
+components 第一阶段仅声明不装配；openers 经统一有序表生效（Profile 用户规则优先，包声明为默认表）。
+迁移旧包已有的 handles 等能力时必须写成对应 opener，不能在格式迁移中丢能力。
 
 内建定版与普通发布不是一套流程：`skills.builtin` 的指纹变化触发自动定版，强制重跑也可手动触发；
 事件一旦执行就对全部内嵌包无条件整包覆盖并全量刷新元数据，不比较版本大小。普通私有包是直接改文件，
@@ -91,7 +109,7 @@ grant fs /skills/{skill_id}
 
 - `ui/`：界面。完整 HTML 文档 + vhtml 写法，见 [ui-component.md](ui-component.md)。
 - `api/` + `tables/`：云端数据面，见 [cloud-data.md](cloud-data.md)。
-- `cli/`：设备侧命令，见 [device-cli.md](device-cli.md)。
+- `manifest.json` 的 `host` + `src/`：设备侧命令，见 [device-cli.md](device-cli.md)。
 - `scripts/`：普通脚本附件，用户自己跑；平台**不安装、不扫描、不启动**它们。
 - `references/`：补充文档（细节多时把长内容拆出去，SKILL.md 保持可读）。
 
@@ -113,7 +131,7 @@ grant fs /skills/{skill_id}
 3. frontmatter 写 `desc` 而不是 `description` → 解析失败。
 4. `name` 与注册表行不一致 → 加载失败。
 5. 包内 API 写绝对路径/手拼 id → fork 后 404。
-6. 把设备二进制塞进 `cli/bin` → 包体超限且违反契约（只入库源码）。
+6. 把设备二进制塞进 `bin` → 包体超限且违反契约（只入库源码）。
 7. 页面自带 `env.js` → 平台有固定出口，不生效。
 8. 发布时把私有行里的运行库/临时文件一起打包 → 审核拒绝。
 

@@ -1,13 +1,10 @@
 ---
 name: drawio
-version: 1.0.3
+version: 1.0.4
 nickname: DrawIO 绘图台
 description: 浏览器内 drawio 图表绘制与编辑工作台：形状/连线/样式编辑、.drawio 文件读写（统一文件视图）、PNG/SVG 导出；AI 可直接编写 .drawio XML 并用页面指令打开编辑
 keywords: [drawio, 绘图, 画图, 图表, 流程图, 架构图, 思维导图, uml, erd, diagram]
 icon: fa-solid fa-diagram-project
-ui:
-  - path: index.html
-    desc: 绘图工作台（工具栏 + 形状面板 + 画布 + 属性面板 + 文件对话框）
 ---
 
 # DrawIO 绘图台

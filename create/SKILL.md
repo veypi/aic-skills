@@ -1,13 +1,10 @@
 ---
 name: create
-version: 1.0.5
+version: 1.0.10
 nickname: create 技能包
 description: AIC 扩展作者手册——把一句人话需求拆成云端/界面/设备三端的实际改动：技能包与数据、界面与页面指令、桌面档案规则、设备命令与常驻服务；含判定流程、字段契约、红线与验收。
 keywords: [create, 扩展, 技能包, 界面, 档案, 规则, 设备, 命令, 服务, 模板]
 icon: fa-solid fa-layer-group
-ui:
-  - path: index.html
-    desc: AIC 扩展能力介绍：做什么、怎么开工
 ---
 
 # create 技能包
@@ -19,9 +16,9 @@ AIC 的扩展落在三个端上，每端有自己的持久化机制和交互协�
 
 | 端 | 负责 | 持久化 | 交互协议 | 能加的东西 | 分篇 |
 |---|---|---|---|---|---|
-| ☁️ 云端 | 存储与服务 | UFS 文件 + 每个包自己的数据表 | HTTP 接口（同源，cookie 身份） | 技能包（说明书/接口/表）、用户空间文件 | `cloud-package.md` `cloud-data.md` |
-| 🖥️ 界面 | 交互与呈现 | 云端固化（技能包文件、用户文件、桌面档案）＋ 页面缓存与临时（本地存储、页面本地文件） | 页面指令（AI 可直接操作页面）+ 页面内事件 | 界面（.html 页面或组件）、桌面档案规则 | `ui-component.md` `ui-profile.md` |
-| ⌨️ 设备 | 执行 | 设备本机配置与状态（`~/.aic`、服务配置），内容从云端取 | 命令行（vsh）与服务命令（MCP/TCP 等，复杂参数走 stdin） | 脚本、原生命令、常驻服务 | `device-cli.md` |
+| ☁️ 云端 | 存储与服务 | UFS 文件 + 每个包自己的数据表 | HTTP 接口（同源，cookie 身份） | 技能包（说明书/接口/表）、用户空间文件 | `references/cloud-package.md` `references/cloud-data.md` |
+| 🖥️ 界面 | 交互与呈现 | 云端固化（技能包文件、用户文件、桌面档案）＋ 页面缓存与临时（本地存储、页面本地文件） | 页面指令（AI 可直接操作页面）+ 页面内事件 | 界面（.html 页面或组件）、typed Profile | `references/ui-component.md` `references/ui-profile.md` |
+| ⌨️ 设备 | 执行 | 设备本机配置与状态（`~/.aic`、服务配置），内容从云端取 | 命令行（vsh）与服务命令（MCP/TCP 等，复杂参数走 stdin） | 脚本、原生命令、常驻服务 | `references/device-cli.md` |
 
 **多数需求横跨多端**（"带数据的应用" = 云端包 ＋ 界面页 ＋ 可选设备命令）。别只做一端就交。
 
@@ -41,16 +38,16 @@ AIC 的扩展落在三个端上，每端有自己的持久化机制和交互协�
 
 | 需求长什么样 | 内容物 | 放哪 | 生效 | 读 |
 |---|---|---|---|---|
-| 一个界面 | `.html` | 技能包 `ui/` / 用户云空间 / 页面本地 | 装载 | `ui-component.md` |
-| 能查数据 | 表 + `api/*.sqlx` | 技能包 | 装载 | `cloud-data.md` |
-| 一个能发布的能力包 | `SKILL.md`（+ 上面两种） | 技能包 | 装载 → 审核发布 | `cloud-package.md` `publishing.md` |
-| 换桌面（换组件/填插槽/换侧栏/排窗口） | 规则文档 | 用户云空间 `.profile/<name>.json` | rules→reload，layout→live | `ui-profile.md` |
-| 设备上多一条命令 | 程序源码 / 脚本 / 服务声明 | 设备本地 | 用户安装 | `device-cli.md` |
+| 一个界面 | `.html` | 技能包 `ui/` / 用户云空间 / 页面本地 | 装载 | `references/ui-component.md` |
+| 能查数据 | 表 + `api/*.sqlx` | 技能包 | 装载 | `references/cloud-data.md` |
+| 一个能发布的能力包 | `SKILL.md`（+ 上面两种） | 技能包 | 装载 → 审核发布 | `references/cloud-package.md` `references/publishing.md` |
+| 换桌面（换组件/填插槽/排窗口） | typed Profile 文档 | 用户云空间 `.profile/<name>.json` | aliases/slots→reload，layout→live | `references/ui-profile.md` |
+| 设备上多一条命令 | 程序源码 / 脚本 / 服务声明 | 设备本地 | 用户安装 | `references/device-cli.md` |
 
 ### ③ 动手前读对应分篇
 
 **只读你要动的那几端**。字段名、约束、寻址方式都在分篇里，照抄比猜准。
-需要向用户解释方案、或判断归属拿不准时，读 `model.md`。
+需要向用户解释方案、或判断归属拿不准时，读 `references/model.md`。
 
 ### ④ 建容器（需要包时才做）
 
@@ -60,11 +57,16 @@ AIC 的扩展落在三个端上，每端有自己的持久化机制和交互协�
    → 返回 `skill_id` 与 `url_prefix`，并落一份 SKILL.md 骨架
 2. 授权：`grant fs /skills/{skill_id}`
 3. 写文件：fs 工具写 `/skills/{skill_id}/...`（fs 路径，与页面 URL 不同段）
+4. 写包根 `manifest.json`（schema 1）：页面清单进 `ui.pages`（页面 id → 包内
+   `ui/<id>.html`）；组件贡献进 `ui.components`，打开规则进 `ui.openers`；设备命令进
+   `host`。可复制 `templates/skill/manifest.json`。**没有 `ui.pages` 的包不出 UI 徽标、
+   不进 launcher 子页面树**；frontmatter 不承担这些声明。
 
 ### ⑤ 按该端的协议实现
 
 - **云端**：包内 API 一律**相对地址**（`api/xxx`，前缀自动补）；不写死 id。
-- **界面**：**完整 HTML 文档**（片段会静默不挂载）；颜色字号一律用平台 token；
+- **界面**：**完整 HTML 文档**（片段会静默不挂载）；页面清单同步写进包根
+  `manifest.json` 的 `ui.pages`；颜色字号一律用平台 token；
   窗口宽度用 `@container`（不是 `@media`）；要让 AI 操作页面就声明 `pageDesc.commands`。
 - **设备**：参数走 stdin；**只入库源码**，构建产物与二进制不进包。
 
@@ -100,7 +102,7 @@ AIC 的扩展落在三个端上，每端有自己的持久化机制和交互协�
 
 - **界面**：能打开；资源无 404；亮/暗主题都正常；声明的页面命令能被 AI 调通。
 - **数据**：接口通；换账号看不到别人的数据；包内无真实用户数据。
-- **档案**：`profile inspect` 里规则在生效表；被拒规则在 rejected 里可查；改 rules 后 reload 生效。
+- **档案**：`profile inspect` 里 aliases/slots 在生效表；被拒项在 rejected 里可查；改 aliases/slots 后 reload 生效。
 - **包**：SKILL.md 可执行、引用完整；包内无二进制/密钥/用户数据；发布前自查过。
 - **设备**：源码在包内、产物不在；正文写全安装/依赖/路径/调用；设备上跑得通。
 
@@ -108,13 +110,13 @@ AIC 的扩展落在三个端上，每端有自己的持久化机制和交互协�
 
 | 分篇 | 讲什么 | 什么时候读 |
 |---|---|---|
-| `model.md` | 三端模型、需求→组合对照表、跨层说明 | 判断不清归属时；需要向用户解释方案时 |
-| `cloud-package.md` | 技能包结构、frontmatter、建行写包、寻址 | 要建包或往包里加文件 |
-| `cloud-data.md` | 表声明、sqlx 接口、用户隔离、SQL 规范、owner 调试直连 | 要存数据或查/修数据 |
-| `ui-component.md` | 完整 HTML 文档、vhtml 语法、样式 token、页面指令 | 要写界面 |
-| `ui-profile.md` | 三类规则、硬约束、生效语义、档案命令面 | 要改桌面 |
-| `device-cli.md` | 命令与服务形态、manifest 字段、真实 MCP/Streamer 契约、源码与产物边界 | 要动设备 |
-| `materials.md` | 共享服务、页面/设备通道、身份边界 | 要调平台能力或设备 |
-| `publishing.md` | 发布流程、审核要点、fork、下架 | 用户说"发布出去" |
+| `references/model.md` | 三端模型、需求→组合对照表、跨层说明 | 判断不清归属时；需要向用户解释方案时 |
+| `references/cloud-package.md` | 技能包结构、frontmatter、建行写包、寻址 | 要建包或往包里加文件 |
+| `references/cloud-data.md` | 表声明、sqlx 接口、用户隔离、SQL 规范、owner 调试直连 | 要存数据或查/修数据 |
+| `references/ui-component.md` | 完整 HTML 文档、vhtml 语法、样式 token、页面指令 | 要写界面 |
+| `references/ui-profile.md` | typed registry + layout、硬约束、生效语义、档案命令面 | 要改桌面 |
+| `references/device-cli.md` | 命令与服务形态、manifest 字段、真实 MCP/Streamer 契约、源码与产物边界 | 要动设备 |
+| `references/materials.md` | 共享服务、页面/设备通道、身份边界 | 要调平台能力或设备 |
+| `references/publishing.md` | 发布流程、审核要点、fork、下架 | 用户说"发布出去" |
 
 模板在 `templates/`（技能包骨架、组件页、档案、服务声明），可复制参考的成品在 `examples/`。

@@ -61,17 +61,17 @@ func TestListAndOpen(t *testing.T) {
 
 func TestVersionFromFrontmatter(t *testing.T) {
 	for name, want := range map[string]string{
-		"browser":       "1.2.8",
-		"cua":           "1.1.3",
-		"blender":       "0.3.3",
-		"create":        "1.0.5",
+		"browser":       "1.2.12",
+		"cua":           "1.1.7",
+		"blender":       "0.3.6",
+		"create":        "1.0.10",
 		"vhtml":         "0.5.1",
-		"office_studio": "1.0.4",
-		"drawio":        "1.0.3",
+		"office_studio": "1.0.5",
+		"drawio":        "1.0.4",
 		"hello":         "1.0.1",
-		"ppt_studio":    "1.0.4",
-		"video_studio":  "1.0.3",
-		"play_with_ai":  "1.0.4",
+		"ppt_studio":    "1.0.5",
+		"video_studio":  "1.0.4",
+		"play_with_ai":  "1.0.5",
 	} {
 		if !slices.Contains(List(), name) {
 			want = ""
@@ -111,7 +111,7 @@ func TestZipRoundTrip(t *testing.T) {
 		t.Fatalf("zip entries = %v, SKILL.md missing", names)
 	}
 	// frontmatter 与打包内容同源。
-	name, version := Frontmatter([]byte("---\nname: demo\nversion: 2.0.0\nui:\n  - path: index.html\n---\nbody\n"))
+	name, version := Frontmatter([]byte("---\nname: demo\nversion: 2.0.0\n---\nbody\n"))
 	if name != "demo" || version != "2.0.0" {
 		t.Errorf("Frontmatter = %q %q", name, version)
 	}
@@ -184,5 +184,44 @@ func TestCreateDeviceExamplesUseRealMCP(t *testing.T) {
 		if !strings.Contains(test, "TestMCPInitializeAndPing") {
 			t.Errorf("%s lacks the SDK initialize + ping contract test", root)
 		}
+	}
+}
+
+func TestCreateUsesCurrentUIAndProfileContracts(t *testing.T) {
+	dir, err := Open("create")
+	if err != nil {
+		t.Fatal(err)
+	}
+	manual := readSkillFile(t, dir, "SKILL.md")
+	for _, name := range []string{"model", "cloud-package", "cloud-data", "ui-component", "ui-profile", "device-cli", "materials", "publishing"} {
+		if !strings.Contains(manual, "`references/"+name+".md`") {
+			t.Errorf("create manual does not link references/%s.md", name)
+		}
+		if strings.Contains(manual, "`"+name+".md`") {
+			t.Errorf("create manual retains bare reference %s.md", name)
+		}
+	}
+	component := readSkillFile(t, dir, "references/ui-component.md")
+	if !strings.Contains(component, "<vslot>") {
+		t.Error("ui-component must teach vslot")
+	}
+	for _, path := range []string{
+		"references/ui-profile.md",
+		"examples/profile_demo/profile.json",
+		"templates/profile/slot.json",
+	} {
+		body := readSkillFile(t, dir, path)
+		if !strings.Contains(body, "/ai/msg/tools/exec.html") || !strings.Contains(body, "actions") {
+			t.Errorf("%s does not use the verified exec actions outlet", path)
+		}
+	}
+	for _, path := range []string{"templates/profile/alias.json", "templates/profile/slot.json", "templates/profile/components.json"} {
+		readSkillFile(t, dir, path)
+	}
+	if notes := readSkillFile(t, dir, "examples/notes/ui/index.html"); !strings.Contains(notes, "content.text") {
+		t.Error("notes example must support Blob text content")
+	}
+	if data := readSkillFile(t, dir, "references/cloud-data.md"); !strings.Contains(data, "JSON 文本") {
+		t.Error("cloud-data must document JSON text binding")
 	}
 }

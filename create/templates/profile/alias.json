@@ -1,0 +1,9 @@
+{
+  "v": 1,
+  "base": "default",
+  "registry": {
+    "aliases": [
+      { "match": "/ai/box.html", "url": "/ai/box.html" }
+    ]
+  }
+}

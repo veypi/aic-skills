@@ -1,11 +1,7 @@
 ---
 name: browser
-version: 1.2.8
+version: 1.2.12
 description: 用设备上的 Chrome 实时查看与操作网页：CDP 通道供 AI 驱动浏览器，UI 提供同一浏览器的实时画面与人工交互。
-ui:
-  - path: index.html
-    desc: 设备窗口列表、导航与实时键鼠交互
-    handles: [http, https]
 ---
 
 # Browser
@@ -15,11 +11,16 @@ UI 与 AI 共享同一个浏览器实例和同一个页面，人工与 AI 可以
 
 ## 安装与构建
 
-```sh
-# 下载、解包并注册，运行期生效，无需重启 pod/aic
-commands install browser
+Desktop 与 CLI 发行包**预装本包并附带预编译的 `bin/browser`**：pod 启动时自动定版到
+`~/.aic/packages/browser`，开箱即有 `browser` 命令，无需安装与 Go 工具链；包随 pod
+版本整体更新，不可 `commands install/update/uninstall`。
 
-# 在设备安装目录编译（云端包只保存源码，不保存二进制）
+源码运行 pod（没有随包二进制的环境）才需要手动构建：
+
+```sh
+# 平台 exec 先允许写设备包目录（本机 owner 终端按本机权限执行）
+grant fs <设备用户 home 的绝对路径>/.aic/packages/browser
+
 cd ~/.aic/packages/browser/src
 cp go.mod.example go.mod
 go mod tidy
@@ -111,7 +112,7 @@ echo '{"url":"https://example.com/"}' | browser navigate --input - --json
 
 | 文件键或 env | 作用 |
 | --- | --- |
-| `AIC_BROWSER_PATH` | Chrome 可执行文件路径（兼容 `AGENT_BROWSER_EXECUTABLE_PATH`） |
+| `AIC_BROWSER_PATH` | Chrome 可执行文件路径 |
 | `BROWSER_SECURE_ORIGINS` | 逗号/换行分隔的 http origin，绕开 Chrome 自动 HTTPS 升级 |
 | `BROWSER_WINDOW_SIZE` | 视口尺寸，默认 `1280x720`（720p）；影响截图帧的比例 |
 | `BROWSER_PROFILE` | Chrome 资料目录，默认 `~/.aic/chrome-profile`（固定目录，登录态跨重启保留；`~` 会展开，目录自动创建） |
@@ -127,10 +128,9 @@ echo '{"url":"https://example.com/"}' | browser navigate --input - --json
 1. 内网 http 站点若被 Chrome 自动升级到 https，将 origin 写入 `BROWSER_SECURE_ORIGINS`。
 2. 浏览器服务通常需要 `commands config browser --no-sandbox`，否则 Chrome 自身沙箱无法初始化。
 3. 服务调用与流权限统一为 `grant cmd browser`。
-4. 更新设备包：`commands update browser`；更新后按本文重新构建。
-5. 移除设备包：`commands uninstall browser`（该包的命令定义级配置随包清除）。
-6. 视口比例固定为 `BROWSER_WINDOW_SIZE`；不做移动端模拟。
-7. 不做远端剪贴板读取与本地文件拖放。
+4. 预装包随 pod 版本更新（启动定版为内嵌内容）；不可 `commands update/uninstall`。
+5. 视口比例固定为 `BROWSER_WINDOW_SIZE`；不做移动端模拟。
+6. 不做远端剪贴板读取与本地文件拖放。
 8. 同一个资料目录同一时刻只能有一个 Chrome 实例：不要拿 `BROWSER_PROFILE` 指向的目录
    再手动开一个 Chrome（会被 SingletonLock 挡住，表现为 DevTools 端点一直等不到）。
    想人工操作同一个浏览器，用 `BROWSER_HEADLESS=0` 让服务自己把窗口显示出来。

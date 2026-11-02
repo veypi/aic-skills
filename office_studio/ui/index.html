@@ -137,7 +137,7 @@
   // 打开/跳转：按类型进入对应编辑器子页面（同窗导航；裸赋值注册 $data，模板事件才能解析）
   go = (p) => {
     const page = kindOf(p) === 'word' ? 'word' : 'excel'
-    $router.push(page + '?path=' + encodeURIComponent(p))
+    $router.push(page + '?url=' + encodeURIComponent(p))
   }
 
   // 另存为对话框的初始目录：最近打开文件所在目录（无历史则根）
@@ -172,7 +172,7 @@
       })
       if (!f) return
       const page = isWord ? 'word' : 'excel'
-      $router.push(page + '?path=' + encodeURIComponent(f.path) + '&new=1')
+      $router.push(page + '?url=' + encodeURIComponent(f.path) + '&new=1')
     } catch (e) { home_err = '新建失败：' + errMsg(e) }
   }
 

@@ -117,7 +117,7 @@ pageDesc = {
 
 - 组件通过属性传参：`<user-card name="Tom" :age="userAge" v:score="score" disabled></user-card>`
   （静态值 / 单向 / 双向 / 布尔存在即 true）。
-- 宿主组件可以用 `<slot>` 留出口，父级投影内容进去；投影内容不是组件的一部分，作用域仍属父级。
+- 宿主组件可以用 `<vslot>` 留出口，父级用 `vslot="名称"` 投影内容；投影内容不是组件的一部分，作用域仍属父级。
 - 往插槽里放**自定义片段**走档案规则（slot），见 [ui-profile.md](ui-profile.md)——片段是纯结构的。
 
 ## 8. 高频坑
@@ -134,7 +134,7 @@ pageDesc = {
 10. 同页 query 变化不会重建组件 → 监听 `$router.onChange(...)` 自己刷新。
 11. 运行时创建的元素用相对路径 → 不会被加前缀，用 `$mod.scoped + '/x.png'`。
 12. 自带 `env.js` → 平台有固定出口，不生效；逻辑别写 env.js。
-13. 包页面里的 `<a href="/绝对路径">` → 会被路由器拦下并按包作用域重写，跳不出去；改用按钮 + `$mod.$os.open(url)`。
+13. 跳其他应用或 `/fs/...` 文件时，包页面里的 `<a href="/绝对路径">` 会被路由器拦下并按包作用域重写；改用按钮 + `$mod.$os.open(url)`。**应用内页面导航只用 `$router.push`**，`$os.open` 只用于跨应用、文件或 Launcher/OS 等特殊开窗场景。
 
 ## 9. 验收
 

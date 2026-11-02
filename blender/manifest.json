@@ -1,8 +1,8 @@
 {
   "schema": 1,
-  "commands": {
+  "host": {
     "blender": {
-      "run": ["bin/blender"],
+      "run": ["uvx", "blender-mcp"],
       "protocol": "mcp",
       "idle_timeout": "30m"
     }

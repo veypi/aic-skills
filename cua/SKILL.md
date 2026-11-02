@@ -1,25 +1,27 @@
 ---
 name: cua
-version: 1.1.3
+version: 1.1.7
 description: 通过设备上的官方 CuaDriver MCP 操作应用、原生窗口和浏览器。
-ui:
-  - path: index.html
-    desc: 远程查看和控制设备桌面、应用窗口
 ---
 
 # CUA
 
 Pod 经统一 commands 机制拉起本包自带启动器（`src/`，Go）：启动器负责定位官方
 `cua-driver` 并以 `mcp` 运行（stdio 直通）。工具名、描述、参数、结果全部来自上游；
-pod 对 cua 没有任何专属代码与配置——本包与普通第三方包同等待遇，只是官方预装。
+pod 对 cua 没有任何专属代码与配置——本包与普通第三方包同一 manifest 契约，只是作为官方包随发行预装。
 
 ## 安装与构建
 
-```sh
-# 下载、解包并注册，运行期生效，无需重启 pod/aic
-commands install cua
+Desktop 与 CLI 发行包**预装本包并附带预编译的 `bin/cua`**：pod 启动时自动定版到
+`~/.aic/packages/cua`，无需 `commands install` 与 Go 工具链；包随 pod 版本整体更新，
+不可 `commands install/update/uninstall`。
 
-# 在设备安装目录编译（云端包只保存源码，不保存二进制）
+源码运行 pod（没有随包二进制的环境）才需要手动构建：
+
+```sh
+# 平台 exec 先允许写设备包目录（本机 owner 终端按本机权限执行）
+grant fs <设备用户 home 的绝对路径>/.aic/packages/cua
+
 cd ~/.aic/packages/cua/src
 cp go.mod.example go.mod
 go mod tidy
@@ -37,7 +39,7 @@ go build -o ../bin/cua .
 commands config cua --no-sandbox
 ```
 
-Desktop 随包提供 CuaDriver 0.33.2，默认注册为 `cua`，第一次调用时启动。CLI 可安装官方 CuaDriver，或通过 `AIC_CUA_DRIVER_PATH` 指定可执行文件。macOS 按上游安装布局把官方 CuaDriver.app 安装到 `/Applications/CuaDriver.app`（可复制 Desktop 的 resources/cua/darwin/CuaDriver.app）；仅把 app 放在资源目录不会完成系统安装。官方 MCP 会按应用名启动 daemon，客户端与安装的驱动版本应一致。升级后先用 `cua-driver stop` 停止旧 daemon。macOS 使用 CuaDriver.app 的辅助功能和屏幕录制授权身份；使用 `cua-driver permissions grant` 引导授权，`cua-driver doctor` 诊断。
+Desktop 随包提供 CuaDriver 0.33.2 运行资源；预装定版后即注册 `cua`，第一次调用时启动。CLI 可安装官方 CuaDriver，或通过 `AIC_CUA_DRIVER_PATH` 指定可执行文件。macOS 按上游安装布局把官方 CuaDriver.app 安装到 `/Applications/CuaDriver.app`（可复制 Desktop 的 resources/cua/darwin/CuaDriver.app）；仅把 app 放在资源目录不会完成系统安装。官方 MCP 会按应用名启动 daemon，客户端与安装的驱动版本应一致。升级后先用 `cua-driver stop` 停止旧 daemon。macOS 使用 CuaDriver.app 的辅助功能和屏幕录制授权身份；使用 `cua-driver permissions grant` 引导授权，`cua-driver doctor` 诊断。
 
 调用设备在 exec 外层通过 `1host` 选择。命令别名 `cua` 的授权（`grant cmd cua`）允许使用该设备服务；工具内部的权限与路径限制由 CuaDriver 执行。原生 fs 的路径规则不等同于对桌面自动化的隔离。
 
@@ -50,13 +52,13 @@ cua get_window_state --pid 123 --window_id 456 --session work --json
 cua get_window_state --help      # 按 inputSchema 渲染参数表
 ```
 
-标量参数自动映射为同名 flag（如 `--pid 123`）；复杂对象走 `--input JSON`。调试直通保留：`mcp tools|describe|call cua ...`。
+标量参数自动映射为同名 flag（如 `--pid 123`）；复杂对象走 `--input JSON`。工具目录用 `cua`（无参），原始 schema 用 `commands info cua --schema`。
 
 `pid`、`window_id` 使用上游枚举结果。动作使用最新观察返回的 `element_token`；同一工作过程沿用同一 `session`。引用失效后重新观察，不能重放可能已执行的动作。参数以当前 `cua <tool> --help` 渲染的官方 schema 为准，不传入自定义 `locator`、`ref` 或 `view_id`。
 
 `--input -` 从 stdin 读取 JSON。命令输出标准 MCP 结果，包含上游 `content`、可选 `structuredContent` 和 `isError`。图片保留为 MCP image 内容，不转换为自定义观察对象。
 
-UI `/skills/cloud/cua` 经 `$hosts.openTools(hostId)` 的 `execCall` 调用同一命令面（`cua <tool> --json`），支持选择设备、主显示器桌面或应用窗口。截图调用添加 `--image-preview 1280x720`，Pod 在输出前等比缩入 1280×720，转为不超过 600 KiB 的 JPEG，小图不放大；普通 MCP 调用默认保留原图。工具调用使用正式 `cua <tool>`；仅 schema/能力探测使用 `mcp describe` 的调试输出。空闲时每次完成后间隔 1 秒刷新，窗口截图关闭辅助功能树遍历；这不是连续视频流。查看端使用独立随机 `session`，不会覆盖 AI 工作会话中的观察引用。
+UI `/skills/cloud/cua` 经 `$hosts.openTools(hostId)` 的 `execCall` 调用同一命令面（`cua <tool> --json`），支持选择设备、主显示器桌面或应用窗口。截图调用添加 `--image-preview 1280x720`，Pod 在输出前等比缩入 1280×720，转为不超过 600 KiB 的 JPEG，小图不放大；普通 MCP 调用默认保留原图。工具调用使用正式 `cua <tool>`；仅 schema/能力探测使用 `commands info cua --schema`。空闲时每次完成后间隔 1 秒刷新，窗口截图关闭辅助功能树遍历；这不是连续视频流。查看端使用独立随机 `session`，不会覆盖 AI 工作会话中的观察引用。
 
 窗口列表只保留可见、非最小化且有有效尺寸的候选，不逐个截图探测。若选中后发现窗口已最小化或没有渲染内容，移出列表、清空画面并暂停刷新；恢复窗口后可刷新列表或重试，不自动激活或恢复窗口。桌面截图参数读取当前设备 `cua get_desktop_state --help` 的实际 schema，只有明确支持时才传 `max_image_dimension`，每次重连重新读取。
 

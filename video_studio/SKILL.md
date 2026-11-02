@@ -1,13 +1,10 @@
 ---
 name: video_studio
-version: 1.0.3
+version: 1.0.4
 nickname: 视频工坊
 description: 浏览器内一站式视频制作：AI 文件驱动编辑 + 可视化舞台/时间轴，真实 3D 场景、关键帧动画、逐字弹簧、素材拖拽剪辑、AI 配音（TTS），WebCodecs 硬编直接导出 MP4
 keywords: [video, 视频, 剪辑, 动画, 3D, MP4, 配音, TTS, 时间轴, WebCodecs]
 icon: fa-solid fa-clapperboard
-ui:
-  - path: index.html
-    desc: 主工作台（场景列表 + 舞台 + 属性面板 + 时间轴 + 素材）
 ---
 
 # Video Studio · 视频制作

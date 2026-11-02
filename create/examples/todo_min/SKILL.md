@@ -1,11 +1,9 @@
 ---
 name: todo_min
+version: 0.1.0
 nickname: 待办清单示例
 description: 界面与 API 组合示例（当前 v6.1 格式）：待办清单——ui 页面 + tables 声明 + sqlx 接口 + pageDesc 指令的完整链路，含行级隔离与自测指令
 keywords: [示例, 待办, tables, sqlx, 数据面, pageDesc]
-ui:
-  - path: index.html
-    desc: 待办清单主界面
 ---
 
 # todo_min（最小活 skill 示例）

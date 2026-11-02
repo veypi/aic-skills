@@ -42,13 +42,23 @@ function diagnosticText(value, depth = 0) {
   return safe.slice(0, 640) + (safe.length > 640 || text.length > 4096 ? '… (diagnostic shortened)' : '');
 }
 
-async function cuaCommand(connection, command, options) {
+// cuaLabel 命令标签（诊断用）：服务命令 `cua <tool>` 与工具目录命令
+// `commands info cua --schema` 各给一个可读名。
+function cuaLabel(command) {
+  const match = command.match(/^((?:mcp (?:call|describe) )?)cua ([a-zA-Z0-9_]+)/);
+  if (match) return `${match[1]}cua ${match[2]}`;
+  if (/^commands info cua\b/.test(command)) return 'commands info cua';
+  return 'CUA command';
+}
+
+// cuaExecRaw 执行设备命令并做传输层校验（截断 / 空输出 / 非法 JSON）；返回解析后
+// 的 JSON 值与诊断上下文。MCP 工具结果（对象）与工具目录（数组）共用这段。
+async function cuaExecRaw(connection, command, options) {
   const out = await connection.execCall(command, options);
   const content = typeof out.content === 'string' ? out.content : '';
   let bytes;
   const outputBytes = () => bytes ??= new TextEncoder().encode(content).byteLength;
-  const match = command.match(/^((?:mcp (?:call|describe) )?)cua ([a-zA-Z0-9_]+)/);
-  const label = match ? `${match[1]}cua ${match[2]}` : 'CUA command';
+  const label = cuaLabel(command);
   const rawExit = String(out.attrs?.exit_code ?? 'unknown');
   const exitCode = /^-?\d{1,10}$/.test(rawExit) ? rawExit : 'unknown';
   const context = () => `${label} (stdout ${outputBytes()} bytes, exit ${exitCode})`;
@@ -69,6 +79,11 @@ async function cuaCommand(connection, command, options) {
       : ' The response may be incomplete or truncated.';
     throw failure('invalid_response', `${context()}: command returned invalid JSON${details}.${hint}`);
   }
+  return {result, context, details, exitCode, stderr};
+}
+
+async function cuaCommand(connection, command, options) {
+  const {result, context, details, exitCode, stderr} = await cuaExecRaw(connection, command, options);
   if (!result || typeof result !== 'object' || Array.isArray(result)
       || (result.content != null && !Array.isArray(result.content))) {
     throw failure('invalid_response', `${context()}: expected a valid MCP JSON object${details}`);
@@ -84,6 +99,21 @@ async function cuaCommand(connection, command, options) {
     throw failure(code, message);
   }
   return result;
+}
+
+// cuaToolSchema 取单个工具的 inputSchema。设备命令面：`commands info cua --schema`
+// 返回该服务全部工具的原始描述（数组），按名挑出目标工具。
+async function cuaToolSchema(connection, name, options) {
+  const {result, context, details, exitCode} = await cuaExecRaw(connection, 'commands info cua --schema', options);
+  if (!Array.isArray(result)) {
+    throw failure('invalid_response', `${context()}: expected a tool list${details}`);
+  }
+  if (exitCode !== '0') {
+    throw failure('cua_error', `${context()}: command failed${details}`);
+  }
+  const tool = result.find(item => item && item.name === name);
+  if (!tool) throw failure('invalid_response', `${context()}: unknown tool "${name}"${details}`);
+  return tool;
 }
 
 export async function cuaCall(connection, name, args = {}, options = {}) {
@@ -191,7 +221,7 @@ export class CuaSession {
     try {
       if (describe) {
         if (!/^[a-zA-Z0-9_]+$/.test(name)) throw new Error('Invalid CUA command');
-        return await cuaCommand(connection, `mcp describe cua ${name} --json`, {...options, signal: controller.signal});
+        return await cuaToolSchema(connection, name, {...options, signal: controller.signal});
       }
       return await cuaCall(connection, name, {...args, session}, {...options, signal: controller.signal});
     }

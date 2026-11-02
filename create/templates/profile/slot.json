@@ -1,0 +1,9 @@
+{
+  "v": 1,
+  "base": "default",
+  "registry": {
+    "slots": [
+      { "component": "/ai/msg/tools/exec.html", "slot": "actions", "url": "/fs/cloud/u/admin/slot.html", "mode": "override" }
+    ]
+  }
+}

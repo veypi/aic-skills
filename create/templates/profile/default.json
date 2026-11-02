@@ -1,6 +1,11 @@
 {
   "v": 1,
   "base": "",
-  "rules": [],
+  "registry": {
+    "components": {},
+    "openers": [],
+    "aliases": [],
+    "slots": []
+  },
   "layout": null
 }

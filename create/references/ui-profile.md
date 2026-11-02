@@ -1,25 +1,23 @@
-# 桌面档案（profile）
+# 桌面档案（Profile）
 
-> 面向"不了解平台实现"的 AI。目标：写出一份能生效的桌面档案，并知道哪些规则一定会被拒。
+> 面向 AI 的现行契约。Profile 是 typed registry + layout；不要写旧 `rules[]`、`kind:"dock"` 或 layout v5。
 
-## 1. 是什么
+## 1. 存储与生效模型
 
-档案 = 一份 JSON 定制文档，决定**桌面长什么样**：把某个组件换成另一个、给组件的插槽填上
-自己的片段、换掉侧栏、记住窗口排布。
+Profile 分为：
 
-它属于**界面层**（改的是界面怎么组装），但**存在云端**（规则文件在用户云空间）。
+- **saved registry**：档案里保存的期望状态，AI 可以直接编辑；
+- **effectiveRegistry**：本次装载后实际生效的个人定制，带 `generation`、`rejected` 和 `diagnostics`；
+- **layout**：窗口树与窗口记录，独立于贡献装配。
 
-两类存储：
+存储位置：
 
-| | 正式档 | 临时档 |
+| 类型 | 位置 | 生命周期 |
 | --- | --- | --- |
-| 位置 | 用户云空间 `/u/{uid}/.profile/<name>.json`（同名覆盖前写 `.bak`） | 页面本地（会话级工作副本，自动保存，保留最近 20 份） |
-| 生命周期 | 长期、跨设备漫游 | 随会话；刷新/分享链接仍指向它 |
-| 何时产生 | 手动保存 | 第一次改动桌面时自动物化 |
+| 正式档 | `/u/{uid}/.profile/<name>.json` | 长期保存，同名覆盖前写 `.bak` |
+| 临时档 | 页面 localStorage | 首次修改桌面时物化，保留最近 20 份 |
 
-URL 形态：`?profile=` 缺省 = 读 `default` 正式档；`?profile=none` = 干净单窗（不读档不落档）；
-`?profile=<name>` = 以具名正式档为底；`?profile=tmp_<id>` = 指向临时档。
-**`tmp_` 前缀保留给临时档**，正式档名不能以它开头。
+URL 参数：缺省读取 `default`；`?profile=none` 不读档；`?profile=<name>` 读取具名档；`?profile=tmp_<id>` 读取临时档。`tmp_` 是保留前缀。
 
 ## 2. 文档结构
 
@@ -27,120 +25,87 @@ URL 形态：`?profile=` 缺省 = 读 `default` 正式档；`?profile=none` = �
 {
   "v": 1,
   "base": "default",
-  "rules": [
-    { "kind": "alias", "match": "/ai/box.html", "url": "/ai/box.html" },
-    { "kind": "slot",  "component": "/ai/box.html", "slot": "footer", "url": "/fs/cloud/u/admin/slot.html", "mode": "override" },
-    { "kind": "dock",  "edge": "auto", "url": "/os/dock.html" }
-  ],
+  "registry": {
+    "components": { "os.dock": "your-skill:dock" },
+    "openers": [
+      { "match": { "extensions": ["docx"] }, "page": "office_studio:word" },
+      { "match": { "schemes": ["http", "https"] }, "page": "browser:index" }
+    ], 
+    "aliases": [
+      { "match": "/ai/box.html", "url": "/ai/box.html" }
+    ],
+    "slots": [
+      {
+        "component": "/ai/msg/tools/exec.html",
+        "slot": "actions",
+        "url": "/fs/cloud/u/admin/slot.html",
+        "mode": "override"
+      }
+    ]
+  },
   "layout": {
-    "v": 5,
-    "tree": { "k": "split", "dir": "row", "ratio": 0.5, "a": { "k": "leaf", "id": "w-1" }, "b": { "k": "leaf", "id": "w-2" } },
+    "v": 1,
+    "tree": { "k": "leaf", "id": "w-1" },
     "activeId": "w-1",
-    "windows": [ { "id": "w-1", "surface": "route", "position": "tile", "url": "/agents/coder", "name": "对话", "minimized": false } ]
+    "maximizedId": null,
+    "windows": []
   }
 }
 ```
 
-- `rules[]` = **替换类规则**（alias / slot / dock）：改动需要 reload 才生效。
-- `layout` = **布局档**（窗口树 + 窗口记录）：改动立即生效（live）。
-- `base` 只在临时档里有意义（它从哪个正式档复制而来）。
+| 字段 | 含义 | 当前生效方式 |
+| --- | --- | --- |
+| `registry.components` | point → 组件贡献引用 | 第一阶段只保存，不自动绑定 |
+| `registry.openers[]` | 有序打开规则：`{match:{schemes/extensions/prefixes}, page:"<skill_id>:<page_id>"}` | 生效：顺序即优先级，第一个命中生效；用户表先于默认表（内置注册 + 包 manifest 聚合） |
+| `registry.aliases[]` | 个人组件落点定制 | `apply` 后注册生效 |
+| `registry.slots[]` | 个人插槽投影定制 | `apply` 后注册生效 |
+| `layout` | v1 窗口树和窗口记录 | 由 OS 布局管道消费 |
 
-示例里的恒等 alias 是安全占位，用来验证规则链，不会替换组件。真正替换时，`url` 必须指向**现存且接口兼容**
-的平台组件；通过目录白名单只代表允许装载，不代表任意两个组件都能互换。slot 的宿主与槽名也必须实际存在。
+**Profile 不复制 manifest 内容。** Skill 页面与组件声明以包根 `manifest.json` 为准；components 只保存贡献引用。openers 是有序规则表（规则 + 打开点），不再是贡献引用——默认表由内置注册应用与各包 manifest openers 聚合而成，用户表优先并可调序。
 
-## 3. 三类规则
+## 3. aliases 与 slots
 
-### alias —— 换组件落点
-
-| 字段 | 含义 |
-| --- | --- |
-| `match` | 被替换的组件路径（平台组件路径，如 `/ai/box.html`） |
-| `url` | 替换目标（**也必须是平台组件路径**） |
-
-- `match` 以 `.html` 结尾 = 精确替换这一个文件；不以 `.html` 结尾 = 目录前缀替换
-  （`/ai` 覆盖 `/ai/**`，段边界匹配，不含 `/aix`）。
-- 精确键的 `url` 必须以 `.html` 结尾；前缀键的 `url` 必须不以 `.html` 结尾。
-- 键必须是小写路径段，不能有空段、`.`、`..`。
-
-### slot —— 填组件的插槽
+### alias
 
 | 字段 | 含义 |
 | --- | --- |
-| `component` | 宿主组件路径（它的运行期落点） |
-| `slot` | 插槽名（空串 = 默认插槽） |
-| `url` | 片段文件路径（**必须在本人空间**） |
-| `mode` | `override`（默认，片段优先）或 `soft`（片段只压过组件原生内容） |
+| `match` | 被替换的平台组件路径；`.html` 结尾是精确键，否则是段边界前缀键 |
+| `url` | 替换目标；精确键目标以 `.html` 结尾，前缀键目标不以 `.html` 结尾 |
 
-片段是**惰性模板**：
-
-- `<script>` / setup / heads **永不执行**；
-- 片段里**禁止数据绑定**（`{{ }}`、`:x`、`v-x` 等）与**主动内容**（内联 `on*`、
-  `iframe` / `object` / `embed` / `form`、`javascript:` / `data:text/html` 链接）；
-- `<style>` 按片段自身作用域注入，**`unscoped` 不生效**；禁 `@import`、外链 `url(http…)`；
-- 片段只放本人空间：云端私有文件写完整组件 URL `/fs/cloud/u/{uid}/...`，公共资源用 `/public/{uid}/...`；裸 `/u/{uid}/...` 是 fs 工具路径，不能用于这里的 `url`。
-
-优先级：宿主插槽同时有"父级投影"和"片段"时，`override` 模式片段优先，`soft` 模式投影优先。
-
-### dock —— 换侧栏
+### slot
 
 | 字段 | 含义 |
 | --- | --- |
-| `url` | 侧栏组件（平台组件；侧栏不受"保留名单"限制） |
-| `edge` | `left`（竖道）/ `top`（横道）/ `auto`（按窗口宽高比自动选） |
+| `component` | 宿主组件路径 |
+| `slot` | 槽名，空串是默认槽 |
+| `url` | 本人空间的片段 URL |
+| `mode` | `override`（默认）或 `soft` |
 
-## 4. 硬约束（越界必被拒）
+现有装载约束继续有效：alias 目标是平台组件，slot 片段位于本人空间；禁止 `..` 穿越；平台保留组件不可被 alias 替换；真正改指向的 alias 与同一组件的 slot 互斥。无效项进入 `rejected`，不会伪装成已生效。
 
-1. **目标白名单**：`alias` / `dock` 的 `url` 只能指向**平台自带目录**
-   （`/ai/`、`/os/`、`/page/`、`/layout/`、`/shared/`、`/widgets/`、`/assets/`）。
-   slot 片段的 `url` 只能指向**本人空间**。
-   ——这条决定了"用户自写的组件不能顶替平台组件"。
-2. **URL 归一化后判定**：白名单按 URL 语义归一化后的落点判断，档案里**禁止 `..` 段**
-   （显式报错，不静默改写目标）。
-3. **保留名单**：`/os/`、`/layout/`、`/vb`、`/page/admin` 不可被替换——**同时约束键与目标**
-   （外壳、认证、管理页不能被换掉）。
-4. **注册契约**：键/值/槽名的形态不合即被拒（形状校验与平台注册器同源）。
-5. **alias 与 slot 对同一组件互斥**：组件被 alias 整体换掉后，它原来的 slot 键永不命中——
-   装载时该 slot 规则会被丢弃并告警（只看**注册成功**的 alias；失败的 alias 不牵连你的 slot）。
-6. **坏规则单条丢弃 + 告警**，不整档作废；被拒的规则能在 `profile inspect` 里看到。
+## 4. AI 编辑并生效
 
-## 5. 生效语义
+1. 先执行 `profile inspect`，确认当前 saved、effective 和 rejected。
+2. 用 fs 写面编辑 `/u/{uid}/.profile/<name>.json`。
+3. 执行 `profile apply <name>`。该命令显式切档并 reload，aliases/slots 随后生效。
+4. 再执行 `profile inspect` 验收。
 
-- `rules` 改动 → **需要 reload**（整页重载后生效）；`layout` 改动 → **立即生效**。
-- 加载与查看**不产生副作用**；切换档案是显式动作（`apply`）。
-- 第一次改动桌面（开窗/拖动/关窗/改规则）→ 自动物化临时档，并把地址栏换成 `?profile=tmp_<id>`。
-- **保存 = 固化**：校验 → 写 `/u/{uid}/.profile/<name>.json` + 同名 `.bak` →
-  临时档清成纯引用（地址栏回到 `?profile=<name>`）。
-  固化时会剥掉易失键（`session_id` 等）——正式档存路由身份，不存会话绑定。
-- 任何档解析失败 → 空档回落 + 告警；**定制不会砖平台**。
+`generation` 每次成功装载递增；并发读取时只有最新一次 load 可以提交，旧异步结果不得覆盖新状态。保存到档案不等于 Skill 贡献已生效，必须区分 `registry` 与 `effectiveRegistry`。
 
-## 6. 命令面
-
-在页面上下文执行（`exec 1host=page`）：
+## 5. 命令面
 
 | 命令 | 作用 |
 | --- | --- |
-| `profile list` | 列正式档（`/u/{uid}/.profile/`） |
-| `profile save <name>` | 把当前生效状态固化为正式档（剥易失键、备份 `.bak`、临时档清回纯引用；无效规则剔除后存并列出） |
-| `profile apply <name>` | 切到具名档（规则变更需 reload，自动整页重载） |
-| `profile revert` | 弃临时档，回到底档并重载 |
-| `profile inspect` | 打印当前生效面：来源 / base / 临时档 / 指纹 / 规则 / 生效规则表 / **被拒清单** |
+| `profile list` | 列出正式档 |
+| `profile save <name>` | 保存当前 saved registry 与 layout，写 `.bak` 并清理临时档 |
+| `profile apply <name>` | 切换到具名档并 reload |
+| `profile revert` | 弃临时档，回到底档并 reload |
+| `profile inspect` | 输出来源、saved registry、effectiveRegistry、generation 和 rejected |
 
-**写档案前先 `profile inspect`**：看清当前生效表与被拒清单，再动手，能省掉一轮试错。
+## 6. 验收
 
-## 7. 验收
-
-- `profile inspect` 里规则出现在生效规则表（不是 rejected）。
-- 改 `rules` 后 reload 生效；改 `layout` 立即生效。
-- 保存后再 `profile inspect`，base 指向新正式档、临时档清空。
-- 被拒规则有明确原因（白名单/保留名单/契约/互斥），不是"配了没生效"。
-
-## 8. 高频坑
-
-1. 把"改页面内容"当成档案 → 那是 UI 组件的事，档案管的是桌面结构。
-2. alias 目标指向用户自己写的文件 → 必被拒（白名单只放平台自带目录）。
-3. 档里写了 `..` 段 → 必被拒（不做静默改写）。
-4. 精确键（`.html`）配了目录目标（或反之）→ 注册契约不合，直接被拒。
-5. 同一组件既 alias 又 slot → slot 死规则，告警丢弃。
-6. 以为"改了 rules 会立刻生效" → 需要 reload。
-7. 正式档名以 `tmp_` 开头 → 名字被保留前缀占用，直接报错。
-8. 分享 `?profile=tmp_<id>` 链接给别人 → 对方机器上没有这个临时档，会回退 default 正式档并告警。
+- 文档只有 `registry`，没有旧 `rules`；layout 使用 `v:1`。
+- AI 编辑正式档并 apply 后，alias/slot 出现在 effectiveRegistry。
+- components 引用只保存不生效；openers 有序规则表生效，坏规则进 rejected。
+- 无效个人定制能在 rejected 中看到原因。
+- 保存后再次 inspect，base、临时档和 generation 符合预期。

@@ -38,6 +38,7 @@ insert into items (user_id, title, qty) values (:user_id, :title, :qty)
 - **`user_id` 由服务端注入**（取当前登录身份），客户端不能覆盖——身份不可伪造。
 - 查询必须带 `user_id = :user_id` 过滤；全表拉取要加 LIMIT。
 - 返回形态：查询返回 `{ rows: [...] }`；写入返回受影响行数/空对象。
+- `json` 字段的 SQLx 绑定值必须是 **JSON 文本**：页面或 AI 传对象/数组前先 `JSON.stringify`，查询返回后再 `JSON.parse`；不要直接绑定对象，否则数据库驱动会报 `unsupported type map[string]interface {}`。
 
 ## 3. 怎么调
 

@@ -1,11 +1,9 @@
 ---
 name: notes
+version: 0.1.0
 nickname: 笔记示例
 description: 文件驱动型示例：页面浏览/编辑用户空间的 .md 文件（$fs 读写 + 打开/另存为对话框 + pageDesc 指令），演示"AI 写文件、页面展示"的协作模式
 keywords: [示例, 文件, $fs, markdown, 指令]
-ui:
-  - path: index.html
-    desc: 笔记浏览/编辑器
 ---
 
 # notes（文件驱动示例）

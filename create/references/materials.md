@@ -54,9 +54,17 @@
 ## 5. 文件与导出（页面常用）
 
 ```js
+// 文本读取统一处理 string | Blob；不要在非字符串时回退成空串
+readText = async (path) => {
+  const r = await $mod.$fs.readFile(path)
+  if (typeof r.content === 'string') return r.content
+  if (r.content && typeof r.content.text === 'function') return await r.content.text()
+  throw new Error('unsupported text content: ' + path)
+}
+
 // 打开文件（平台选择器）
 const pick = await $mod.$fs.pickFiles({ accept: ['.md', '.txt'], multiple: false, start: dir })
-if (pick) { text = (await $mod.$fs.readFile(pick.path)).content }
+if (pick) { text = await readText(pick.path) }
 
 // 另存为（只返回目标路径，自行写入）
 const target = await $mod.$fs.pickSavePath({ name: current || 'a.md', ext: 'md', start: dir })
@@ -76,7 +84,7 @@ saveBlob = (name, blob) => {
 
 ## 6. 安全边界
 
-- 设备服务使用 `mcp.<alias>` 命令权限，拒绝时按现有 grant 流程申请。
+- 设备服务命令使用别名本身的命令权限（`grant cmd <alias>`），拒绝时按现有 grant 流程申请。
 - 官方 browser/CUA 以设备权限运行；**原生 fs 规则不隔离浏览器/桌面操作**。
 - 第三方服务默认运行在设备沙箱内；`no_sandbox` 只能由设备所有者在配置中显式设置，技能或工具参数不能借此提权。
 - 页面/云端都不接入 MCP 协议；MCP 仅在 Pod 内部。

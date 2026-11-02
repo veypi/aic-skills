@@ -4,6 +4,24 @@
 
 两个版本面：**模块版本**（本文件 / tag `vX.Y.Z`，Go 依赖面）与**技能版本**（各 `SKILL.md` frontmatter 的 `version:`，进入 `skills.builtin` 指纹）。内容更新 bump 技能版本以触发自动定版；事件执行时无条件整包覆盖，不做版本大小比较。契约或结构变化 bump 模块版本。
 
+## Unreleased
+
+- **新增 `manifest/` 子包：schema 1 的唯一权威解析器**（严格解析 + 归一化，未知字段与旧结构直接报错）。aic 的 `skillhub.ParseManifest` 与 aic-pod 的包装载都改为调用它；`manifest_contract_test.go` 删除本地弱副本，全部内嵌包与 create 示例/模板直接过权威 parser，仓内只保留 page 文件存在性等资产检查。
+- `browser`（1.2.11 → 1.2.12）：删除 `AGENT_BROWSER_EXECUTABLE_PATH` 旧环境变量名（只认 `AIC_BROWSER_PATH`）；安装手册改为「发行包预装 + 预编译 `bin/browser`」，手动构建仅保留给源码运行 pod 的回退路径。
+- `cua`（1.1.6 → 1.1.7）：安装手册同步预装形态（pod 启动定版，无需 `commands install` 与 Go 工具链）。
+- `create`（1.0.9 → 1.0.10）：手册补齐包根 `manifest.json` 步骤——`ui.pages`/`ui.components`/`ui.openers`/`host` 的落位与「没有 `ui.pages` 就不出 UI 徽标、不进 launcher 子页面树」的后果；此前手册完全没提 manifest。
+- 测试清扫：删除「旧 Profile 模板必须不存在」「browser 不得声明 opener」这类只为旧提交服务的断言；`AGENTS.md` 的声明面描述改为 schema 1 真值（frontmatter 只放元数据；launcher 无独立段）。
+- 根 `manifest.json` 统一为 schema 1：UI pages/components/openers 与 Host 服务、内嵌 streams；pod 只消费 `host`，不解释 UI 声明。
+- Profile 改为 typed registry + layout v1：saved/effective 分离，第一阶段仅 aliases/slots 装配；components 只保存贡献引用，openers 改为有序规则表（装载即生效、顺序即优先级）；非法规则与 alias-covered slot 均进入 rejected。
+- `blender` 改为直接启动现成 `uvx blender-mcp`，删除自研 Go 桥接、私有 addon 与 vtools/tcp 依赖；工具面完全由上游 MCP 提供。
+- `create`（1.0.5 → 1.0.9）：分篇路径、typed Profile 示例、真实 vslot/插槽目标、FS 文本读取与 JSON 字段绑定契约全面校对；Profile 模板文件名整理为 `alias.json` / `slot.json` / `components.json`，可复制示例补齐 `version`。
+- `browser`（1.2.10 → 1.2.11）：去掉 `ui.openers.web` 的 http/https opener——browser UI 只用于看画面与临时交互（人工登录 / 人机验证码），外部 URL 交回系统浏览器。声明了 opener 却没有接收端会把目标 URL 静默丢弃（页面不读 `query.url`），并让「URL 无命中 → 系统浏览器」这条退路永远不触发。
+- `cua`（1.1.5 → 1.1.6）：schema/能力探测从已下线的 `mcp describe` 调试直通改走 `commands info cua --schema`（返回该服务全部工具的原始描述，按名取目标工具）；`cua/ui/cua.js` 抽出共用的传输层校验，工具结果（对象）与工具目录（数组）分别校验，三处测试夹具同步。
+- `blender`（0.3.5 → 0.3.6）：手册同步统一命令面——调试直通已下线，工具目录用 `<alias>`（无参）、参数表用 `<alias> <tool> --help`、原始 inputSchema 用 `commands info <alias> --schema`；服务命令的调用门是别名本身（`grant cmd <alias>`）。
+- 内嵌技能内容版本同步：browser 1.2.12 / cua 1.1.7 / blender 0.3.6 / create 1.0.10 / office_studio 1.0.5 / drawio 1.0.4 / ppt_studio 1.0.5 / video_studio 1.0.4 / play_with_ai 1.0.5。
+- 安装手册补齐平台 exec 的设备包目录 `grant fs`；CUA 不再宣称 Desktop 默认注册命令，Profile 总览不再把第一阶段未装配的组件绑定写成可换侧栏。
+- 文档同步到当前事实：`README.md` / `README.en.md` 的技能版本表（browser 1.2.12 / cua 1.1.7 / blender 0.3.6 / create 1.0.10）与分发口径（pod 只内嵌官方预装包 browser/cua 用于启动定版；owner 服务走 `commands add` / 设备 `commands` 配置段，删掉已下线的 `mcp.servers`）；`AGENTS.md` 的分发描述同步；`create/references/device-cli.md` 的独立 MCP 服务注册改用 `commands add`。
+
 ## 0.3.6 — 2026-11-01
 
 ### `cua`（1.1.1 → 1.1.2）与 `blender`（0.3.1 → 0.3.2）：变成普通第三方包

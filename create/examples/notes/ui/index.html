@@ -87,7 +87,10 @@
       const f = await $mod.$fs.readFile(path)
       if (f.dir) throw new Error('is a directory: ' + path)
       current = path
-      text = typeof f.content === 'string' ? f.content : ''
+      const content = f.content
+      if (typeof content === 'string') text = content
+      else if (content && typeof content.text === 'function') text = await content.text()
+      else throw new Error('unsupported text content: ' + path)
       return current
     }
 

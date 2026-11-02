@@ -42,8 +42,8 @@ async function fixture(t) {
     hosts: {openTools: async hostId => ({
       close: async () => {},
       execCall: async (command, options) => {
-        if (command === 'mcp describe cua get_desktop_state --json') {
-          return {content: JSON.stringify({name: 'get_desktop_state', inputSchema: {properties: {session: {}, max_image_dimension: {}}}}), attrs: {exit_code: '0'}};
+        if (command === 'commands info cua --schema') {
+          return {content: JSON.stringify([{name: 'get_desktop_state', inputSchema: {properties: {session: {}, max_image_dimension: {}}}}]), attrs: {exit_code: '0'}};
         }
         const name = command.split(' ')[1], args = JSON.parse(options.stdin);
         calls.push({hostId, name, args});

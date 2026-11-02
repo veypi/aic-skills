@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "ui": {
+    "pages": {
+      "index": {
+        "desc": "统一首页（打开/新建 xlsx、docx；共享最近打开历史，点击进入编辑器）"
+      },
+      "excel": {
+        "desc": "Excel 工作台（打开 / 编辑 / 保存 xlsx；AI 经窗口指令读写）"
+      },
+      "word": {
+        "desc": "Word 审阅工作台（打开 / 阅读 / 替换 / 批注 / 修订接受拒绝 / 保存 docx；AI 与用户同工具）"
+      }
+    },
+    "openers": {
+      "excel": {
+        "page": "excel",
+        "name": "Office Studio Excel",
+        "match": {"extensions": ["xlsx"]}
+      },
+      "word": {
+        "page": "word",
+        "name": "Office Studio Word",
+        "match": {"extensions": ["docx"]}
+      }
+    }
+  }
+}

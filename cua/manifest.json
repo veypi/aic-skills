@@ -1,6 +1,13 @@
 {
   "schema": 1,
-  "commands": {
+  "ui": {
+    "pages": {
+      "index": {
+        "desc": "远程查看和控制设备桌面、应用窗口"
+      }
+    }
+  },
+  "host": {
     "cua": {
       "run": ["bin/cua"],
       "protocol": "mcp",

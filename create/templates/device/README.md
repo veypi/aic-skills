@@ -1,7 +1,7 @@
 # 设备 MCP 服务模板
 
 这是一个**真实可运行的 MCP stdio 服务**：官方 Go SDK 负责 initialize、tools/list 和 tools/call；
-包根 `manifest.json` 声明服务命令（`commands`），经统一 commands 机制注册。它不是一次性 stdin JSON CLI。
+包根 `manifest.json` 的 `host` 声明服务命令，经统一 commands 机制注册。它不是一次性 stdin JSON CLI。
 
 ## 构建
 
@@ -37,8 +37,8 @@ mytool ping --json
 
 ## 边界
 
-- `cli/` 只入库源码与清单，不放 `cli/bin/`、二进制、压缩包或构建产物。
-- 自动读取包内清单目前只对官方内嵌包生效；普通用户包用上面的 `mcp add` 或设备配置注册。
-- 本例是普通 MCP Provider，**没有实现 `vtools.Streamer`，所以不能声明 `stream.channel`**。
-  RTC 流要求真实 Streamer 实现；长任务输出仍走 exec 日志与 `bg`。
+- `src/` 只入库源码与模块声明，不放 `bin/`、二进制、压缩包或构建产物。
+- 官方与第三方包同权：包根 `manifest.json` 的 `host` 声明经 `commands install` 注册，不需要另外用 `commands add` 登记。
+- 本例是普通 MCP Provider，**不声明 RTC 流**。流能力要求服务真实监听流地址并实现流协议，
+  在 `host.<alias>.streams.<name>.address_env` 声明（参考 browser 包）；长任务输出仍走 exec 日志与 `bg`。
 - 需要普通原生 CLI 时看根技能 `hello`，不要把一次性 stdin JSON 程序声明成 MCP 服务。

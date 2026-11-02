@@ -1,0 +1,5 @@
+[
+  { "match": { "extensions": ["docx"] }, "page": "office_studio:word" },
+  { "match": { "extensions": ["xlsx"] }, "page": "office_studio:excel" },
+  { "match": { "schemes": ["http", "https"] }, "page": "browser:index" }
+]

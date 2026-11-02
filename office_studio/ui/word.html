@@ -774,10 +774,10 @@
     ],
   }
 
-  // ===== 路由参数（单值 query.path；new=1 = 新建模式）=====
+  // ===== 路由参数（单值 query.url；new=1 = 新建模式）=====
   const looksLikeFsPath = (p) => /^\/(fs\/)?(cloud|page)\//.test(p) || /^\/(fs\/)?[a-f0-9]{32}\//.test(p)
   const routeTask = () => {
-    const p = String(($router.query && $router.query.path) || '')
+    const p = String(($router.query && $router.query.url) || '')
     if (!p || !looksLikeFsPath(p)) return null
     return { path: p, newFile: String(($router.query && $router.query.new) || '') === '1' }
   }

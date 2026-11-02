@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "commands": {
+  "host": {
     "mytool": {
       "run": ["bin/mytool"],
       "protocol": "mcp",

@@ -1,9 +1,11 @@
 # aic-skills
 
-The official AIC **skill content repository**. A skill is `SKILL.md` plus optional `ui/`,
-`api/`, `tables/` and plain resources; device-side capabilities add a root `manifest.json` plus
-`src/`. The Go embed carries cloud static content only (shipped with the platform, aic); device
-program source lives in the package and is built on the device — the pod no longer embeds this repo.
+The official AIC **skill content repository**. A skill is `SKILL.md` plus an optional root
+`manifest.json`, `ui/`, `api/`, `tables/` and plain resources; device-side capabilities add `src/`.
+The Go embed carries the package content: it ships inside the platform (aic), and the pod embeds
+only the official preinstalled packages (browser/cua) to version them onto the device at startup.
+Device program source lives in the package and is built on the device or taken from the prebuilt
+binaries shipped with the release.
 
 [中文](README.md) | **English**
 
@@ -11,15 +13,15 @@ program source lives in the package and is built on the device — the pod no lo
 
 | Skill | Version | Shape |
 | --- | --- | --- |
-| `browser` | 1.2.8 | Prose + UI + device service: a Go service inside the package driving its own Chrome over CDP (AI tools + live view + human input) |
-| `cua` | 1.1.3 | Prose + UI + device launcher: remote view and control through the official `cua-driver` (0.33.2) MCP |
-| `blender` | 0.3.3 | Prose + device service: a Go service inside the package bridging to Blender on the device over vtools/tcp (inspect / render / run Python) |
-| `create` | 1.0.5 | Guide + templates + intro page: the AIC extension authoring manual (cloud / page / host) and a human-facing capability page |
-| `office_studio` | 1.0.4 | Prose + UI: office document workspace |
-| `drawio` | 1.0.3 | Prose + UI: DrawIO diagram workspace |
-| `ppt_studio` | 1.0.4 | Prose + UI: slide studio |
-| `video_studio` | 1.0.3 | Prose + UI: video studio |
-| `play_with_ai` | 1.0.4 | Prose + UI: multi-game table for playing against AI (gomoku / xiangqi) |
+| `browser` | 1.2.12 | Prose + UI + device service: a Go service inside the package driving its own Chrome over CDP (AI tools + live view + human input) |
+| `cua` | 1.1.7 | Prose + UI + device launcher: remote view and control through the official `cua-driver` (0.33.2) MCP |
+| `blender` | 0.3.6 | Prose + device launcher: runs the off-the-shelf `blender-mcp` service (inspect / render / run Python) |
+| `create` | 1.0.10 | Guide + templates + intro page: the AIC extension authoring manual (cloud / page / host) and a human-facing capability page |
+| `office_studio` | 1.0.5 | Prose + UI: office document workspace |
+| `drawio` | 1.0.4 | Prose + UI: DrawIO diagram workspace |
+| `ppt_studio` | 1.0.5 | Prose + UI: slide studio |
+| `video_studio` | 1.0.4 | Prose + UI: video studio |
+| `play_with_ai` | 1.0.5 | Prose + UI: multi-game table for playing against AI (gomoku / xiangqi) |
 | `vhtml` | 0.5.1 | Prose: the vhtml frontend framework guide |
 | `hello` | 1.0.1 | Example: a plain native CLI |
 
@@ -30,12 +32,16 @@ switch** — a directory that is not listed is never published.
 
 - Prose, UI and cloud APIs are published and served by the platform; a skill has no
   installed / enabled / process / service state.
-- Ordinary CLIs and scripts run **natively** after user installation; a device-service package
-  instead carries a root `manifest.json` (declaring `commands` / `streams`) plus `src/` program
-  source. No binaries, build outputs or provider / SDK layer are committed.
+- The root schema-1 `manifest.json` declares `ui.pages` as a map keyed by package-relative page
+  paths without `.html` (values currently contain only `desc`), and `host` services with
+  `run` / `url` / `protocol` / `idle_timeout`; streams are nested in their service and contain only
+  `address_env`. Device program source lives in `src/`. No binaries, build outputs or provider / SDK
+  layer are committed.
 - Stateful software is registered as a vsh root command through device-side **commands install**:
-  browser/cua/blender behave like any other package (each ships its own service or launcher),
-  while host-registered services come from device `mcp.servers`.
+  browser/cua are preinstalled and versioned onto the device by the pod (the release ships prebuilt
+  `bin/<name>`), while blender and third-party packages are installed with `commands install <id>`
+  (each ships its own service or launcher); owner-registered services come from `commands add` or
+  the device `commands` config section.
 - Skill pages and package resources share **one segment**: `/skills/cloud/{id}` (mirrors
   `/fs/cloud` — the bare entry loads the package's `ui/index.html`, the same segment serves
   the package); subpages `/skills/cloud/{id}/{page}`; detail and management live at
@@ -51,8 +57,8 @@ the package and creates the row (`id` = package name, owner `system`, public). I
 sorted package-name + embedded-`version` list; a changed fingerprint triggers the event, and an administrator
 can also force a rerun. **The run does not compare row versions**: it atomically replaces every embedded package
 and fully refreshes row metadata. Bump a skill's version for every content change so the fingerprint changes.
-Devices no longer share that embed: a device fetches a package with `commands install <id>` and
-builds `bin/<name>` itself, as described in the package's SKILL.md.
+Devices share that embed only for the official preinstalled packages (browser/cua are versioned onto the device by the pod); other packages are fetched with `commands install <id>`,
+install the dependencies described in the package's SKILL.md, and build `bin/<name>` only when the package ships its own program — preinstalled packages use the prebuilt binaries shipped with the release and need no Go toolchain.
 
 ```sh
 go get github.com/veypi/aic-skills@latest

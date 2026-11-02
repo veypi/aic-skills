@@ -29,10 +29,13 @@ function fixture(t, handle, options = {}) {
     const connection = {
       closed: false,
       execCall: async (command, options) => {
-        if (command === 'mcp describe cua get_desktop_state --json') {
+        if (command === 'commands info cua --schema') {
           describes.push({hostId, options});
-          return encode(await (optionsForSchema?.(hostId, options) ||
-            {name: 'get_desktop_state', inputSchema: {type: 'object', properties: {session: {}, max_image_dimension: {}}}}));
+          // 设备命令面返回该服务全部工具的原始描述（数组）；夹具只暴露一个工具，
+          // 名字缺省补成 get_desktop_state。
+          const tool = await (optionsForSchema?.(hostId, options) ||
+            {inputSchema: {type: 'object', properties: {session: {}, max_image_dimension: {}}}});
+          return encode([{name: 'get_desktop_state', ...tool}]);
         }
         const match = command.match(/^cua ([a-z_]+) --input - --json( --image-preview 1280x720)?$/);
         assert.ok(match, 'CUA uses the fixed exec command and JSON stdin');

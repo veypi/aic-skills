@@ -10,7 +10,7 @@
 1. **AI 原生操作面**：一切编辑能力暴露为窗口指令（结构化 JSON 进/出），AI 是"隐形的手"，
    与人共用同一个编辑器实例——AI 写一格，用户屏幕上立即变化。
 2. **文件即路径**：cloud / page（浏览器 OPFS）/ host（本机磁盘）统一走平台 `$fs`，
-   应用层不区分端；文件管理器双击即打开（filebind 协议）。
+   应用层不区分端；文件管理器双击即打开（根 manifest `ui.openers` 协议）。
 3. **与平台深集成**：ask AI 联动（AI 读到的是用户正看的同一工作簿）、/fs 原生读写、
    会话产物直落用户云盘。
 
@@ -21,7 +21,7 @@
 
 - [x] 打开 / 编辑 / 保存闭环：Univer presets `0.25.1`（表格 UI + 公式 + 数字格式）
       + `@mertdeveci55/univer-import-export 0.2.1`（xlsx 序列化，exceljs 底座）
-- [x] 平台打开协议：filebinds 登记 `xlsx,xls` → `/skills/cloud/office_studio/excel`
+- [x] 平台打开协议：根 manifest `ui.openers` 声明 `xlsx` → excel、`docx` → word（2026-11-01 起替代 filebind）
 - [x] AI 指令面：`open` / `status` / `read_range`（含公式）/ `cell_info` / `set_range` /
       `set_cell`（值或公式）/ `save`（写回或另存）——全部经真实平台验证
 - [x] 引擎资源加速：bundle 16.19MB（gzip 3.67MB）经 jsDelivr（`gh/veypi/aic-skills`）分发（2026-09-14 起迁至独立资产分支 `office_assets`），
@@ -44,7 +44,7 @@
 - [x] 统一首页（`ui/index.html`）：打开 docx/xlsx + 新建入口 + 共享「最近打开」历史
       （逐条移除 / 清空；任一编辑器打开或保存成功都写入同一列表）
 - [x] 多类型路由：首页按扩展名同窗导航进入 `excel.html` / `word.html` 子页面；
-      filebind 直达编辑器（`xlsx,xls` → excel、`docx,doc` → word）
+      manifest openers 直达编辑器（`xlsx` → excel、`docx` → word）
 - [x] 新建入口：「新建表格 / 新建文档」→ 另存为对话框选路径 → 编辑器暂存，
       **首次保存时落盘**（中途关闭不产生文件）
 - [x] 审阅引擎扩展：`insert_paragraph` 支持虚拟锚点 `@start` / `@end`
@@ -114,7 +114,7 @@
 - [x] 多端并发写同一文件（2026-09-13）：save 前 sha-256 冲突检测（不一致拒绝覆盖，`--force` 强制）——跨窗口实时同步仍不在范围
 - [ ] 引擎包体积（16MB / gzip 3.67MB）：首访依赖 CDN；未来按需拆包（仅编辑器内核 + 用到时加载插件）
 - [x] 切换首页/编辑器销毁页面（2026-09-13）：首页二次确认 + 同文件重开防重载已加；窗口被直接关闭/销毁时仍无自动快照（如需再加）
-- [ ] filebind / picker 链路的回归清单需固化（双击打开、选择器、最近文件、新建）
+- [ ] openers / picker 链路的回归清单需固化（双击打开、选择器、最近文件、新建）
 - [x] 样式继承对调用方“隐形”（2026-09-13 事故根因）：插入类已回显 `styleFrom` / `numPrRemoved`（见阶段 1.7/1.8）；替换“保留原格式”仍为文档约定，可用 `style_report` 自查
 
 ## 测试资产

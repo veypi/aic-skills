@@ -11,7 +11,7 @@
 //     的形态使用（开发期与自建部署）。
 //
 // 权限边界：Chrome 由本程序拉起，能访问什么由本程序的启动参数与操作系统决定；
-// MCP 调用门由 Pod 的服务命令权限（mcp.<alias>）把关。
+// MCP 调用门由 Pod 的服务命令权限（命令别名本身）把关。
 package main
 
 import (
@@ -35,7 +35,7 @@ func main() {
 		log.Fatal(err)
 	}
 	opts := launchOptions{
-		ChromePath: firstEnv("AIC_BROWSER_PATH", "AGENT_BROWSER_EXECUTABLE_PATH"),
+		ChromePath: firstEnv("AIC_BROWSER_PATH"),
 		// 资料目录默认 ~/.aic/chrome-profile（固定目录，登录态跨重启保留）；
 		// BROWSER_PROFILE 可改。默认不显示窗口，BROWSER_HEADLESS=0 弹出可见窗口。
 		ProfileDir: firstEnv("BROWSER_PROFILE"),

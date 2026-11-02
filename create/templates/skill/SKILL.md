@@ -4,9 +4,6 @@ version: 0.1.0
 description: <一句话：这个包解决什么问题、AI 什么时候该用它>
 keywords: [example]
 icon: fa-solid fa-box
-ui:
-  - path: index.html
-    desc: <页面说明：这块界面是干什么的>
 ---
 
 # <包名>
