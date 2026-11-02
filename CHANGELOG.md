@@ -4,7 +4,7 @@
 
 两个版本面：**模块版本**（本文件 / tag `vX.Y.Z`，Go 依赖面）与**技能版本**（各 `SKILL.md` frontmatter 的 `version:`，进入 `skills.builtin` 指纹）。内容更新 bump 技能版本以触发自动定版；事件执行时无条件整包覆盖，不做版本大小比较。契约或结构变化 bump 模块版本。
 
-## Unreleased
+## 0.4.0 — 2026-11-02
 
 - **新增 `manifest/` 子包：schema 1 的唯一权威解析器**（严格解析 + 归一化，未知字段与旧结构直接报错）。aic 的 `skillhub.ParseManifest` 与 aic-pod 的包装载都改为调用它；`manifest_contract_test.go` 删除本地弱副本，全部内嵌包与 create 示例/模板直接过权威 parser，仓内只保留 page 文件存在性等资产检查。
 - `browser`（1.2.11 → 1.2.12）：删除 `AGENT_BROWSER_EXECUTABLE_PATH` 旧环境变量名（只认 `AIC_BROWSER_PATH`）；安装手册改为「发行包预装 + 预编译 `bin/browser`」，手动构建仅保留给源码运行 pod 的回退路径。
