@@ -4,6 +4,11 @@
 
 两个版本面：**模块版本**（本文件 / tag `vX.Y.Z`，Go 依赖面）与**技能版本**（各 `SKILL.md` frontmatter 的 `version:`，进入 `skills.builtin` 指纹）。内容更新 bump 技能版本以触发自动定版；事件执行时无条件整包覆盖，不做版本大小比较。契约或结构变化 bump 模块版本。
 
+## 0.4.1 — 2026-11-03
+
+- **执行目标参数改名 `1host` → `_host`**：平台 fs/exec 的执行目标参数由 `1host` 改为 `_host`——OpenAI 兼容 function-calling 的参数名规范不接受以数字开头的名字（实测 MiniMax 会整个丢掉该属性，fs/exec 调用因缺目标被连续拒绝）。手册里的调用写法同步：`exec 1host=page` → `exec _host=page`、`fs {"1host":"page",...}` → `fs {"_host":"page",...}`。
+- 技能版本同步：play_with_ai 1.0.5 → 1.0.6 / cua 1.1.7 → 1.1.8 / video_studio 1.0.4 → 1.0.5 / ppt_studio 1.0.5 → 1.0.6 / create 1.0.10 → 1.0.11。
+
 ## 0.4.0 — 2026-11-02
 
 - **新增 `manifest/` 子包：schema 1 的唯一权威解析器**（严格解析 + 归一化，未知字段与旧结构直接报错）。aic 的 `skillhub.ParseManifest` 与 aic-pod 的包装载都改为调用它；`manifest_contract_test.go` 删除本地弱副本，全部内嵌包与 create 示例/模板直接过权威 parser，仓内只保留 page 文件存在性等资产检查。
