@@ -230,7 +230,7 @@ ui/
 - **初始加载优先级**：上次打开的本地文件（localStorage `ppt_last_open`）→ 本地最近
   修改的 PPT → 默认样例。顶栏「✦ 样例」「📁 文件」弹层分别切换样例、列出本地 PPT。
 - **本地文档**：存放在页面本地存储 `/ppt/<名称>/index.json`，编辑后 1.2s 防抖自动
-  保存（写入串行化防乱序覆盖）；AI 经 fs 工具（1host=page）读写同一路径，页面指令
+  保存（写入串行化防乱序覆盖）；AI 经 fs 工具（_host=page）读写同一路径，页面指令
   经 pageDesc 声明（`ppt_*`），平台自动注册。
 - **工具栏数据流**：引擎 `statechange` → stage `$emit` → 页面 `st` → 工具栏 `:st`
   渲染；工具栏 `@cmd` 意图 → 页面中转为 stage 命令式调用。导出两种：`exportPptx`
@@ -243,8 +243,8 @@ ui/
 - **文件删除**：「📁 文件」弹层每项 ✕ 删除整个目录（json + `image/`），不可恢复。
 - **双语**：面板与工具栏文案在 `langs.json`（zh-CN / en-US），经 `$t()` 引用，语言跟随全局 header。
 
-双向交互：AI 直接用 fs 工具（`1host=page`）读写 `/ppt/...` 下的 json 完成内容编辑；页面操作经
+双向交互：AI 直接用 fs 工具（`_host=page`）读写 `/ppt/...` 下的 json 完成内容编辑；页面操作经
 `$pageExec` 指令（`ppt_status / ppt_list / ppt_open / ppt_case / ppt_run [--start] /
 ppt_stop / ppt_new / ppt_save / ppt_get [--full] / ppt_mode / ppt_delete`），由 AI 用
-`exec 1host=page {win_id}.<cmd>` 调用，路径为页面本地 OPFS（`/ppt/<名称>/index.json`）。
+`exec _host=page {win_id}.<cmd>` 调用，路径为页面本地 OPFS（`/ppt/<名称>/index.json`）。
 指令声明见 `index.html` 的 `pageDesc`。

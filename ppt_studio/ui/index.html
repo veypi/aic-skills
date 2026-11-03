@@ -603,7 +603,7 @@
   let suppressSave = false
   let forking = false
 
-  // 本地文件根 /ppt/（页面本地存储，AI 侧经 fs 工具 1host=page 读写同一路径）
+  // 本地文件根 /ppt/（页面本地存储，AI 侧经 fs 工具 _host=page 读写同一路径）
   const sessRoot = () => '/ppt/'
   const globalPath = (rel) => '/ppt/' + rel
   const lastKey = () => 'ppt_last_open'
@@ -1339,7 +1339,7 @@
     audio.play().catch(() => done(false))
   })
 
-  // ---- $pageExec 事件（AI 通过 exec 1host=page {win_id}.<cmd> 调用；内容编辑由 AI 直接写文件完成） ----
+  // ---- $pageExec 事件（AI 通过 exec _host=page {win_id}.<cmd> 调用；内容编辑由 AI 直接写文件完成） ----
   // exec argv 解析：--key val 优先，否则取第一个非 -- 位置参数
   const arg = (argv, key, dft) => {
     const i = argv.indexOf('--' + key)
@@ -1364,7 +1364,7 @@
   const reply = (obj) => ({content: JSON.stringify(obj)})
   const curGlobalPath = () => cur_kind === 'case' ? 'cases/' + cur_path : (cur_path ? '/ppt/' + cur_path : '')
 
-  // pageDesc：平台操控面声明。外部 AI 经 exec 1host=page {win_id}.{cmd} 调用；
+  // pageDesc：平台操控面声明。外部 AI 经 exec _host=page {win_id}.{cmd} 调用；
   // 内容创建/修改由 AI 直接 fs 读写 /ppt/ 完成，页面指令只管打开、播放与状态
   pageDesc = {
     desc: 'PPT Studio 幻灯片工作台：本地 /ppt/ JSON 文件驱动，页面负责打开、编辑、预览与全屏演示（支持逐页语音讲解脚本）',

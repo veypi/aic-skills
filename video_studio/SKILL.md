@@ -1,6 +1,6 @@
 ---
 name: video_studio
-version: 1.0.4
+version: 1.0.5
 nickname: 视频工坊
 description: 浏览器内一站式视频制作：AI 文件驱动编辑 + 可视化舞台/时间轴，真实 3D 场景、关键帧动画、逐字弹簧、素材拖拽剪辑、AI 配音（TTS），WebCodecs 硬编直接导出 MP4
 keywords: [video, 视频, 剪辑, 动画, 3D, MP4, 配音, TTS, 时间轴, WebCodecs]
@@ -15,8 +15,8 @@ icon: fa-solid fa-clapperboard
 
 1. 打开页面：`open /skills/cloud/{skill_id}`（`skill_id` 取自 skill 列表；HTTP API 与资源用返回的 `url_prefix`，同前缀）
 2. 探测指令：使用 `open` 返回的 `events` 查看 `*_video` / `gen_voice` / `run_js`；需要重新查看时执行不带窗口前缀的 `list`
-3. 项目文件读写：用 **fs 工具（1host=page）** 直接读写 `/video/...` 路径（与页面同一浏览器本地存储）
-4. 页面操作（新建/打开/播放/重载/截图/配音）走 `exec 1host=page {win_id}.<cmd>`，argv 形如 `["--name","my-video"]`
+3. 项目文件读写：用 **fs 工具（_host=page）** 直接读写 `/video/...` 路径（与页面同一浏览器本地存储）
+4. 页面操作（新建/打开/播放/重载/截图/配音）走 `exec _host=page {win_id}.<cmd>`，argv 形如 `["--name","my-video"]`
 
 ## 项目存储：浏览器本地（OPFS 单根，纯本地不依赖会话）
 
@@ -33,16 +33,16 @@ icon: fa-solid fa-clapperboard
 
 1. 构思：脚本 → 场景划分（每个场景 3~6 秒）→ 每场景元素（文字/形状/图片/图表）+ 动画（入场 fx / 关键帧 keyframes）
 2. `{win_id}.new_video --name x-主题 --title "标题"` 创建项目
-3. 读写项目文件用**标准 fs 工具**（1host=page）：`fs.read {"1host":"page","path":"/video/x-主题/index.json"}` 读骨架 → `fs.write` 写完整文档（JSON 用 2 空格缩进展开）
+3. 读写项目文件用**标准 fs 工具**（_host=page）：`fs.read {"_host":"page","path":"/video/x-主题/index.json"}` 读骨架 → `fs.write` 写完整文档（JSON 用 2 空格缩进展开）
 4. 改完 `index.json` 或素材后调 `{win_id}.reload_video` 让页面刷新画面（保持当前帧）
 5. 需要配图/配乐：把素材链接发给用户，请其下载后上传「素材」tab——上传完成后 AI 写相对路径引用（`assets/封面.png`），再 `reload_video` 刷新画面。不要用 page curl 下载外部素材
 6. `{win_id}.run_video --name x-主题` 预览播放
-7. 删除文件/项目：删除请走页面端 `exec 1host=page rm <路径>`（页面端内置 `rm`；fs 工具本身没有删除动作）；清理项目 = 删 `/video/{name}` 目录
+7. 删除文件/项目：删除请走页面端 `exec _host=page rm <路径>`（页面端内置 `rm`；fs 工具本身没有删除动作）；清理项目 = 删 `/video/{name}` 目录
 8. 完成：提醒用户点击页面顶部「导出」按钮自行导出（导出由用户操作，AI 不触发）
 
 用户说「来个样例看看」：`{win_id}.list_video` 查看样例清单，告知用户点页面上的「样例」即可（样例只读，用户可在页面右侧「另存为项目」后手动编辑）。
 
-## pageDesc 指令（exec 1host=page {win_id}.{cmd}）
+## pageDesc 指令（exec _host=page {win_id}.{cmd}）
 
 指令仅在用户打开 Video Studio 页面时响应。成功返回 `{ok:true,...}`，失败 `{ok:false,error}`。
 
@@ -92,7 +92,7 @@ icon: fa-solid fa-clapperboard
 | `--name <文件名>` | 可选，输出文件名（默认 `{标题}-f{帧号}.png`） |
 | `--scale <倍率>` | 可选，分辨率倍率 0.25~2（默认 1 = 文档分辨率） |
 
-复用导出管线（确定性 DOM → canvas）截取指定帧为 PNG，保存到 `/video/screenshots/`（不移动播放头）。返回 `{ ok, path, frame, width, height, size }`；用 `fs.read`（1host=page，路径 `/video/screenshots/...`）查看画面。注意：动画入场起点（如 frame 0）元素可能未显现，截关键帧建议指定 `--frame`。
+复用导出管线（确定性 DOM → canvas）截取指定帧为 PNG，保存到 `/video/screenshots/`（不移动播放头）。返回 `{ ok, path, frame, width, height, size }`；用 `fs.read`（_host=page，路径 `/video/screenshots/...`）查看画面。注意：动画入场起点（如 frame 0）元素可能未显现，截关键帧建议指定 `--frame`。
 
 ### run_js — 纯数值计算（动画曲线 / 3D 建模参数）
 
@@ -234,7 +234,7 @@ material `kind: standard|basic`，支持 `color/metalness/roughness/wireframe/op
 ## 制作规范
 
 1. **场景时长**：每场景 3~6 秒为宜；全片一般 8~60 秒（导出性能与时长线性相关）
-2. **先读后改**：修改前先 `fs.read`（1host=page，路径 `/video/{项目名}/index.json`）了解现状；不确定项目名先 `list_video`
+2. **先读后改**：修改前先 `fs.read`（_host=page，路径 `/video/{项目名}/index.json`）了解现状；不确定项目名先 `list_video`
 3. **坐标合理**：基于 `size` 布局，避免元素越界；文字框给足高度（fontSize 64 标题至少 h=100）；`align/valign` 配合居中
 4. **动画克制的**：同屏 2~4 个入场动画即可，`delay` 错峰（0.3~0.5s 间隔）；关键帧运动轨迹明确、有终点
 5. **字幕**：口语化短句，与画面内容对应；不要整屏字幕

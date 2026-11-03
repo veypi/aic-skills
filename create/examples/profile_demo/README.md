@@ -17,7 +17,7 @@ Launcher/components/openers 若在 registry 中保存贡献引用，第一阶段
 3. 切过去（页面上下文执行）：
 
 ```sh
-exec 1host=page
+exec _host=page
 profile apply demo
 ```
 

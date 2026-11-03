@@ -62,16 +62,16 @@ func TestListAndOpen(t *testing.T) {
 func TestVersionFromFrontmatter(t *testing.T) {
 	for name, want := range map[string]string{
 		"browser":       "1.2.12",
-		"cua":           "1.1.7",
+		"cua":           "1.1.8",
 		"blender":       "0.3.6",
-		"create":        "1.0.10",
+		"create":        "1.0.11",
 		"vhtml":         "0.5.1",
 		"office_studio": "1.0.5",
 		"drawio":        "1.0.4",
 		"hello":         "1.0.1",
-		"ppt_studio":    "1.0.5",
-		"video_studio":  "1.0.4",
-		"play_with_ai":  "1.0.5",
+		"ppt_studio":    "1.0.6",
+		"video_studio":  "1.0.5",
+		"play_with_ai":  "1.0.6",
 	} {
 		if !slices.Contains(List(), name) {
 			want = ""

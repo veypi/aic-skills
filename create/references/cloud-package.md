@@ -72,7 +72,7 @@ components 第一阶段仅声明不装配；openers 经统一有序表生效（P
 **建行**（只在页面上下文里调；云端执行器打不到平台接口）：
 
 ```sh
-exec 1host=page
+exec _host=page
 curl /api/skills -X POST -H 'Content-Type: application/json' -d '{"name":"example"}'
 ```
 

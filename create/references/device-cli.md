@@ -104,7 +104,7 @@ commands add mytool -- /absolute/path/to/mytool
 正式调用面是 **`<alias> <tool>` 服务根命令**：
 
 ```sh
-exec 1host=<设备ID>
+exec _host=<设备ID>
 mytool                         # 工具目录
 mytool ping --help             # 参数表
 mytool ping --json             # 无参调用

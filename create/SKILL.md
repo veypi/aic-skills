@@ -1,6 +1,6 @@
 ---
 name: create
-version: 1.0.10
+version: 1.0.11
 nickname: create 技能包
 description: AIC 扩展作者手册——把一句人话需求拆成云端/界面/设备三端的实际改动：技能包与数据、界面与页面指令、桌面档案规则、设备命令与常驻服务；含判定流程、字段契约、红线与验收。
 keywords: [create, 扩展, 技能包, 界面, 档案, 规则, 设备, 命令, 服务, 模板]
@@ -53,7 +53,7 @@ AIC 的扩展落在三个端上，每端有自己的持久化机制和交互协�
 
 私有包目录默认只读。建行、授权、写文件是三件事，顺序不能反：
 
-1. 建行：`exec 1host=page` → `curl /api/skills -X POST -H 'Content-Type: application/json' -d '{"name":"example"}'`
+1. 建行：`exec _host=page` → `curl /api/skills -X POST -H 'Content-Type: application/json' -d '{"name":"example"}'`
    → 返回 `skill_id` 与 `url_prefix`，并落一份 SKILL.md 骨架
 2. 授权：`grant fs /skills/{skill_id}`
 3. 写文件：fs 工具写 `/skills/{skill_id}/...`（fs 路径，与页面 URL 不同段）
@@ -90,12 +90,12 @@ AIC 的扩展落在三个端上，每端有自己的持久化机制和交互协�
 
 | 动作 | 怎么调 |
 |---|---|
-| 调平台同源接口 | `exec 1host=page` → `curl /api/...`（cookie 身份自动带；云端执行器打不到平台接口） |
+| 调平台同源接口 | `exec _host=page` → `curl /api/...`（cookie 身份自动带；云端执行器打不到平台接口） |
 | 建包 / 授权 / 写包 | 见 §1 ④；写文件用 fs 工具，路径 `/skills/{id}/...` |
 | 读写用户文件 | fs 工具，路径 `/u/{uid}/...` |
-| 操作桌面档案 | `exec 1host=page` → `profile list` / `save <name>` / `apply <name>` / `revert` / `inspect` |
-| 开窗口 | `exec 1host=page` → `open <url>` / `list` / `close <win_id>` / `reload` |
-| 调设备命令 | `exec 1host=<设备ID>` → `<alias>` 列工具 / `<alias> <tool> --help` 看参数 / `<alias> <tool> --input '{...}' --json` 调用（`mcp ...` 仅调试直通） |
+| 操作桌面档案 | `exec _host=page` → `profile list` / `save <name>` / `apply <name>` / `revert` / `inspect` |
+| 开窗口 | `exec _host=page` → `open <url>` / `list` / `close <win_id>` / `reload` |
+| 调设备命令 | `exec _host=<设备ID>` → `<alias>` 列工具 / `<alias> <tool> --help` 看参数 / `<alias> <tool> --input '{...}' --json` 调用（`mcp ...` 仅调试直通） |
 | 页面调设备 | `$hosts.openTools(hostId)` → `execCall(script, {stdin})` → 用完 `close()` |
 
 ## 4. 验收清单

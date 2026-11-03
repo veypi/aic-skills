@@ -1,6 +1,6 @@
 ---
 name: ppt_studio
-version: 1.0.5
+version: 1.0.6
 nickname: PPT 工坊
 description: 幻灯片工作室：以本地 /ppt/ JSON 文件驱动的方式创建、编辑、预览与全屏演示 PPT，支持逐页语音讲解脚本
 keywords: [ppt, slides, 幻灯片, 演示, 演讲, 讲解, deck, 演示文稿]
@@ -18,12 +18,12 @@ icon: fa-solid fa-person-chalkboard
 
 1. 打开页面：`open /skills/cloud/{skill_id}`（`skill_id` 取自 skill 列表；`url_prefix` 同前缀，用于资源与 API）
 2. 探测指令：使用 `open` 返回的 `events` 查看 `ppt_*`；需要重新查看时执行不带窗口前缀的 `list`
-3. 内容创建/修改：用 **fs 工具（1host=page）** 直接读写 `/ppt/...` 路径（与页面同一本地存储）：
+3. 内容创建/修改：用 **fs 工具（_host=page）** 直接读写 `/ppt/...` 路径（与页面同一本地存储）：
    - 每套 PPT 一个目录，核心文件固定 `index.json`，如 `/ppt/产品发布会/index.json`
    - 页数多时用分页拆分：`slides` 数组写相对引用字符串（如 `"slides/slide_1.json"`），每页一个 `slides/slide_N.json`（**推荐**，改一页只动一个文件）
    - JSON 一律 2 空格缩进展开，方便后续按行阅读与 edit 精确修改
    - 图片：元素 `src` 写**相对 json 的路径**（如 `image/cover.png`，放同级 `image/` 子目录）；也支持 http(s) URL、dataURI 与 `svg` 元素内联 markup。**禁止 base64 大体积图片内嵌**；无云→页二进制搬运通道，网络配图直接用 URL 引用或 svg 示意
-4. 页面操作（打开、播放、状态查询）走 `exec 1host=page {win_id}.<cmd>`，argv 形如 `["--path","/ppt/x/index.json"]`
+4. 页面操作（打开、播放、状态查询）走 `exec _host=page {win_id}.<cmd>`，argv 形如 `["--path","/ppt/x/index.json"]`
 5. 写完文件页面**不会自动感知**：调用 `ppt_open`（刷新打开）或 `ppt_run`（播放）让页面更新
 
 典型流程（用户说「做一个关于 X 的 PPT」）：

@@ -11,9 +11,9 @@ keywords: [示例, ui, pageDesc, vhtml, 计数器]
 最小可用形态：`SKILL.md` + `manifest.json`（`ui.pages`）+ `ui/index.html`，无数据面。
 演示两件事：vhtml 页面骨架（含 `@container` 窗口响应式）+ pageDesc 指令（AI 经 `{win_id}.{cmd}` 操控页面）。
 
-> **复制改造**：`exec 1host=page` → `curl /api/skills -X POST -H 'Content-Type: application/json' -d '{"name":"{你的名字}"}'` 建行，再 `grant fs /skills/{id}` 后把本目录内容写进 `/skills/{id}/`（fs 工具路径）；同步修改 frontmatter 的 `name`、`nickname`/`description`。
+> **复制改造**：`exec _host=page` → `curl /api/skills -X POST -H 'Content-Type: application/json' -d '{"name":"{你的名字}"}'` 建行，再 `grant fs /skills/{id}` 后把本目录内容写进 `/skills/{id}/`（fs 工具路径）；同步修改 frontmatter 的 `name`、`nickname`/`description`。
 
-## 使用（AI 操作序，均为 exec 1host=page 通道）
+## 使用（AI 操作序，均为 exec _host=page 通道）
 
 ```
 open /skills/cloud/{skill_id}  # 打开页面；skill_id 取自 skills 工具的 search/load

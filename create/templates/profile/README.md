@@ -15,7 +15,7 @@
 写好后让 AI 执行（页面上下文）：
 
 ```sh
-exec 1host=page
+exec _host=page
 profile inspect          # 先看 saved / effective / rejected / slot hit
 profile apply <name>     # 切档并 reload
 profile save <name>      # 把当前桌面固化成正式档

@@ -52,7 +52,7 @@ await $fetch('api/add', { method: 'POST', body: { title, qty } })
 **AI 侧**（页面上下文执行，同源 + cookie 身份自动携带）：
 
 ```sh
-exec 1host=page
+exec _host=page
 curl {url_prefix}/api/list
 curl {url_prefix}/api/add -X POST -H 'Content-Type: application/json' -d '{"title":"x","qty":1}'
 ```
@@ -70,7 +70,7 @@ curl {url_prefix}/api/add -X POST -H 'Content-Type: application/json' -d '{"titl
 ### 4.1 原始 SQL（逃生舱）
 
 ```sh
-exec 1host=page
+exec _host=page
 curl /api/skills/{skill_id}/tables_sqlx -X POST -H 'Content-Type: application/json' \
   -d '{"sql":"select rowid as id, title, qty from items order by rowid desc limit 20"}'
 ```

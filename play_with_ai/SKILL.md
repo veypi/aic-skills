@@ -1,6 +1,6 @@
 ---
 name: play_with_ai
-version: 1.0.5
+version: 1.0.6
 nickname: 与 AI 对弈
 description: 与 AI 对弈的多游戏游乐场：当前内置五子棋与象棋。AI 经窗口指令绑定席位获得行动权、按回合行棋，局面变化自动推送到会话
 keywords: [game, 游戏, 对弈, 下棋, 五子棋, gomoku, 象棋, chess, play]
@@ -22,7 +22,7 @@ icon: fa-solid fa-chess
 
 ## 开局流程
 
-1. **打开对弈台**：`exec 1host=page` → `open /skills/cloud/{skill_id}`（`skill_id` 取自 skill 列表；
+1. **打开对弈台**：`exec _host=page` → `open /skills/cloud/{skill_id}`（`skill_id` 取自 skill 列表；
    返回值里带 `win_id` 与该窗口的指令清单 `events`）。
 2. **选游戏**：`games` 看有哪些游戏；用 `start --game <id>` 指定。
 3. **绑定席位**：`start --game gomoku --seat black`（`--seat` 缺省时取第一个空缺席位）。
