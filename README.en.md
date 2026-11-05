@@ -1,6 +1,6 @@
 # aic-skills
 
-The official AIC **skill content repository**. A skill is `SKILL.md` plus an optional root
+The official ivec.ai **skill content repository**. A skill is `SKILL.md` plus an optional root
 `manifest.json`, `ui/`, `api/`, `tables/` and plain resources; device-side capabilities add `src/`.
 The Go embed carries the package content: it ships inside the platform (aic), and the pod embeds
 only the official preinstalled packages (browser/cua) to version them onto the device at startup.
@@ -16,7 +16,7 @@ binaries shipped with the release.
 | `browser` | 1.2.12 | Prose + UI + device service: a Go service inside the package driving its own Chrome over CDP (AI tools + live view + human input) |
 | `cua` | 1.1.8 | Prose + UI + device launcher: remote view and control through the official `cua-driver` (0.33.2) MCP |
 | `blender` | 0.3.6 | Prose + device launcher: runs the off-the-shelf `blender-mcp` service (inspect / render / run Python) |
-| `create` | 1.0.11 | Guide + templates + intro page: the AIC extension authoring manual (cloud / page / host) and a human-facing capability page |
+| `create` | 1.0.11 | Guide + templates + intro page: the ivec extension authoring manual (cloud / page / host) and a human-facing capability page |
 | `office_studio` | 1.0.5 | Prose + UI: office document workspace |
 | `drawio` | 1.0.4 | Prose + UI: DrawIO diagram workspace |
 | `ppt_studio` | 1.0.6 | Prose + UI: slide studio |

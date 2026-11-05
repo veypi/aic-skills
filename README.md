@@ -1,6 +1,6 @@
 # aic-skills
 
-AIC 官方**技能内容仓**。技能 = `SKILL.md` + 可选包根 `manifest.json`、`ui/`、`api/`、`tables/`
+ivec.ai 官方**技能内容仓**。技能 = `SKILL.md` + 可选包根 `manifest.json`、`ui/`、`api/`、`tables/`
 + 普通资源；设备侧能力另有 `src/`。Go embed 携带包内容：随平台 aic 构建分发，pod 只内嵌官方
 预装包（browser/cua）用于启动定版；设备程序源码随包入库，设备自行构建或直接用发行包附带的预编译程序。
 
@@ -13,7 +13,7 @@ AIC 官方**技能内容仓**。技能 = `SKILL.md` + 可选包根 `manifest.jso
 | `browser` | 1.2.12 | 说明 + UI + 设备服务：包内 Go 服务，自带 Chrome 的 CDP 通道（AI 工具 + 实时画面 + 人工交互） |
 | `cua` | 1.1.8 | 说明 + UI + 设备启动器：官方 `cua-driver`（0.33.2）MCP 的远程查看与控制 |
 | `blender` | 0.3.6 | 说明 + 设备启动：直接运行现成 `blender-mcp`（看场景 / 渲染 / 执行 Python） |
-| `create` | 1.0.11 | 手册 + 模板 + 介绍页：AIC 扩展作者手册（云端/界面/设备三端）与给人看的扩展能力介绍页 |
+| `create` | 1.0.11 | 手册 + 模板 + 介绍页：ivec 扩展作者手册（云端/界面/设备三端）与给人看的扩展能力介绍页 |
 | `office_studio` | 1.0.5 | 说明 + UI：Office 文档工作台 |
 | `drawio` | 1.0.4 | 说明 + UI：DrawIO 绘图工作台 |
 | `ppt_studio` | 1.0.6 | 说明 + UI：PPT 工坊 |
