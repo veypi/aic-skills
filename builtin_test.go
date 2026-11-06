@@ -66,7 +66,7 @@ func TestVersionFromFrontmatter(t *testing.T) {
 		"blender":       "0.3.6",
 		"create":        "1.0.11",
 		"vhtml":         "0.5.1",
-		"office_studio": "1.0.5",
+		"office_studio": "1.0.6",
 		"drawio":        "1.0.4",
 		"hello":         "1.0.1",
 		"ppt_studio":    "1.0.6",

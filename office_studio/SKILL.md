@@ -1,6 +1,6 @@
 ---
 name: office_studio
-version: 1.0.5
+version: 1.0.6
 nickname: Office Studio
 description: Office 文档工作台：打开、编辑、保存真实 office 文件（docx/xlsx/pptx），AI 与用户共用同一编辑器协作。当前已接入 Excel（xlsx 编辑）与 Word（docx 审阅/表格编辑/插图，红字修订），含统一首页（打开/新建 + 共享历史）
 keywords: [office, excel, xlsx, word, docx, 表格, 文档, 电子表格, 编辑器, 工作簿, 审阅, 修订, 新建, 首页, 历史, 契约]
@@ -21,7 +21,7 @@ Office 文件工作台：在平台窗口里打开真实 office 文件（**零复
 ## 页面与导航
 
 - 首页 → 点击文件（或新建）→ **同窗导航**进入对应编辑器（`excel?url=...` / `word?url=...`）；编辑器顶部「首页」按钮返回
-- 文件管理器双击 xlsx/docx → 根 manifest 的 `ui.openers` 直达对应编辑器（已有窗口则复用；打开统一经 `?url=< /fs 完整路径>` 传参）
+- 文件管理器双击 xls/xlsx/doc/docx → 根 manifest 的 `ui.openers` 直达对应编辑器（已有窗口则复用；打开统一经 `?url=< /fs 完整路径>` 传参）
 - **窗口复用（AI 操作默认）**：打开文件前先 `list` 查已有 Office 窗口（title 含“Office Studio”或 url 含 `/excel`、`/word`）——已有对应编辑器 → **在该窗口内** `open --path <文件>` 切换，不新开；没有 → 新开**一个**并持续复用；除非用户明确要求（如并排对比），不为新文件新建窗口
 - 打开的文件 = 一个 `/fs/...` 路径（cloud / page / host 任意端，应用不区分），读写全走平台 `$fs`
 - 保存 = 把文档导出 docx/xlsx **写回打开时的路径**（覆盖原文件）

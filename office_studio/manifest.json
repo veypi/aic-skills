@@ -16,12 +16,12 @@
       "excel": {
         "page": "excel",
         "name": "Office Studio Excel",
-        "match": {"extensions": ["xlsx"]}
+        "match": {"extensions": ["xlsx", "xls"]}
       },
       "word": {
         "page": "word",
         "name": "Office Studio Word",
-        "match": {"extensions": ["docx"]}
+        "match": {"extensions": ["docx", "doc"]}
       }
     }
   }
