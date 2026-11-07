@@ -1,12 +1,12 @@
 # 设备侧命令（host CLI）
 
-> 面向"不了解平台实现"的 AI。目标：让设备多一条命令，或让包里声明一个常驻服务。
+> 面向"不了解平台实现"的 AI。目标：让设备脚本批量处理并回写技能 API，或增加原生命令/常驻服务。
 
 ## 1. 先选形态
 
 | 形态 | 什么时候用 | 谁负责安装/运行 |
 | --- | --- | --- |
-| **普通脚本** | 一次性执行、无状态 | 用户自己跑（包内 `scripts/` 只是附件，平台不安装不扫描） |
+| **普通脚本** | 一次性执行、目录/文件批处理、循环调用技能 API | 用户自己跑（包内 `scripts/` 只是附件，平台不安装不扫描） |
 | **原生 CLI** | 用户能自己装的独立程序 | 用户按正文安装；正文写清安装方式、依赖、固定路径、调用示例 |
 | **包内常驻服务** | 需要保持连接、窗口、快照等状态 | 包根 `manifest.json` + 包内服务程序（`src/`）；`commands install` 注册 |
 | **独立 MCP 服务** | 第三方现成服务 | 用户安装并用 `commands add` 或设备 `commands` 配置段注册；技能写清安装与配置步骤 |
@@ -29,6 +29,35 @@
 ```
 
 包里可附 `scripts/hello.sh` 之类的附件，但平台不自动执行它们。最小原生 CLI 示例见根技能 `hello`。
+
+### 2.1 普通脚本直接批量回写技能 API
+
+Host 与 Cloud/Pod 的 exec/vsh 内建 curl 支持 `/skills/cloud/{skill_id}/api/...`，自动补平台地址并
+携带当前设备/会话身份。因此“设备处理一批文件或数据，再保存到云端”通常只需要：
+
+```text
+普通脚本（循环/读取 JSONL/扫描目录） + 技能包 api/*.sqlx
+```
+
+```sh
+base=${1:?"pass the skill url_prefix"}
+while IFS= read -r item; do
+  [ -z "$item" ] && continue
+  out=$(curl "$base/api/item_add" -X POST \
+    -H 'Content-Type: application/json' -d "$item") || exit 1
+  case "$out" in
+    *'"code":'*) printf '%s\n' "$out" >&2; exit 1 ;;
+  esac
+done < items.jsonl
+curl "$base/api/items"
+```
+
+- 这是**结构化记录的客户端批量写入**：一次 API 请求仍执行一条 SQL，不构成事务；失败前的写入保留。
+- 让脚本生成/转换整批数据，AI 只运行一次脚本；不要为每条记录分别发起一次 AI 工具调用。
+- 检查响应 JSON 的 `code`，不能只看 curl 退出码；失败即停，非幂等写入不自动重试。
+- `url_prefix` 作为参数或配置传入，不写死 skill_id；不传 `user_id`，服务端按身份隔离。
+- 不要为了 for 循环注册 MCP，也不要把内建 curl 的相对地址能力当成系统 shell 的通用能力。
+- 完整调用边界、批量验收与文件上传限制见 [cloud-data.md](cloud-data.md) §3。
 
 ## 3. 常驻服务：包内声明
 
@@ -158,6 +187,7 @@ RTC DataChannel（如 `mytool:view`）：
 - 包内只有源码、模块声明与测试；没有二进制、压缩包、构建产物。
 - 服务能完成协议握手、工具发现和一次真实调用：`mytool`、`mytool ping --json`。
 - 页面侧调用后关闭连接句柄；错误与截断不被当作成功。
+- 普通脚本若调用技能 API：实测一个脚本批量写入多条、一次读回；失败响应会让脚本停止，后续行不写入。
 - 声明 `streams` 前，已有真实流服务、前端协议和通道冲突测试，而不只是 JSON 字段。
 
 ## 8. 高频坑
@@ -171,3 +201,5 @@ RTC DataChannel（如 `mytool:view`）：
 7. 把"大输出被截断"当成程序 bug → 先检查日志与截断规则。
 8. 还在写 `cli/manifest.json` → 旧维度已删，唯一契约是包根 `manifest.json` + `commands install`。
 9. 把 `streams` 当长任务输出开关 → 它是需要真实流服务的 RTC 路由。
+10. AI 逐条 POST 一批数据 → 改成一个脚本循环处理并批量回写，检查业务错误后一次读回。
+11. 在任意系统 shell 里执行 `curl /skills/...` → 相对地址与身份注入属于 exec/vsh 内建 curl。

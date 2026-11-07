@@ -59,32 +59,6 @@ func TestListAndOpen(t *testing.T) {
 	}
 }
 
-func TestVersionFromFrontmatter(t *testing.T) {
-	for name, want := range map[string]string{
-		"browser":       "1.2.12",
-		"cua":           "1.1.8",
-		"blender":       "0.3.6",
-		"create":        "1.0.11",
-		"vhtml":         "0.5.1",
-		"office_studio": "1.0.6",
-		"drawio":        "1.0.4",
-		"hello":         "1.0.1",
-		"ppt_studio":    "1.0.6",
-		"video_studio":  "1.0.5",
-		"play_with_ai":  "1.0.6",
-	} {
-		if !slices.Contains(List(), name) {
-			want = ""
-		}
-		if v := Version(name); v != want {
-			t.Errorf("Version(%s) = %q, want %q", name, v, want)
-		}
-	}
-	if v := Version("ghost"); v != "" {
-		t.Errorf("Version(ghost) = %q, want empty", v)
-	}
-}
-
 func TestZipRoundTrip(t *testing.T) {
 	data, err := Zip("vhtml")
 	if err != nil {

@@ -41,18 +41,19 @@ Boundary (contract truth: aic `docs/reference/skill.md`):
 - `builtin.go` — `List` / `Open` / `Version` / `Zip` / `Frontmatter` helpers over the embed.
 - `builtin_embed.go` — **the publication switch** (`//go:embed all:<dir> …`): a directory that
   is not listed is never published.
-- `builtin_test.go` — contract tests (list/metadata/version/zip, and "no runtime artifacts").
+- `builtin_test.go` — contract tests (embedded list/asset shape/zip, and "no runtime artifacts").
 
 ## Publication & versioning rules
 
 - Adding a skill = create `<name>/SKILL.md` with `name: <name>` **equal to the directory name**
   and a numeric `version:`, add `<name>` to the `//go:embed` list, and update the expected
-  list/versions in `builtin_test.go`.
+  list in `builtin_test.go`.
 - `version:` is the **content version** and part of aic's `skills.builtin` maintenance-event
   fingerprint (package name + embedded version). A changed fingerprint triggers seeding; a forced
   rerun is also available. Once the event runs, every embedded package is replaced and its row metadata
   fully refreshed **without comparing version ordering**. This repository keeps numeric dotted versions;
-  bump the affected skill on every content change so automatic seeding sees the change.
+  bump the affected skill when its content changes **and the change should reach the platform** —
+  the version is the seeding signal, so a content change without a bump stays unpublished.
 - The **module version** (`VERSION` + `CHANGELOG.md`, tag `vX.Y.Z`) is the Go dependency
   surface used by the platform consumer (aic). Release = commit → tag → push → consumer bumps `require`.
 - Never put build artifacts in a skill directory (binaries, `*.zip`, `*.sqlite`):

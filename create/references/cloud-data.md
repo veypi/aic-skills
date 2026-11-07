@@ -42,6 +42,8 @@ insert into items (user_id, title, qty) values (:user_id, :title, :qty)
 
 ## 3. 怎么调
 
+### 3.1 页面与 AI
+
 **页面里**（相对地址，前缀自动补）：
 
 ```js
@@ -49,7 +51,7 @@ const r = await $fetch('api/list')                    // GET
 await $fetch('api/add', { method: 'POST', body: { title, qty } })
 ```
 
-**AI 侧**（页面上下文执行，同源 + cookie 身份自动携带）：
+**AI 的 page 通道**（同源 + cookie 身份自动携带）：
 
 ```sh
 exec _host=page
@@ -58,6 +60,49 @@ curl {url_prefix}/api/add -X POST -H 'Content-Type: application/json' -d '{"titl
 ```
 
 `url_prefix` 就是建行时返回的 `/skills/cloud/{id}`——不要手拼 id。
+
+### 3.2 Host / Pod 脚本直接调用
+
+Host 与 Cloud/Pod 的 exec/vsh **内建 curl** 也支持 `{url_prefix}/api/...`：相对地址自动指向平台，
+身份来自当前设备或 exec 会话，SQLx 的 `:user_id` 仍由服务端注入。不要手工塞 cookie/token 或 `user_id`。
+
+```sh
+exec _host=<设备ID>       # 或 cloud（Pod）
+curl '{url_prefix}/api/list'
+curl '{url_prefix}/api/add' -X POST -H 'Content-Type: application/json' \
+  -d '{"title":"来自设备脚本","qty":1}'
+```
+
+这里说的是 **exec/vsh 内建 curl**，不是任意系统终端里的 `/usr/bin/curl`；后者不会凭相对路径自动获得
+平台地址和身份。这个能力只覆盖 `/skills/cloud/{skill_id}/api/...`，不代表 `/api/skills` 等平台管理接口
+也能从 Host/Pod 调用。
+
+### 3.3 一个脚本批量处理与写入
+
+批量场景让脚本读取 JSONL、扫描目录或循环计算数据，再逐条 POST；**不要由 AI 为每行分别发一次工具调用**。
+每行必须是独立、完整的 JSON 对象，脚本用变量传 `-d`，不要把业务文本拼进 shell 源码。
+
+```sh
+# items.jsonl：每行一个完整 JSON；base 由调用者传入，避免写死 skill_id
+base=${1:?"usage: sh batch.sh /skills/cloud/<skill_id>"}
+while IFS= read -r item; do
+  [ -z "$item" ] && continue
+  out=$(curl "$base/api/todo_add" -X POST \
+    -H 'Content-Type: application/json' -d "$item") || exit 1
+  case "$out" in
+    *'"code":'*) printf '%s\n' "$out" >&2; exit 1 ;;
+  esac
+done < items.jsonl
+
+curl "$base/api/todos"       # 完成后一次读回校验
+```
+
+- curl 进程退出码为 0 不等于业务成功；响应里的 `code` 也要检查。写入接口可再按契约检查 `affected`。
+- 默认顺序执行，失败即停并打印原始响应；不要在原因不明时并行写或静默跳过。
+- 当前 SQLx 是**一次请求执行一条 SQL**，批量循环不是自动事务：第 N 条失败时，前 N-1 条已写入。
+  需要幂等重跑时由应用生成稳定业务 id 并设计去重；**非幂等 POST 不自动重试**。
+- 这里的“批量上传”指批量提交结构化记录。SQLx 不是通用 multipart/二进制文件上传面；
+  大量文件使用平台文件通道或 `pull`/`push`，不要编造文件上传参数。
 
 用户端只调 `api/*.sqlx`；owner 自己的排障与数据修复见 §4。
 
@@ -115,6 +160,7 @@ curl /api/skills/{skill_id}/tables_sqlx -X POST -H 'Content-Type: application/js
 ## 7. 验收
 
 - 建包后接口能通：GET 返回 `{ rows: [...] }`，POST 写入成功。
+- 有设备批处理时，在一个 Host/Pod 脚本里完成多条写入并一次读回；制造一条可预期失败，确认脚本停止、错误可见且后续行未写入。
 - 换一个账号调用，**看不到**上一个账号的数据（隔离生效）。
 - 参数非法时返回可读错误，不 500 白屏。
 - 包内没有真实用户数据（公开库从空开始）。

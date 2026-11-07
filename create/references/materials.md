@@ -35,12 +35,14 @@
 
 | 通道 | 方向 | 载体 | 例子 |
 |---|---|---|---|
-| HTTP | 页面 ↔ 云端 | 同源请求（cookie 身份） | `$fetch('api/todos')`、`curl /api/skills` |
+| 技能 HTTP API | Page/Host/Pod ↔ 云端 | 页面同源请求；exec/vsh 内建 curl 请求 `{url_prefix}/api/...` | `$fetch('api/todos')`、设备脚本批量 POST |
+| 平台管理 HTTP | 页面 ↔ 云端 | 同源请求（cookie 身份） | `curl /api/skills` |
 | 页面指令 | AI ↔ 页面 | 页面声明 `pageDesc.commands`，AI 按命令名调用 | `{窗口ID}.{命令名}` |
 | 设备命令 | AI/页面 ↔ 设备 | vsh 服务命令（MCP/TCP 等），复杂参数走 stdin | `browser snapshot --json` |
 
 **身份**：来自已认证连接，**不能通过工具参数覆盖** user_id、owner 或审批事实；
-云端 API 的 user_id/skill_id 由服务端重写。
+云端 API 的 user_id/skill_id 由服务端重写。Page 使用 cookie；Host 使用设备连接身份，Cloud/Pod 使用
+exec 会话身份。自动身份注入只承诺 `/skills/cloud/{skill_id}/api/...`，其它路径或外部 origin 不自动带凭证。
 
 **取消**：UI 与 AI 都用原生 exec 取消；设备侧按 Provider 能力传递取消，写入不自动重放。
 
@@ -87,10 +89,11 @@ saveBlob = (name, blob) => {
 - 设备服务命令使用别名本身的命令权限（`grant cmd <alias>`），拒绝时按现有 grant 流程申请。
 - 官方 browser/CUA 以设备权限运行；**原生 fs 规则不隔离浏览器/桌面操作**。
 - 第三方服务默认运行在设备沙箱内；`no_sandbox` 只能由设备所有者在配置中显式设置，技能或工具参数不能借此提权。
-- 页面/云端都不接入 MCP 协议；MCP 仅在 Pod 内部。
+- 页面/云端都不接入 MCP 协议；MCP 仅在 Pod 内部。设备脚本批量调技能 API 走 HTTP，不需要为此增加 MCP。
 
 ## 7. 调试
 
+- 技能 API 三端连通：同一身份在 Host/Pod 用内建 curl 读；有写接口时再做批量写入与读回。
 - 页面挂载失败 → 红色 `[vhtml] ... failed` 占位（不是白屏）。
 - 错误登记：`window.__vhtml_dev.errors`（含代码预览）。
 - 刷新窗口：AI 侧 `reload [win_id]`；详细日志：`localStorage.debug = 1`。

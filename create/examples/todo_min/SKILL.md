@@ -1,9 +1,9 @@
 ---
 name: todo_min
-version: 0.1.0
+version: 0.1.1
 nickname: 待办清单示例
-description: 界面与 API 组合示例（当前 v6.1 格式）：待办清单——ui 页面 + tables 声明 + sqlx 接口 + pageDesc 指令的完整链路，含行级隔离与自测指令
-keywords: [示例, 待办, tables, sqlx, 数据面, pageDesc]
+description: 界面与 API 组合示例：待办清单——ui 页面 + tables 声明 + sqlx 接口 + pageDesc 指令 + Host/Pod 批量脚本，含行级隔离与自测
+keywords: [示例, 待办, tables, sqlx, 数据面, pageDesc, Host, Pod, 批处理]
 ---
 
 # todo_min（最小活 skill 示例）
@@ -24,12 +24,30 @@ keywords: [示例, 待办, tables, sqlx, 数据面, pageDesc]
 
 所有接口强制 `user_id = :user_id`（服务端注入，不可伪造）——每个用户只看/只改自己的数据。
 
-AI 调用示例（page 通道）：
+AI 调用示例（page、Host 或 Cloud/Pod 的 exec/vsh 内建 curl）：
 
 ```
 curl {url_prefix}/api/todos
 curl {url_prefix}/api/todo_add -X POST -H 'Content-Type: application/json' -d '{"id":"m1","title":"买牛奶","priority":"2","note":"","created_at":"2026-01-01T00:00:00Z"}'
 ```
+
+Host/Pod 批量写入：脚本读取 JSONL，一次运行提交整批，不要由 AI 逐条发调用。`todos.jsonl` 每行是完整的
+`todo_add` 参数对象。
+
+```sh
+base=${1:?"pass url_prefix"}
+while IFS= read -r row; do
+  [ -z "$row" ] && continue
+  out=$(curl "$base/api/todo_add" -X POST \
+    -H 'Content-Type: application/json' -d "$row") || exit 1
+  case "$out" in
+    *'"code":'*) printf '%s\n' "$out" >&2; exit 1 ;;
+  esac
+done < todos.jsonl
+curl "$base/api/todos"
+```
+
+批量循环不是事务；失败前的写入保留。使用稳定业务 id 设计去重，非幂等 POST 不自动重试。
 
 ## 页面与指令
 
@@ -49,3 +67,5 @@ curl {url_prefix}/api/todo_add -X POST -H 'Content-Type: application/json' -d '{
 open /skills/cloud/{skill_id} → {win_id}.todo_status → {win_id}.todo_add --title "测试"
 → {win_id}.todo_status（total 应 +1）→ curl {url_prefix}/api/todos（读回持久化结果）
 ```
+
+批处理另测：一个 Host/Pod 脚本写入多条 → 一次 GET 读回；故意提交重复 id → 脚本在错误行停止，后续行不写入。

@@ -69,7 +69,7 @@ components 第一阶段仅声明不装配；openers 经统一有序表生效（P
 
 ## 4. 建行、授权、写文件
 
-**建行**（只在页面上下文里调；云端执行器打不到平台接口）：
+**建行**（`/api/skills` 是平台管理接口，只在页面上下文里调；不要与三端可调的技能数据 API 混淆）：
 
 ```sh
 exec _host=page
@@ -100,7 +100,7 @@ grant fs /skills/{skill_id}
 | HTTP 包服务（API/静态资源） | 与页面**同段**：`/skills/cloud/{id}/...`，用 `url_prefix` 拼 |
 | 包内 API（页面里调用） | **相对地址**：`$fetch('api/todos')`——前缀自动补，与部署 id 无关 |
 | 包目录（fs 工具） | `/skills/{id}/...` |
-| 设备侧 | 设备不提供技能内容路由；要内容用 `pull` 或下载接口 |
+| 设备/Pod 调包内 API | exec/vsh 内建 `curl {url_prefix}/api/...`，身份自动注入；页面文件内容仍用 `pull` 或下载接口 |
 
 **不要写死技能 id 或手拼前缀**——fork 或换部署后会 404。页内导航用相对页面名
 （`$router.push('sub')`），资源用相对路径或 `$mod.scoped`。
@@ -110,7 +110,7 @@ grant fs /skills/{skill_id}
 - `ui/`：界面。完整 HTML 文档 + vhtml 写法，见 [ui-component.md](ui-component.md)。
 - `api/` + `tables/`：云端数据面，见 [cloud-data.md](cloud-data.md)。
 - `manifest.json` 的 `host` + `src/`：设备侧命令，见 [device-cli.md](device-cli.md)。
-- `scripts/`：普通脚本附件，用户自己跑；平台**不安装、不扫描、不启动**它们。
+- `scripts/`：普通脚本附件，用户自己跑；可循环调用 `{url_prefix}/api/...` 批量回写；平台**不安装、不扫描、不启动**它们。
 - `references/`：补充文档（细节多时把长内容拆出去，SKILL.md 保持可读）。
 
 ## 7. 私有行与公开行
@@ -126,11 +126,11 @@ grant fs /skills/{skill_id}
 
 ## 8. 高频坑
 
-1. 在云端执行器里调平台接口 → 空响应或 401；平台接口只能从页面上下文调。
+1. 把技能 API 的三端支持误套到平台管理接口 → `/skills/cloud/{id}/api/...` 可由 Page/Host/Pod 调；`/api/skills` 等管理接口仍从页面上下文调。
 2. 忘了先 `grant fs` → 私有包目录写不进去。
 3. frontmatter 写 `desc` 而不是 `description` → 解析失败。
 4. `name` 与注册表行不一致 → 加载失败。
-5. 包内 API 写绝对路径/手拼 id → fork 后 404。
+5. 页面里手拼 id → fork 后 404；页面用相对 API，Host/Pod 脚本把 `url_prefix` 作为参数或配置传入。
 6. 把设备二进制塞进 `bin` → 包体超限且违反契约（只入库源码）。
 7. 页面自带 `env.js` → 平台有固定出口，不生效。
 8. 发布时把私有行里的运行库/临时文件一起打包 → 审核拒绝。
@@ -138,6 +138,6 @@ grant fs /skills/{skill_id}
 ## 9. 验收
 
 - SKILL.md 可执行、引用完整（引用的文件都存在）。
-- 页面能打开，资源无 404；接口按用户隔离（换个账号看不到别人的数据）。
+- 页面能打开，资源无 404；接口按用户隔离（换个账号看不到别人的数据）；设备批处理脚本实测过 Host/Pod 读写与失败停止。
 - 包内没有二进制、构建产物、用户数据、密钥。
 - `description` 说清了"什么时候用"与"什么时候别用"。
