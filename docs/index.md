@@ -22,6 +22,7 @@
 | `vhtml` | [vhtml/SKILL.md](../vhtml/SKILL.md)（前端框架指南，源在 vhtml 仓 `ui/docs/SKILL.md`） |
 | `drawio` | [drawio/SKILL.md](../drawio/SKILL.md) + [references/](../drawio/references/) |
 | `office_studio` / `ppt_studio` / `video_studio` / `play_with_ai` | 各包 `SKILL.md` 与其 `references/` |
+| `3d_maker` | [3d_maker/SKILL.md](../3d_maker/SKILL.md)（建模代码编写指南 + 工作台 UI） |
 | `hello` | [hello/SKILL.md](../hello/SKILL.md)（最小 CLI 示例） |
 
 ## 约定

@@ -19,6 +19,7 @@ ivec.ai 官方**技能内容仓**。技能 = `SKILL.md` + 可选包根 `manifest
 | `ppt_studio` | 1.0.6 | 说明 + UI：PPT 工坊 |
 | `video_studio` | 1.0.5 | 说明 + UI：视频工坊 |
 | `play_with_ai` | 1.0.6 | 说明 + UI：与 AI 对弈的多游戏台（五子棋 / 象棋） |
+| `3d_maker` | 1.0.0 | 说明 + UI：浏览器内参数化 CAD 建模、装配、打印就绪检测与 STL/OBJ/GLB/3MF 导出 |
 | `vhtml` | 0.5.1 | 说明：vhtml 前端框架指南 |
 | `hello` | 1.0.1 | 示例：普通原生 CLI |
 

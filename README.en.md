@@ -22,6 +22,7 @@ binaries shipped with the release.
 | `ppt_studio` | 1.0.6 | Prose + UI: slide studio |
 | `video_studio` | 1.0.5 | Prose + UI: video studio |
 | `play_with_ai` | 1.0.6 | Prose + UI: multi-game table for playing against AI (gomoku / xiangqi) |
+| `3d_maker` | 1.0.0 | Prose + UI: in-browser parametric CAD modeling, assemblies, print-readiness checks and STL/OBJ/GLB/3MF export |
 | `vhtml` | 0.5.1 | Prose: the vhtml frontend framework guide |
 | `hello` | 1.0.1 | Example: a plain native CLI |
 

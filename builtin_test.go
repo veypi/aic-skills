@@ -13,15 +13,15 @@ import (
 
 func TestListAndOpen(t *testing.T) {
 	names := List()
-	if len(names) != 11 {
-		t.Fatalf("List = %v, want eleven static skills", names)
+	if len(names) != 12 {
+		t.Fatalf("List = %v, want twelve static skills", names)
 	}
 	for _, name := range []string{"create", "vhtml", "office_studio"} {
 		if !slices.Contains(names, name) {
 			t.Errorf("resource package %s missing", name)
 		}
 	}
-	want := map[string]bool{"browser": true, "cua": true, "blender": true, "create": true, "vhtml": true, "office_studio": true, "drawio": true, "hello": true, "ppt_studio": true, "video_studio": true, "play_with_ai": true}
+	want := map[string]bool{"browser": true, "cua": true, "blender": true, "create": true, "vhtml": true, "office_studio": true, "drawio": true, "hello": true, "ppt_studio": true, "video_studio": true, "play_with_ai": true, "3d_maker": true}
 	for _, n := range names {
 		if !want[n] {
 			t.Fatalf("unexpected builtin package %q in %v", n, names)

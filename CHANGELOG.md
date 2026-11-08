@@ -4,6 +4,10 @@
 
 两个版本面：**模块版本**（本文件 / tag `vX.Y.Z`，Go 依赖面）与**技能版本**（各 `SKILL.md` frontmatter 的 `version:`，进入 `skills.builtin` 指纹）。内容更新 bump 技能版本以触发自动定版；事件执行时无条件整包覆盖，不做版本大小比较。契约或结构变化 bump 模块版本。
 
+## 0.4.2 — 2026-11-08
+
+- **新增内建技能 `3d_maker`（1.0.0）**：自 `test_skills/3d_maker` 迁入——浏览器内参数化 CAD 建模、多部件装配、打印就绪检测与 STL/OBJ/GLB/3MF 导出（内置 JS 内核 / OCCT 高性能内核）。frontmatter 的 `ui:` 段改为包根 `manifest.json`（schema 1）；手册与 UI 中残留的 `1host` 全部改为 `_host`；开发笔记 `docs/todo.md` 不入库。embed 列表与契约测试期望 11 → 12，README 中英文版本表与 docs/index.md 同步。
+
 ## 0.4.1 — 2026-11-03
 
 - **执行目标参数改名 `1host` → `_host`**：平台 fs/exec 的执行目标参数由 `1host` 改为 `_host`——OpenAI 兼容 function-calling 的参数名规范不接受以数字开头的名字（实测 MiniMax 会整个丢掉该属性，fs/exec 调用因缺目标被连续拒绝）。手册里的调用写法同步：`exec 1host=page` → `exec _host=page`、`fs {"1host":"page",...}` → `fs {"_host":"page",...}`。
