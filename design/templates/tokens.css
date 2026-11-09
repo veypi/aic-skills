@@ -1,0 +1,28 @@
+:root {
+  /* 语义角色模板：按 DESIGN.md 调整，不为用不到的层级提前造 Token。 */
+  --design-bg: #fafafa;
+  --design-surface: #ffffff;
+  --design-text: #171717;
+  --design-text-muted: #666666;
+  --design-border: #e5e5e5;
+  --design-accent: #315efb;
+  --design-accent-text: #ffffff;
+  --design-success: #18794e;
+  --design-warning: #9a6700;
+  --design-danger: #c93c37;
+
+  --design-font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --design-font-display: var(--design-font-body);
+  --design-font-mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
+
+  --design-space-1: 4px;
+  --design-space-2: 8px;
+  --design-space-3: 12px;
+  --design-space-4: 16px;
+  --design-space-6: 24px;
+  --design-space-8: 32px;
+
+  --design-radius-control: 6px;
+  --design-radius-surface: 10px;
+  --design-content-width: 1200px;
+}

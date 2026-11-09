@@ -3,7 +3,17 @@
   "ui": {
     "pages": {
       "index": {
-        "desc": "主工作台（场景列表 + 舞台 + 属性面板 + 时间轴 + 素材）"
+        "desc": "片架：打开、新建 .video_studio 存档，最近记录与内置实样"
+      },
+      "studio": {
+        "desc": "视频工作台（场景列表 + 舞台 + 属性面板 + 时间轴 + 素材）"
+      }
+    },
+    "openers": {
+      "video": {
+        "page": "studio",
+        "name": "Video Studio",
+        "match": {"extensions": ["video_studio"]}
       }
     }
   }

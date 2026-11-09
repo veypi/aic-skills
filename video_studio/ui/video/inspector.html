@@ -2,16 +2,16 @@
 <html>
   <head><title>Video Inspector</title></head>
   <style>
-    body { display: flex; flex-direction: column; height: 100%; min-height: 0; overflow-y: auto; background: var(--bg-color-secondary); font-size: 12.5px; color: var(--text-color); }
-    .ro-banner { margin: 12px; padding: 14px; border-radius: 10px; background: color-mix(in srgb, var(--color-warning) 10%, transparent); border: 1px solid color-mix(in srgb, var(--color-warning) 30%, transparent); color: var(--color-warning); display: flex; flex-direction: column; gap: 10px; }
+    body { display: flex; flex-direction: column; height: 100%; min-height: 0; overflow-y: auto; background: var(--bg-color-secondary); font-size: 13px; color: var(--text-color); }
+    .ro-banner { margin: 12px; padding: 12px; border-radius: 4px; background: color-mix(in srgb, var(--color-warning) 10%, transparent); border: 1px solid color-mix(in srgb, var(--color-warning) 30%, transparent); color: var(--color-warning); display: flex; flex-direction: column; gap: 10px; }
     .empty { padding: 30px 16px; text-align: center; color: var(--text-color-tertiary); }
-    .form { padding: 10px 12px 30px; }
+    .form { padding: 12px 14px 30px; }
     .sec-head { display: flex; align-items: center; gap: 8px; padding: 4px 0 10px; }
-    .tag { background: color-mix(in srgb, var(--color-primary) 25%, transparent); color: var(--color-primary); font-size: 11px; padding: 2px 8px; border-radius: 5px; }
+    .tag { background: color-mix(in srgb, var(--color-primary) 10%, transparent); color: var(--color-primary); font-size: 10px; padding: 2px 6px; border-radius: 3px; text-transform: uppercase; letter-spacing: .04em; }
     .id { color: var(--text-color); font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .sp { flex: 1; }
-    .sec { border-top: 1px solid color-mix(in srgb, var(--text-color) 7%, transparent); padding: 10px 0 12px; }
-    .sec-t { font-size: 11px; color: var(--text-color-tertiary); font-weight: 600; letter-spacing: 0.6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+    .sec { border-top: 1px solid var(--border-color); padding: 14px 0 16px; }
+    .sec-t { font-size: 11px; color: var(--text-color-secondary); font-weight: 600; letter-spacing: 0.04em; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
     .frow { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; }
     .frow label { flex: none; width: 62px; color: var(--text-color-tertiary); font-size: 12px; }
     .frow .grow { flex: 1; min-width: 0; }
@@ -20,7 +20,7 @@
     .fgrid .cell label { font-size: 10.5px; color: var(--text-color-tertiary); }
     .in, .sel, .ta {
       width: 100%; box-sizing: border-box; background: color-mix(in srgb, var(--text-color) 6%, transparent);
-      border: 1px solid color-mix(in srgb, var(--text-color) 12%, transparent); border-radius: 6px; color: var(--text-color);
+      border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-color);
       font-size: 12px; padding: 5px 7px; outline: none; font-family: inherit;
     }
     .in:focus, .sel:focus, .ta:focus { border-color: var(--color-primary); }
@@ -31,21 +31,21 @@
     .color-pair { display: flex; gap: 6px; align-items: center; flex: 1; min-width: 0; }
     .color-pair input[type='color'] {
       flex: none; width: 28px; height: 26px; padding: 0; border: 1px solid color-mix(in srgb, var(--text-color) 15%, transparent);
-      border-radius: 6px; background: transparent; cursor: pointer;
+      border-radius: 4px; background: transparent; cursor: pointer;
     }
     .mini {
       border: 1px solid color-mix(in srgb, var(--text-color) 12%, transparent); background: color-mix(in srgb, var(--text-color) 6%, transparent); color: var(--text-color);
-      font-size: 11px; padding: 3px 9px; border-radius: 6px; cursor: pointer; white-space: nowrap;
+      font-size: 11px; padding: 3px 8px; border-radius: 4px; cursor: pointer; white-space: nowrap;
     }
-    .mini:hover { background: color-mix(in srgb, var(--color-primary) 28%, transparent); color: var(--color-primary-text); }
+    .mini:hover { background: var(--bg-color-tertiary); color: var(--text-color); }
     .mini.danger:hover { background: color-mix(in srgb, var(--color-danger) 30%, transparent); color: var(--color-danger); }
-    .mini.primary { background: color-mix(in srgb, var(--color-primary) 30%, transparent); border-color: color-mix(in srgb, var(--color-primary) 50%, transparent); color: var(--color-primary); }
+    .mini.primary { background: color-mix(in srgb, var(--color-primary) 10%, transparent); border-color: color-mix(in srgb, var(--color-primary) 35%, transparent); color: var(--color-primary); }
     .btn {
-      border: none; border-radius: 8px; padding: 7px 14px; font-size: 12.5px; cursor: pointer;
+      border: none; border-radius: 4px; padding: 7px 12px; font-size: 12px; cursor: pointer;
       background: color-mix(in srgb, var(--text-color) 8%, transparent); color: var(--text-color);
     }
-    .btn.primary { background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover)); color: var(--color-primary-text); font-weight: 600; }
-    .kf-card { border: 1px solid color-mix(in srgb, var(--text-color) 9%, transparent); border-radius: 8px; padding: 7px 8px; margin-bottom: 7px; background: color-mix(in srgb, var(--text-color) 3%, transparent); }
+    .btn.primary { background: var(--color-primary); color: var(--color-primary-text); font-weight: 500; }
+    .kf-card { border: 1px solid var(--border-color); border-radius: 4px; padding: 7px 8px; margin-bottom: 7px; background: color-mix(in srgb, var(--text-color) 3%, transparent); }
     .kf-head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
     .kf-head .t { color: var(--color-warning); font-size: 11px; font-weight: 600; }
     .kf-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
@@ -63,8 +63,8 @@
     <input type="file" ref="file" style="display: none" />
 
     <div class="ro-banner" v-if="readonly && doc">
-      <div>当前是内置样例（只读）。另存为项目后即可编辑、保存与导出。</div>
-      <button class="btn primary" @click="$emit('saveas')">另存为项目</button>
+      <div>{{ $t('inspector.readonly_hint') }}</div>
+      <button class="btn primary" @click="$emit('saveas')">{{ $t('inspector.save_as_archive') }}</button>
     </div>
 
     <!-- ================= 元素表单 ================= -->
@@ -73,71 +73,71 @@
         <span class="tag">{{ curEl().type }}</span>
         <span class="id">{{ curEl().id }}</span>
         <div class="sp"></div>
-        <button class="mini" @click="$emit('dupel', curEl().id)">复制</button>
-        <button class="mini danger" @click="$emit('delel', curEl().id)">删除</button>
+        <button class="mini" @click="$emit('dupel', curEl().id)">{{ $t('common.duplicate') }}</button>
+        <button class="mini danger" @click="$emit('delel', curEl().id)">{{ $t('common.delete') }}</button>
       </div>
 
       <div class="sec">
-        <div class="sec-t">位置与尺寸</div>
+        <div class="sec-t">{{ $t('inspector.position_size') }}</div>
         <div class="fgrid">
           <div class="cell"><label>X</label><input class="in" type="number" :value="curEl().x" @change="onNum(curEl(), 'x', $event)" /></div>
           <div class="cell"><label>Y</label><input class="in" type="number" :value="curEl().y" @change="onNum(curEl(), 'y', $event)" /></div>
-          <div class="cell"><label>宽</label><input class="in" type="number" :value="curEl().w" @change="onNum(curEl(), 'w', $event)" /></div>
-          <div class="cell"><label>高</label><input class="in" type="number" :value="curEl().h" @change="onNum(curEl(), 'h', $event)" /></div>
-          <div class="cell"><label>旋转°</label><input class="in" type="number" :value="curEl().rotation || 0" @change="onNum(curEl(), 'rotation', $event)" /></div>
-          <div class="cell"><label>不透明</label><input class="in" type="number" min="0" max="1" step="0.05" :value="curEl().opacity == null ? 1 : curEl().opacity" @change="onNum(curEl(), 'opacity', $event)" /></div>
-          <div class="cell"><label>层级 Z</label><input class="in" type="number" :value="curEl().z == null ? 0 : curEl().z" @change="onNum(curEl(), 'z', $event)" /></div>
-          <div class="cell"><label>开始 s</label><input class="in" type="number" step="0.1" min="0" title="场景内开始秒（时间轴可拖拽）" :value="+curEl().start || 0" @change="onNum(curEl(), 'start', $event)" /></div>
-          <div class="cell"><label>时长 s</label><input class="in" type="number" step="0.1" min="0" title="可见窗口时长，0 = 到场景尾" :value="+curEl().dur || 0" @change="onNum(curEl(), 'dur', $event)" /></div>
+          <div class="cell"><label>{{ $t('inspector.width') }}</label><input class="in" type="number" :value="curEl().w" @change="onNum(curEl(), 'w', $event)" /></div>
+          <div class="cell"><label>{{ $t('inspector.height') }}</label><input class="in" type="number" :value="curEl().h" @change="onNum(curEl(), 'h', $event)" /></div>
+          <div class="cell"><label>{{ $t('inspector.rotation_deg') }}</label><input class="in" type="number" :value="curEl().rotation || 0" @change="onNum(curEl(), 'rotation', $event)" /></div>
+          <div class="cell"><label>{{ $t('inspector.opacity') }}</label><input class="in" type="number" min="0" max="1" step="0.05" :value="curEl().opacity == null ? 1 : curEl().opacity" @change="onNum(curEl(), 'opacity', $event)" /></div>
+          <div class="cell"><label>{{ $t('inspector.z_index') }}</label><input class="in" type="number" :value="curEl().z == null ? 0 : curEl().z" @change="onNum(curEl(), 'z', $event)" /></div>
+          <div class="cell"><label>{{ $t('inspector.start_s') }}</label><input class="in" type="number" step="0.1" min="0" :title="$t('inspector.start_hint')" :value="+curEl().start || 0" @change="onNum(curEl(), 'start', $event)" /></div>
+          <div class="cell"><label>{{ $t('inspector.duration_s') }}</label><input class="in" type="number" step="0.1" min="0" :title="$t('inspector.duration_hint')" :value="+curEl().dur || 0" @change="onNum(curEl(), 'dur', $event)" /></div>
         </div>
         <div class="frow">
-          <label>图层</label>
-          <button class="mini" @click="zMove(curScene(), curEl(), -1)">下移一层</button>
-          <button class="mini" @click="zMove(curScene(), curEl(), 1)">上移一层</button>
+          <label>{{ $t('inspector.layer') }}</label>
+          <button class="mini" @click="zMove(curScene(), curEl(), -1)">{{ $t('stage.backward') }}</button>
+          <button class="mini" @click="zMove(curScene(), curEl(), 1)">{{ $t('stage.forward') }}</button>
         </div>
       </div>
 
       <!-- 文本 -->
       <div class="sec" v-if="curEl().type === 'text'">
-        <div class="sec-t">文本</div>
+        <div class="sec-t">{{ $t('timeline.text') }}</div>
         <div class="frow"><div class="grow"><textarea class="ta" :value="curEl().html" @change="onStr(curEl(), 'html', $event)"></textarea></div></div>
         <div class="fgrid">
-          <div class="cell"><label>字号</label><input class="in" type="number" :value="curEl().fontSize || 24" @change="onNum(curEl(), 'fontSize', $event)" /></div>
-          <div class="cell"><label>字重</label>
+          <div class="cell"><label>{{ $t('inspector.font_size') }}</label><input class="in" type="number" :value="curEl().fontSize || 24" @change="onNum(curEl(), 'fontSize', $event)" /></div>
+          <div class="cell"><label>{{ $t('inspector.font_weight') }}</label>
             <select class="sel" :value="curEl().fontWeight || 400" @change="onNum(curEl(), 'fontWeight', $event)">
               <option v-for="w in [400, 500, 600, 700, 800, 900]" :value="w" :selected="(curEl().fontWeight || 400) === w">{{ w }}</option>
             </select>
           </div>
-          <div class="cell"><label>行高</label><input class="in" type="number" step="0.05" :value="curEl().lineHeight || 1.25" @change="onNum(curEl(), 'lineHeight', $event)" /></div>
-          <div class="cell"><label>字距</label><input class="in" type="number" :value="curEl().letterSpacing || 0" @change="onNum(curEl(), 'letterSpacing', $event)" /></div>
+          <div class="cell"><label>{{ $t('inspector.line_height') }}</label><input class="in" type="number" step="0.05" :value="curEl().lineHeight || 1.25" @change="onNum(curEl(), 'lineHeight', $event)" /></div>
+          <div class="cell"><label>{{ $t('inspector.letter_spacing') }}</label><input class="in" type="number" :value="curEl().letterSpacing || 0" @change="onNum(curEl(), 'letterSpacing', $event)" /></div>
         </div>
         <div class="frow">
-          <label>颜色</label>
+          <label>{{ $t('inspector.color') }}</label>
           <div class="color-pair">
             <input type="color" :value="toHex(curEl().color)" @change="onStr(curEl(), 'color', $event)" />
             <input class="in" type="text" :value="curEl().color" @change="onStr(curEl(), 'color', $event)" />
           </div>
         </div>
         <div class="fgrid">
-          <div class="cell"><label>对齐</label>
+          <div class="cell"><label>{{ $t('inspector.align') }}</label>
             <select class="sel" :value="curEl().align || 'left'" @change="onStr(curEl(), 'align', $event)">
               <option v-for="a in ['left', 'center', 'right']" :value="a" :selected="(curEl().align || 'left') === a">{{ a }}</option>
             </select>
           </div>
-          <div class="cell"><label>垂直</label>
+          <div class="cell"><label>{{ $t('inspector.valign') }}</label>
             <select class="sel" :value="curEl().valign || 'top'" @change="onStr(curEl(), 'valign', $event)">
               <option v-for="a in ['top', 'middle', 'bottom']" :value="a" :selected="(curEl().valign || 'top') === a">{{ a }}</option>
             </select>
           </div>
         </div>
-        <div class="hint">支持白名单标签：&lt;b&gt; &lt;i&gt; &lt;u&gt; &lt;br&gt; &lt;span&gt;；变量：&#123;&#123;page&#125;&#125; &#123;&#123;pages&#125;&#125; &#123;&#123;title&#125;&#125;</div>
+        <div class="hint">{{ $t('inspector.text_hint') }}</div>
       </div>
 
       <!-- 形状 -->
       <div class="sec" v-if="curEl().type === 'shape'">
-        <div class="sec-t">形状</div>
+        <div class="sec-t">{{ $t('inspector.shape') }}</div>
         <div class="frow">
-          <label>形状</label>
+          <label>{{ $t('inspector.shape') }}</label>
           <select class="sel grow" :value="curEl().shape || 'rect'" @change="onStr(curEl(), 'shape', $event)">
             <option v-for="s in ['rect', 'ellipse', 'triangle', 'arrow', 'line']" :value="s" :selected="(curEl().shape || 'rect') === s">{{ s }}</option>
           </select>
@@ -146,119 +146,128 @@
           </select>
         </div>
         <div class="frow">
-          <label>填充</label>
+          <label>{{ $t('inspector.fill') }}</label>
           <div class="color-pair">
             <input type="color" :value="toHex(curEl().fill)" @change="onStr(curEl(), 'fill', $event)" />
-            <input class="in" type="text" :value="curEl().fill" placeholder="支持 rgba/渐变" @change="onStr(curEl(), 'fill', $event)" />
+            <input class="in" type="text" :value="curEl().fill" :placeholder="$t('inspector.fill_hint')" @change="onStr(curEl(), 'fill', $event)" />
           </div>
         </div>
         <div class="frow">
-          <label>描边</label>
+          <label>{{ $t('inspector.stroke') }}</label>
           <div class="color-pair">
             <input type="color" :value="toHex(curEl().stroke)" @change="onStr(curEl(), 'stroke', $event)" />
-            <input class="in" type="text" :value="curEl().stroke" placeholder="留空无描边" @change="onStr(curEl(), 'stroke', $event)" />
+            <input class="in" type="text" :value="curEl().stroke" :placeholder="$t('inspector.no_stroke')" @change="onStr(curEl(), 'stroke', $event)" />
           </div>
           <input class="in" style="width: 56px" type="number" :value="curEl().strokeWidth || 0" @change="onNum(curEl(), 'strokeWidth', $event)" />
         </div>
         <div class="frow" v-if="curEl().shape === 'rect'">
-          <label>圆角</label>
+          <label>{{ $t('inspector.radius') }}</label>
           <input class="in" type="number" :value="curEl().radius || 0" @change="onNum(curEl(), 'radius', $event)" />
         </div>
       </div>
 
       <!-- 图片 -->
       <div class="sec" v-if="curEl().type === 'image'">
-        <div class="sec-t">图片</div>
+        <div class="sec-t">{{ $t('timeline.image') }}</div>
         <div class="frow">
-          <label>素材</label>
+          <label>{{ $t('common.assets') }}</label>
           <input class="in grow" type="text" :value="curEl().src" placeholder="assets/xxx.png" @change="onStr(curEl(), 'src', $event)" />
-          <button class="mini" @click="upElSrc(curEl())">上传</button>
+          <button class="mini" @click="upElSrc(curEl())">{{ $t('common.upload') }}</button>
         </div>
         <div class="fgrid">
-          <div class="cell"><label>填充模式</label>
+          <div class="cell"><label>{{ $t('inspector.fit') }}</label>
             <select class="sel" :value="curEl().fit || 'contain'" @change="onStr(curEl(), 'fit', $event)">
               <option v-for="f in ['contain', 'cover']" :value="f" :selected="(curEl().fit || 'contain') === f">{{ f }}</option>
             </select>
           </div>
-          <div class="cell"><label>圆角</label><input class="in" type="number" :value="curEl().radius || 0" @change="onNum(curEl(), 'radius', $event)" /></div>
+          <div class="cell"><label>{{ $t('inspector.radius') }}</label><input class="in" type="number" :value="curEl().radius || 0" @change="onNum(curEl(), 'radius', $event)" /></div>
         </div>
       </div>
 
       <!-- SVG -->
       <div class="sec" v-if="curEl().type === 'svg'">
-        <div class="sec-t">SVG 标记</div>
+        <div class="sec-t">{{ $t('inspector.svg_markup') }}</div>
         <textarea class="ta code" :value="curEl().markup" @change="onStr(curEl(), 'markup', $event)"></textarea>
       </div>
 
       <!-- 图表 / 表格（JSON 编辑） -->
       <div class="sec" v-if="curEl().type === 'chart' || curEl().type === 'table'">
         <div class="sec-t">
-          <span>{{ curEl().type === 'chart' ? '图表 option' : '表格数据' }}</span>
-          <button class="mini primary" @click="applyJson()">应用</button>
+          <span>{{ curEl().type === 'chart' ? $t('inspector.chart_option') : $t('inspector.table_data') }}</span>
+          <button class="mini primary" @click="applyJson()">{{ $t('common.apply') }}</button>
         </div>
         <textarea class="ta code" v:value="jsonBuf"></textarea>
-        <div class="hint">编辑后点「应用」生效；图表 option 形如 { xAxis: { data: [...] }, series: [{ type: 'bar', data: [...] }] }</div>
+        <div class="hint">{{ $t('inspector.json_hint') }}</div>
       </div>
 
       <!-- 媒体 -->
       <div class="sec" v-if="curEl().type === 'media'">
-        <div class="sec-t">媒体</div>
+        <div class="sec-t">{{ $t('inspector.media') }}</div>
         <div class="frow">
-          <label>类型</label>
+          <label>{{ $t('inspector.type') }}</label>
           <select class="sel grow" :value="curEl().kind || 'video'" @change="onStr(curEl(), 'kind', $event)">
             <option v-for="k in ['video', 'audio']" :value="k" :selected="(curEl().kind || 'video') === k">{{ k }}</option>
           </select>
         </div>
         <div class="frow">
-          <label>素材</label>
+          <label>{{ $t('common.assets') }}</label>
           <input class="in grow" type="text" :value="curEl().src" placeholder="assets/xxx.mp4" @change="onStr(curEl(), 'src', $event)" />
-          <button class="mini" @click="upElSrc(curEl())">上传</button>
+          <button class="mini" @click="upElSrc(curEl())">{{ $t('common.upload') }}</button>
         </div>
         <div class="fgrid">
-          <div class="cell"><label>入点 s</label><input class="in" type="number" step="0.1" min="0" :value="+curEl().trimStart || 0" @change="onNum(curEl(), 'trimStart', $event)" /></div>
-          <div class="cell"><label>出点 s</label><input class="in" type="number" step="0.1" min="-1" :value="curEl().trimEnd >= 0 ? curEl().trimEnd : -1" @change="onNum(curEl(), 'trimEnd', $event)" /></div>
-          <div class="cell" style="grid-column: span 2"><span class="hint">开始/时长在「位置与尺寸」区（或拖时间轴块）；入点/出点=源裁剪（-1 为源全长）</span></div>
+          <div class="cell"><label>{{ $t('inspector.trim_start') }}</label><input class="in" type="number" step="0.1" min="0" :value="+curEl().trimStart || 0" @change="onNum(curEl(), 'trimStart', $event)" /></div>
+          <div class="cell"><label>{{ $t('inspector.trim_end') }}</label><input class="in" type="number" step="0.1" min="-1" :value="curEl().trimEnd >= 0 ? curEl().trimEnd : -1" @change="onNum(curEl(), 'trimEnd', $event)" /></div>
+          <div class="cell" style="grid-column: span 2"><span class="hint">{{ $t('inspector.media_hint') }}</span></div>
         </div>
         <div class="frow">
-          <label class="chk"><input type="checkbox" :checked="!!curEl().loop" @change="onBool(curEl(), 'loop', $event)" /> 循环</label>
-          <label class="chk"><input type="checkbox" :checked="!!curEl().muted" @change="onBool(curEl(), 'muted', $event)" /> 静音</label>
+          <label class="chk"><input type="checkbox" :checked="!!curEl().loop" @change="onBool(curEl(), 'loop', $event)" /> {{ $t('inspector.loop') }}</label>
+          <label class="chk"><input type="checkbox" :checked="!!curEl().muted" @change="onBool(curEl(), 'muted', $event)" /> {{ $t('stage.mute') }}</label>
         </div>
       </div>
 
       <!-- 动画 fx -->
       <div class="sec">
-        <div class="sec-t">入场 / 退场动画</div>
+        <div class="sec-t">{{ $t('inspector.animations') }}</div>
         <div class="frow">
-          <label>入场</label>
+          <label>{{ $t('inspector.enter') }}</label>
           <select class="sel grow" :value="fxv(curEl(), 'enter', 'none')" @change="setFx(curEl(), 'enter', $event.target.value)">
             <option v-for="t in enterTypes" :value="t" :selected="fxv(curEl(), 'enter', 'none') === t">{{ t }}</option>
           </select>
         </div>
         <div class="fgrid" v-if="fxv(curEl(), 'enter', 'none') !== 'none'">
-          <div class="cell"><label>时长 s</label><input class="in" type="number" step="0.1" min="0" :value="fxv(curEl(), 'enterDur', 0.6)" @change="setFxNum(curEl(), 'enterDur', $event)" /></div>
-          <div class="cell"><label>延迟 s</label><input class="in" type="number" step="0.1" min="0" :value="fxv(curEl(), 'delay', 0)" @change="setFxNum(curEl(), 'delay', $event)" /></div>
+          <div class="cell"><label>{{ $t('inspector.duration_s') }}</label><input class="in" type="number" step="0.1" min="0" :value="fxv(curEl(), 'enterDur', 0.6)" @change="setFxNum(curEl(), 'enterDur', $event)" /></div>
+          <div class="cell"><label>{{ $t('inspector.delay_s') }}</label><input class="in" type="number" step="0.1" min="0" :value="fxv(curEl(), 'delay', 0)" @change="setFxNum(curEl(), 'delay', $event)" /></div>
         </div>
         <div class="frow">
-          <label>退场</label>
+          <label>{{ $t('inspector.exit') }}</label>
           <select class="sel grow" :value="fxv(curEl(), 'exit', 'none')" @change="setFx(curEl(), 'exit', $event.target.value)">
             <option v-for="t in exitTypes" :value="t" :selected="fxv(curEl(), 'exit', 'none') === t">{{ t }}</option>
           </select>
         </div>
         <div class="fgrid" v-if="fxv(curEl(), 'exit', 'none') !== 'none'">
-          <div class="cell"><label>时长 s</label><input class="in" type="number" step="0.1" min="0" :value="fxv(curEl(), 'exitDur', 0.5)" @change="setFxNum(curEl(), 'exitDur', $event)" /></div>
+          <div class="cell"><label>{{ $t('inspector.duration_s') }}</label><input class="in" type="number" step="0.1" min="0" :value="fxv(curEl(), 'exitDur', 0.5)" @change="setFxNum(curEl(), 'exitDur', $event)" /></div>
         </div>
         <div class="frow" v-if="curEl().type === 'text'">
-          <label class="chk"><input type="checkbox" :checked="!!fxv(curEl(), 'countUp', false)" @change="setFx(curEl(), 'countUp', $event.target.checked)" /> 数字滚动</label>
-          <label v-if="fxv(curEl(), 'countUp', false)">时长</label>
+          <label class="chk"><input type="checkbox" :checked="!!fxv(curEl(), 'countUp', false)" @change="setFx(curEl(), 'countUp', $event.target.checked)" /> {{ $t('inspector.count_up') }}</label>
+          <label v-if="fxv(curEl(), 'countUp', false)">{{ $t('inspector.duration') }}</label>
           <input class="in" v-if="fxv(curEl(), 'countUp', false)" style="width: 60px" type="number" step="0.1" min="0" :value="fxv(curEl(), 'countUpDur', 1.2)" @change="setFxNum(curEl(), 'countUpDur', $event)" />
+        </div>
+        <div class="frow" v-if="curEl().type === 'text'">
+          <label class="chk"><input type="checkbox" :checked="!!curEl().reveal" @change="setReveal(curEl(), $event.target.checked)" /> {{ $t('inspector.reveal') }}</label>
+          <template v-if="curEl().reveal">
+            <input class="in" style="width: 56px" type="number" step="0.1" min="0.1" :title="$t('inspector.reveal_duration')" :value="curEl().reveal.dur || 0.7" @change="onNum(curEl().reveal, 'dur', $event)" />
+            <select class="sel" style="width: 76px" :value="curEl().reveal.dir || 'up'" @change="onStr(curEl().reveal, 'dir', $event)">
+              <option v-for="d in ['up', 'down', 'left', 'right']" :value="d" :selected="(curEl().reveal.dir || 'up') === d">{{ d }}</option>
+            </select>
+          </template>
         </div>
       </div>
 
       <!-- 关键帧 -->
       <div class="sec">
         <div class="sec-t">
-          <span>关键帧（{{ (curEl().keyframes || []).length }}）</span>
-          <button class="mini primary" @click="addKf(curEl())">+ 在 {{ Math.max(0, Math.round((sceneLocalT() - (+curEl().start || 0)) * 100) / 100) }}s 添加</button>
+          <span>{{ $t('inspector.keyframes') }} ({{ (curEl().keyframes || []).length }})</span>
+          <button class="mini primary" @click="addKf(curEl())">{{ $t('inspector.add_keyframe_at', {time: keyframeTime()}) }}</button>
         </div>
         <div class="kf-card" v-for="(k, ki) in (curEl().keyframes || [])">
           <div class="kf-head">
@@ -272,59 +281,94 @@
           <div class="kf-grid">
             <div class="cell"><label>X</label><input class="in" type="number" :value="k.x" @change="kfNum(k, 'x', $event)" /></div>
             <div class="cell"><label>Y</label><input class="in" type="number" :value="k.y" @change="kfNum(k, 'y', $event)" /></div>
-            <div class="cell"><label>缩放</label><input class="in" type="number" step="0.05" :value="k.scale" @change="kfNum(k, 'scale', $event)" /></div>
-            <div class="cell"><label>旋转</label><input class="in" type="number" :value="k.rotation" @change="kfNum(k, 'rotation', $event)" /></div>
-            <div class="cell"><label>透明</label><input class="in" type="number" step="0.05" min="0" max="1" :value="k.opacity" @change="kfNum(k, 'opacity', $event)" /></div>
+            <div class="cell"><label>{{ $t('inspector.scale') }}</label><input class="in" type="number" step="0.05" :value="k.scale" @change="kfNum(k, 'scale', $event)" /></div>
+            <div class="cell"><label>{{ $t('inspector.rotation') }}</label><input class="in" type="number" :value="k.rotation" @change="kfNum(k, 'rotation', $event)" /></div>
+            <div class="cell"><label>{{ $t('inspector.opacity') }}</label><input class="in" type="number" step="0.05" min="0" max="1" :value="k.opacity" @change="kfNum(k, 'opacity', $event)" /></div>
           </div>
         </div>
-        <div class="hint">X/Y 为画面绝对坐标；留空表示该属性不参与此关键帧</div>
+        <div class="hint">{{ $t('inspector.keyframe_hint') }}</div>
       </div>
     </div>
 
     <!-- ================= 场景表单 ================= -->
     <div class="form" v-else-if="!readonly && sel && sel.kind === 'scene' && curScene()">
       <div class="sec-head">
-        <span class="tag">场景</span>
-        <span class="id">场景 {{ sel.sceneIndex + 1 }} / {{ doc.scenes.length }}</span>
+        <span class="tag">{{ $t('scenes.scene') }}</span>
+        <span class="id">{{ $t('scenes.scene') }} {{ sel.sceneIndex + 1 }} / {{ doc.scenes.length }}</span>
       </div>
       <div class="sec">
-        <div class="sec-t">基本</div>
+        <div class="sec-t">{{ $t('inspector.basic') }}</div>
         <div class="fgrid">
-          <div class="cell"><label>时长 s</label><input class="in" type="number" step="0.1" min="0.1" :value="curScene().duration" @change="onNum(curScene(), 'duration', $event)" /></div>
-          <div class="cell"><label>转场时长 s</label><input class="in" type="number" step="0.1" min="0" :value="curScene().transitionIn == null ? 0.6 : curScene().transitionIn" @change="onNum(curScene(), 'transitionIn', $event)" /></div>
+          <div class="cell"><label>{{ $t('inspector.duration_s') }}</label><input class="in" type="number" step="0.1" min="0.1" :value="curScene().duration" @change="onNum(curScene(), 'duration', $event)" /></div>
+          <div class="cell"><label>{{ $t('inspector.transition_duration') }}</label><input class="in" type="number" step="0.1" min="0" :value="curScene().transitionIn == null ? 0.6 : curScene().transitionIn" @change="onNum(curScene(), 'transitionIn', $event)" /></div>
         </div>
         <div class="frow" v-if="sel.sceneIndex > 0">
-          <label>转场</label>
+          <label>{{ $t('inspector.transition') }}</label>
           <select class="sel grow" :value="curScene().transition || 'fade'" @change="onStr(curScene(), 'transition', $event)">
             <option v-for="t in transitions" :value="t" :selected="(curScene().transition || 'fade') === t">{{ t }}</option>
           </select>
         </div>
         <div class="frow">
-          <label>背景</label>
+          <label>{{ $t('inspector.background') }}</label>
           <div class="color-pair">
             <input type="color" :value="toHex(curScene().background)" @change="onStr(curScene(), 'background', $event)" />
-            <input class="in" type="text" :value="curScene().background" placeholder="支持 CSS 渐变" @change="onStr(curScene(), 'background', $event)" />
+            <input class="in" type="text" :value="curScene().background" :placeholder="$t('inspector.css_gradient')" @change="onStr(curScene(), 'background', $event)" />
           </div>
         </div>
       </div>
       <div class="sec">
         <div class="sec-t">
-          <span>字幕（{{ (curScene().captions || []).length }}）</span>
-          <button class="mini" @click="addCap(curScene())">+ 添加</button>
+          <span>{{ $t('inspector.camera') }}</span>
+          <span style="display: flex; gap: 4px">
+            <button class="mini" @click="camPreset('push')">{{ $t('inspector.camera_push') }}</button>
+            <button class="mini" @click="camPreset('punch')">{{ $t('inspector.camera_punch') }}</button>
+            <button class="mini" @click="camPreset('pan')">{{ $t('inspector.camera_pan') }}</button>
+            <button class="mini danger" v-if="curScene().camera" @click="camClear()">{{ $t('common.clear') }}</button>
+          </span>
+        </div>
+        <textarea class="ta code" v:value="camBuf" :placeholder="$t('inspector.no_camera')"></textarea>
+        <div class="frow">
+          <button class="mini primary" @click="applyCam()">{{ $t('common.apply') }}</button>
+          <span class="hint">{{ $t('inspector.camera_hint') }}</span>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sec-t">
+          <span>{{ $t('inspector.scene_voice') }}</span>
+          <button class="mini" v-if="!curScene().voice" @click="addVoice()">+ {{ $t('common.add') }}</button>
+          <button class="mini danger" v-if="curScene().voice" @click="delVoice()">{{ $t('common.remove') }}</button>
+        </div>
+        <div v-if="curScene().voice" style="display: contents">
+          <div class="frow">
+            <label>{{ $t('common.assets') }}</label>
+            <input class="in grow" type="text" :value="curScene().voice.src" placeholder="assets/scene-voice.mp3" @change="onStr(curScene().voice, 'src', $event)" />
+            <button class="mini" @click="upTrack(curScene().voice)">{{ $t('common.upload') }}</button>
+          </div>
+          <div class="fgrid">
+            <div class="cell"><label>{{ $t('inspector.offset_s') }}</label><input class="in" type="number" min="0" step="0.1" :value="curScene().voice.offset || 0" @change="onNum(curScene().voice, 'offset', $event)" /></div>
+            <div class="cell"><label>{{ $t('stage.volume') }}</label><input class="in" type="number" min="0" max="1" step="0.05" :value="curScene().voice.volume == null ? 1 : curScene().voice.volume" @change="onNum(curScene().voice, 'volume', $event)" /></div>
+          </div>
+          <div class="hint">{{ $t('inspector.voice_hint') }}</div>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sec-t">
+          <span>{{ $t('inspector.captions') }} ({{ (curScene().captions || []).length }})</span>
+          <button class="mini" @click="addCap(curScene())">+ {{ $t('common.add') }}</button>
         </div>
         <div class="cap-row" v-for="(c, ci) in (curScene().captions || [])">
-          <input class="in num" type="number" step="0.1" min="0" title="开始 s" :value="c.start" @change="onNum(c, 'start', $event)" />
-          <input class="in num" type="number" step="0.1" min="0" title="结束 s" :value="c.end" @change="onNum(c, 'end', $event)" />
+          <input class="in num" type="number" step="0.1" min="0" :title="$t('inspector.start_s')" :value="c.start" @change="onNum(c, 'start', $event)" />
+          <input class="in num" type="number" step="0.1" min="0" :title="$t('inspector.end_s')" :value="c.end" @change="onNum(c, 'end', $event)" />
           <input class="in grow" type="text" :value="c.text" @change="onStr(c, 'text', $event)" />
           <button class="mini danger" @click="delCap(curScene(), ci)">×</button>
         </div>
-        <div class="hint">时间为场景内秒数</div>
+        <div class="hint">{{ $t('inspector.caption_time_hint') }}</div>
       </div>
       <div class="sec">
-        <div class="sec-t">元素（点击选中）</div>
+        <div class="sec-t">{{ $t('inspector.elements_pick') }}</div>
         <div class="el-pick">
           <button class="mini" v-for="el in (curScene().elements || [])" @click="$emit('pickel', el.id)">{{ el.id }}</button>
-          <span class="hint" v-if="!(curScene().elements || []).length">暂无元素，从底部时间轴添加</span>
+          <span class="hint" v-if="!(curScene().elements || []).length">{{ $t('inspector.no_elements') }}</span>
         </div>
       </div>
     </div>
@@ -332,100 +376,103 @@
     <!-- ================= 项目表单 ================= -->
     <div class="form" v-else-if="!readonly && doc">
       <div class="sec-head">
-        <span class="tag">项目</span>
+        <span class="tag">{{ $t('inspector.project') }}</span>
         <span class="id">{{ doc.title }}</span>
       </div>
       <div class="sec">
-        <div class="sec-t">基本</div>
-        <div class="frow"><label>标题</label><input class="in grow" type="text" :value="doc.title" @change="onStr(doc, 'title', $event)" /></div>
+        <div class="sec-t">{{ $t('inspector.basic') }}</div>
+        <div class="frow"><label>{{ $t('inspector.title') }}</label><input class="in grow" type="text" :value="doc.title" @change="onStr(doc, 'title', $event)" /></div>
         <div class="fgrid">
-          <div class="cell"><label>宽 px</label><input class="in" type="number" min="240" max="4096" :value="doc.size.width" @change="onSize('width', $event)" /></div>
-          <div class="cell"><label>高 px</label><input class="in" type="number" min="240" max="4096" :value="doc.size.height" @change="onSize('height', $event)" /></div>
-          <div class="cell"><label>帧率 fps</label><input class="in" type="number" min="1" max="60" :value="doc.fps" @change="onNum(doc, 'fps', $event)" /></div>
+          <div class="cell"><label>{{ $t('inspector.width_px') }}</label><input class="in" type="number" min="240" max="4096" :value="doc.size.width" @change="onSize('width', $event)" /></div>
+          <div class="cell"><label>{{ $t('inspector.height_px') }}</label><input class="in" type="number" min="240" max="4096" :value="doc.size.height" @change="onSize('height', $event)" /></div>
+          <div class="cell"><label>{{ $t('inspector.fps') }}</label><input class="in" type="number" min="1" max="60" :value="doc.fps" @change="onNum(doc, 'fps', $event)" /></div>
         </div>
       </div>
       <div class="sec" v-if="doc.theme">
-        <div class="sec-t">主题</div>
+        <div class="sec-t">{{ $t('inspector.theme') }}</div>
         <div class="frow">
-          <label>背景</label>
+          <label>{{ $t('inspector.background') }}</label>
           <div class="color-pair">
             <input type="color" :value="toHex(doc.theme.background)" @change="onStr(doc.theme, 'background', $event)" />
             <input class="in" type="text" :value="doc.theme.background" @change="onStr(doc.theme, 'background', $event)" />
           </div>
         </div>
         <div class="frow">
-          <label>文字色</label>
+          <label>{{ $t('inspector.text_color') }}</label>
           <div class="color-pair">
             <input type="color" :value="toHex(doc.theme.color)" @change="onStr(doc.theme, 'color', $event)" />
             <input class="in" type="text" :value="doc.theme.color" @change="onStr(doc.theme, 'color', $event)" />
           </div>
         </div>
         <div class="frow">
-          <label>强调色</label>
+          <label>{{ $t('inspector.accent') }}</label>
           <div class="color-pair">
             <input type="color" :value="toHex(doc.theme.accent)" @change="onStr(doc.theme, 'accent', $event)" />
             <input class="in" type="text" :value="doc.theme.accent" @change="onStr(doc.theme, 'accent', $event)" />
           </div>
         </div>
-        <div class="frow"><label>字体族</label><input class="in grow" type="text" :value="doc.theme.fontFamily" @change="onStr(doc.theme, 'fontFamily', $event)" /></div>
+        <div class="frow"><label>{{ $t('inspector.font_family') }}</label><input class="in grow" type="text" :value="doc.theme.fontFamily" @change="onStr(doc.theme, 'fontFamily', $event)" /></div>
       </div>
       <div class="sec" v-if="doc.theme && doc.theme.captionStyle">
-        <div class="sec-t">字幕样式</div>
+        <div class="sec-t">{{ $t('inspector.caption_style') }}</div>
         <div class="fgrid">
-          <div class="cell"><label>字号</label><input class="in" type="number" :value="doc.theme.captionStyle.fontSize" @change="onNum(doc.theme.captionStyle, 'fontSize', $event)" /></div>
-          <div class="cell"><label>距底 px</label><input class="in" type="number" :value="doc.theme.captionStyle.bottom" @change="onNum(doc.theme.captionStyle, 'bottom', $event)" /></div>
-          <div class="cell"><label>描边宽</label><input class="in" type="number" :value="doc.theme.captionStyle.strokeWidth" @change="onNum(doc.theme.captionStyle, 'strokeWidth', $event)" /></div>
+          <div class="cell"><label>{{ $t('inspector.font_size') }}</label><input class="in" type="number" :value="doc.theme.captionStyle.fontSize" @change="onNum(doc.theme.captionStyle, 'fontSize', $event)" /></div>
+          <div class="cell"><label>{{ $t('inspector.bottom_px') }}</label><input class="in" type="number" :value="doc.theme.captionStyle.bottom" @change="onNum(doc.theme.captionStyle, 'bottom', $event)" /></div>
+          <div class="cell"><label>{{ $t('inspector.stroke_width') }}</label><input class="in" type="number" :value="doc.theme.captionStyle.strokeWidth" @change="onNum(doc.theme.captionStyle, 'strokeWidth', $event)" /></div>
         </div>
         <div class="frow">
-          <label>文字色</label>
+          <label>{{ $t('inspector.text_color') }}</label>
           <div class="color-pair">
             <input type="color" :value="toHex(doc.theme.captionStyle.color)" @change="onStr(doc.theme.captionStyle, 'color', $event)" />
             <input class="in" type="text" :value="doc.theme.captionStyle.color" @change="onStr(doc.theme.captionStyle, 'color', $event)" />
           </div>
         </div>
         <div class="frow">
-          <label>底背景</label>
+          <label>{{ $t('inspector.caption_background') }}</label>
           <input class="in grow" type="text" :value="doc.theme.captionStyle.background" placeholder="rgba(0,0,0,0.45)" @change="onStr(doc.theme.captionStyle, 'background', $event)" />
         </div>
       </div>
       <div class="sec">
-        <div class="sec-t"><span>背景音乐</span>
-          <button class="mini" v-if="!doc.music" @click="addTrack('music')">+ 添加</button>
-          <button class="mini danger" v-if="doc.music" @click="delTrack('music')">移除</button>
+        <div class="sec-t"><span>{{ $t('inspector.background_music') }}</span>
+          <button class="mini" v-if="!doc.music" @click="addTrack('music')">+ {{ $t('common.add') }}</button>
+          <button class="mini danger" v-if="doc.music" @click="delTrack('music')">{{ $t('common.remove') }}</button>
         </div>
         <div v-if="doc.music" style="display: contents">
           <div class="frow">
-            <label>素材</label>
+            <label>{{ $t('common.assets') }}</label>
             <input class="in grow" type="text" :value="doc.music.src" placeholder="assets/bg.mp3" @change="onStr(doc.music, 'src', $event)" />
-            <button class="mini" @click="upTrack(doc.music)">上传</button>
+            <button class="mini" @click="upTrack(doc.music)">{{ $t('common.upload') }}</button>
           </div>
           <div class="frow">
-            <label>音量</label>
+            <label>{{ $t('stage.volume') }}</label>
             <input class="in" style="width: 64px" type="number" min="0" max="1" step="0.05" :value="doc.music.volume == null ? 0.3 : doc.music.volume" @change="onNum(doc.music, 'volume', $event)" />
-            <label class="chk"><input type="checkbox" :checked="doc.music.loop !== false" @change="onBool(doc.music, 'loop', $event)" /> 循环</label>
+            <label class="chk"><input type="checkbox" :checked="doc.music.loop !== false" @change="onBool(doc.music, 'loop', $event)" /> {{ $t('inspector.loop') }}</label>
           </div>
         </div>
       </div>
       <div class="sec">
-        <div class="sec-t"><span>配音轨</span>
-          <button class="mini" v-if="!doc.voice" @click="addTrack('voice')">+ 添加</button>
-          <button class="mini danger" v-if="doc.voice" @click="delTrack('voice')">移除</button>
+        <div class="sec-t"><span>{{ $t('inspector.sfx') }} ({{ (doc.sfx || []).length }})</span>
+          <button class="mini" @click="addSfx()">+ {{ $t('common.add') }}</button>
         </div>
-        <div v-if="doc.voice" style="display: contents">
-          <div class="frow">
-            <label>素材</label>
-            <input class="in grow" type="text" :value="doc.voice.src" placeholder="assets/voice.mp3" @change="onStr(doc.voice, 'src', $event)" />
-            <button class="mini" @click="upTrack(doc.voice)">上传</button>
+        <div class="kf-card" v-for="(s, si) in (doc.sfx || [])">
+          <div class="kf-head">
+            <span class="t">t =</span>
+            <input class="in" style="width: 62px" type="number" step="0.05" min="0" :title="$t('inspector.sfx_time_hint')" :value="s.t" @change="onNum(s, 't', $event)" />
+            <input class="in grow" type="text" :value="s.src" placeholder="assets/whoosh.mp3" @change="onStr(s, 'src', $event)" />
+            <button class="mini" @click="upSfx(s)">{{ $t('common.upload') }}</button>
+            <button class="mini danger" @click="delSfx(si)">×</button>
           </div>
-          <div class="frow">
-            <label>音量</label>
-            <input class="in" style="width: 64px" type="number" min="0" max="1" step="0.05" :value="doc.voice.volume == null ? 1 : doc.voice.volume" @change="onNum(doc.voice, 'volume', $event)" />
+          <div class="fgrid">
+            <div class="cell"><label>{{ $t('stage.volume') }}</label><input class="in" type="number" min="0" max="2" step="0.05" :value="s.volume == null ? 1 : s.volume" @change="onNum(s, 'volume', $event)" /></div>
+            <div class="cell"><label>{{ $t('inspector.window_s') }}</label><input class="in" type="number" min="0" step="0.1" :title="$t('inspector.window_hint')" :value="s.dur || 0" @change="onNum(s, 'dur', $event)" /></div>
+            <div class="cell" style="grid-column: span 2"><label>{{ $t('inspector.motion_note') }}</label><input class="in" type="text" :value="s.note" :placeholder="$t('inspector.motion_note_placeholder')" @change="onStr(s, 'note', $event)" /></div>
           </div>
         </div>
+        <div class="hint">{{ $t('inspector.sfx_hint') }}</div>
       </div>
     </div>
 
-    <div class="empty" v-if="!doc">打开或新建项目后此处显示属性</div>
+    <div class="empty" v-if="!doc">{{ $t('inspector.empty') }}</div>
   </body>
   <script setup>
     doc = null          // prop
@@ -435,6 +482,7 @@
     uploadasset = null  // prop：fn(file) → Promise<ref>
 
     jsonBuf = ''
+    camBuf = ''        // 场景运镜 JSON 编辑缓冲
     kfVer = 0          // 关键帧结构版本号（增删后递增，强制重建列表）
     capVer = 0         // 字幕结构版本号
     easings = ['linear', 'easeIn', 'easeOut', 'easeInOut', 'quadIn', 'quadOut', 'circIn', 'circOut', 'backOut', 'backIn', 'spring']
@@ -490,6 +538,81 @@
       setFx(el, key, v)
     }
 
+    /* ---------------- 运镜 ---------------- */
+    syncCam = () => {
+      const sc = curScene()
+      camBuf = sc && sc.camera ? JSON.stringify(sc.camera, null, 2) : ''
+    }
+    applyCam = () => {
+      const sc = curScene()
+      if (!sc) return
+      const txt = String(camBuf || '').trim()
+      if (!txt) { sc.camera = null; changed(); return }
+      try {
+        const v = JSON.parse(txt)
+        if (v.keyframes != null && !Array.isArray(v.keyframes)) throw new Error($t('inspector.keyframes_array'))
+        if (v.shakes != null && !Array.isArray(v.shakes)) throw new Error($t('inspector.shakes_array'))
+        sc.camera = v
+        changed()
+        $message.success($t('inspector.camera_applied'))
+      } catch (e) {
+        $message.error($t('inspector.camera_json_error') + e.message)
+      }
+    }
+    camPreset = (kind) => {
+      const sc = curScene()
+      if (!sc || !doc) return
+      const dur = +sc.duration || 3
+      const cx = doc.size.width / 2, cy = doc.size.height / 2
+      if (kind === 'push') {
+        sc.camera = { keyframes: [{ t: 0, zoom: 1 }, { t: dur, zoom: 1.12, easing: 'easeInOut' }] }
+      } else if (kind === 'punch') {
+        const hit = Math.min(1.1, Math.max(0.3, dur * 0.3))
+        sc.camera = {
+          keyframes: [
+            { t: 0, zoom: 1 },
+            { t: hit - 0.2, zoom: 0.97, easing: 'easeOut' },
+            { t: hit, zoom: 2.3, focus: [cx, cy], easing: 'easeIn' },
+            { t: hit + 0.17, zoom: 2.15, focus: [cx, cy], easing: 'easeOut' },
+            { t: dur, zoom: 2.15, focus: [cx, cy] },
+          ],
+          shakes: [{ t: hit, amp: 10, decay: 0.06, dur: 0.25 }],
+        }
+      } else if (kind === 'pan') {
+        sc.camera = { keyframes: [{ t: 0, x: 60 }, { t: dur, x: -60, easing: 'easeInOut' }] }
+      }
+      syncCam()
+      changed()
+    }
+    camClear = () => {
+      const sc = curScene()
+      if (!sc) return
+      sc.camera = null
+      syncCam()
+      changed()
+    }
+
+    /* ---------------- 音效 SFX ---------------- */
+    addSfx = () => {
+      const arr = (doc.sfx || []).slice()
+      arr.push({ id: 'sfx-' + (arr.length + 1), src: '', t: 0, volume: 1, dur: 0, note: '' })
+      doc.sfx = arr
+      changed()
+    }
+    delSfx = (i) => {
+      const arr = (doc.sfx || []).slice()
+      arr.splice(i, 1)
+      doc.sfx = arr
+      changed()
+    }
+    upSfx = (s) => pickUpload((ref) => { s.src = ref })
+
+    /* ---------------- 遮罩揭示 ---------------- */
+    setReveal = (el, on) => {
+      el.reveal = on ? { dur: 0.7, delay: 0, dir: 'up' } : null
+      changed()
+    }
+
     /* ---------------- 关键帧（拷贝-改-赋回，勿在代理数组上 splice） ---------------- */
     sceneLocalT = () => {
       const sc = curScene()
@@ -500,10 +623,11 @@
       const lf = Math.max(0, Math.min(frame - acc, fr - 1))
       return Math.round((lf / doc.fps) * 100) / 100
     }
+    keyframeTime = () => Math.max(0, Math.round((sceneLocalT() - (+curEl().start || 0)) * 100) / 100)
     addKf = (el) => {
       const arr = (el.keyframes || []).slice()
       // 关键帧为窗口相对时间（元素 start 之后）
-      arr.push({ t: Math.max(0, Math.round((sceneLocalT() - (+el.start || 0)) * 100) / 100), x: +el.x || 0, y: +el.y || 0, easing: 'easeInOut' })
+      arr.push({ t: keyframeTime(), x: +el.x || 0, y: +el.y || 0, easing: 'easeInOut' })
       arr.sort((a, b) => (+a.t || 0) - (+b.t || 0))
       el.keyframes = arr
       kfVer++
@@ -526,7 +650,7 @@
     /* ---------------- 字幕 ---------------- */
     addCap = (sc) => {
       const arr = (sc.captions || []).slice()
-      arr.push({ start: 0.5, end: Math.max(1, Math.min(+sc.duration || 3, 3)), text: '新字幕' })
+      arr.push({ start: 0.5, end: Math.max(1, Math.min(+sc.duration || 3, 3)), text: $t('inspector.new_caption') })
       sc.captions = arr
       capVer++
       changed()
@@ -563,7 +687,7 @@
         if (!f) return
         Promise.resolve(uploadasset(f))
           .then((ref) => { setter(ref); changed() })
-          .catch((e) => $message.error('上传失败：' + ((e && e.message) || e)))
+          .catch((e) => $message.error($t('common.upload_failed') + ((e && e.message) || e)))
       }
       inp.click()
     }
@@ -573,10 +697,11 @@
     /* ---------------- 音轨 ---------------- */
     addTrack = (kind) => {
       if (kind === 'music') doc.music = { src: '', volume: 0.3, loop: true, offset: 0 }
-      else doc.voice = { src: '', volume: 1, offset: 0 }
       changed()
     }
     delTrack = (kind) => { doc[kind] = null; changed() }
+    addVoice = () => { curScene().voice = {src: '', volume: 1, offset: 0.2}; changed() }
+    delVoice = () => { curScene().voice = null; changed() }
 
     /* ---------------- 图表/表格 JSON ---------------- */
     syncJson = () => {
@@ -598,9 +723,9 @@
           el.header = v.header !== false
         }
         changed()
-        $message.success('已应用')
+        $message.success($t('inspector.applied'))
       } catch (e) {
-        $message.error('JSON 格式错误：' + e.message)
+        $message.error($t('inspector.json_error') + e.message)
       }
     }
   </script>
@@ -608,5 +733,9 @@
     // 选中元素变化 → 刷新 JSON 编辑缓冲
     $watch(() => (sel && sel.kind === 'element' ? sel.elId : ''), () => syncJson())
     syncJson()
+    // 选中场景/文档变化 → 刷新运镜编辑缓冲
+    $watch(() => (sel && sel.kind === 'scene' ? sel.sceneIndex : -1), () => syncCam())
+    $watch(() => doc, () => syncCam())
+    syncCam()
   </script>
 </html>

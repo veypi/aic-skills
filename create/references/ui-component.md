@@ -7,9 +7,11 @@
 | 需求 | 形态 | 落位 |
 | --- | --- | --- |
 | 只想看一个界面，不发布 | 独立页面 | 用户云空间 `/u/{uid}/name.html`（长期）或页面本地 OPFS `/name.html`（临时） |
+| 主任务由 AI 在对话框完成 | 展示与交接页 | 实样、原始需求、轻量工具；通过 `user_prompt` 回到对话，不另造项目机制 |
 | 界面要随技能包发布 | 包内页面 | 技能包 `ui/index.html`（裸入口加载它） |
 | 同一份界面要被多处引用 | 可复用组件 | 包内 `ui/local/xxx.html`，用自定义标签引用 |
 | 界面要能发布给别人 | 技能包 + UI | 见 [cloud-package.md](cloud-package.md) |
+| 文档、项目或素材编辑器 | 文件型 UI + `$fs` | 见 [ui-storage.md](ui-storage.md)，不要自建项目文件库 |
 
 判错的后果：把独立页面硬塞进技能包 → 用户没法单独打开；把可复用组件写成巨型单页 → 改一处崩一片。
 
@@ -47,6 +49,8 @@
 - 双向绑定只接受静态属性路径；计算结果用事件处理器赋值。
 - 列表行整体替换（`items[i] = {...}`）会销毁重建行 DOM（焦点丢失）——改字段或用数组 mutator。
 - setup 阶段没有 DOM：需要 DOM 就用事件回调或 `<script>` 块，不要在 setup 里碰 `$refs`。
+- `setup` 只在实例创建时运行一次；普通 `<script>` 在挂载时运行一次；`<script active>` 在首次挂载、缓存路由重新进入和页面恢复可见时运行。
+- 路由参数驱动的装载放进 `<script active>`，每次激活读取当前 `$router.query`；页内持续监听再配 `$router.onChange`。用 `url|case|new` 之类的路由 key 防重，不把参数快照藏在只执行一次的初始化里。
 
 ## 4. 样式（视觉统一）
 
@@ -60,24 +64,37 @@
   平台已提供并自动适配亮/暗主题。要"面"就把 `--bg-color-secondary` / `-tertiary`
   用在具体元素（卡片、面板）上。
 - **body 只写布局**：`body { height: 100%; display: flex; flex-direction: column; container-type: inline-size; }`
-- **窗口宽度用 `@container`，不要用 `@media`**（窗口 ≠ 视口）。容器查询基于 `container-type` 建立的容器。
+- **窗口宽度用 `@container`，不要用 `@media`**（窗口 ≠ 视口）。容器查询基于 `container-type` 建立的容器。嵌套窗口中的字号与控件尺度用 `cqw`/`clamp` 跟随容器，不用 `vw`。
+- 分隔线只服务真实对象边界；留白已经分组时不重复加线。固定设计尺寸的实样预览按容器等比缩放，不能用内部滚动条或文字裁切冒充缩略图。
 - 组件样式自动作用域化（只作用于本组件 DOM）；用 `body .x` 前缀可向下穿透到后代。
 - 按钮：主操作实底 `--color-primary` + 文字 `--color-primary-text`；一般操作弱面
   `--bg-color-tertiary` + `1px --border-color`；危险操作用 `--color-danger`。
 - 图标用内联 SVG 或 emoji，不引外部图标字体。
 - 可点击元素用 `<button>` / `<a>`，别用 div 假装按钮。
 
-## 5. 平台能力（共享服务）
+## 5. 内容、反馈与双语
+
+- 页面主体是用户要操作的真实对象与动作，不是产品说明书。功能介绍、方法教学、格式路径、实现方式和“如何使用”不能用来填充空白；空态只说当前事实与下一步。
+- 正常打开、新建、切换或进入页面不弹成功提示。保存状态、只读状态等优先就地表达；只有结果需要离开当前上下文、异常或需要处理时才通知。
+- 通知统一使用平台 `$message.info/success/warning/error`，确认使用 `$message.confirm`；禁止在技能里另造 toast 状态、计时器、DOM 和样式。
+- 所有用户可见文案使用 `$t`：包括导航、按钮、空态、表单、提示、运行时反馈和内置条目标题。`ui/langs.json` 至少维护 `zh-CN` 与 `en-US`，通过 `vhtml i18n scan/add` 管道更新；动态 key 使用 `_` 前缀，禁止 `--autoremove`。
+
+## 6. 平台能力（共享服务）
 
 平台壳向页面注入这些共享服务（可直接用，也可经 `$mod` 读同名服务）：`$fs` `$auth` `$ai`
-`$hosts` `$os` `$skills` `$account` `$catalog` `$pageExec`。细节见 [materials.md](materials.md)。
+`$hosts` `$os` `$skills` `$account` `$catalog` `$pageExec` `$message`。细节见 [materials.md](materials.md)。
 
 包内 API 用 `$fetch('api/xxx')`——相对地址会自动补上包服务前缀。包外资源用 `$mod.scoped`
 前缀或相对路径；**不要手拼前缀、不要写死技能 id**（fork/换部署会 404）。
 
+**UI 用户产物默认存 `$fs`**：文档、项目、素材和导出文件都通过统一文件树读写；打开用
+`$fs.pickFiles`，新建/另存为用 `$fs.pickSavePath`，跨端复制用 `$fs.transfer`。没有打开文档时提供
+「打开 / 新建 / 最近记录」首页，不扫描私有项目目录，不在应用里重复实现文件管理器。完整契约见
+[ui-storage.md](ui-storage.md)。
+
 JS 参数用 camelCase；后端 DTO 与工具协议字段保留 snake_case。
 
-## 6. 页面指令（让 AI 操作你的界面）
+## 7. 页面指令（让 AI 操作你的界面）
 
 在 `<script setup>` 里声明 `pageDesc`，AI 通过窗口指令调用：
 
@@ -113,14 +130,14 @@ pageDesc = {
 - 命令在页面内注册，AI 通过页面命令通道发现与调用；窗口命令命名空间是 `{窗口ID}.{命令名}`。
 - 同页重复注册由后注册者覆盖；跨标签通过 session queue 单次投递。
 
-## 7. 组件复用与插槽
+## 8. 组件复用与插槽
 
 - 组件通过属性传参：`<user-card name="Tom" :age="userAge" v:score="score" disabled></user-card>`
   （静态值 / 单向 / 双向 / 布尔存在即 true）。
 - 宿主组件可以用 `<vslot>` 留出口，父级用 `vslot="名称"` 投影内容；投影内容不是组件的一部分，作用域仍属父级。
 - 往插槽里放**自定义片段**走档案规则（slot），见 [ui-profile.md](ui-profile.md)——片段是纯结构的。
 
-## 8. 高频坑
+## 9. 高频坑
 
 1. 文件不是完整 HTML 文档 → 静默不挂载（伴随误导性 404）。
 2. 模板里用了 setup 里的 `const` → 引用不到（公开状态一律裸赋值）。
@@ -131,15 +148,19 @@ pageDesc = {
 7. 双向绑定写 `v-model` → 没有这个语法，用 `v:value`。
 8. 数字输入框拿到的是字符串 → 提交前自己 `Number()`。
 9. 页内导航写 `news.html` → 写相对页面名 `news`（`$router.push('news')`）。
-10. 同页 query 变化不会重建组件 → 监听 `$router.onChange(...)` 自己刷新。
+10. 同页 query 变化或缓存页面重新激活后仍读旧参数 → 装载放入 `<script active>` 并读当前 `$router.query`，用路由 key 防重。
 11. 运行时创建的元素用相对路径 → 不会被加前缀，用 `$mod.scoped + '/x.png'`。
 12. 自带 `env.js` → 平台有固定出口，不生效；逻辑别写 env.js。
 13. 跳其他应用或 `/fs/...` 文件时，包页面里的 `<a href="/绝对路径">` 会被路由器拦下并按包作用域重写；改用按钮 + `$mod.$os.open(url)`。**应用内页面导航只用 `$router.push`**，`$os.open` 只用于跨应用、文件或 Launcher/OS 等特殊开窗场景。
 
-## 9. 验收
+## 10. 验收
 
 - 页面能打开，控制台无错误占位（挂载失败会显示红色 `[vhtml] ... failed`）。
+- 页面展示真实对象与动作，没有产品说明、方法教学或格式路径等注释型内容；正常打开、新建与切换不弹成功提示。
+- 中英文可见文案完整，i18n 扫描无缺失；通知使用 `$message`，没有自定义 toast。
+- 缓存页面重新激活后读取当前路由参数，首次挂载不会重复装载。
 - 资源无 404；相对路径在包内与用户空间两种落位都成立。
 - 亮色/暗色主题下都可读（只用 token 就自动成立）。
 - 声明了 pageDesc 的命令能被 AI 调通，返回可读文本。
 - 交互元素可用键盘聚焦，悬停/聚焦有可见反馈。
+- 涉及存储时，用户产物可从任意 `$fs` 位置打开并写回；最近记录不冒充文件清单，移除记录不删除文件。

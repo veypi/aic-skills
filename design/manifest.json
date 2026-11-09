@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "ui": {
+    "pages": {
+      "index": {
+        "desc": "对话式界面设计：真实 HTML 实样、原始 Prompt 与主题 Token 工具"
+      }
+    }
+  }
+}

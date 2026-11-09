@@ -15,6 +15,8 @@
 
 ## 2. 发布流程
 
+开发过程中不随每次修改 bump 版本号。只有用户明确确定发版时，才统一修改版本号并提交；发布时选择一个尚未消耗的 version。
+
 1. 管理页 `/skills/detail/cloud/{id}` 发起，或
    `POST /api/skills/releases {source, name?, version}`（source = 私有行 id/name）。
 2. 契约校验：frontmatter `name` 必须等于注册表行 name；内容按静态包校验路径、体积、元数据。

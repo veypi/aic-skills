@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Slow Sunday — Huila No. 01</title>
+  <style>
+    html,body{width:100%;height:100%;overflow:hidden}
+    *{box-sizing:border-box}
+    body{margin:0;background:#f2ebdd;color:#29251f;font-family:Arial,Helvetica,sans-serif;container-type:inline-size}
+    .page{height:100%;display:flex;flex-direction:column}
+    .mast{height:64px;flex:none;display:flex;align-items:center;gap:32px;padding:0 36px;border-bottom:1px solid #bdb4a4}
+    .brand{font-family:Georgia,'Times New Roman',serif;font-size:22px;letter-spacing:-.8px}
+    .brand i{color:#a84f33;font-weight:400}
+    .nav{display:flex;gap:24px;margin-left:25px;color:#6e665b;font-size:10px;letter-spacing:.7px;text-transform:uppercase}
+    .nav span:first-child{color:#29251f;border-bottom:1px solid #29251f;padding-bottom:4px}
+    .cart{margin-left:auto;font-size:10px;text-transform:uppercase;letter-spacing:.8px}
+    .main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.06fr) minmax(0,.94fr)}
+    .copy{min-width:0;padding:30px 42px 28px 44px;display:flex;flex-direction:column}
+    .eyebrow{color:#a84f33;font-size:9px;letter-spacing:1.8px;text-transform:uppercase}
+    h1{margin:20px 0 17px;font-family:Georgia,'Times New Roman',serif;font-size:clamp(48px,6.2cqw,63px);line-height:.96;font-weight:400;letter-spacing:-2.7px}
+    h1 em{color:#a84f33;font-weight:400}
+    .dek{max-width:350px;margin:0;color:#70675c;font-size:12px;line-height:1.65}
+    .purchase{margin-top:auto;display:flex;align-items:center;gap:19px}
+    .order{padding:14px 17px;background:#29251f;color:#f6efe2;font-size:10px;letter-spacing:.3px}
+    .order span{margin-left:24px;color:#dca485}
+    .price{font-family:Georgia,'Times New Roman',serif;font-size:18px}
+    .price small{display:block;margin-top:3px;color:#7c7368;font-family:Arial,Helvetica,sans-serif;font-size:8px;letter-spacing:.8px;text-transform:uppercase}
+    .stage{position:relative;min-width:0;min-height:0;display:grid;place-items:center;overflow:hidden;background:#b85f40}
+    .stage-word{position:absolute;left:0;right:0;top:30px;color:#d38466;text-align:center;font-family:Georgia,'Times New Roman',serif;font-size:clamp(58px,8cqw,84px);letter-spacing:5px}
+    .branch{position:absolute;right:-18px;bottom:-24px;width:56%;height:70%;opacity:.34}
+    .pack{position:relative;width:180px;height:250px;padding:18px 17px 15px;background:#ecdfc5;color:#2f3b31;box-shadow:18px 22px 0 #753b2c33;transform:rotate(-3deg);display:flex;flex-direction:column}
+    .pack:before{content:'';position:absolute;left:0;right:0;top:0;height:9px;border-bottom:1px solid #b7aa8e;background:#dfcfaf}
+    .pack:after{content:'';position:absolute;right:0;top:9px;bottom:0;width:8px;background:#d5c3a3}
+    .pack-brand{font-size:8px;letter-spacing:1.5px;text-transform:uppercase}
+    .pack-art{width:100%;height:93px;margin:12px 0 6px}
+    .pack-name{font-family:Georgia,'Times New Roman',serif;font-size:28px;line-height:.9;letter-spacing:-1px}
+    .pack-name i{color:#a84f33;font-size:19px;font-weight:400}
+    .pack-weight{margin-top:auto;padding-top:8px;border-top:1px solid #a99e87;font-size:7px;letter-spacing:1px;text-transform:uppercase}
+    .stamp{position:absolute;right:24px;top:24px;width:66px;height:66px;border:1px solid #f0b397;border-radius:50%;display:grid;place-items:center;color:#f4c1a8;text-align:center;font-size:7px;line-height:1.5;letter-spacing:1px;text-transform:uppercase;transform:rotate(8deg)}
+    .stage-note{position:absolute;left:22px;bottom:18px;color:#f4c5ad;font-size:8px;letter-spacing:1.2px;text-transform:uppercase}
+    .facts{height:76px;flex:none;display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid #bdb4a4}
+    .fact{padding:16px 22px;border-right:1px solid #cfc6b6}
+    .fact:last-child{border-right:0}
+    .fact span{display:block;color:#857b6d;font-size:8px;letter-spacing:1.2px;text-transform:uppercase}
+    .fact b{display:block;margin-top:7px;font-family:Georgia,'Times New Roman',serif;font-size:15px;font-weight:400}
+    @container(max-width:700px){
+      .mast{height:54px;padding:0 20px}.nav{display:none}.main{grid-template-columns:minmax(0,1fr) minmax(0,.82fr)}
+      .copy{padding:25px 20px 20px}h1{font-size:clamp(37px,8.2cqw,52px);letter-spacing:-2px}.dek{font-size:10px}.purchase{align-items:flex-start;flex-direction:column;gap:12px}.order span{margin-left:12px}
+      .pack{width:140px;height:205px;padding:16px 13px 12px}.pack-art{height:65px;margin:10px 0 5px}.pack-name{font-size:23px}.pack-name i{font-size:16px}.stamp{right:12px;top:12px;width:50px;height:50px;font-size:6px}.stage-word{font-size:48px}
+      .facts{height:68px;grid-template-columns:repeat(2,1fr)}.fact{padding:11px 14px}.fact:nth-child(n+3){display:none}.fact b{font-size:13px}
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="mast">
+      <div class="brand">Slow <i>/</i> Sunday</div>
+      <nav class="nav"><span>Coffee</span><span>Our roastery</span><span>Journal</span></nav>
+      <div class="cart">Bag · 0</div>
+    </header>
+    <main class="main">
+      <section class="copy">
+        <div class="eyebrow">First release · Roast No. 01</div>
+        <h1>A slower<br>kind of<br><em>morning.</em></h1>
+        <p class="dek">A washed lot from a small hillside farm in Huila. Cacao sweetness, ripe plum, and a finish that asks you to stay a little longer.</p>
+        <div class="purchase"><div class="order">Order the first roast <span>→</span></div><div class="price">$18<small>250 g · Whole bean</small></div></div>
+      </section>
+      <section class="stage" aria-label="Slow Sunday Huila coffee package">
+        <div class="stage-word">HUILA</div>
+        <svg class="branch" viewBox="0 0 240 300" aria-hidden="true">
+          <g fill="none" stroke="#f4c5ad" stroke-width="2">
+            <path d="M205 302C153 238 139 151 82 48"/>
+            <path d="M149 208C100 204 67 177 54 139C98 132 137 159 149 208Z"/>
+            <path d="M131 163C164 139 180 105 172 73C135 84 117 124 131 163Z"/>
+            <path d="M95 85C58 81 38 60 34 32C68 28 92 51 95 85Z"/>
+          </g>
+          <g fill="#f4c5ad"><circle cx="161" cy="223" r="13"/><circle cx="184" cy="242" r="15"/><circle cx="111" cy="117" r="12"/></g>
+        </svg>
+        <div class="stamp">Roasted<br>every<br>Thursday</div>
+        <div class="pack">
+          <div class="pack-brand">Slow Sunday · Colombia</div>
+          <svg class="pack-art" viewBox="0 0 150 100" aria-hidden="true">
+            <circle cx="105" cy="30" r="20" fill="#b85f40"/>
+            <path d="M0 88L44 34L75 72L105 46L150 88Z" fill="#7c8970"/>
+            <path d="M0 88L48 57L76 83L111 61L150 88Z" fill="#3f5545"/>
+            <path d="M0 89H150" stroke="#2f3b31" stroke-width="1"/>
+          </svg>
+          <div class="pack-name">HUILA<br><i>No. 01</i></div>
+          <div class="pack-weight">250 g · Washed · Whole bean</div>
+        </div>
+        <div class="stage-note">Picked at 1,750 m · Southern Colombia</div>
+      </section>
+    </main>
+    <footer class="facts">
+      <div class="fact"><span>Origin</span><b>Huila, Colombia</b></div>
+      <div class="fact"><span>Process</span><b>Washed</b></div>
+      <div class="fact"><span>Tasting notes</span><b>Cacao · Plum · Panela</b></div>
+      <div class="fact"><span>Roast day</span><b>Every Thursday</b></div>
+    </footer>
+  </div>
+</body>
+</html>

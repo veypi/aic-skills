@@ -1,0 +1,19 @@
+{
+  "id": "s6",
+  "duration": 3.5,
+  "transition": "iris",
+  "transitionIn": 0.7,
+  "voice": { "src": "assets/voice-s6.mp3", "volume": 1, "offset": 0.2 },
+  "background": "radial-gradient(820px 560px at 50% 42%, #18211c 0%, #0b0d12 72%)",
+  "elements": [
+    { "id": "chapter", "type": "text", "x": 80, "y": 50, "w": 500, "h": 26, "html": "06 / DELIVERY", "fontSize": 13, "fontWeight": 600, "letterSpacing": 3, "color": "rgba(243,241,234,0.42)" },
+    { "id": "title", "type": "text", "x": 240, "y": 88, "w": 800, "h": 52, "html": "最后一帧，也是一次交付。", "fontSize": 36, "fontWeight": 650, "color": "#f3f1ea", "align": "center", "reveal": { "dur": 0.6, "delay": 0.35, "dir": "up" } },
+    { "id": "file-card", "type": "shape", "shape": "rect", "x": 350, "y": 166, "w": 580, "h": 410, "radius": 22, "fill": "#141821", "stroke": "rgba(200,245,96,0.20)", "strokeWidth": 1, "fx": { "enter": "zoom", "enterDur": 0.65, "delay": 0.25 } },
+    { "id": "ring", "type": "chart", "x": 490, "y": 176, "w": 300, "h": 300, "option": { "series": [ { "type": "pie", "data": [100, 0.01] } ], "color": ["#c8f560", "#232a34"] }, "fx": { "enter": "fade", "enterDur": 0.5, "delay": 0.45 } },
+    { "id": "percent", "type": "text", "x": 490, "y": 286, "w": 300, "h": 80, "html": "100%", "fontSize": 54, "fontWeight": 700, "color": "#0b0d12", "align": "center", "valign": "middle", "fx": { "countUp": true, "countUpDur": 1.0, "delay": 0.7 } },
+    { "id": "ready", "type": "text", "x": 490, "y": 482, "w": 300, "h": 30, "html": "MP4 · READY", "fontSize": 18, "fontWeight": 650, "letterSpacing": 3, "color": "#c8f560", "align": "center", "fx": { "enter": "fade", "enterDur": 0.5, "delay": 1.5 } },
+    { "id": "rule", "type": "shape", "shape": "rect", "x": 400, "y": 524, "w": 480, "h": 1, "fill": "rgba(255,255,255,0.08)" },
+    { "id": "metadata", "type": "text", "x": 390, "y": 540, "w": 500, "h": 28, "html": "H.264  +  AAC   ·   1280 × 720   ·   30 FPS", "fontSize": 14, "fontFamily": "monospace", "color": "rgba(243,241,234,0.48)", "align": "center", "fx": { "enter": "fade", "enterDur": 0.5, "delay": 1.7 } },
+    { "id": "footnote", "type": "text", "x": 240, "y": 624, "w": 800, "h": 30, "html": "从浏览器里的时间轴，直接到可以分享的成片。", "fontSize": 21, "color": "rgba(243,241,234,0.54)", "align": "center", "fx": { "enter": "fade", "enterDur": 0.6, "delay": 1.9 } }
+  ]
+}

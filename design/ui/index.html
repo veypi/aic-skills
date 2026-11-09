@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="description" content="Design 对话式界面设计：实样、原始 Prompt 与主题工具">
+  <title>{{ $t('home.title') }}</title>
+</head>
+<style>
+  body {
+    --display-font: "Iowan Old Style", "Palatino Linotype", "Songti SC", "Noto Serif CJK SC", serif;
+    height: 100%; min-height: 0; overflow: hidden; container-type: inline-size;
+    background: var(--bg-color); color: var(--text-color);
+    font-size: clamp(11px, .9cqw, 13px);
+  }
+  button, textarea, input { font: inherit; }
+  button, summary { -webkit-tap-highlight-color: transparent; }
+  textarea:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+  button:focus-visible { outline: 0; }
+  .app { height: 100%; min-height: 0; overflow: auto; }
+  .masthead { position: sticky; z-index: 20; top: 0; min-height: 60px; display: flex; align-items: center; gap: 22px; padding: 0 clamp(20px, 4cqw, 50px); border-bottom: 1px solid var(--border-color); background: color-mix(in srgb, var(--bg-color) 94%, transparent); backdrop-filter: blur(12px); }
+  .brand { font-family: var(--display-font); font-size: clamp(24px, 2.4cqw, 29px); line-height: 1; font-weight: 500; letter-spacing: -.035em; }
+  .mast-note { color: var(--text-color-tertiary); font-size: var(--font-size-xs); }
+  .mast-actions { margin-left: auto; display: flex; gap: 22px; }
+  .text-action { position: relative; min-height: 34px; display: inline-flex; align-items: center; gap: 7px; padding: 0; border: 0; background: transparent; color: var(--text-color-secondary); cursor: pointer; font-size: clamp(11px, .9cqw, 13px); white-space: nowrap; }
+  .text-action:after { content: ''; position: absolute; left: 0; right: 100%; bottom: 1px; height: 1px; background: currentColor; transition: right 150ms ease; }
+  .text-action:hover:after { right: 0; }
+  .text-action:hover, .text-action.primary { color: var(--color-primary); }
+  .text-action:disabled { opacity: .45; cursor: not-allowed; }
+  .page { width: min(1380px, 100%); box-sizing: border-box; margin: 0 auto; padding: 0 clamp(20px, 4cqw, 50px) 56px; }
+  .hero { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(300px, .92fr); gap: clamp(30px, 5cqw, 72px); align-items: center; padding: clamp(36px, 5cqw, 64px) 0 38px; }
+  .section-no { color: var(--color-primary); font-family: var(--display-font); font-size: 17px; font-style: italic; }
+  .hero h1 { max-width: 720px; margin: 17px 0 0; white-space: pre-line; font-family: var(--display-font); font-size: clamp(34px, 4.5cqw, 52px); line-height: 1.12; font-weight: 500; letter-spacing: -.03em; }
+  .hero-copy { max-width: 540px; margin: 21px 0 0; color: var(--text-color-secondary); font-size: clamp(13px, 1.25cqw, 15px); line-height: 1.8; }
+  .composer { padding: 22px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color-secondary); }
+  .composer label { display: block; margin-bottom: 10px; color: var(--text-color-secondary); font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); }
+  .brief-input { width: 100%; min-height: 116px; box-sizing: border-box; resize: vertical; padding: 13px 14px; border: 1px solid var(--border-color); border-radius: 5px; background: var(--bg-color); color: var(--text-color); font-size: clamp(12px, 1cqw, 14px); line-height: 1.7; }
+  .brief-input::placeholder { color: var(--text-color-tertiary); }
+  .brief-input:focus { border-color: var(--color-primary); outline: 0; }
+  .composer-actions { display: flex; align-items: center; gap: 16px; margin-top: 13px; }
+  .composer-hint { color: var(--text-color-tertiary); font-size: var(--font-size-xs); }
+  .composer-actions .text-action { margin-left: auto; }
+  .quick { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color); }
+  .quick .text-action { color: var(--text-color-tertiary); font-size: var(--font-size-xs); }
+  .form-error { margin-top: 10px; color: var(--color-danger); font-size: var(--font-size-xs); }
+  .section { padding: 36px 0 42px; }
+  .section + .section { padding-top: 48px; }
+  .section-head { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 12px; align-items: baseline; margin-bottom: 24px; }
+  .section-number { color: var(--color-primary); font-family: var(--display-font); font-size: 16px; font-style: italic; }
+  .section-head h2 { margin: 0; font-family: var(--display-font); font-size: clamp(23px, 2.5cqw, 30px); line-height: 1.2; font-weight: 500; letter-spacing: -.025em; }
+  .section-note { max-width: 360px; color: var(--text-color-tertiary); font-size: var(--font-size-xs); line-height: 1.6; text-align: right; }
+  .case-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr)); gap: 28px 24px; }
+  .case { min-width: 0; }
+  .case-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+  .case-number { color: var(--text-color-tertiary); font-family: var(--font-family-mono, monospace); font-size: 11px; }
+  .case-title { min-width: 0; margin: 0; font-family: var(--display-font); font-size: clamp(21px, 2.1cqw, 27px); line-height: 1.25; font-weight: 500; letter-spacing: -.02em; }
+  .case-kind { margin-left: auto; color: var(--text-color-tertiary); font-size: var(--font-size-xs); white-space: nowrap; }
+  .case-frame { position: relative; aspect-ratio: 16 / 10; overflow: hidden; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-color-secondary); }
+  .case-frame iframe { position: absolute; left: 0; top: 0; display: block; border: 0; pointer-events: none; transform-origin: 0 0; }
+  .case-overlay { position: absolute; z-index: 3; inset: 0; opacity: 0; pointer-events: none; background: color-mix(in srgb, var(--bg-color) 76%, transparent); color: var(--text-color); backdrop-filter: blur(5px); transition: opacity 150ms ease; }
+  .case-frame:hover .case-overlay, .case-frame:focus-within .case-overlay { opacity: 1; pointer-events: auto; }
+  .overlay-url { position: absolute; left: 14px; right: 14px; top: 12px; display: block; color: var(--text-color-tertiary); font-family: var(--font-family-mono, monospace); font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
+  .overlay-actions { position: absolute; left: 14px; right: 14px; bottom: 14px; display: flex; justify-content: flex-end; gap: 8px; }
+  .overlay-action { min-height: 32px; padding: 0 11px; border: 1px solid var(--border-color); border-radius: 4px; background: color-mix(in srgb, var(--bg-color) 86%, transparent); color: var(--text-color); cursor: pointer; font-size: 11px; }
+  .overlay-action:hover, .overlay-action.active { border-color: var(--color-primary); color: var(--color-primary); }
+  .overlay-action.primary { border-color: var(--color-primary); background: var(--color-primary); color: var(--color-primary-text); }
+  .overlay-prompt { position: absolute; inset: 44px 14px 58px; overflow: auto; margin: 0; color: var(--text-color-secondary); font-family: var(--font-family); font-size: 12px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
+  @media (hover: none) { .case-overlay { opacity: 1; pointer-events: auto; } }
+  .case-summary { min-height: 44px; margin: 13px 0 0; color: var(--text-color-secondary); font-size: clamp(12px, 1.1cqw, 14px); line-height: 1.7; }
+  .case-link { max-width: 100%; display: block; margin-top: 10px; padding: 0; border: 0; background: transparent; color: var(--text-color-tertiary); cursor: pointer; font-family: var(--font-family-mono, monospace); font-size: 10px; line-height: 1.55; text-align: left; overflow-wrap: anywhere; }
+  .case-link:hover { color: var(--color-primary); }
+  .case-actions { display: flex; align-items: center; gap: 19px; margin-top: 10px; }
+  .case-actions .text-action { font-size: var(--font-size-xs); }
+  .prompt { margin-top: 11px; }
+  .prompt summary { padding: 5px 0; color: var(--text-color-tertiary); cursor: pointer; font-size: var(--font-size-xs); list-style: none; }
+  .prompt summary::-webkit-details-marker { display: none; }
+  .prompt summary:hover { color: var(--color-primary); }
+  .prompt[open] { box-sizing: border-box; padding: 12px 14px; border-radius: 5px; background: var(--bg-color-secondary); }
+  .prompt-text { max-height: 180px; overflow: auto; margin: 9px 0 0; color: var(--text-color-secondary); font-family: var(--font-family); font-size: var(--font-size-xs); line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .load-state { padding: 36px 0; color: var(--text-color-tertiary); font-family: var(--display-font); font-size: 20px; }
+  .load-error { color: var(--color-danger); font-family: var(--font-family); font-size: var(--font-size-sm); }
+  .theme-lab { display: grid; grid-template-columns: minmax(280px, .82fr) minmax(0, 1.18fr); gap: clamp(26px, 4cqw, 54px); align-items: start; box-sizing: border-box; padding: 24px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color-secondary); }
+  .control-label { display: block; margin: 0 0 10px; color: var(--text-color-tertiary); font-size: var(--font-size-xs); }
+  .color-line { display: flex; align-items: center; gap: 12px; margin-bottom: 21px; }
+  .color-picker { width: 46px; height: 36px; padding: 0; border: 1px solid var(--border-color); border-radius: 4px; background: transparent; cursor: pointer; }
+  .hex-input { width: 116px; height: 36px; box-sizing: border-box; padding: 0 7px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-color); color: var(--text-color); font-family: var(--font-family-mono, monospace); font-size: var(--font-size-sm); text-transform: uppercase; }
+  .hex-input:focus { border-color: var(--color-primary); outline: 0; }
+  .mode { margin-left: auto; display: flex; gap: 14px; }
+  .mode .text-action { font-size: var(--font-size-xs); }
+  .mode .active { color: var(--color-primary); border-bottom: 1px solid var(--color-primary); }
+  .presets { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 23px; }
+  .swatch-button { width: 30px; height: 30px; padding: 0; border: 1px solid color-mix(in srgb, var(--text-color) 18%, transparent); border-radius: 50%; cursor: pointer; }
+  .swatch-button:hover, .swatch-button.active { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+  .tokens { min-height: 184px; box-sizing: border-box; margin: 10px 0 13px; padding: 14px; border: 1px solid var(--border-color); border-radius: 5px; background: var(--bg-color); color: var(--text-color-secondary); font-family: var(--font-family-mono, monospace); font-size: 11px; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .theme-actions { display: flex; gap: 19px; }
+  .theme-actions .text-action { font-size: var(--font-size-xs); }
+  .theme-preview { min-height: 350px; display: flex; flex-direction: column; box-sizing: border-box; padding: 25px 26px; border: 1px solid var(--theme-border); border-radius: 6px; background: var(--theme-canvas); color: var(--theme-text); }
+  .preview-nav { display: flex; align-items: center; gap: 15px; padding-bottom: 16px; border-bottom: 1px solid var(--theme-border); color: var(--theme-muted); font-size: 11px; }
+  .preview-logo { color: var(--theme-text); font-family: var(--display-font); font-size: 21px; }
+  .preview-nav span:last-child { margin-left: auto; color: var(--theme-primary); }
+  .preview-body { padding-top: 28px; }
+  .preview-eyebrow { color: var(--theme-primary); font-size: 10px; letter-spacing: .12em; }
+  .preview-body h3 { max-width: 460px; margin: 12px 0 0; font-family: var(--display-font); font-size: clamp(24px, 2.8cqw, 34px); line-height: 1.15; font-weight: 500; letter-spacing: -.025em; }
+  .preview-body p { max-width: 440px; margin: 15px 0 0; color: var(--theme-muted); font-size: 12px; line-height: 1.75; }
+  .preview-bottom { display: flex; align-items: center; gap: 19px; margin-top: auto; padding-top: 26px; }
+  .preview-cta { display: inline-block; padding: 10px 16px; border-radius: 4px; background: var(--theme-primary); color: var(--theme-primary-text); font-size: 12px; }
+  .preview-link { color: var(--theme-primary); font-size: 12px; border-bottom: 1px solid var(--theme-primary); }
+  .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 30px; }
+  .step-number { color: var(--color-primary); font-family: var(--display-font); font-size: 20px; font-style: italic; }
+  .step h3 { margin: 13px 0 0; font-family: var(--display-font); font-size: clamp(21px, 2cqw, 25px); font-weight: 500; letter-spacing: -.02em; }
+  .step p { margin: 10px 0 0; color: var(--text-color-secondary); font-size: clamp(12px, 1.1cqw, 14px); line-height: 1.75; }
+  .footer { display: flex; justify-content: space-between; gap: 20px; padding-top: 20px; color: var(--text-color-tertiary); font-size: var(--font-size-xs); }
+  .toast { position: fixed; z-index: 50; right: 22px; bottom: 22px; max-width: min(360px, 80cqw); padding: 11px 14px; border: 1px solid var(--border-color); border-radius: 5px; background: var(--bg-color); color: var(--text-color); box-shadow: var(--shadow-md); font-size: var(--font-size-xs); }
+  @container (max-width: 900px) {
+    .hero { grid-template-columns: minmax(0, 1fr); gap: 26px; }
+    .hero h1 { max-width: 650px; font-size: clamp(32px, 6.5cqw, 46px); }
+    .composer { max-width: 680px; }
+    .theme-lab { grid-template-columns: minmax(0, 1fr); }
+  }
+  @container (max-width: 680px) {
+    .mast-note { display: none; }
+    .hero { padding-top: 32px; }
+    .hero h1 { font-size: clamp(30px, 9cqw, 40px); }
+    .section-head { grid-template-columns: 28px minmax(0, 1fr); }
+    .section-note { grid-column: 2; text-align: left; }
+    .case-grid { grid-template-columns: minmax(0, 1fr); }
+    .case-summary { min-height: 0; }
+    .steps { grid-template-columns: minmax(0, 1fr); }
+    .footer { flex-direction: column; }
+    .theme-lab { padding: 18px; }
+  }
+  @container (max-width: 430px) {
+    .mast-actions .text-action:first-child { display: none; }
+    .composer { padding: 16px; }
+    .composer-hint { display: none; }
+    .color-line { flex-wrap: wrap; }
+    .mode { margin-left: 0; width: 100%; }
+    .case-kind { display: none; }
+    .theme-preview { padding: 20px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .text-action:after { transition: none; } }
+</style>
+<body>
+  <div class="app">
+    <header class="masthead">
+      <div class="brand">Design</div>
+      <div class="mast-actions"><button class="text-action" @click="openCases()">{{ $t('home.view_cases') }}</button><button class="text-action primary" @click="focusComposer()">{{ $t('home.start') }} →</button></div>
+    </header>
+
+    <main class="page">
+      <section class="hero" ref="composer">
+        <div>
+          <div class="section-no">01</div>
+          <h1>{{ $t('home.hero') }}</h1>
+        </div>
+        <div class="composer">
+          <label for="design-brief">{{ $t('home.brief_label') }}</label>
+          <textarea id="design-brief" ref="brief" class="brief-input" v:value="brief" :placeholder="$t('home.brief_placeholder')" @input="formError = ''"></textarea>
+          <div v-if="formError" class="form-error" role="alert">{{ formError }}</div>
+          <div class="composer-actions"><button class="text-action primary" @click="startBrief()">{{ $t('home.send_to_ai') }} →</button></div>
+          <div class="quick"><button class="text-action" @click="quickNew()">{{ $t('home.quick_new') }}</button><button class="text-action" @click="quickExisting()">{{ $t('home.quick_existing') }}</button></div>
+        </div>
+      </section>
+
+      <section class="section" ref="cases">
+        <div class="section-head"><span class="section-number">02</span><h2>{{ $t('home.cases_title') }}</h2></div>
+        <div v-if="caseError" class="load-state load-error">{{ caseError }}</div>
+        <div v-else-if="!cases.length" class="load-state">{{ $t('home.loading_cases') }}</div>
+        <div v-else class="case-grid" ref="gallery">
+          <article v-for="item in cases" class="case">
+            <div class="case-frame">
+              <iframe :src="casePreview(item)" :title="casePreview(item)" sandbox="allow-scripts" loading="lazy"></iframe>
+              <div class="case-overlay">
+                <div class="overlay-url">{{ casePath(item) }}</div>
+                <pre class="overlay-prompt">{{ item.prompt }}</pre>
+                <div class="overlay-actions"><button class="overlay-action" @click="openCase(item)">{{ $t('home.open_case') }} ↗</button><button class="overlay-action primary" @click="useCase(item)">{{ $t('home.send_prompt') }} →</button></div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head"><span class="section-number">03</span><h2>{{ $t('home.theme_title') }}</h2></div>
+        <div class="theme-lab">
+          <div>
+            <label class="control-label" for="theme-color">{{ $t('home.base_color') }}</label>
+            <div class="color-line"><input id="theme-color" class="color-picker" type="color" v:value="baseColor" @change="setBase(baseColor)" :aria-label="$t('home.base_color')"><input class="hex-input" v:value="baseColor" @change="setBase(baseColor)" :aria-label="$t('home.hex_color')"><div class="mode"><button class="text-action" :class="{active: mode === 'light'}" @click="setMode('light')">{{ $t('home.light') }}</button><button class="text-action" :class="{active: mode === 'dark'}" @click="setMode('dark')">{{ $t('home.dark') }}</button></div></div>
+            <div class="presets"><button v-for="color in presets" class="swatch-button" :class="{active: baseColor === color}" :style="{backgroundColor: color}" @click="setBase(color)" :aria-label="$t('home.use_color') + color"></button></div>
+            <div v-if="themeError" class="form-error" role="alert">{{ themeError }}</div>
+            <label class="control-label">{{ $t('home.semantic_tokens') }}</label>
+            <pre class="tokens">{{ tokenText() }}</pre>
+            <div class="theme-actions"><button class="text-action" @click="copyText(tokenText(), $t('home.tokens_copied'))">{{ $t('home.copy_tokens') }}</button><button class="text-action primary" @click="useTheme()">{{ $t('home.use_theme') }} →</button></div>
+          </div>
+          <div class="theme-preview" :style="themeStyle()">
+            <div class="preview-nav"><span class="preview-logo">Fieldwork</span><span>{{ $t('home.preview_nav') }}</span><span>{{ $t('home.preview_action') }}</span></div>
+            <div class="preview-body"><span class="preview-eyebrow">{{ $t('home.preview_eyebrow') }}</span><h3>{{ $t('home.preview_title') }}</h3><p>{{ $t('home.preview_copy') }}</p></div>
+            <div class="preview-bottom"><span class="preview-cta">{{ $t('home.preview_cta') }}</span><span class="preview-link">{{ $t('home.preview_link') }}</span></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+    <div v-if="notice" class="toast" role="status">{{ notice }}</div>
+  </div>
+</body>
+<script setup>
+  import {PRESETS, makeTheme, normalizeHex, themeCSS} from './theme.js'
+
+  brief = ''
+  cases = []
+  caseError = ''
+  formError = ''
+  notice = ''
+  presets = PRESETS
+  baseColor = PRESETS[0]
+  mode = 'light'
+  theme = makeTheme(baseColor, mode)
+  themeError = ''
+
+  let noticeTimer = 0
+  const directInstruction = '\n\n如果已有目标项目，直接修改对应代码；如果是新界面，先确认真实内容与保存位置，再创建自包含 HTML 并用 page open 打开。不要创建 .design 项目。'
+  const showNotice = text => {
+    notice = text
+    if (noticeTimer) clearTimeout(noticeTimer)
+    noticeTimer = setTimeout(() => { notice = '' }, 2600)
+  }
+  $scope.addCleanup(() => { if (noticeTimer) clearTimeout(noticeTimer) })
+
+  goChat = prompt => {
+    const chatHref = '/?user_prompt=' + encodeURIComponent(prompt)
+    const os = $mod?.$os
+    if (os?.open) { os.open(chatHref); return }
+    window.open(chatHref, '_blank')
+  }
+  focusComposer = () => {
+    $refs.composer?.scrollIntoView({behavior: 'smooth', block: 'start'})
+    $refs.brief?.focus()
+  }
+  openCases = () => { $refs.cases?.scrollIntoView({behavior: 'smooth', block: 'start'}) }
+  startBrief = () => {
+    const value = brief.trim()
+    if (!value) { formError = $t('home.brief_required'); $refs.brief?.focus(); return }
+    goChat('/skills:design ' + value + directInstruction)
+  }
+  quickNew = () => {
+    brief = $t('home.quick_new_prompt')
+    focusComposer()
+  }
+  quickExisting = () => {
+    brief = $t('home.quick_existing_prompt')
+    focusComposer()
+  }
+  casePreview = item => 'cases/' + item.id + '.html'
+  casePath = item => $mod.scoped + '/cases/' + item.id + '.html'
+  openCase = item => {
+    const path = casePath(item)
+    const os = $mod?.$os
+    if (os?.open) { os.open(path); return }
+    window.open(path, '_blank')
+  }
+  useCase = item => { goChat('/skills:design ' + item.prompt + directInstruction) }
+  copyText = async (text, success) => {
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('clipboard unavailable')
+      await navigator.clipboard.writeText(text)
+      showNotice(success)
+    } catch (error) { showNotice($t('home.copy_failed')) }
+  }
+
+  setBase = color => {
+    themeError = ''
+    try {
+      baseColor = normalizeHex(color)
+      theme = makeTheme(baseColor, mode)
+    } catch (error) { themeError = String(error?.message || error) }
+  }
+  setMode = value => { mode = value; theme = makeTheme(baseColor, mode); themeError = '' }
+  tokenText = () => themeCSS(theme)
+  themeStyle = () => ({
+    '--theme-primary': theme.primary,
+    '--theme-primary-text': theme.primaryText,
+    '--theme-canvas': theme.canvas,
+    '--theme-surface': theme.surface,
+    '--theme-text': theme.text,
+    '--theme-muted': theme.muted,
+    '--theme-border': theme.border,
+  })
+  useTheme = () => {
+    const request = brief.trim() || $t('home.theme_default_prompt')
+    goChat('/skills:design ' + request + '\n\n请使用以下语义 Token，并保持现有平台的明暗主题可切换：\n' + tokenText() + directInstruction)
+  }
+
+  loadCases = async () => {
+    caseError = ''
+    try {
+      const response = await fetch('cases/cases.json')
+      if (!response.ok) throw new Error(String(response.status))
+      const value = await response.json()
+      cases = Array.isArray(value) ? value : (value.cases || [])
+    } catch (error) { caseError = $t('home.cases_failed') + String(error?.message || error) }
+  }
+
+  pageDesc = {
+    desc: 'Design 对话式设计入口：真实 HTML 实样、原始 Prompt 与主题 Token 工具',
+    commands: [],
+  }
+
+  loadCases()
+</script>
+<script>
+  const previewObserver = new ResizeObserver(entries => {
+    for (const entry of entries) {
+      const iframe = entry.target.querySelector('iframe')
+      if (!iframe) continue
+      const scale = entry.contentRect.width / 960
+      iframe.style.width = '960px'
+      iframe.style.height = '600px'
+      iframe.style.transform = `scale(${scale})`
+    }
+  })
+  const fitPreviews = () => {
+    for (const frame of $node.querySelectorAll('.case-frame')) {
+      if (frame.dataset.fitted) continue
+      frame.dataset.fitted = 'true'
+      previewObserver.observe(frame)
+    }
+  }
+  $watch(() => cases.length, () => { $scope.requestAnimationFrame(fitPreviews) })
+  fitPreviews()
+  $scope.addCleanup(() => previewObserver.disconnect())
+</script>
+</html>

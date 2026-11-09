@@ -2,27 +2,27 @@
 <html>
   <head><title>Video Timeline</title></head>
   <style>
-    body { display: flex; flex-direction: column; height: 100%; min-height: 0; background: var(--bg-color-secondary); border-top: 1px solid color-mix(in srgb, var(--text-color) 8%, transparent); }
+    body { display: flex; flex-direction: column; height: 100%; min-height: 0; background: var(--bg-color-secondary); border-top: 1px solid var(--border-color); }
     .tl-bar {
       flex: none; display: flex; align-items: center; gap: 6px;
-      padding: 6px 10px; border-bottom: 1px solid color-mix(in srgb, var(--text-color) 6%, transparent);
+      min-height: 36px; padding: 4px 10px; border-bottom: 1px solid var(--border-color); box-sizing: border-box;
     }
-    .tl-sec { font-size: 12px; color: var(--text-color-tertiary); font-weight: 600; letter-spacing: 0.5px; margin-right: 4px; }
+    .tl-sec { font-size: 11px; color: var(--text-color-secondary); font-weight: 600; letter-spacing: 0.04em; margin-right: 6px; }
     .tl-adds { display: flex; gap: 4px; flex-wrap: wrap; }
     .tl-adds button {
       border: 1px solid color-mix(in srgb, var(--text-color) 10%, transparent); background: color-mix(in srgb, var(--text-color) 4%, transparent);
-      color: var(--text-color-secondary); font-size: 11.5px; padding: 3px 9px; border-radius: 6px; cursor: pointer;
+      color: var(--text-color-secondary); font-size: 11px; padding: 2px 7px; border-radius: 3px; cursor: pointer;
     }
     .tl-adds button:hover { background: color-mix(in srgb, var(--color-primary) 25%, transparent); color: var(--color-primary); border-color: color-mix(in srgb, var(--color-primary) 40%, transparent); }
     .tl-adds button:disabled { opacity: 0.4; cursor: not-allowed; }
     .sp { flex: 1; }
-    .tl-time { font-size: 11.5px; color: var(--text-color-secondary); font-variant-numeric: tabular-nums; }
+    .tl-time { font-family: var(--font-family-mono, monospace); font-size: 11px; color: var(--text-color-secondary); font-variant-numeric: tabular-nums; }
     .tl-zoom { display: flex; align-items: center; gap: 5px; }
     .tl-zoom button {
       width: 20px; height: 20px; border: 1px solid color-mix(in srgb, var(--text-color) 10%, transparent); background: color-mix(in srgb, var(--text-color) 6%, transparent);
-      color: var(--text-color-secondary); border-radius: 5px; font-size: 13px; line-height: 1; cursor: pointer; padding: 0;
+      color: var(--text-color-secondary); border-radius: 3px; font-size: 13px; line-height: 1; cursor: pointer; padding: 0;
     }
-    .tl-zoom button:hover { background: color-mix(in srgb, var(--color-primary) 30%, transparent); color: var(--color-primary-text); }
+    .tl-zoom button:hover { background: var(--bg-color-tertiary); color: var(--text-color); }
     .tl-zoom input[type=range] { width: 90px; accent-color: var(--color-primary); cursor: pointer; }
     .tl-zoomv { font-size: 10.5px; color: var(--text-color-tertiary); min-width: 44px; font-variant-numeric: tabular-nums; }
 
@@ -45,7 +45,7 @@
       border-bottom: 1px solid color-mix(in srgb, var(--text-color) 3%, transparent); cursor: pointer; box-sizing: border-box;
     }
     .tl-g-row:hover { background: color-mix(in srgb, var(--text-color) 4%, transparent); }
-    .tl-g-row.active { background: color-mix(in srgb, var(--color-primary) 16%, transparent); color: var(--color-primary); }
+    .tl-g-row.active { background: color-mix(in srgb, var(--color-primary) 9%, transparent); color: var(--color-primary); }
     .tl-g-row.hidden-el { opacity: 0.45; }
     .tl-g-eye {
       flex: none; width: 18px; height: 18px; border: none; background: transparent; color: var(--text-color-tertiary);
@@ -79,12 +79,12 @@
     /* ---------- 条块 ---------- */
     .tl-bar-scene {
       position: absolute; top: 4px; height: 18px; border-radius: 4px;
-      background: color-mix(in srgb, var(--color-primary) 22%, transparent); border: 1px solid color-mix(in srgb, var(--color-primary) 40%, transparent);
+      background: color-mix(in srgb, var(--color-primary) 14%, transparent); border: 1px solid color-mix(in srgb, var(--color-primary) 32%, transparent);
       color: var(--color-primary); font-size: 10px; line-height: 17px; padding: 0 6px;
       cursor: pointer; overflow: hidden; white-space: nowrap; box-sizing: border-box;
     }
     .tl-bar-scene:hover { background: color-mix(in srgb, var(--color-primary) 32%, transparent); }
-    .tl-bar-scene.active { background: color-mix(in srgb, var(--color-primary) 45%, transparent); border-color: var(--color-primary); color: var(--color-primary-text); }
+    .tl-bar-scene.active { background: color-mix(in srgb, var(--color-primary) 24%, transparent); border-color: var(--color-primary); color: var(--color-primary); }
     .tl-bar-scene.hidden-el { opacity: 0.4; }
     .tl-edge { position: absolute; top: 0; bottom: 0; width: 7px; cursor: ew-resize; z-index: 2; }
     .tl-edge.l { left: 0; }
@@ -119,6 +119,13 @@
       background: color-mix(in srgb, var(--color-success) 12%, transparent); border: 1px solid color-mix(in srgb, var(--color-success) 35%, transparent);
       font-size: 9.5px; line-height: 15px; color: var(--color-success); padding: 0 6px; overflow: hidden; white-space: nowrap;
     }
+    .tl-bar-sfx {
+      position: absolute; top: 4px; height: 18px; border-radius: 4px; box-sizing: border-box;
+      background: color-mix(in srgb, var(--color-warning) 16%, transparent); border: 1px solid color-mix(in srgb, var(--color-warning) 45%, transparent);
+      cursor: grab; overflow: hidden;
+    }
+    .tl-bar-sfx:hover { background: color-mix(in srgb, var(--color-warning) 30%, transparent); }
+    .tl-g-row.sfx { color: var(--color-warning); }
 
     .tl-playhead {
       position: absolute; top: 0; bottom: 0; width: 0; border-left: 1.5px solid var(--color-danger);
@@ -132,36 +139,36 @@
   </style>
   <body>
     <div class="tl-bar">
-      <span class="tl-sec">时间轴</span>
+      <span class="tl-sec">{{ $t('studio.timeline') }}</span>
       <div class="tl-adds">
-        <button @click="add('text')" :disabled="readonly || !doc">+ 文本</button>
-        <button @click="add('shape', 'rect')" :disabled="readonly || !doc">+ 矩形</button>
-        <button @click="add('shape', 'ellipse')" :disabled="readonly || !doc">+ 椭圆</button>
-        <button @click="add('shape', 'triangle')" :disabled="readonly || !doc">+ 三角</button>
-        <button @click="add('shape', 'arrow')" :disabled="readonly || !doc">+ 箭头</button>
-        <button @click="add('image')" :disabled="readonly || !doc">+ 图片</button>
-        <button @click="add('chart')" :disabled="readonly || !doc">+ 图表</button>
-        <button @click="add('table')" :disabled="readonly || !doc">+ 表格</button>
+        <button @click="add('text')" :disabled="readonly || !doc">+ {{ $t('timeline.text') }}</button>
+        <button @click="add('shape', 'rect')" :disabled="readonly || !doc">+ {{ $t('timeline.rect') }}</button>
+        <button @click="add('shape', 'ellipse')" :disabled="readonly || !doc">+ {{ $t('timeline.ellipse') }}</button>
+        <button @click="add('shape', 'triangle')" :disabled="readonly || !doc">+ {{ $t('timeline.triangle') }}</button>
+        <button @click="add('shape', 'arrow')" :disabled="readonly || !doc">+ {{ $t('timeline.arrow') }}</button>
+        <button @click="add('image')" :disabled="readonly || !doc">+ {{ $t('timeline.image') }}</button>
+        <button @click="add('chart')" :disabled="readonly || !doc">+ {{ $t('timeline.chart') }}</button>
+        <button @click="add('table')" :disabled="readonly || !doc">+ {{ $t('timeline.table') }}</button>
       </div>
       <div class="sp"></div>
       <span class="tl-time">{{ fmtT(frame / fpsOf()) }} / {{ fmtT(totalDur()) }} · {{ Math.floor(frame) }}f</span>
       <div class="tl-zoom">
-        <button @click="zoomBy(0.8)" title="缩小">−</button>
-        <input type="range" min="10" max="240" step="2" v:value="pps" @input="setPps(+pps)" title="缩放（Ctrl+滚轮）" />
-        <button @click="zoomBy(1.25)" title="放大">+</button>
+        <button @click="zoomBy(0.8)" :title="$t('timeline.zoom_out')">−</button>
+        <input type="range" min="10" max="240" step="2" v:value="pps" @input="setPps(+pps)" :title="$t('timeline.zoom_hint')" />
+        <button @click="zoomBy(1.25)" :title="$t('timeline.zoom_in')">+</button>
         <span class="tl-zoomv">{{ Math.round(pps) }}px/s</span>
       </div>
     </div>
     <div class="tl-body" v-if="doc">
       <div class="tl-gutter">
-        <div class="tl-g-head"><span>{{ tracks().length }} 轨</span><span>·</span><span>{{ doc.scenes.length }} 场景</span></div>
+        <div class="tl-g-head"><span>{{ $t('timeline.tracks') }} {{ tracks().length }}</span><span>·</span><span>{{ $t('common.scenes') }} {{ doc.scenes.length }}</span></div>
         <div class="tl-g-rows"><div class="tl-g-rows-in" ref="grows">
           <div v-for="tr in tracks()" class="tl-g-row"
                :class="[tr.kind, { active: isActive(tr), 'hidden-el': tr.hidden }]"
                @click="onRowClick(tr)">
             <template v-if="tr.kind === 'scene'">
               <button class="tl-g-arrow" @click.stop="toggleCollapse(tr)">{{ collapsed[tr.id] ? '▸' : '▾' }}</button>
-              <button class="tl-g-eye" :class="{ off: tr.hidden }" :title="tr.hidden ? '显示场景' : '隐藏场景'" @click.stop="toggleHide(tr)">{{ tr.hidden ? '−' : '●' }}</button>
+              <button class="tl-g-eye" :class="{ off: tr.hidden }" :title="tr.hidden ? $t('timeline.show_scene') : $t('timeline.hide_scene')" @click.stop="toggleHide(tr)">{{ tr.hidden ? '−' : '●' }}</button>
               <span class="tl-g-name">{{ tr.label }}</span>
               <span class="tl-g-sub">{{ tr.dur.toFixed(1) }}s</span>
             </template>
@@ -170,11 +177,16 @@
               <span class="tl-g-name">{{ tr.label }}</span>
               <span class="tl-g-sub">{{ tr.sub }}</span>
             </template>
+            <template v-else-if="tr.kind === 'sfx'">
+              <span class="tl-g-ico">✦</span>
+              <span class="tl-g-name">{{ tr.id }}</span>
+              <span class="tl-g-sub">{{ tr.start.toFixed(2) }}s</span>
+            </template>
             <template v-else>
-              <button class="tl-g-eye" :class="{ off: tr.hidden }" :title="tr.hidden ? '显示元素' : '隐藏元素（预览/导出都不渲染）'" @click.stop="toggleHide(tr)">{{ tr.hidden ? '−' : '●' }}</button>
+              <button class="tl-g-eye" :class="{ off: tr.hidden }" :title="tr.hidden ? $t('timeline.show_element') : $t('timeline.hide_element')" @click.stop="toggleHide(tr)">{{ tr.hidden ? '−' : '●' }}</button>
               <span class="tl-g-ico">{{ typeIcon(tr.el) }}</span>
               <span class="tl-g-name">{{ tr.id }}</span>
-              <span class="tl-g-sub" v-if="tr.el.type === 'media'">{{ (tr.el.trimEnd >= 0 ? tr.el.trimEnd - (+tr.el.trimStart || 0) : 0) ? (tr.el.trimEnd >= 0 ? (tr.el.trimEnd - (+tr.el.trimStart || 0)).toFixed(1) + 's' : '全长') : '全长' }}</span>
+              <span class="tl-g-sub" v-if="tr.el.type === 'media'">{{ (tr.el.trimEnd >= 0 ? tr.el.trimEnd - (+tr.el.trimStart || 0) : 0) ? (tr.el.trimEnd >= 0 ? (tr.el.trimEnd - (+tr.el.trimStart || 0)).toFixed(1) + 's' : $t('timeline.full_length')) : $t('timeline.full_length') }}</span>
             </template>
           </div>
         </div></div>
@@ -189,15 +201,22 @@
               <template v-if="tr.kind === 'scene'">
                 <div class="tl-bar-scene" :class="{ active: curSceneIdx() === tr.i, 'hidden-el': tr.hidden }"
                      :style="{ left: x(tr.start) + 'px', width: Math.max(8, w(tr.dur)) + 'px' }"
-                     :title="'S' + (tr.i + 1) + ' · ' + tr.dur.toFixed(1) + 's（点击定位；左右缘拖时长）'"
+                     :title="'S' + (tr.i + 1) + ' · ' + tr.dur.toFixed(1) + 's · ' + $t('timeline.scene_bar_hint')"
                      @mousedown="onSceneBarDown(tr, $event)">
-                  S{{ tr.i + 1 }}<span v-if="tr.i > 0 && doc.scenes[tr.i].transition && doc.scenes[tr.i].transition !== 'none'"> ⇢</span>
-                  <div class="tl-edge l" title="拖拽改上一场景时长" @mousedown.stop="onEdgeDown(tr.i - 1, $event)"></div>
-                  <div class="tl-edge r" title="拖拽改本场景时长" @mousedown.stop="onEdgeDown(tr.i, $event)"></div>
+                  S{{ tr.i + 1 }}<span v-if="tr.i > 0 && doc.scenes[tr.i].transition && doc.scenes[tr.i].transition !== 'none'"> ⇢</span><span v-if="doc.scenes[tr.i].camera" :title="$t('timeline.has_camera')"> ⌖</span>
+                  <div class="tl-edge l" :title="$t('timeline.previous_duration')" @mousedown.stop="onEdgeDown(tr.i - 1, $event)"></div>
+                  <div class="tl-edge r" :title="$t('timeline.current_duration')" @mousedown.stop="onEdgeDown(tr.i, $event)"></div>
                 </div>
               </template>
               <template v-else-if="tr.kind === 'track'">
                 <div class="tl-bar-track" :style="{ left: x(tr.start) + 'px', width: Math.max(8, w(tr.dur)) + 'px' }">{{ tr.sub }}</div>
+              </template>
+              <template v-else-if="tr.kind === 'sfx'">
+                <div class="tl-bar-sfx" :style="{ left: x(tr.start) + 'px', width: Math.max(6, w(tr.dur)) + 'px' }"
+                     :title="(tr.sfx.note || tr.id) + '\nt=' + tr.start.toFixed(2) + 's · ' + $t('timeline.sfx_hint')" @mousedown="onSfxDown(tr, $event)">
+                  <span class="tl-bar-lab">{{ String(tr.sfx.src || '').split('/').pop() }}</span>
+                  <div class="tl-edge r" :title="$t('timeline.sfx_duration')" @mousedown.stop="onSfxEdgeDown(tr, $event)"></div>
+                </div>
               </template>
               <template v-else>
                 <div class="tl-bar-el" :class="[tr.el.type, { active: isActive(tr), 'hidden-el': tr.hidden }]"
@@ -205,7 +224,7 @@
                      :title="elTitle(tr)" @mousedown="onElBarDown(tr, $event)">
                   <span class="tl-bar-lab">{{ tr.id }}</span>
                   <div v-for="(k, ki) in (tr.el.keyframes || [])" class="tl-kf" :style="{ left: w(+k.t || 0) + 'px' }"
-                       :title="'t=' + k.t + 's（拖拽改时间，Alt+点击删除）'" @mousedown.stop="onKfDown(tr, k, ki, $event)"></div>
+                       :title="'t=' + k.t + 's · ' + $t('timeline.keyframe_hint')" @mousedown.stop="onKfDown(tr, k, ki, $event)"></div>
                   <div class="tl-edge l" @mousedown.stop="onElEdgeDown(tr, 'l', $event)"></div>
                   <div class="tl-edge r" @mousedown.stop="onElEdgeDown(tr, 'r', $event)"></div>
                 </div>
@@ -216,7 +235,7 @@
         </div>
       </div>
     </div>
-    <div class="tl-empty" v-if="!doc">打开项目后此处显示时间轴</div>
+    <div class="tl-empty" v-if="!doc">{{ $t('timeline.empty') }}</div>
   </body>
   <script setup>
     import { elDurOf } from './engine.js'
@@ -306,6 +325,10 @@
         const frames = sceneFrames(s)
         const sd = frames / fps
         out.push({ kind: 'scene', key: 's:' + s.id, i, id: s.id, label: 'S' + (i + 1), start: acc / fps, dur: sd, hidden: !!s.hidden })
+        if (s.voice && s.voice.src) {
+          const offset = Math.max(0, +s.voice.offset || 0)
+          out.push({ kind: 'track', key: 'v:' + i, label: $t('timeline.voice') + ' S' + (i + 1), sub: String(s.voice.src).split('/').pop(), start: acc / fps + offset, dur: Math.max(0.1, sd - offset) })
+        }
         if (!collapsed[s.id]) {
           ;(s.elements || []).forEach((el) => {
             const st = Math.max(0, +el.start || 0)
@@ -319,8 +342,12 @@
       ;(doc.overlay || []).forEach((el) => {
         out.push({ kind: 'oel', key: 'o:' + el.id, id: el.id, el, start: Math.max(0, +el.start || 0), dur: elDurOf(el, total), hidden: !!el.hidden })
       })
-      if (doc.music && doc.music.src) out.push({ kind: 'track', key: 'm:', label: '音乐', sub: String(doc.music.src).split('/').pop(), start: +doc.music.offset || 0, dur: total })
-      if (doc.voice && doc.voice.src) out.push({ kind: 'track', key: 'v:', label: '配音', sub: String(doc.voice.src).split('/').pop(), start: +doc.voice.offset || 0, dur: total })
+      if (doc.music && doc.music.src) out.push({ kind: 'track', key: 'm:', label: $t('timeline.music'), sub: String(doc.music.src).split('/').pop(), start: +doc.music.offset || 0, dur: total })
+      // 声明式 SFX：每条一行，全片秒钉帧（宽度 = dur，缺省 0.4s 示意）
+      ;(doc.sfx || []).forEach((s, i) => {
+        if (!s || !s.src) return
+        out.push({ kind: 'sfx', key: 'sfx:' + i + ':' + (s.id || ''), i, id: s.id || ('sfx-' + (i + 1)), sfx: s, start: Math.max(0, +s.t || 0), dur: +s.dur > 0 ? +s.dur : 0.4 })
+      })
       return out
     }
 
@@ -336,6 +363,7 @@
     onRowClick = (tr) => {
       if (tr.kind === 'scene') { $emit('pickscene', tr.i); $emit('seek', tr.start * fpsOf()) }
       else if (tr.kind === 'el') { $emit('pickel', { id: tr.id, scene: tr.i }); $emit('seek', tr.start * fpsOf()) }
+      else if (tr.kind === 'sfx') { $emit('seek', tr.start * fpsOf()) }
     }
 
     toggleCollapse = (tr) => { collapsed = Object.assign({}, collapsed, { [tr.id]: !collapsed[tr.id] }) }
@@ -350,9 +378,9 @@
 
     elTitle = (tr) => {
       const el = tr.el
-      const a = [tr.id + ' · ' + el.type, '窗口 ' + (+el.start || 0).toFixed(1) + 's + ' + tr.dur.toFixed(1) + 's']
-      if (el.type === 'media') a.push('源 ' + (+el.trimStart || 0).toFixed(1) + 's → ' + (el.trimEnd >= 0 ? el.trimEnd.toFixed(1) + 's' : '全长'))
-      a.push('拖动改开始；左缘切入、右缘切出')
+      const a = [tr.id + ' · ' + el.type, $t('timeline.window') + ' ' + (+el.start || 0).toFixed(1) + 's + ' + tr.dur.toFixed(1) + 's']
+      if (el.type === 'media') a.push($t('timeline.source') + ' ' + (+el.trimStart || 0).toFixed(1) + 's → ' + (el.trimEnd >= 0 ? el.trimEnd.toFixed(1) + 's' : $t('timeline.full_length')))
+      a.push($t('timeline.element_hint'))
       return a.join('\n')
     }
 
@@ -475,6 +503,50 @@
           el.dur = round2(nd)
           if (el.type === 'media') el.trimEnd = round2((+el.trimStart || 0) + nd) // 媒体切出同步源出点（不冻结）
         }
+        if (!rafP) { rafP = true; requestAnimationFrame(() => { rafP = false; kver++ }) }
+      }
+      const up = () => {
+        window.removeEventListener('mousemove', mv)
+        window.removeEventListener('mouseup', up)
+        kver++
+        $emit('docchange')
+      }
+      window.addEventListener('mousemove', mv)
+      window.addEventListener('mouseup', up)
+    }
+
+    /* SFX 条：拖动改钉帧 t；点击定位 */
+    onSfxDown = (tr, e) => {
+      if (readonly || e.button !== 0) return
+      e.preventDefault()
+      const s = tr.sfx
+      const x0 = e.clientX
+      const t0 = Math.max(0, +s.t || 0)
+      let moved = false
+      const mv = (ev) => {
+        if (!moved && Math.abs(ev.clientX - x0) < 3) return
+        moved = true
+        s.t = round2(Math.max(0, t0 + (ev.clientX - x0) / pps))
+        if (!rafP) { rafP = true; requestAnimationFrame(() => { rafP = false; kver++ }) }
+      }
+      const up = () => {
+        window.removeEventListener('mousemove', mv)
+        window.removeEventListener('mouseup', up)
+        if (moved) { kver++; $emit('docchange') }
+        else onRowClick(tr)
+      }
+      window.addEventListener('mousemove', mv)
+      window.addEventListener('mouseup', up)
+    }
+    /* SFX 右缘：改播放窗口 dur（0 = 源全长） */
+    onSfxEdgeDown = (tr, e) => {
+      if (readonly || e.button !== 0) return
+      e.preventDefault()
+      const s = tr.sfx
+      const x0 = e.clientX
+      const d0 = +s.dur > 0 ? +s.dur : 0.4
+      const mv = (ev) => {
+        s.dur = round2(Math.max(0, d0 + (ev.clientX - x0) / pps))
         if (!rafP) { rafP = true; requestAnimationFrame(() => { rafP = false; kver++ }) }
       }
       const up = () => {

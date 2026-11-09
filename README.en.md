@@ -14,13 +14,14 @@ binaries shipped with the release.
 | Skill | Version | Shape |
 | --- | --- | --- |
 | `browser` | 1.2.12 | Prose + UI + device service: a Go service inside the package driving its own Chrome over CDP (AI tools + live view + human input) |
-| `cua` | 1.1.8 | Prose + UI + device launcher: remote view and control through the official `cua-driver` (0.33.2) MCP |
+| `cua` | 1.1.9 | Prose + UI + device launcher: remote view and control through the official `cua-driver` (0.33.2) MCP |
 | `blender` | 0.3.6 | Prose + device launcher: runs the off-the-shelf `blender-mcp` service (inspect / render / run Python) |
-| `create` | 1.0.11 | Guide + templates + intro page: the ivec extension authoring manual (cloud / page / host) and a human-facing capability page |
+| `create` | 1.0.14 | Guide + templates + intro page: the ivec extension authoring manual (cloud / page / host) and a human-facing capability page |
+| `design` | 0.1.2 | Guide + live examples + tools: conversational UI/UX design, original prompts, theme tokens and evidence-based review |
 | `office_studio` | 1.0.5 | Prose + UI: office document workspace |
 | `drawio` | 1.0.4 | Prose + UI: DrawIO diagram workspace |
 | `ppt_studio` | 1.0.6 | Prose + UI: slide studio |
-| `video_studio` | 1.0.5 | Prose + UI: video studio |
+| `video_studio` | 1.1.9 | Prose + UI: video studio |
 | `play_with_ai` | 1.0.6 | Prose + UI: multi-game table for playing against AI (gomoku / xiangqi) |
 | `3d_maker` | 1.0.0 | Prose + UI: in-browser parametric CAD modeling, assemblies, print-readiness checks and STL/OBJ/GLB/3MF export |
 | `vhtml` | 0.5.1 | Prose: the vhtml frontend framework guide |
@@ -72,6 +73,7 @@ go test ./...                # embed list, metadata, versions, zip round-trip
 
 cd browser/ui && npm test    # page tests (zero dependencies, node --test)
 cd cua/ui && npm test
+cd design/ui && npm test
 cd play_with_ai/ui && npm test
 
 # The root Go suite also covers both real MCP examples (initialize + tools/call)

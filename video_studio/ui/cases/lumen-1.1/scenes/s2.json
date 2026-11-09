@@ -1,0 +1,20 @@
+{
+  "id": "s2",
+  "duration": 5,
+  "transition": "fade",
+  "transitionIn": 0.5,
+  "voice": { "src": "assets/voice-s2.mp3", "volume": 1, "offset": 0.1 },
+  "background": "radial-gradient(900px 600px at 86% 10%, #fffdf7 0%, #f0ece3 70%)",
+  "camera": { "keyframes": [ { "t": 0, "zoom": 1 }, { "t": 5, "zoom": 1.015, "easing": "easeInOut" } ] },
+  "elements": [
+    { "id": "chapter", "type": "text", "x": 78, "y": 52, "w": 500, "h": 28, "html": "02 / TYPOGRAPHY & RHYTHM", "fontSize": 13, "fontWeight": 600, "letterSpacing": 3, "color": "rgba(27,28,26,0.48)" },
+    { "id": "rule", "type": "shape", "shape": "rect", "x": 78, "y": 90, "w": 1124, "h": 1, "fill": "rgba(27,28,26,0.16)" },
+    { "id": "giant-index", "type": "text", "x": 46, "y": 170, "w": 190, "h": 300, "html": "02", "fontSize": 230, "fontFamily": "Georgia, 'Times New Roman', serif", "color": "rgba(27,28,26,0.055)", "keyframes": [ { "t": 0, "blur": 16, "opacity": 0 }, { "t": 1.6, "blur": 0, "opacity": 1, "easing": "easeOut" } ] },
+    { "id": "phrase-a", "type": "text", "x": 180, "y": 176, "w": 920, "h": 112, "html": "不是堆效果。", "fontSize": 80, "fontWeight": 650, "letterSpacing": -3, "fontFamily": "'Songti SC', 'Noto Serif CJK SC', Georgia, serif", "color": "#1b1c1a", "align": "center", "keyframes": [ { "t": 0.25, "y": 216, "blur": 14, "opacity": 0 }, { "t": 1.05, "y": 176, "blur": 0, "opacity": 1, "easing": "bezier(0.16,1,0.3,1)" } ] },
+    { "id": "phrase-b", "type": "text", "x": 180, "y": 306, "w": 920, "h": 116, "html": "是让<span style=\"background-color:#ff8066;border-radius:5px;padding:0 10px;color:#1b1c1a\">意义</span>发生。", "fontSize": 80, "fontWeight": 650, "letterSpacing": -3, "fontFamily": "'Songti SC', 'Noto Serif CJK SC', Georgia, serif", "color": "#1b1c1a", "align": "center", "keyframes": [ { "t": 0.65, "y": 346, "blur": 16, "opacity": 0 }, { "t": 1.55, "y": 306, "blur": 0, "opacity": 1, "easing": "bezier(0.16,1,0.3,1)" } ] },
+    { "id": "marker", "type": "svg", "x": 310, "y": 430, "w": 660, "h": 18, "draw": { "dur": 0.55, "delay": 1.5, "easing": "bezier(0.65,0,0.35,1)" }, "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 660 18'><path d='M4 11C140 4 382 16 654 8' fill='none' stroke='#ff8066' stroke-width='5' stroke-linecap='round'/></svg>" },
+    { "id": "sub", "type": "text", "x": 230, "y": 484, "w": 820, "h": 50, "html": "运镜、文字、声音，在同一个时间轴里说话。", "fontSize": 27, "fontWeight": 450, "color": "rgba(27,28,26,0.62)", "align": "center", "stagger": { "by": "char", "step": 0.025, "delay": 1.85, "dur": 0.65, "dy": 20, "easing": "bezier(0.16,1,0.3,1)" } },
+    { "id": "side-note", "type": "text", "x": 1060, "y": 510, "w": 140, "h": 100, "html": "FORM<br>FOLLOWS<br>MEANING", "fontSize": 12, "fontWeight": 600, "letterSpacing": 2, "lineHeight": 1.8, "color": "rgba(27,28,26,0.36)", "align": "right", "fx": { "enter": "fade", "enterDur": 0.8, "delay": 2.5 } },
+    { "id": "footer", "type": "text", "x": 78, "y": 646, "w": 500, "h": 24, "html": "EVERY MOVE HAS A REASON", "fontSize": 12, "letterSpacing": 2, "color": "rgba(27,28,26,0.38)" }
+  ]
+}

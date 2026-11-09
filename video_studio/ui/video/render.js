@@ -1,5 +1,5 @@
 /*
- * render.js — browser video export pipeline for the video/1 engine.
+ * render.js — browser video export pipeline for the video_studio/1 engine.
  * Zero backend, zero native binaries: deterministic per-frame DOM → canvas →
  * WebCodecs VideoEncoder (H.264) + mp4-muxer; audio via OfflineAudioContext
  * mix → AudioEncoder (AAC) → same muxer. Output: standard MP4 Blob.
@@ -221,25 +221,16 @@ async function decodeFrame(html, width, height) {
 }
 
 /** 合成绘制一个 media/three 项。统一在文档坐标空间（先 scale(sx,sy)），
- *  叠加 anc（过渡容器变换：translate/scale/opacity，transform-origin 中心）。 */
+ *  叠加 anc.m（容器复合仿射矩阵：过渡 ∘ 运镜，含旋转）与 anc.opacity。 */
 function drawItemCompose(ctx2d, it, sx, sy, snap) {
   const w = it.w,
     h = it.h;
   ctx2d.save();
   ctx2d.scale(sx, sy); // 进入文档坐标空间
   const a = it.anc;
-  if (a && (a.scale !== 1 || a.tx || a.ty || a.opacity !== 1)) {
-    // anc 容器变换（transform-origin 中心）：p' = (p - c)·s + c + t
-    // 矩阵序列：T(c + t) · S(s) · T(-c)——先整体平移到中心+位移，再以原点
-    // 缩放，再平移回；随后 item 绘制链的 itemCenter 与 -c 抵消，几何正确。
-    // （旧序列 T(t + c(1-s))·S·T(-c)·T(itemCenter) 在 itemCenter=docCenter 时
-    //   不抵消，合成内容被平移 c·s 画出画布外——过渡帧 media/three 全黑）
-    const cxp = a.W / 2,
-      cyp = a.H / 2;
-    ctx2d.translate(cxp + (a.tx || 0), cyp + (a.ty || 0));
-    ctx2d.scale(a.scale || 1, a.scale || 1);
-    ctx2d.translate(-cxp, -cyp);
-  }
+  // 容器变换以真仿射矩阵叠加（buildFrame 已复合过渡与运镜，绕画面中心）；
+  // 随后 item 绘制链在文档坐标里定位，几何与 DOM 序列化路径一致。
+  if (a && a.m) ctx2d.transform(a.m[0], a.m[1], a.m[2], a.m[3], a.m[4], a.m[5]);
   ctx2d.translate(it.x + it.dx + w / 2, it.y + it.dy + h / 2);
   if (it.rotation) ctx2d.rotate((it.rotation * Math.PI) / 180);
   if (it.scaleX !== 1 || it.scaleY !== 1) ctx2d.scale(it.scaleX, it.scaleY);

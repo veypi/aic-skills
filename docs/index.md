@@ -17,6 +17,7 @@
 | 包 | 手册与分篇 |
 | --- | --- |
 | `create` | [SKILL.md](../create/SKILL.md) + [references/](../create/references/)（三端扩展作者手册）+ [templates/](../create/templates/) + [examples/](../create/examples/) |
+| `design` | [SKILL.md](../design/SKILL.md) + [references/](../design/references/) + [templates/](../design/templates/)（对话式 UI/UX 设计、实样、主题工具与评审） |
 | `browser` / `cua` | [browser/SKILL.md](../browser/SKILL.md)、[cua/SKILL.md](../cua/SKILL.md)（设备 MCP 用法与实时画面） |
 | `blender` | [blender/SKILL.md](../blender/SKILL.md) |
 | `vhtml` | [vhtml/SKILL.md](../vhtml/SKILL.md)（前端框架指南，源在 vhtml 仓 `ui/docs/SKILL.md`） |

@@ -1,0 +1,2151 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta name="description" content="Video Studio — browser video workspace with scenes, timeline, preview and WebCodecs export" />
+  <title>Video Studio</title>
+</head>
+<style>
+  body {
+    --display-font: "Iowan Old Style", "Palatino Linotype", "Songti SC", "Noto Serif CJK SC", serif;
+    container-type: inline-size;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    background: var(--bg-color);
+    color: var(--text-color);
+  }
+
+  .topbar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 44px;
+    padding: 0 12px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-color);
+    position: relative;
+    z-index: 20;
+    min-width: 0;
+  }
+
+  .brand {
+    font-family: var(--font-family);
+    font-size: 12px;
+    line-height: 18px;
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0;
+    color: var(--text-color);
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 8px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .brand:hover { color: var(--color-primary); }
+
+  .brand .logo {
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-primary);
+    font-size: 9px;
+    line-height: 1;
+  }
+
+  .doc-title {
+    font-family: var(--font-family);
+    font-size: 11px;
+    font-weight: var(--font-weight-medium);
+    line-height: 18px;
+    display: flex;
+    align-items: center;
+    color: var(--text-color);
+    max-width: 260px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0 0 0 2px;
+    cursor: pointer;
+  }
+
+  .doc-title:before {
+    content: '/';
+    margin-right: 12px;
+    color: var(--text-color-tertiary);
+    font-family: var(--font-family);
+    font-size: 11px;
+  }
+
+  .doc-title.empty {
+    color: var(--text-color-disabled);
+    cursor: default;
+  }
+
+  .doc-title:hover {
+    color: var(--color-primary);
+  }
+
+  .save-state {
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+    line-height: 16px;
+    display: flex;
+    align-items: center;
+    color: var(--text-color-tertiary);
+    white-space: nowrap;
+  }
+
+  .save-state.dirty {
+    color: var(--color-warning);
+  }
+
+  .save-state.fail {
+    color: var(--color-danger);
+  }
+
+  .spacer {
+    flex: 1;
+  }
+
+  .tbtn {
+    border: 0;
+    border-bottom: 1px solid transparent;
+    background: transparent;
+    color: var(--text-color-tertiary);
+    padding: 4px 5px;
+    border-radius: 0;
+    font-size: 10px;
+    line-height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: color 0.12s, border-color 0.12s;
+    white-space: nowrap;
+  }
+
+  .tbtn:hover {
+    color: var(--color-primary);
+    border-bottom-color: currentColor;
+  }
+
+  .tbtn.primary {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+    font-weight: var(--font-weight-normal);
+    margin-left: 6px;
+  }
+
+  .tbtn.primary:after { content: ' →'; }
+
+  .tbtn.primary:hover { color: var(--color-primary-hover); }
+
+  .tbtn.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .tbtn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .panel-switches {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 0;
+    margin-right: 4px;
+  }
+
+  .panel-switch {
+    width: 27px;
+    height: 27px;
+    padding: 0;
+    border: none;
+    border-bottom: 1px solid transparent;
+    border-radius: 0;
+    background: transparent;
+    color: var(--text-color-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .panel-switch:hover { color: var(--color-primary); }
+
+  .panel-switch.active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+  }
+
+  .panel-icon { width: 15px; height: 15px; display: block; }
+
+  .more-actions { display: none; position: relative; }
+  .more-actions summary { padding: 4px 5px; border-bottom: 1px solid transparent; color: var(--text-color-tertiary); cursor: pointer; list-style: none; font-size: 10px; line-height: 18px; white-space: nowrap; }
+  .more-actions summary::-webkit-details-marker { display: none; }
+  .more-actions summary:hover, .more-actions[open] summary { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+  .more-menu { position: absolute; top: 36px; right: 0; width: 142px; box-sizing: border-box; padding: 6px; border: 1px solid var(--text-color-tertiary); background: var(--bg-color); box-shadow: var(--shadow-lg); z-index: 45; }
+  .more-menu button { width: 100%; min-height: 32px; display: flex; align-items: center; padding: 4px 7px; border: 0; border-bottom: 1px solid var(--border-color); background: transparent; color: var(--text-color-secondary); cursor: pointer; text-align: left; font-size: 12px; }
+  .more-menu button:last-child { border-bottom: 0; }
+  .more-menu button:hover { color: var(--color-primary); }
+  .more-menu button:disabled { opacity: .45; cursor: not-allowed; }
+
+  @container (max-width: 900px) {
+    .topbar > .file-action { display: none; }
+    .more-actions { display: block; }
+  }
+
+  /* ---- 工作区三栏 ---- */
+  .ws {
+    flex: 1;
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    overflow: hidden;
+  }
+
+  .left {
+    flex: none;
+    width: 196px;
+    border-right: 1px solid var(--border-color);
+    background: var(--bg-color);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  .left .ltabs {
+    flex: none;
+    display: flex;
+    border-bottom: 1px solid color-mix(in srgb, var(--text-color) 7%, transparent);
+  }
+  .left .ltabs button {
+    flex: 1;
+    padding: 9px 0;
+    font-size: 13px;
+    color: var(--text-color-secondary);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+  }
+  .left .ltabs button:hover { color: var(--text-color); }
+  .left .ltabs button.on { color: var(--text-color); border-bottom-color: var(--color-primary); }
+
+  .left video-scenes,
+  .left video-assets {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+  }
+
+  .center {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+  }
+
+  .center video-stage {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+  }
+
+  .right {
+    flex: none;
+    width: 322px;
+    border-left: 1px solid var(--border-color);
+    background: var(--bg-color);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  .rbody {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+  }
+
+  .rbody video-inspector {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+  }
+
+  .bottom {
+    flex: none;
+    height: 188px;
+    display: flex;
+  }
+
+  .bottom video-timeline {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+  }
+
+  /* ---- 面板拖拽分割条 ---- */
+  .pd { flex: none; position: relative; background: transparent; z-index: 5; }
+  .pd.v { width: 5px; cursor: col-resize; }
+  .pd.h { height: 5px; cursor: row-resize; }
+  .pd::after { content: ''; position: absolute; background: transparent; transition: background 0.12s; }
+  .pd.v::after { left: 2px; top: 0; bottom: 0; width: 1px; }
+  .pd.h::after { top: 2px; left: 0; right: 0; height: 1px; }
+  .pd:hover::after, .pd.dragging::after { background: var(--color-primary); }
+
+  .popover {
+    position: absolute;
+    top: 44px;
+    right: 8px;
+    width: 300px;
+    max-height: 60vh;
+    overflow: auto;
+    background: var(--bg-color);
+    border: 1px solid var(--text-color-tertiary);
+    border-radius: 0;
+    box-shadow: var(--shadow-lg);
+    z-index: 40;
+    padding: 8px;
+  }
+
+  .pop-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 9px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--text-color);
+    position: relative;
+  }
+
+  .pop-item:hover {
+    background: color-mix(in srgb, var(--color-primary) 16%, transparent);
+  }
+
+  .pop-item .t {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text-color);
+  }
+
+  .pop-item .d {
+    font-size: 11.5px;
+    color: var(--text-color-tertiary);
+  }
+
+  .pop-item .del {
+    position: absolute;
+    right: 8px;
+    top: 9px;
+    color: var(--text-color-secondary);
+    font-size: 12px;
+    padding: 2px 6px;
+    border-radius: 6px;
+  }
+
+  .pop-item .del:hover {
+    background: color-mix(in srgb, var(--color-danger) 20%, transparent);
+    color: var(--color-danger);
+  }
+
+  /* ---- 导出设置弹层 ---- */
+  .exf-t { font-size: 13px; font-weight: 600; color: var(--text-color); padding: 4px 6px 8px; }
+  .exf-r { display: flex; align-items: center; gap: 8px; padding: 4px 6px; }
+  .exf-r label { flex: none; width: 52px; font-size: 12px; color: var(--text-color-tertiary); }
+  .exf-r .hint { font-size: 11px; color: var(--text-color-tertiary); line-height: 1.6; }
+  .exf-sel, .exf-in {
+    flex: 1; min-width: 0; background: color-mix(in srgb, var(--text-color) 6%, transparent); color: var(--text-color);
+    border: 1px solid color-mix(in srgb, var(--text-color) 12%, transparent); border-radius: 4px;
+    font-size: 12px; padding: 5px 7px; outline: none;
+  }
+  .exf-in { flex: none; width: 72px; }
+  .exf-b { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 6px 4px; }
+
+  .pop-title {
+    padding: 6px 8px 4px;
+    font-size: 11px;
+    color: var(--text-color-tertiary);
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .pop-title .pop-link {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-size: 10.5px;
+    letter-spacing: 0;
+    border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
+    border-radius: 5px;
+    padding: 1px 7px;
+  }
+  .pop-title .pop-link:hover {
+    background: color-mix(in srgb, var(--color-primary) 20%, transparent);
+    color: var(--color-primary);
+  }
+
+  @container (max-width: 1100px) {
+    .left, .right {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      z-index: 12;
+      max-width: calc(100% - 32px);
+      box-shadow: 0 12px 36px color-mix(in srgb, var(--text-color) 45%, transparent);
+    }
+    .left { left: 0; }
+    .right { right: 0; }
+    .ws > .pd.v { display: none; }
+  }
+
+  @container (max-width: 720px) {
+    .topbar {
+      flex-wrap: nowrap;
+      gap: 6px;
+      min-height: 44px;
+      padding: 4px 10px;
+    }
+    .brand { font-size: 11px; line-height: 18px; gap: 5px; }
+    .brand .logo { width: 16px; height: 16px; }
+    .doc-title {
+      flex: 1;
+      min-width: 72px;
+      max-width: 180px;
+      margin-left: 0;
+      font-size: 11px;
+      line-height: 18px;
+    }
+    .save-state { display: none; }
+    .topbar > .spacer { display: none; }
+    .topbar > .tbtn { padding: 3px 4px; font-size: 10px; line-height: 16px; }
+    .popover { top: 44px; max-width: calc(100cqw - 16px); }
+    .panel-switches {
+      order: initial;
+      flex: none;
+      justify-content: center;
+    }
+    .panel-switch { width: 30px; }
+    .left, .right { max-width: calc(100% - 24px); }
+    .bottom { max-height: 42vh; }
+    body .vd-controls {
+      flex-wrap: wrap;
+      min-width: 0;
+      gap: 6px;
+      padding: 6px 8px;
+    }
+    body .vd-seek { flex: 1 1 120px; min-width: 80px; }
+    body .vd-time { min-width: 0; font-size: 11px; }
+    body .vd-vol { width: 48px; }
+  }
+
+  @container (max-width: 480px) {
+    .topbar { gap: 4px; padding-inline: 8px; }
+    .brand { font-size: 11px; margin-right: 2px; }
+    .brand .logo { display: none; }
+    .doc-title { max-width: 80px; font-size: 11px; }
+    .doc-title:before { margin-right: 6px; }
+    .panel-switch { width: 23px; }
+    .topbar > .tbtn.primary { margin-left: 2px; }
+  }
+
+  @container (max-width: 390px) {
+    .doc-title { display: none; }
+  }
+
+  .resource-error {
+    flex: none; padding: 7px 12px; color: var(--color-danger); background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--color-danger) 25%, transparent); font-size: var(--font-size-xs);
+  }
+
+</style>
+
+<body>
+  <div class="topbar">
+    <button class="brand" @click="goHome()" :title="$t('studio.back_home')"><span class="logo">▶</span> Video Studio</button>
+    <div class="doc-title" :class="{ empty: !curPath && !curTitle }" @click="selNone()" :title="curPath ? toRef(curPath) : $t('studio.archive_settings')">{{ curTitle ||
+      curName || $t('studio.no_archive') }}</div>
+    <span class="save-state" :class="{ dirty: saveState === '_studio.unsaved', fail: saveState === '_studio.failed' }">{{ saveState ? $t(saveState) : '' }}</span>
+    <div class="spacer"></div>
+    <div class="panel-switches" role="group" :aria-label="$t('studio.panel_switches')">
+      <button class="panel-switch" :class="{ active: showLeft }" :aria-pressed="showLeft" @click="showLeft = !showLeft" :title="$t('studio.scenes_assets')" :aria-label="$t('studio.toggle_scenes_assets')">
+        <svg class="panel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/>
+        </svg>
+      </button>
+      <button class="panel-switch" :class="{ active: showRight }" :aria-pressed="showRight" @click="showRight = !showRight" :title="$t('studio.properties')" :aria-label="$t('studio.toggle_properties')">
+        <svg class="panel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3"/>
+          <path d="M14 2v4M8 10v4M16 18v4"/>
+        </svg>
+      </button>
+      <button class="panel-switch" :class="{ active: showTimeline }" :aria-pressed="showTimeline" @click="showTimeline = !showTimeline" :title="$t('studio.timeline')" :aria-label="$t('studio.toggle_timeline')">
+        <svg class="panel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M8 2v20"/>
+        </svg>
+      </button>
+    </div>
+    <button class="tbtn file-action" @click="chooseOpen()">{{ $t('common.open') }}</button>
+    <button class="tbtn file-action" @click="chooseNew()">{{ $t('common.new') }}</button>
+    <button class="tbtn file-action" @click="saveAsArchive()" :disabled="!doc || exporting">{{ $t('common.save_as') }}</button>
+    <button class="tbtn file-action" @click="undoEdit()" :disabled="!undoStack.length" :title="$t('studio.undo_hint')">{{ $t('common.undo') }}</button>
+    <button class="tbtn file-action" @click="redoEdit()" :disabled="!redoStack.length" :title="$t('studio.redo_hint')">{{ $t('common.redo') }}</button>
+    <details class="more-actions" ref="moreActions"><summary>{{ $t('common.more') }}</summary><div class="more-menu">
+      <button @click="chooseOpen(); $refs.moreActions.open = false">{{ $t('common.open') }}</button>
+      <button @click="chooseNew(); $refs.moreActions.open = false">{{ $t('common.new') }}</button>
+      <button @click="saveAsArchive(); $refs.moreActions.open = false" :disabled="!doc || exporting">{{ $t('common.save_as') }}</button>
+      <button @click="undoEdit(); $refs.moreActions.open = false" :disabled="!undoStack.length">{{ $t('common.undo') }}</button>
+      <button @click="redoEdit(); $refs.moreActions.open = false" :disabled="!redoStack.length">{{ $t('common.redo') }}</button>
+    </div></details>
+    <button class="tbtn primary" @click="showExport = !showExport" :disabled="exporting || !doc">{{ $t('common.export') }}</button>
+  </div>
+
+  <div class="popover" v-if="showExport" style="width: 330px" @mousedown.stop>
+    <div class="exf-t">{{ $t('studio.export_settings') }}</div>
+    <div class="exf-r">
+      <label>{{ $t('studio.format') }}</label>
+      <select class="exf-sel" :value="exFormat" @change="exFormat = $event.target.value">
+        <option value="mp4" :selected="exFormat === 'mp4'">MP4 · H.264 + AAC</option>
+        <option value="webm" :selected="exFormat === 'webm'">WebM · VP9 + Opus</option>
+        <option value="webm-vp8" :selected="exFormat === 'webm-vp8'">WebM · VP8 + Opus</option>
+        <option value="wav" :selected="exFormat === 'wav'">WAV · {{ $t('studio.audio_only') }}</option>
+      </select>
+    </div>
+    <template v-if="exFormat !== 'wav'">
+      <div class="exf-r">
+        <label>{{ $t('studio.resolution') }}</label>
+        <select class="exf-sel" :value="exRes" @change="exRes = $event.target.value">
+          <option value="orig" :selected="exRes === 'orig'">{{ $t('studio.original_size', {width: doc ? doc.size.width : 0, height: doc ? doc.size.height : 0}) }}</option>
+          <option value="1080" :selected="exRes === '1080'">1080p {{ $t('studio.full_hd') }}</option>
+          <option value="720" :selected="exRes === '720'">720p {{ $t('studio.hd') }}</option>
+          <option value="480" :selected="exRes === '480'">480p {{ $t('studio.sd') }}</option>
+          <option value="custom" :selected="exRes === 'custom'">{{ $t('studio.custom') }}</option>
+        </select>
+      </div>
+      <div class="exf-r" v-if="exRes === 'custom'">
+        <label>{{ $t('studio.size') }}</label>
+        <input class="exf-in" type="number" min="16" step="2" v:value="exW" /> ×
+        <input class="exf-in" type="number" min="16" step="2" v:value="exH" />
+      </div>
+      <div class="exf-r">
+        <label>{{ $t('studio.fps') }}</label>
+        <select class="exf-sel" :value="exFps" @change="exFps = $event.target.value">
+          <option value="orig" :selected="exFps === 'orig'">{{ $t('studio.original_fps', {fps: doc ? doc.fps : 30}) }}</option>
+          <option value="24" :selected="exFps === '24'">24 fps</option>
+          <option value="25" :selected="exFps === '25'">25 fps</option>
+          <option value="30" :selected="exFps === '30'">30 fps</option>
+          <option value="60" :selected="exFps === '60'">60 fps</option>
+        </select>
+      </div>
+      <div class="exf-r">
+        <label>{{ $t('studio.quality') }}</label>
+        <select class="exf-sel" :value="exQuality" @change="exQuality = $event.target.value">
+          <option value="low" :selected="exQuality === 'low'">{{ $t('studio.quality_low') }}</option>
+          <option value="medium" :selected="exQuality === 'medium'">{{ $t('studio.quality_medium') }}</option>
+          <option value="high" :selected="exQuality === 'high'">{{ $t('studio.quality_high') }}</option>
+        </select>
+      </div>
+      <div class="exf-r"><span class="hint">{{ exSummary() }}</span></div>
+    </template>
+    <div class="exf-r" v-else><span class="hint">{{ $t('studio.wav_hint') }}</span></div>
+    <div class="exf-b">
+      <button class="tbtn" @click="showExport = false">{{ $t('common.cancel') }}</button>
+      <button class="tbtn primary" @click="startExport()" :disabled="exporting">{{ exporting ? $t('studio.exporting') : $t('studio.start_export') }}</button>
+    </div>
+  </div>
+
+  <div class="ws">
+    <div class="left" v-if="showLeft" :style="{ width: leftW + 'px' }">
+      <div class="ltabs">
+        <button :class="{ on: ltab === 'scenes' }" @click="ltab = 'scenes'">{{ $t('common.scenes') }}</button>
+        <button :class="{ on: ltab === 'assets' }" @click="ltab = 'assets'">{{ $t('common.assets') }}</button>
+      </div>
+      <video-scenes v-show="ltab === 'scenes'" :scenes="doc ? doc.scenes : []" :cur="activeSceneIdx()" :readonly="!curPath" :ver="sceneVer"
+        @pick="onPickScene" @add="addScene" @dup="dupScene" @del="delScene" @move="moveScene"></video-scenes>
+      <video-assets v-show="ltab === 'assets'" :files="assetFiles" :readonly="!curPath"
+        @upload="onUploadAssets" @del="onDelAsset" @pick="onPickAsset" @insert="onInsertAsset"></video-assets>
+    </div>
+    <div class="pd v" v-if="showLeft" :class="{ dragging: resizing === 'left' }" @mousedown="startResize('left', $event)" :title="$t('studio.resize_left')"></div>
+    <div class="center">
+      <video-stage ref="stage" :editable="!!curPath && !exporting" :selid="sel.kind === 'element' ? sel.elId : ''"
+        @select="onStageSelect" @mutate="onStageChange" @ctxdel="delElements" @dropasset="onDropAsset" @framechange="onFrameChange"></video-stage>
+    </div>
+    <div class="pd v" v-if="showRight" :class="{ dragging: resizing === 'right' }" @mousedown="startResize('right', $event)" :title="$t('studio.resize_right')"></div>
+    <div class="right" v-if="showRight" :style="{ width: rightW + 'px' }">
+      <div class="rbody">
+        <video-inspector :doc="doc" :sel="sel" :frame="curFrame" :readonly="!curPath"
+          :uploadasset="uploadAsset" @mutate="onDocChange" @saveas="saveAsArchive" @pickel="onPickEl"
+          @delel="delElement" @dupel="dupElement"></video-inspector>
+      </div>
+    </div>
+  </div>
+
+  <div class="pd h" v-if="showTimeline" :class="{ dragging: resizing === 'bottom' }" @mousedown="startResize('bottom', $event)" :title="$t('studio.resize_timeline')"></div>
+  <div class="bottom" v-if="showTimeline" :style="{ height: bottomH + 'px' }">
+    <video-timeline :doc="doc" :frame="curFrame" :sel="sel" :readonly="!curPath" :ver="sceneVer" @seek="onSeek"
+      @pickscene="onPickScene" @pickel="onPickEl" @addel="onAddEl" @docchange="onDocChange"
+      @movescene="moveSceneTo" @dropasset="onDropAsset"></video-timeline>
+  </div>
+
+  <div class="resource-error" v-if="missingAssets.length">{{ $t('studio.missing_assets') }} {{ missingAssets.join(', ') }}</div>
+</body>
+
+<script setup>
+  import {starterDoc, defaultTheme, normalizeDoc, uid, waitMediaSeek, waitMediaReady, prepareMedia, easing, easingOf, springPhysics, bezierEasing, interpolate} from './video/engine.js'
+  import {pushRecent, loadRecent} from './recent.js'
+  import {ARCHIVE_EXT, ARCHIVE_FORMAT, DEFAULT_DIR, toTree, toRef, parentOf, archiveName, assertArchivePath, assertDocumentRefs, resolveRef, defaultArchivePath, readText, pickerStart} from './archive.js'
+
+  // ---- 状态 ----
+  doc = null            // 当前 video_studio/1 文档对象（真身，proxy）
+  curPath = ''          // 当前主存档完整 $fs 树路径（'' = 样例只读）
+  curDir = ''           // 主文件父目录，所有相对资源唯一根
+  curName = ''          // 主文件名（仅供显示，不参与寻址）
+  curTitle = ''
+  assets = {}           // ref → dataURL（预览/导出共用）
+  missingAssets = []
+  sel = {kind: 'none', sceneIndex: 0, elId: ''}   // 选中态
+  curFrame = 0          // 当前帧（stage framechange 事件同步）
+  // 面板每次进入均默认关闭；localStorage 只记忆尺寸，不记忆展开状态
+  showLeft = false
+  showRight = false
+  showTimeline = false
+  // ---- 导出配置（对话框）----
+  showExport = false
+  exFormat = 'mp4'    // mp4 | webm | webm-vp8 | wav
+  exRes = 'orig'      // orig | 1080 | 720 | 480 | custom
+  exW = 1280
+  exH = 720
+  exFps = 'orig'      // orig | 24 | 25 | 30 | 60
+  exQuality = 'medium' // low | medium | high
+  exporting = false
+  saveState = ''
+  sceneVer = 0        // 场景结构版本号（增删/移动后递增，强制子组件重建列表）
+  ltab = 'scenes'     // 左侧 tab：scenes | assets
+  assetFiles = []     // 素材列表 [{name, ref, size, mtime, kind}]（assets/ 目录）
+  cur_refs = {}       // 拆分文档：sceneId → 相对引用（如 scenes/scene_1.json）
+  cur_split = false   // 当前文档 scenes 是否含字符串引用（决定保存按拆分写回还是整体单写）
+  saved_scene_snap = {}   // 拆分保存快照：引用 → 已落盘场景序列化（增量跳过未变化文件）
+  saved_index_snap = ''   // 主 .video_studio 已落盘内容（引用数组版）
+  // ---- 面板尺寸（分割条拖拽，localStorage 记忆）----
+  leftW = 196
+  rightW = 322
+  bottomH = 188
+  resizing = ''       // 正在拖拽的分割条：left | right | bottom
+  try {
+    const p = JSON.parse(localStorage.getItem('video_studio_panels') || '{}')
+    if (p.left) leftW = Math.max(140, Math.min(480, +p.left))
+    if (p.right) rightW = Math.max(240, Math.min(560, +p.right))
+    if (p.bottom) bottomH = Math.max(120, Math.min(520, +p.bottom))
+  } catch (e) { }
+  const clampP = (v, min, max) => Math.max(min, Math.min(max, v))
+  // 拖拽分割条：实时更新面板尺寸 + stage fit 适配（scale 变化经响应式自动重排），松手记忆
+  startResize = (axis, e) => {
+    e.preventDefault()
+    resizing = axis
+    const x0 = e.clientX, y0 = e.clientY
+    const l0 = leftW, r0 = rightW, b0 = bottomH
+    const onMove = (ev) => {
+      if (axis === 'left') leftW = clampP(l0 + (ev.clientX - x0), 140, 480)
+      else if (axis === 'right') rightW = clampP(r0 - (ev.clientX - x0), 240, 560)
+      // 底部分割线是时间轴顶部边界：往上拖（clientY 减小）→ 高度增大
+      else bottomH = clampP(b0 - (ev.clientY - y0), 120, 520)
+      const st = $refs.stage && $refs.stage.$data
+      if (st && st.fit) st.fit()
+    }
+    const onUp = () => {
+      resizing = ''
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+      try {localStorage.setItem('video_studio_panels', JSON.stringify({left: leftW, right: rightW, bottom: bottomH}))} catch (err) { }
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }
+
+  // ---- AI 操控面（pageDesc，平台自动采集为 {win_id}.{cmd}）----
+  // 存档读写只依赖统一 $fs；curPath 是唯一寻址状态
+  let saveTimer = 0
+  let saveQueue = Promise.resolve()
+
+  const projDir = () => curDir
+  const projIndex = () => curPath
+  const normName = (n) => String(n || '').trim().replace(/[\\/:\*\?"<>\|#%\s]+/g, '-').replace(/^-+|-+$/g, '') || 'video-' + Date.now().toString(36)
+  const ensureTheme = (d) => {
+    d.theme = Object.assign(defaultTheme(), d.theme || {})
+    d.theme.captionStyle = Object.assign(defaultTheme().captionStyle, d.theme.captionStyle || {})
+    return d
+  }
+
+  // ---- 场景拆分加载：scenes 元素为字符串时，按相对主存档的路径逐个拉取场景 json ----
+  // 返回 { refs, split }：refs 为 sceneId → 引用路径；split 表示文档是否含引用场景。doc.scenes 原地解析为对象数组
+  const resolveSceneRefs = async (doc, loadText) => {
+    const refs = {}
+    let split = false
+    if (doc && Array.isArray(doc.scenes)) {
+      doc.scenes = await Promise.all(doc.scenes.map(async (s, i) => {
+        if (typeof s !== 'string') return s
+        split = true
+        try {
+          const sc = JSON.parse(await loadText(s))
+          if (!sc || !Array.isArray(sc.elements)) throw new Error('场景缺少 elements 数组: ' + s)
+          if (sc.id) refs[sc.id] = s
+          return sc
+        } catch (e) {
+          // 单场景失败不拖垮整片：占位错误场景（可删除），引用保留供保存回写
+          return {id: 'broken-' + i, broken: true, brokenRef: s, brokenError: String((e && e.message) || e), elements: [], duration: 3, transition: 'fade', transitionIn: 0.6}
+        }
+      }))
+    }
+    return {refs, split}
+  }
+
+  // 打开/重载文档后初始化保存快照：拆分结构记录已落盘场景内容与引用版 index，之后自动保存只写真正变化的文件
+  const snapProjectOpen = () => {
+    saved_scene_snap = {}
+    saved_index_snap = ''
+    if (!cur_split) return
+    const dir = projDir() + '/'
+    doc.scenes.forEach((s) => {
+      const ref = s && s.id ? cur_refs[s.id] : null
+      if (ref) saved_scene_snap[ref] = JSON.stringify(s, null, 2)
+    })
+    const idx = JSON.parse(JSON.stringify(doc))
+    idx.scenes = doc.scenes.map((s) => (s && s.broken && s.brokenRef) ? s.brokenRef : (s && s.id ? cur_refs[s.id] : null)).filter(Boolean)
+    saved_index_snap = JSON.stringify(idx, null, 2)
+  }
+
+  // ---- 统一文件树：/cloud、/page、/{host_id} 对编辑器完全同构 ----
+  storageReady = () => !!$mod.$fs
+  const fsGet = (path) => $mod.$fs.readFile(toTree(path))         // {ok, content(string|Blob), mime, size}
+  const fsText = (path) => readText($mod.$fs, path)
+  const fsPut = (path, content) => $mod.$fs.writeFile(toTree(path), content)   // string | Blob
+  const fsLs = async (path) => {
+    try {return await $mod.$fs.list(toTree(path))} catch (e) {return {ok: false, items: []}}
+  }
+  const fsRm = (path) => $mod.$fs.remove(toTree(path))
+
+  // ---- 初始化与文件选择：首页、opener、AI 都汇聚到同一存档路径 ----
+  // setup 不碰 DOM；首次打开由挂载脚本触发。异步子组件仍可能晚到，统一在此等待。
+  waitStage = async () => {
+    for (let i = 0; i < 100; i++) {
+      const stage = $refs.stage
+      if (stage && stage.$data) return stage
+      await new Promise((resolve, reject) => {
+        const task = $scope.setTimeout(resolve, 20)
+        if (task === null) reject(new Error('页面已关闭'))
+      })
+    }
+    throw new Error('视频舞台初始化超时')
+  }
+  let lastRoute = ''
+  initPage = async () => {
+    const url = String($router.query.url || '')
+    const caseId = String($router.query.case || '')
+    const key = url + '|' + caseId + '|' + String($router.query.new || '')
+    if (key === lastRoute) return
+    lastRoute = key
+    try {
+      if (url) {
+        if (String($router.query.new || '') === '1') await newArchive(url)
+        else await openArchive(url)
+      } else if (caseId) await openCase(caseId)
+      else goHome()
+    } catch (e) {$message.error($t('home.open_failed') + String((e && e.message) || e))}
+  }
+  goHome = async () => {
+    if (curPath) {clearTimeout(saveTimer); await doSave()}
+    $router.push('index')
+  }
+  chooseOpen = async () => {
+    try {
+      if (curPath) {clearTimeout(saveTimer); await doSave()}
+      const picked = await $mod.$fs.pickFiles({accept: [ARCHIVE_EXT], start: await pickerStart($mod.$fs, curDir)})
+      if (picked) $router.push('studio?url=' + encodeURIComponent(toRef(picked.path)))
+    } catch (e) {$message.error($t('home.open_failed') + String((e && e.message) || e))}
+  }
+  chooseNew = async () => {
+    try {
+      if (curPath) {clearTimeout(saveTimer); await doSave()}
+      const picked = await $mod.$fs.pickSavePath({name: $t('home.untitled') + ARCHIVE_EXT, ext: ARCHIVE_EXT, accept: [ARCHIVE_EXT], start: await pickerStart($mod.$fs, curDir)})
+      if (picked) $router.push('studio?url=' + encodeURIComponent(toRef(picked.path)) + '&new=1')
+    } catch (e) {$message.error($t('home.new_failed') + String((e && e.message) || e))}
+  }
+
+  // pageDesc：所有文件指令接收 /fs 路径；页面内部转为 $fs 完整树路径
+  pageDesc = {
+    desc: 'Video Studio 视频工作台：.video_studio 主存档 + 同目录相对资源，经统一 $fs 在云端、页面或设备上打开、编辑、预览与导出',
+    commands: [
+      {
+        name: 'list_video', desc: '列出最近打开记录，不扫描文件系统',
+        handler: async () => reply({
+          ok: true, current: curPath ? toRef(curPath) : '', current_title: curTitle,
+          files: loadRecent().map(item => ({...item, path: toRef(item.path)})),
+        })
+      },
+
+      {
+        name: 'new_video', desc: '新建视频存档（--path 可选 /fs 路径，省略时用 /fs/page/.video；--title/--width/--height 可选）',
+        handler: async (argv) => {
+          try {
+            const path = arg(argv, 'path') || defaultArchivePath(arg(argv, 'name') || arg(argv, 'title'))
+            const d = await newArchive(path, {title: arg(argv, 'title'), width: arg(argv, 'width'), height: arg(argv, 'height')})
+            return reply({ok: true, path: toRef(curPath), scenes: d.scenes.length, duration: Math.round(d.scenes.reduce((a, s) => a + s.duration, 0))})
+          } catch (e) {return reply(errReply(e))}
+        }
+      },
+
+      {
+        name: 'open', desc: '打开 /fs 路径的 .video_studio 存档（平台 opener 使用）',
+        help: '--path /fs/.../demo.video_studio',
+        handler: async (argv) => {
+          try {
+            await openArchive(arg(argv, 'path'))
+            return reply({ok: true, path: toRef(curPath), title: curTitle})
+          } catch (e) {return reply(errReply(e))}
+        }
+      },
+      {
+        name: 'open_video', desc: '打开 /fs 路径的 .video_studio 存档',
+        help: '--path /fs/.../demo.video_studio',
+        handler: async (argv) => {
+          try {
+            await openArchive(arg(argv, 'path'))
+            return reply({ok: true, path: toRef(curPath), title: curTitle})
+          } catch (e) {return reply(errReply(e))}
+        }
+      },
+      {
+        name: 'save_video', desc: '保存当前存档',
+        handler: async () => {
+          try {
+            if (!curPath) throw new Error('样例或无路径文档请使用 save_as_video --path')
+            await doSave()
+            return reply({ok: true, path: toRef(curPath)})
+          } catch (e) {return reply(errReply(e))}
+        }
+      },
+      {
+        name: 'save_as_video', desc: '另存为并复制素材依赖',
+        help: '--path /fs/.../copy.video_studio',
+        handler: async (argv) => {
+          try {
+            const path = arg(argv, 'path')
+            if (!path) throw new Error('--path 必填')
+            await saveAsArchive(path)
+            return reply({ok: true, path: toRef(curPath)})
+          } catch (e) {return reply(errReply(e))}
+        }
+      },
+
+      {
+        name: 'run_video', desc: '预览播放当前存档（--path 可选，指定则先打开）',
+        handler: async (argv) => {
+          try {
+            const path = arg(argv, 'path')
+            if (path && toTree(path) !== curPath) await openArchive(path)
+            if (!doc) throw new Error('没有已打开的项目')
+            $refs.stage.$data.togglePlay()
+            return reply({ok: true, playing: $refs.stage.$data.playing, title: curTitle})
+          } catch (e) {return reply(errReply(e))}
+        }
+      },
+
+      {
+        name: 'stop_video', desc: '停止预览播放',
+        handler: async () => {
+          try {
+            const st = $refs.stage.$data
+            if (st.playing) st.togglePlay()
+            return reply({ok: true, playing: false})
+          } catch (e) {return reply(errReply(e))}
+        }
+      },
+
+      {
+        name: 'reload_video', desc: '重新加载当前 .video_studio 与相对资源（AI 写完文件后调用）',
+        handler: async () => {
+          try {
+            if (!curPath) throw new Error('没有已打开的存档')
+            await reloadProject()
+            return reply({ok: true, path: toRef(curPath), title: curTitle})
+          } catch (e) {return reply(errReply(e))}
+        }
+      },
+
+      {
+        name: 'gen_voice', desc: '逐场景生成配音素材（--text 必填；--name 可选文件名；--set voice|music 可选：voice 配置到当前场景，music 配置为全片音乐）。TTS 限流约 3s/个',
+        handler: async (argv) => {
+          try {
+            if (!curPath) throw new Error('请先打开存档（new_video 或 open_video）')
+            const text = String(arg(argv, 'text', '') || '').trim()
+            if (!text) throw new Error('--text 必填')
+            if (text.length > 5000) throw new Error('文本超长（最多 5000 字）')
+            // 平台包级 TTS（skills 面保留端点 POST {scoped}/api/speech，与 ppt_studio 同款）：POST {text} → 音频 blob（按文本 hash 缓存）
+            const resp = await fetch('@' + $mod.scoped + '/api/speech', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({text}),
+            })
+            if (!resp.ok) throw new Error('TTS 合成失败 HTTP ' + resp.status)
+            const blob = await resp.blob()
+            if (!blob.size) throw new Error('TTS 返回空音频')
+            // 文件名：--name 或自动（voice-时间戳）；可选参数显式取值（不 fallback 位置参数）；
+            // 截断防长文本；扩展名按响应 mime（mpeg→mp3）；assets/ 内重名自动加 -N
+            let mimeExt = String((blob.type || '').split('/')[1] || 'mp3').toLowerCase()
+            if (mimeExt === 'mpeg') mimeExt = 'mp3'
+            const rawName = cleanName(optArg(argv, 'name'), 60)
+            const dot = rawName.lastIndexOf('.')
+            const base = dot > 0 ? rawName.slice(0, dot) : (rawName || 'voice-' + Date.now().toString(36))
+            const l = await fsLs(projDir() + '/assets/')
+            const names = new Set((l.items || []).map((i) => i.name))
+            let name = base + '.' + mimeExt
+            let n = 1
+            while (names.has(name)) name = base + '-' + (n++) + '.' + mimeExt
+            const ref = 'assets/' + name
+            await fsPut(resolveRef(projDir(), ref), blob)
+            // 预热 dataURL 并同步舞台（立即可用于预览/导出）
+            const dataUrl = await blobToDataURL(blob)
+            assets[ref] = dataUrl
+            const st = $refs.stage && $refs.stage.$data
+            if (st) {if (st.engine) st.engine.assets = assets; if (st.refreshFrame) st.refreshFrame()}
+            // voice 属于当前场景（scene-local offset）；music 仍是全片轨
+            const track = String(arg(argv, 'set', '') || '')
+            let voiceScene = -1
+            if (track === 'voice') {
+              voiceScene = activeSceneIdx()
+              if (!doc.scenes[voiceScene]) throw new Error('当前场景不存在')
+              doc.scenes[voiceScene].voice = {src: ref, volume: 1, offset: 0.2}
+            } else if (track === 'music') {
+              doc.music = {src: ref, volume: 1, offset: 0, loop: true}
+            }
+            if (track === 'voice' || track === 'music') onDocChange()
+            const duration = await audioDuration(blob)
+            await refreshAssets()
+            return reply({ok: true, ref, name, size: blob.size, duration, track, scene: voiceScene >= 0 ? voiceScene + 1 : null, hint: '素材引用：' + ref + '（时长 ' + duration + 's）'})
+          } catch (e) {return reply(errReply(e))}
+        }
+      },
+
+      {
+        name: 'shot_video', desc: '截图当前画面为 PNG（--frame/--name/--scale 可选），写入当前存档目录 screenshots/ 并返回 /fs 路径',
+        handler: async (argv) => {
+          try {
+            if (!doc || !curPath) throw new Error('请先打开存档')
+            const st = $refs.stage && $refs.stage.$data
+            const engine = st && st.engine
+            if (!engine) throw new Error('引擎未就绪')
+            // 关键：totalFrames 只在引擎规范化后的 doc 上（页面 proxy doc 是原始 JSON，没有该字段）——
+            // 用 doc.totalFrames 会得到 undefined → total=1 → 任何 --frame 都被钳到第 0 帧
+            const total = (engine.doc && engine.doc.totalFrames) || st.totalFrames || 1
+            const fr = parseInt(optArg(argv, 'frame'), 10)
+            const f = isNaN(fr) ? engine.frame : Math.max(0, Math.min(fr, total - 1))
+            // 复用导出管线：确定性 DOM → SVG foreignObject → canvas（不动播放头）
+            if (engine.prepare) await engine.prepare()   // three 元素懒加载就绪
+            // 预热并等待媒体就绪：窗口外 video 首次出现在截图帧时可能未加载（黑帧）
+            prepareMedia(engine.doc, engine.assets)
+            await waitMediaReady()
+            const {drawFrameToCanvas} = await import('./video/render.js')
+            // forExport：与导出画面一致（audio 元素不画 chip；media 合成真帧）
+            const node = engine.buildFrame(f, {forExport: true})
+            await waitMediaSeek(node)
+            const scale = Math.max(0.25, Math.min(2, parseFloat(optArg(argv, 'scale') || '1') || 1))
+            const W = Math.round(doc.size.width * scale)
+            const H = Math.round(doc.size.height * scale)
+            const canvas = document.createElement('canvas')
+            canvas.width = W
+            canvas.height = H
+            const ctx = canvas.getContext('2d', {alpha: false})
+            ctx.fillStyle = '#000'
+            ctx.fillRect(0, 0, W, H)
+            await drawFrameToCanvas(node, canvas, ctx, W, H)
+            const blob = await new Promise((res, rej) => canvas.toBlob((b) => (b ? res(b) : rej(new Error('toBlob failed'))), 'image/png'))
+            const rawName = cleanName(optArg(argv, 'name'), 60)
+            const name = (rawName || safeTitle() + '-f' + f) + '.png'
+            const outPath = resolveRef(projDir(), 'screenshots/' + name)
+            await fsPut(outPath, blob)
+            return reply({ok: true, path: toRef(outPath), frame: f, total, width: W, height: H, size: blob.size})
+          } catch (e) {return reply(errReply(e))}
+        }
+      },
+
+      {
+        name: 'run_js', desc: '纯数值/曲线/3D 建模计算 JS（软沙箱：仅 Math + M 数学包 + T three.js 核心数学几何 + console/copy，无 DOM/网络/存储/定时器/构造器）。--code 必填（表达式/IIFE，或语句体自己 return）。M 包：TAU, lerp, clamp, smoothstep, map, deg, rad, round(v,n), range(n,a,b), rand(seed)→fn, easing, easingOf, bezier(x1..)→fn, spring(d,s,m)→fn, interpolate。T 包（three r170 纯计算类，无渲染器）：Vector2/3/4, Matrix3/4, Quaternion, Euler, Color, Spherical, CatmullRomCurve3, SplineCurve, CurvePath, Path, Shape, BufferGeometry 及 Box/Sphere/TorusKnot/Tube/Lathe/Extrude/Shape 等 Geometry 类, MathUtils。console.log 收进 logs；copy(v) 写剪贴板。返回 {ok, result, result_type, logs, copied}。适合先算好路径/顶点/曲线参数再 fs.write 写入文档或素材',
+        handler: async (argv) => {
+          try {
+            const code = optArg(argv, 'code') || String((argv || [])[0] || '')
+            if (!code.trim()) throw new Error('--code 必填')
+            const T = await runJsThreeKit()
+            return reply(runJsSandbox(code, T))
+          } catch (e) {return reply({ok: false, error: String((e && e.message) || e)})}
+        }
+      },
+
+      {
+        name: 'analyze_music', desc: '节拍分析（--src 必填：项目内音频素材相对路径如 assets/bgm.mp3；--name 可选输出文件名，默认 beats.json）。WebAudio 解码 → 能量流自相关求 BPM/拍点网格 + 真实瞬态 onsets，写入项目文件并返回摘要。卡拍片分镜前先调此指令，时间线按 beats/onsets 写 t（稀疏重音钉 onsets 而非网格插值点）',
+        handler: async (argv) => {
+          try {
+            if (!curPath) throw new Error('请先打开存档')
+            const src = optArg(argv, 'src')
+            if (!src) throw new Error('--src 必填（项目内音频素材相对路径）')
+            const r = await fsGet(resolveRef(projDir(), src))
+            const blob = r.content instanceof Blob ? r.content : new Blob([r.content])
+            const AC = window.AudioContext || window.webkitAudioContext
+            const ac = new AC()
+            let audio
+            try { audio = await ac.decodeAudioData(await blob.arrayBuffer()) } finally { ac.close() }
+            // 多声道混单声道（节拍分析只需包络）
+            const n = audio.length
+            const mono = new Float32Array(n)
+            for (let c = 0; c < audio.numberOfChannels; c++) {
+              const d = audio.getChannelData(c)
+              for (let i = 0; i < n; i++) mono[i] += d[i] / audio.numberOfChannels
+            }
+            const {analyzeBeats} = await import('./video/beats.js')
+            const res = analyzeBeats(mono, audio.sampleRate)
+            res.src = src
+            const rawName = cleanName(optArg(argv, 'name'), 60) || 'beats.json'
+            const outRef = rawName.endsWith('.json') ? rawName : rawName + '.json'
+            const outPath = resolveRef(projDir(), outRef)
+            await fsPut(outPath, JSON.stringify(res, null, 2))
+            return reply({
+              ok: true, path: toRef(outPath),
+              bpm: res.bpm, beatOffset: res.beatOffset, beatPeriod: res.beatPeriod,
+              beats: res.beats.length, onsets: res.onsets.length, confidence: res.confidence,
+              duration: res.duration, firstBeats: res.beats.slice(0, 8),
+              hint: res.confidence < 0.3 ? '置信度低：建议人工核对拍点网格后再分镜' : '分镜时按 beats/onsets 写 t；全画面级节拍冲击全片 ≤3 处',
+            })
+          } catch (e) {return reply(errReply(e))}
+        }
+      },
+
+      {
+        name: 'get_video', desc: '当前打开存档的信息',
+        handler: async () => {
+          try {
+            if (!doc) return reply({ok: true, open: false})
+            const st = $refs.stage.$data.engine ? $refs.stage.$data.engine.getState() : null
+            return reply({
+              ok: true, open: true, path: curPath ? toRef(curPath) : '', readonly: !curPath, title: curTitle,
+              duration: st ? Math.round(st.duration) : 0, fps: st ? st.fps : 0,
+              size: st ? st.size : null, scenes: st ? st.scenes.length : 0
+            })
+          } catch (e) {return reply(errReply(e))}
+        }
+      },
+    ]}
+
+  const errReply = (e) => ({ok: false, error: String((e && e.message) || e)})
+  const reply = (obj) => ({content: JSON.stringify(obj)})
+  const arg = (argv, key, dft) => {
+    const i = (argv || []).indexOf('--' + key)
+    if (i >= 0 && argv[i + 1] !== undefined) return String(argv[i + 1])
+    const pos = (argv || []).find((a) => typeof a === 'string' && !String(a).startsWith('--'))
+    return pos !== undefined ? pos : dft
+  }
+  // 可选参数显式取值：不带位置参数 fallback（否则多 flag 场景会误取其它 flag 的值，如 --text 长文本被当成 --name）
+  const optArg = (argv, key) => {
+    const a = argv || []
+    const i = a.indexOf('--' + key)
+    return i >= 0 && a[i + 1] !== undefined ? String(a[i + 1]) : ''
+  }
+  // 文件名清洗 + 截断（防长文本/超长文件名）
+  const cleanName = (s, max) => {
+    s = String(s || '').replace(/[\\/:*?"<>|#%\s]+/g, '-').replace(/^-+|-+$/g, '')
+    if (max && s.length > max) s = s.slice(0, max)
+    return s
+  }
+  // 音频时长（秒，两位小数）：加载元数据获取，失败返回 0
+  const audioDuration = (blob) => new Promise((res) => {
+    const u = URL.createObjectURL(blob)
+    const a = new Audio()
+    const done = (v) => {URL.revokeObjectURL(u); res(v)}
+    a.onloadedmetadata = () => done(Math.round(a.duration * 100) / 100)
+    a.onerror = () => done(0)
+    a.src = u
+  })
+
+  // ---- run_js 数值计算软沙箱 ----
+  // 仅暴露 Math + M 数学包 + console/copy；DOM/网络/存储/定时器/构造器用参数遮蔽为 undefined，
+  // "use strict" 防 this 逃逸。（用途是 AI 算曲线/数值，非防恶意代码的安全边界）
+  const JS_SHADOW = [
+    'window', 'document', 'globalThis', 'self', 'top', 'parent', 'frames', 'opener',
+    'fetch', 'XMLHttpRequest', 'WebSocket', 'EventSource', 'Worker', 'SharedWorker',
+    'localStorage', 'sessionStorage', 'indexedDB', 'caches', 'cookieStore',
+    'navigator', 'location', 'history', 'open', 'alert', 'confirm', 'prompt', 'print',
+    'setTimeout', 'setInterval', 'setImmediate', 'queueMicrotask', 'requestAnimationFrame',
+    'Function', 'AsyncFunction', 'GeneratorFunction', 'importScripts', 'require',
+    'process', 'Buffer', 'postMessage', 'BroadcastChannel', 'MessageChannel', 'Notification',
+    // 注意：不能放 'eval'/'arguments'——strict 模式下它们是非法参数名，会直接 SyntaxError
+  ]
+  const runJsMathKit = () => ({
+    TAU: Math.PI * 2,
+    lerp: (a, b, t) => a + (b - a) * t,
+    clamp: (v, a, b) => Math.max(a, Math.min(b, v)),
+    smoothstep: (a, b, v) => { const t = Math.max(0, Math.min(1, (v - a) / (b - a))); return t * t * (3 - 2 * t) },
+    map: (v, a, b, c, d) => c + (d - c) * ((v - a) / (b - a)),
+    deg: (r) => (r * 180) / Math.PI,
+    rad: (d) => (d * Math.PI) / 180,
+    round: (v, n) => { const p = Math.pow(10, n == null ? 2 : n); return Math.round(v * p) / p },
+    range: (n, a, b) => Array.from({length: Math.max(0, n | 0)}, (_, i) => a == null ? i : a + (b - a) * (n <= 1 ? 0 : i / (n - 1))),
+    // mulberry32 种子随机（可复现）
+    rand: (seed) => { let s = (seed >>> 0) || 1; return () => { s = (s + 0x6d2b79f5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296 } },
+    easing, easingOf, bezier: bezierEasing, spring: springPhysics, interpolate,
+  })
+  // three.js 核心纯数学/几何类（无 WebGL 依赖），首次 run_js 用时才懒加载（691KB 不进首屏）
+  // 注意：vhtml 编译后动态 import 的相对路径基准是 /vhtml/（非组件目录）——
+  // 必须用 $mod.scoped 拼绝对路径（静态 import 才会按组件路径重写）
+  let threeCoreP = null
+  const runJsThreeKit = async () => {
+    const m = await (threeCoreP || (threeCoreP = import($mod.scoped + '/video/vendor/three.module.js')))
+    const keys = ['Vector2', 'Vector3', 'Vector4', 'Matrix3', 'Matrix4', 'Quaternion', 'Euler', 'Color',
+      'Spherical', 'Cylindrical', 'Plane', 'Ray', 'Triangle', 'Line3', 'Box2', 'Box3', 'Sphere',
+      'Curve', 'CurvePath', 'Path', 'Shape',
+      'CatmullRomCurve3', 'CubicBezierCurve', 'CubicBezierCurve3', 'QuadraticBezierCurve', 'QuadraticBezierCurve3',
+      'LineCurve', 'LineCurve3', 'EllipseCurve', 'ArcCurve', 'SplineCurve',
+      'BufferGeometry', 'BufferAttribute', 'Float32BufferAttribute', 'Uint16BufferAttribute', 'Uint32BufferAttribute',
+      'BoxGeometry', 'CapsuleGeometry', 'CircleGeometry', 'ConeGeometry', 'CylinderGeometry',
+      'DodecahedronGeometry', 'ExtrudeGeometry', 'IcosahedronGeometry', 'LatheGeometry', 'OctahedronGeometry',
+      'PlaneGeometry', 'RingGeometry', 'ShapeGeometry', 'SphereGeometry', 'TetrahedronGeometry',
+      'TorusGeometry', 'TorusKnotGeometry', 'TubeGeometry', 'WireframeGeometry', 'EdgesGeometry', 'MathUtils']
+    const T = {}
+    keys.forEach((k) => { if (m[k]) T[k] = m[k] })
+    // 建模辅助：几何体 → geo json（引擎 three geo 元素格式；法线由引擎 computeVertexNormals 补齐）
+    T.geoPack = (g) => {
+      const out = { positions: Array.from(g.attributes.position.array) }
+      if (g.attributes.uv) out.uvs = Array.from(g.attributes.uv.array)
+      if (g.index) out.index = Array.from(g.index.array)
+      return out
+    }
+    // 参数曲面采样（克莱因瓶等）：fn(u,v)→[x,y,z]；ur=[u0,u1,segU]，vr=[v0,v1,segV]
+    T.surfaceMesh = (fn, ur, vr) => {
+      const u0 = ur[0], u1 = ur[1], nu = Math.max(1, (ur[2] || 48) | 0)
+      const v0 = vr[0], v1 = vr[1], nv = Math.max(1, (vr[2] || 24) | 0)
+      const positions = [], index = []
+      for (let j = 0; j <= nv; j++)
+        for (let i = 0; i <= nu; i++) {
+          const p = fn(u0 + (u1 - u0) * (i / nu), v0 + (v1 - v0) * (j / nv))
+          positions.push(p[0], p[1], p[2])
+        }
+      for (let j = 0; j < nv; j++)
+        for (let i = 0; i < nu; i++) {
+          const a = j * (nu + 1) + i, b = a + 1, c = a + nu + 1, d = c + 1
+          index.push(a, b, d, b, c, d)
+        }
+      return { positions, index }
+    }
+    return T
+  }
+  const runJsSandbox = (code, T) => {
+    const logs = []
+    let copied = false
+    const fmtVal = (v) => {
+      if (typeof v === 'string') return v
+      if (v === undefined) return 'undefined'
+      try { return JSON.stringify(v) } catch (e) { return String(v) }
+    }
+    const fakeConsole = {}
+    ;['log', 'info', 'warn', 'error', 'debug'].forEach((k) => { fakeConsole[k] = (...a) => logs.push('[' + k + '] ' + a.map(fmtVal).join(' ')) })
+    const copy = (v) => {
+      copied = true
+      const text = typeof v === 'string' ? v : fmtVal(v)
+      copyText(text).catch(() => {}) // 写系统剪贴板（尽力而为，无手势可能失败，但返回值不受影响）
+    }
+    let fn
+    try {
+      // 首选：表达式 / IIFE（如 (() => {...})()）
+      fn = new Function('Math', 'M', 'T', 'console', 'copy', ...JS_SHADOW, '"use strict";\nreturn (\n' + code + '\n);')
+    } catch (e1) {
+      // 次选：语句体（需自己 return）
+      fn = new Function('Math', 'M', 'T', 'console', 'copy', ...JS_SHADOW, '"use strict";\n' + code)
+    }
+    const result = fn(Math, runJsMathKit(), T || {}, fakeConsole, copy, ...JS_SHADOW.map(() => undefined))
+    let out
+    if (result === undefined) out = null
+    else if (typeof result === 'string') out = result.length > 200000 ? result.slice(0, 200000) + '…[截断]' : result
+    else {
+      try { out = JSON.parse(JSON.stringify(result)) } catch (e) { out = String(result) }
+    }
+    return {ok: true, result: out, result_type: typeof result, logs, copied}
+  }
+
+  // ---- 存档读写 ----
+  // 文档尚未交给舞台前完成素材预载：normalizeDoc 是纯函数，只用于收集引用。
+  // readAsset 屏蔽 $fs 存档与内置样例的读取差异，三个装载入口共用同一顺序。
+  loadAssets = async (d, readAsset) => {
+    const loaded = {}
+    const missing = []
+    for (const ref of normalizeDoc(d)._assets) {
+      try {
+        const blob = await readAsset(ref)
+        loaded[ref] = await blobToDataURL(blob)
+      } catch (e) {
+        missing.push(ref)
+        console.warn('asset missing:', ref, e)
+      }
+    }
+    assets = loaded
+    missingAssets = missing
+  }
+
+  readArchiveAsset = async (ref) => {
+    const r = await fsGet(resolveRef(projDir(), ref))
+    // 文本与二进制统一转成 Blob；存档内始终只保留相对 ref。
+    if (r.content instanceof Blob) return r.content
+    if (typeof r.content === 'string') return new Blob([r.content], {type: r.mime || 'application/octet-stream'})
+    throw new Error('unsupported content')
+  }
+
+  readCaseAsset = async (id, ref) => {
+    const r = await fetch('cases/' + id + '/' + ref)
+    if (!r.ok) throw new Error('HTTP ' + r.status)
+    return await r.blob()
+  }
+
+  blobToDataURL = (blob) => new Promise((res, rej) => {
+    const fr = new FileReader()
+    fr.onload = () => res(fr.result)
+    fr.onerror = () => rej(fr.error || new Error('read blob failed'))
+    fr.readAsDataURL(blob)
+  })
+
+  openArchive = async (path) => {
+    const target = assertArchivePath(path)
+    if (curPath && curPath !== target) {clearTimeout(saveTimer); await doSave()}
+    const dir = parentOf(target)
+    // 先解析场景引用（scenes 字符串 → 对象），再设 doc：拆分结构由此还原为内存对象数组
+    const raw = JSON.parse(await fsText(target))
+    if (raw.format !== ARCHIVE_FORMAT) throw new Error('不支持的存档格式：' + String(raw.format || '缺失 format'))
+    const sr = await resolveSceneRefs(raw, (s) => fsText(resolveRef(dir, s)))
+    assertDocumentRefs(raw)
+    const d = ensureTheme(raw)
+    curPath = target
+    curDir = dir
+    curName = archiveName(target)
+    curTitle = d.title || curName
+    doc = d
+    cur_split = sr.split
+    cur_refs = sr.refs
+    sel = {kind: 'none', sceneIndex: 0, elId: ''}
+    sceneVer++        // 换文档必须递增：时间轴/场景列表 keyed 行全部重建
+    saveState = '_studio.saved'
+    pushRecent(curPath, curTitle)
+    // 完整文档与素材就绪后只装载一次，避免舞台把相对 ref 当页面 URL 请求。
+    // 关键：传 sandbox 读出的 doc 代理（而非裸 d）——vhtml copyBind 保证同一
+    // 代理对象贯穿后续赋值，stage 与父组件由此共享同一响应式图，
+    // 舞台拖拽写入才能被 inspector 感知、被 doSave 持久化。
+    await loadAssets(d, readArchiveAsset)
+    const stage = await waitStage()
+    stage.$data.setDoc(doc, assets)
+    snapProjectOpen()
+    setBaseline()
+    undoStack = []
+    redoStack = []
+    await refreshAssets()
+    const ref = toRef(curPath)
+    if ($router.query.url !== ref || $router.query.new || $router.query.case) {
+      lastRoute = ref + '||'
+      $router.replace('studio?url=' + encodeURIComponent(ref))
+    }
+    return d
+  }
+
+  reloadProject = async () => {
+    if (!curPath) return
+    const raw = JSON.parse(await fsText(projIndex()))
+    if (raw.format !== ARCHIVE_FORMAT) throw new Error('不支持的存档格式：' + String(raw.format || '缺失 format'))
+    const sr = await resolveSceneRefs(raw, (s) => fsText(resolveRef(projDir(), s)))
+    assertDocumentRefs(raw)
+    const d = ensureTheme(raw)
+    doc = d
+    cur_split = sr.split
+    cur_refs = sr.refs
+    curTitle = d.title || curName
+    // 选中态校验：元素/场景可能已被外部（AI）删除
+    if (sel.kind === 'element') {
+      const sc = d.scenes[sel.sceneIndex]
+      if (!sc || !(sc.elements || []).some((e) => e.id === sel.elId)) sel = {kind: 'none', sceneIndex: 0, elId: ''}
+    } else if (sel.kind === 'scene' && sel.sceneIndex >= d.scenes.length) {
+      sel = {kind: 'none', sceneIndex: 0, elId: ''}
+    }
+    sceneVer++        // 外部（AI）改过的文档结构未知，强制时间轴/场景列表重建
+    // 重载与首次打开保持同一顺序：完整素材就绪后一次性装载舞台。
+    await loadAssets(d, readArchiveAsset)
+    const stage = await waitStage()
+    stage.$data.setDoc(doc, assets)
+    snapProjectOpen()
+    setBaseline()
+    await refreshAssets()
+  }
+
+  newArchive = async (path, opts = {}) => {
+    if (!storageReady()) throw new Error('$fs 不可用，无法保存存档')
+    const target = assertArchivePath(path || defaultArchivePath())
+    const d = starterDoc()
+    d.format = ARCHIVE_FORMAT
+    d.title = opts.title || archiveName(target) || $t('home.untitled')
+    const w = parseInt(opts.width || '0', 10), h = parseInt(opts.height || '0', 10)
+    if (w >= 240 && h >= 240) d.size = {width: w, height: h}
+    await fsPut(target, JSON.stringify(d, null, 2))
+    await openArchive(target)
+    return d
+  }
+
+  openCase = async (id) => {
+    try {
+      const r = await fetch('cases/' + id + '/index.video_studio')
+      if (!r.ok) throw new Error('样例不存在: ' + id)
+      const raw = await r.json()
+      // 样例可能为拆分结构（index.video_studio + scenes/scene_N.json）：按引用逐个拉取
+      const sr = await resolveSceneRefs(raw, async (s) => {
+        const ar = await fetch('cases/' + id + '/' + s)
+        if (!ar.ok) throw new Error('HTTP ' + ar.status)
+        return await ar.text()
+      })
+      if (raw.format !== ARCHIVE_FORMAT) throw new Error('样例格式无效：' + String(raw.format || '缺失 format'))
+      assertDocumentRefs(raw)
+      const d = ensureTheme(raw)
+      curPath = ''
+      curDir = ''
+      curName = ''
+      curTitle = d.title || id
+      doc = d
+      cur_split = sr.split
+      cur_refs = sr.refs
+      saved_scene_snap = {}
+      saved_index_snap = ''
+      sel = {kind: 'none', sceneIndex: 0, elId: ''}
+      sceneVer++        // 换文档必须递增：时间轴/场景列表 keyed 行全部重建
+      saveState = ''
+      assetFiles = []
+      // 样例与存档一致：素材全部转成 dataURL 后才初始化预览和音频。
+      await loadAssets(d, (ref) => readCaseAsset(id, ref))
+      const stage = await waitStage()
+      stage.$data.setDoc(doc, assets)
+      setBaseline()
+    } catch (e) {$message.error($t('studio.case_failed') + e.message)}
+  }
+
+  saveAsArchive = async (path) => {
+    if (!doc) return
+    if (!storageReady()) throw new Error('$fs 不可用，无法保存')
+    let target = path ? assertArchivePath(path) : ''
+    if (!target) {
+      const picked = await $mod.$fs.pickSavePath({name: (curName || safeTitle() || 'video') + ARCHIVE_EXT, ext: ARCHIVE_EXT, accept: [ARCHIVE_EXT], start: await pickerStart($mod.$fs, curDir)})
+      if (!picked) return
+      target = assertArchivePath(picked.path)
+    }
+    if (target === curPath) {await doSave(); return}
+    if (curPath) await doSave()
+    const targetDir = parentOf(target)
+    // 先复制全部素材，再写主存档；任何一步失败都不切换当前路径。
+    if (curPath) {
+      const refs = new Set([...assetFiles.map(item => item.ref), ...Object.keys(assets)])
+      for (const ref of refs) {
+        const source = resolveRef(curDir, ref)
+        const destination = resolveRef(targetDir, ref)
+        if (source !== destination) await $mod.$fs.transfer(source, destination)
+      }
+      const root = await $mod.$fs.list(curDir)
+      const names = new Set((root.items || []).filter(item => !item.dir).map(item => item.name))
+      for (const name of ['brief.md', 'beats.json']) {
+        const source = resolveRef(curDir, name), destination = resolveRef(targetDir, name)
+        if (names.has(name) && source !== destination) await $mod.$fs.transfer(source, destination)
+      }
+    } else {
+      // 内置样例来自包内 HTTP；另存为时把已加载素材落到目标存档目录。
+      for (const ref of Object.keys(assets)) {
+        const response = await fetch(assets[ref])
+        await fsPut(resolveRef(targetDir, ref), await response.blob())
+      }
+    }
+    const previousRefs = cur_refs, previousScenes = saved_scene_snap, previousIndex = saved_index_snap
+    saved_scene_snap = {}
+    saved_index_snap = ''
+    try {
+      await writeProject(target, doc)
+      await openArchive(target)
+    } catch (e) {
+      if (curPath !== target) {
+        cur_refs = previousRefs
+        saved_scene_snap = previousScenes
+        saved_index_snap = previousIndex
+      }
+      throw e
+    }
+    $message.success($t('studio.saved_as') + toRef(target))
+  }
+
+  safeTitle = () => String(curTitle || curName || 'video').replace(/[\\/:*?"<>|#%\s]+/g, '-').slice(0, 60)
+
+  // ---- 编辑历史（undo/redo）与剪贴板 ----
+  undoStack = []        // 公开数组（vhtml 响应式，驱动按钮态）；写入走「拷贝→改→赋回」
+  redoStack = []
+  let lastJson = ''     // 上一次变更后的 doc 序列化（快照基准）
+  let clipboard = ''    // 元素 JSON（应用内剪贴板）
+
+  setBaseline = () => {lastJson = doc ? JSON.stringify(doc) : ''}
+
+  // 任何 doc 变更后调用：把「变更前」快照入 undo 栈
+  // tag 相同的连续变更（如方向键微调）在 1s 窗口内合并为一条历史
+  let lastTag = ''
+  let lastPushT = 0
+  pushHistory = (tag) => {
+    if (!doc) {lastJson = ''; return }
+    if (!curPath) {setBaseline(); return }   // 样例只读，不入栈
+    const j = JSON.stringify(doc)
+    if (j === lastJson) return
+    const now = Date.now()
+    if (lastJson) {
+      const coalesce = tag && tag === lastTag && now - lastPushT < 1000
+      if (!coalesce) {
+        undoStack = undoStack.concat([lastJson]).slice(-100)
+        redoStack = []
+      }
+    }
+    lastJson = j
+    lastTag = tag || ''
+    lastPushT = now
+  }
+
+  applyJson = (j) => {
+    const d = ensureTheme(JSON.parse(j))
+    doc = d
+    curTitle = d.title || curName
+    sel = {kind: 'none', sceneIndex: 0, elId: ''}
+    sceneVer++
+    $refs.stage.$data.setDoc(doc, assets)
+    scheduleSave()
+  }
+
+  undoEdit = () => {
+    if (!undoStack.length || !curPath) return
+    redoStack = redoStack.concat([lastJson])
+    lastJson = undoStack[undoStack.length - 1]
+    undoStack = undoStack.slice(0, -1)
+    applyJson(lastJson)
+  }
+
+  redoEdit = () => {
+    if (!redoStack.length || !curPath) return
+    undoStack = undoStack.concat([lastJson])
+    lastJson = redoStack[redoStack.length - 1]
+    redoStack = redoStack.slice(0, -1)
+    applyJson(lastJson)
+  }
+
+  copyElement = () => {
+    if (sel.kind !== 'element' || !curPath) return
+    const sc = doc.scenes[sel.sceneIndex]
+    if (!sc) return
+    const ids = sel.elIds && sel.elIds.length ? sel.elIds : [sel.elId]
+    const els = (sc.elements || []).filter((e) => ids.indexOf(e.id) >= 0)
+    if (!els.length) return
+    clipboard = JSON.stringify(els.length === 1 ? els[0] : els)
+    $message.success($t('studio.copied_elements', {count: els.length}))
+  }
+
+  pasteElement = () => {
+    if (!clipboard || !canEdit()) return
+    const parsed = JSON.parse(clipboard)
+    const list = Array.isArray(parsed) ? parsed : [parsed]
+    const i = activeSceneIdx()
+    const news = []
+    spliceEls(doc.scenes[i], (a) => {
+      for (const src of list) {
+        const el = JSON.parse(JSON.stringify(src))
+        el.id = (el.type || 'el') + '-' + uid()
+        el.x = (+el.x || 0) + 24
+        el.y = (+el.y || 0) + 24
+        a.push(el)
+        news.push(el.id)
+      }
+    })
+    if (!news.length) return
+    sel = {kind: 'element', sceneIndex: i, elId: news[news.length - 1], elIds: news}
+    onDocChange()
+    $message.success($t('studio.pasted_elements', {count: news.length}))
+  }
+
+  // 方向键微调选中元素（1px，Shift=10px；连续微调合并为一条历史）
+  nudgeSelected = (dx, dy) => {
+    const sc = doc.scenes[sel.sceneIndex]
+    if (!sc) return
+    const r1 = (v) => Math.round(v * 10) / 10
+    let hit = false
+    for (const el of (sc.elements || [])) {
+      if (sel.elIds.indexOf(el.id) < 0) continue
+      // x/y 关键帧轨道驱动位置的元素：平移轨道
+      if (Array.isArray(el.keyframes) && el.keyframes.some((k) => k.x != null || k.y != null)) {
+        el.keyframes = el.keyframes.map((k) => {
+          const c = Object.assign({}, k)
+          if (c.x != null) c.x = r1(c.x + dx)
+          if (c.y != null) c.y = r1(c.y + dy)
+          return c
+        })
+      } else {
+        el.x = r1((+el.x || 0) + dx)
+        el.y = r1((+el.y || 0) + dy)
+      }
+      hit = true
+    }
+    if (!hit) return
+    $refs.stage.$data.refreshFrame()
+    pushHistory('nudge')
+    scheduleSave()
+  }
+
+  // 场景跳转：d=-1 上一场景起点，d=1 下一场景起点
+  jumpScene = (d) => {
+    const st = $refs.stage && $refs.stage.$data
+    if (!st || !st.doc || !st.scenes || !st.scenes.length) return
+    const fr = st.engine.frame
+    if (d > 0) {
+      const nx = st.scenes.find((s) => s.start > fr)
+      st.seekFrame(nx ? nx.start : st.totalFrames - 1)
+    } else {
+      let at = st.scenes[0]
+      for (const s of st.scenes) {if (s.start < fr) at = s; else break}
+      st.seekFrame(at.start)
+    }
+  }
+
+  // ---- 保存 ----
+  scheduleSave = () => {
+    if (!curPath || !storageReady()) return
+    saveState = '_studio.unsaved'
+    clearTimeout(saveTimer)
+    saveTimer = setTimeout(() => {doSave().catch(() => {})}, 600)
+  }
+  // 写盘（对齐 ppt_studio 分页拆分）：拆分结构（cur_split）按引用逐场景写回，
+  // 主 .video_studio 保持引用数组；编辑器新增/复制的场景自动分配 scenes/scene_N.json；
+  // 不再被引用的旧分场景文件同步清理。非拆分结构整体单写。doc 先深拷贝再处理，不污染 vhtml 代理。
+  writeProject = async (path, doc) => {
+    const target = assertArchivePath(path)
+    const out = JSON.parse(JSON.stringify(doc))
+    out.format = ARCHIVE_FORMAT
+    assertDocumentRefs(out)
+    if (!cur_split) {
+      const text = JSON.stringify(out, null, 2)
+      if (text !== saved_index_snap) {
+        await fsPut(target, text)
+        saved_index_snap = text
+      }
+      return
+    }
+    const dir = parentOf(target) + '/'
+    const idCount = {}
+    out.scenes.forEach((s) => {if (s && s.id) idCount[s.id] = (idCount[s.id] || 0) + 1})
+    const used = new Set()
+    const nextRefs = {}
+    const refs = []
+    for (let i = 0; i < out.scenes.length; i++) {
+      const s = out.scenes[i]
+      // 加载失败的占位场景：不写文件，原引用字符串回写（补写文件后重新打开即可恢复）
+      if (s && s.broken && s.brokenRef) {
+        used.add(s.brokenRef)
+        refs.push(s.brokenRef)
+        continue
+      }
+      // 同 id 被复制出多份时不写引用（避免互相覆盖），该场景内联
+      let ref = s && s.id && idCount[s.id] === 1 ? cur_refs[s.id] : null
+      if (ref && used.has(ref)) ref = null
+      if (!ref) ref = 'scenes/scene_' + (i + 1) + '.json'
+      if (used.has(ref)) {refs.push(s); continue}
+      used.add(ref)
+      // 增量保存：序列化内容没变的场景跳过写文件
+      const text = JSON.stringify(s, null, 2)
+      if (saved_scene_snap[ref] !== text) {
+        await fsPut(dir + ref, text)
+        saved_scene_snap[ref] = text
+      }
+      if (s && s.id) nextRefs[s.id] = ref
+      refs.push(ref)
+    }
+    out.scenes = refs
+    cur_refs = nextRefs
+    const indexText = JSON.stringify(out, null, 2)
+    const indexChanged = indexText !== saved_index_snap
+    if (indexChanged) {
+      await fsPut(target, indexText)
+      saved_index_snap = indexText
+    }
+    // 结构有变化才清理：删除不再被引用的旧分场景文件 + 过期快照
+    if (indexChanged) {
+      Object.keys(saved_scene_snap).forEach((k) => {if (!used.has(k)) delete saved_scene_snap[k]})
+      try {
+        const node = await fsLs(dir + 'scenes/')
+        if (node && node.ok && Array.isArray(node.items)) {
+          for (const it of node.items) {
+            if (!it.dir && /\.json$/i.test(it.name) && !used.has('scenes/' + it.name)) {
+              try {await fsRm(dir + 'scenes/' + it.name)} catch (e) { }
+            }
+          }
+        }
+      } catch (e) { }
+    }
+  }
+  doSave = () => {
+    if (!curPath || !storageReady()) return Promise.resolve()
+    clearTimeout(saveTimer)
+    const target = curPath
+    const snapshot = JSON.parse(JSON.stringify(doc))
+    saveState = '_studio.saving'
+    saveQueue = saveQueue.catch(() => {}).then(async () => {
+      await writeProject(target, snapshot)
+      if (target === curPath) {
+        saveState = '_studio.saved'
+        pushRecent(target, curTitle)
+      }
+    }).catch((e) => {
+      console.error('save failed', e)
+      if (target === curPath) saveState = '_studio.failed'
+      throw e
+    })
+    return saveQueue
+  }
+
+  // ---- 编辑数据流（§2.3）----
+  canEdit = () => {
+    if (!doc) return false
+    if (!curPath) {
+      $message.warning($t('studio.readonly_save_hint'))
+      return false
+    }
+    return true
+  }
+
+  onDocChange = () => {
+    curTitle = (doc && doc.title) || curName
+    pushHistory()
+    $refs.stage.$data.refreshFrame()
+    scheduleSave()
+  }
+  onStageChange = () => {
+    pushHistory()
+    scheduleSave()
+  }
+
+  // ---- 选中模型 ----
+  activeSceneIdx = () => {
+    if (!doc) return 0
+    let acc = 0
+    for (let i = 0; i < doc.scenes.length; i++) {
+      const fr = Math.max(1, Math.round((+doc.scenes[i].duration || 1) * doc.fps))
+      if (curFrame < acc + fr) return i
+      acc += fr
+    }
+    return Math.max(0, doc.scenes.length - 1)
+  }
+
+  sceneStartFrame = (i) => {
+    let acc = 0
+    for (let k = 0; k < i; k++) acc += Math.max(1, Math.round((+doc.scenes[k].duration || 1) * doc.fps))
+    return acc
+  }
+
+  onPickScene = (i) => {
+    if (!doc) return
+    i = Math.max(0, Math.min(i, doc.scenes.length - 1))
+    sel = {kind: 'scene', sceneIndex: i, elId: ''}
+    $refs.stage.$data.seekFrame(sceneStartFrame(i))
+  }
+  onStageSelect = (s) => {
+    if (s && s.kind === 'element') {
+      sel = {kind: 'element', sceneIndex: s.sceneIndex, elId: s.id, elIds: s.ids || [s.id]}
+    } else {
+      sel = {kind: 'scene', sceneIndex: activeSceneIdx(), elId: '', elIds: []}
+    }
+  }
+  onPickEl = (p) => {
+    // 时间轴多轨道后可跨场景选中：payload 可为 {id, scene} 或裸 id
+    const id = typeof p === 'string' ? p : p && p.id
+    if (!id) return
+    const si = (p && p.scene != null) ? Math.max(0, Math.min(p.scene, doc.scenes.length - 1)) : activeSceneIdx()
+    sel = {kind: 'element', sceneIndex: si, elId: id, elIds: [id]}
+  }
+  onSeek = (f) => {
+    $refs.stage.$data.seekFrame(f)
+  }
+  onFrameChange = (f) => {curFrame = f}
+  selNone = () => {
+    if (!doc) return
+    sel = {kind: 'none', sceneIndex: activeSceneIdx(), elId: ''}
+  }
+
+  // ---- 场景操作 ----
+  // 注意：vhtml Wrap 代理数组上直接 splice 会复制插入项（已踩坑）——
+  // 统一走「拷贝 → 改 → 赋回」模式（赋值经 copyBind 数组合并，安全可靠）
+  const spliceScenes = (fn) => {
+    const arr = doc.scenes.slice()
+    fn(arr)
+    doc.scenes = arr
+  }
+  const spliceEls = (sc, fn) => {
+    const arr = (sc.elements || []).slice()
+    fn(arr)
+    sc.elements = arr
+  }
+  addScene = () => {
+    if (!canEdit()) return
+    const i = sel.sceneIndex != null ? sel.sceneIndex : doc.scenes.length - 1
+    const at = Math.min(i, doc.scenes.length - 1) + 1
+    spliceScenes((a) => a.splice(at, 0, {
+      id: 's' + uid(), duration: 3, transition: 'fade', transitionIn: 0.6,
+      elements: [],
+    }))
+    sceneVer++
+    onPickScene(at)
+    onDocChange()
+  }
+  dupScene = (i) => {
+    if (!canEdit()) return
+    const c = JSON.parse(JSON.stringify(doc.scenes[i]))
+    c.id = 's' + uid()
+    spliceScenes((a) => a.splice(i + 1, 0, c))
+    sceneVer++
+    onPickScene(i + 1)
+    onDocChange()
+  }
+  delScene = (i) => {
+    if (!canEdit() || doc.scenes.length <= 1) return
+    spliceScenes((a) => a.splice(i, 1))
+    sceneVer++
+    const ni = Math.max(0, Math.min(i, doc.scenes.length - 1))
+    onPickScene(ni)
+    onDocChange()
+  }
+  moveScene = ({i, d}) => {
+    if (!canEdit()) return
+    const j = i + d
+    if (j < 0 || j >= doc.scenes.length) return
+    spliceScenes((a) => {
+      const t = a[i]
+      a.splice(i, 1)
+      a.splice(j, 0, t)
+    })
+    sceneVer++
+    onPickScene(j)
+    onDocChange()
+  }
+
+  // ---- 元素操作 ----
+  makeElement = (type, sub) => {
+    const W = doc.size.width, H = doc.size.height
+    const id = (type === 'shape' ? sub : type) + '-' + uid()
+    const base = {id, type, x: Math.round(W / 2 - 160), y: Math.round(H / 2 - 45), w: 320, h: 90}
+    if (type === 'text') return Object.assign(base, {
+      html: $t('studio.default_text'), fontSize: 42, fontWeight: 600, color: doc.theme.color,
+      align: 'center', valign: 'middle', fx: {enter: 'fade-up', enterDur: 0.6, delay: 0.2},
+    })
+    if (type === 'shape') {
+      const o = Object.assign(base, {shape: sub || 'rect', fill: doc.theme.accent, w: 240, h: 170})
+      if (sub === 'rect') o.radius = 14
+      if (sub === 'arrow') {o.direction = 'right'; o.h = 90}
+      if (sub === 'triangle') {o.w = 200; o.h = 180}
+      return o
+    }
+    if (type === 'image') return Object.assign(base, {w: 360, h: 220, src: '', fit: 'contain'})
+    if (type === 'chart') return Object.assign(base, {
+      w: 560, h: 340, x: Math.round(W / 2 - 280), y: Math.round(H / 2 - 170),
+      option: {xAxis: {data: ['Q1', 'Q2', 'Q3', 'Q4']}, series: [{type: 'bar', data: [120, 210, 340, 520]}]},
+    })
+    if (type === 'table') return Object.assign(base, {
+      w: 480, h: 220, x: Math.round(W / 2 - 240), y: Math.round(H / 2 - 110),
+      columns: [{w: 0.6}, {w: 0.4}],
+      rows: [
+        {cells: [{html: $t('studio.table_name'), bold: true}, {html: $t('studio.table_value'), bold: true}]},
+        {cells: [{html: $t('studio.table_item') + ' A'}, {html: '12'}]},
+        {cells: [{html: $t('studio.table_item') + ' B'}, {html: '34'}]},
+      ],
+      header: true,
+      style: {fontSize: 16, color: '#e2e8f0', headerBg: doc.theme.accent, borderColor: 'rgba(255,255,255,0.15)'},
+    })
+    return base
+  }
+
+  onAddEl = ({type, sub}) => {
+    if (!canEdit() || !doc) return
+    const i = activeSceneIdx()
+    const sc = doc.scenes[i]
+    if (!sc) return
+    const el = makeElement(type, sub)
+    spliceEls(sc, (a) => a.push(el))
+    sel = {kind: 'element', sceneIndex: i, elId: el.id}
+    onDocChange()
+    $message.success($t('studio.element_added') + el.id)
+  }
+
+  delElement = (id) => delElements([id])
+
+  delElements = (ids) => {
+    if (!canEdit() || !ids || !ids.length) return
+    const sc = doc.scenes[sel.sceneIndex]
+    if (!sc) return
+    spliceEls(sc, (a) => {
+      for (const id of ids) {
+        const i = a.findIndex((e) => e.id === id)
+        if (i >= 0) a.splice(i, 1)
+      }
+    })
+    sel = {kind: 'scene', sceneIndex: sel.sceneIndex, elId: '', elIds: []}
+    onDocChange()
+  }
+
+  dupElement = (id) => dupElements([id])
+
+  dupElements = (ids) => {
+    if (!canEdit() || !ids || !ids.length) return
+    const sc = doc.scenes[sel.sceneIndex]
+    if (!sc) return
+    const news = []
+    spliceEls(sc, (a) => {
+      for (const id of ids) {
+        const el = a.find((e) => e.id === id)
+        if (!el) continue
+        const c = JSON.parse(JSON.stringify(el))
+        c.id = (c.type || 'el') + '-' + uid()
+        c.x = (+c.x || 0) + 24
+        c.y = (+c.y || 0) + 24
+        a.push(c)
+        news.push(c.id)
+      }
+    })
+    if (!news.length) return
+    sel = {kind: 'element', sceneIndex: sel.sceneIndex, elId: news[news.length - 1], elIds: news}
+    onDocChange()
+  }
+
+  // 场景拖拽排序：from → to（移除后的插入下标）
+  moveSceneTo = ({from, to}) => {
+    if (!canEdit()) return
+    to = Math.max(0, Math.min(to, doc.scenes.length - 1))
+    if (from === to) return
+    spliceScenes((a) => {
+      const t = a[from]
+      a.splice(from, 1)
+      a.splice(to, 0, t)
+    })
+    sceneVer++
+    onPickScene(to)
+    onDocChange()
+  }
+
+  // ---- 素材上传 ----
+  // 批量上传到 assets/：保留原始文件名（清洗非法字符），重名自动加 -1/-2 后缀；
+  // 写入后预热 dataURL（预览/导出共用）。返回相对引用数组。
+  uploadAssets = async (files) => {
+    if (!curPath || !storageReady()) throw new Error('请先新建或另存为存档')
+    const list = Array.from(files || [])
+    if (!list.length) return []
+    // 一次列目录建名字集合，去重分配
+    const l = await fsLs(projDir() + '/assets/')
+    const names = new Set((l.items || []).map((i) => i.name))
+    const refs = []
+    for (const file of list) {
+      const raw = String(file.name || '').replace(/[\\/:*?"<>|#%\s]+/g, '-').replace(/^-+|-+$/g, '')
+      const dot = raw.lastIndexOf('.')
+      let base = dot > 0 ? raw.slice(0, dot) : raw
+      let ext = dot > 0 ? raw.slice(dot + 1).toLowerCase().replace(/[^a-z0-9]/g, '') : ''
+      if (!ext) {
+        const m = /[a-z0-9.+-]+\/([a-z0-9.+-]+)/i.exec(file.type || '')
+        if (m) ext = m[1].toLowerCase().replace('jpeg', 'jpg')
+      }
+      base = base || 'asset'
+      ext = ext || 'bin'
+      let name = base + '.' + ext
+      let n = 1
+      while (names.has(name)) name = base + '-' + (n++) + '.' + ext
+      names.add(name)
+      const ref = 'assets/' + name
+      await fsPut(resolveRef(projDir(), ref), file)
+      const dataUrl = await blobToDataURL(file)
+      assets[ref] = dataUrl
+      refs.push(ref)
+    }
+    // 上传后同步舞台素材映射（stage/engine 持有的 assets 引用可能还是旧空对象）
+    const st = $refs.stage && $refs.stage.$data
+    if (st) {
+      if (st.engine) st.engine.assets = assets
+      if (st.refreshFrame) st.refreshFrame()
+    }
+    return refs
+  }
+  uploadAsset = async (file) => {
+    const refs = await uploadAssets([file])
+    refreshAssets()
+    return refs[0]
+  }
+
+  // ---- 素材管理（左侧素材 tab）----
+  const assetKind = (name) => {
+    const ext = String(name.split('.').pop() || '').toLowerCase()
+    if (/^(png|jpe?g|gif|webp|svg|avif|bmp|ico)$/.test(ext)) return 'image'
+    if (/^(mp3|wav|ogg|m4a|flac|aac)$/.test(ext)) return 'audio'
+    if (/^(mp4|webm|mov|m4v|avi)$/.test(ext)) return 'video'
+    if (/^(ttf|otf|woff2?)$/.test(ext)) return 'font'
+    return 'other'
+  }
+  refreshAssets = async () => {
+    if (!curPath) {assetFiles = []; return }
+    const l = await fsLs(projDir() + '/assets/')
+    assetFiles = (l.items || []).filter((i) => !i.dir).map((i) => ({
+      name: i.name, ref: 'assets/' + i.name, size: i.size || 0, mtime: i.mtime || 0, kind: assetKind(i.name),
+    }))
+  }
+  onUploadAssets = async (files) => {
+    try {
+      const refs = await uploadAssets(files)
+      await refreshAssets()
+      $message.success($t('studio.uploaded_assets', {count: refs.length}))
+    } catch (e) {$message.error($t('common.upload_failed') + ((e && e.message) || e))}
+  }
+  onDelAsset = async (ref) => {
+    // 删除前确认：素材文件从项目目录移除，不可恢复
+    let ok = false
+    try { ok = await $message.confirm($t('studio.delete_asset_confirm', {name: String(ref).replace(/^assets\//, '')})) } catch (e) { }
+    if (!ok) return
+    try {
+      await fsRm(resolveRef(projDir(), ref))
+      delete assets[ref]
+      await refreshAssets()
+      $message.success($t('studio.deleted') + ref)
+    } catch (e) {$message.error($t('studio.delete_failed') + ((e && e.message) || e))}
+  }
+  onPickAsset = (ref) => {
+    copyText(ref)
+    $message.success($t('studio.reference_copied') + ref)
+  }
+
+  // ---- 素材插入（拖到舞台/时间轴 或 双击素材）----
+  // 确保素材 dataURL 在 assets map（上传已预热；AI 下载/外部引用的补加载），返回是否可用
+  ensureAssetLoaded = async (ref) => {
+    if (assets[ref]) return true
+    try {
+      const r = await fsGet(resolveRef(projDir(), ref))
+      if (r.content instanceof Blob) assets[ref] = await blobToDataURL(r.content)
+      else if (typeof r.content === 'string') assets[ref] = await blobToDataURL(new Blob([r.content], {type: r.mime || 'application/octet-stream'}))
+      else return false
+    } catch (e) {return false}
+    const st = $refs.stage && $refs.stage.$data
+    if (st) {if (st.engine) st.engine.assets = assets}
+    return true
+  }
+  // 按素材类型创建元素：image → image；video → media video；audio → media audio。
+  // 不带原生 controls（确定性帧渲染 + overlay 接管播放）；默认不静音（导出混音带原声）
+  assetToElement = (ref, kind) => {
+    if (kind !== 'video' && kind !== 'audio') kind = 'image'
+    const el = makeElement('image')
+    el.id = kind + '-' + uid()
+    el.src = ref
+    if (kind === 'video') Object.assign(el, {type: 'media', kind: 'video', w: 480, h: 270, muted: false, fit: 'contain', start: 0, trimStart: 0, trimEnd: -1})
+    else if (kind === 'audio') Object.assign(el, {type: 'media', kind: 'audio', w: 320, h: 56, muted: false, start: 0, trimStart: 0, trimEnd: -1})
+    return el
+  }
+  onDropAsset = async ({ref, x, y, scene, start}) => {
+    if (!canEdit() || !doc || !ref) return
+    const i = scene != null ? Math.max(0, Math.min(scene, doc.scenes.length - 1)) : activeSceneIdx()
+    const sc = doc.scenes[i]
+    if (!sc) return
+    const meta = assetFiles.find((f) => f.ref === ref)
+    const kind = meta ? meta.kind : assetKind(ref)
+    if (kind !== 'image' && kind !== 'video' && kind !== 'audio') {$message.warning($t('studio.unsupported_asset') + kind); return }
+    const ok = await ensureAssetLoaded(ref)
+    if (!ok) {$message.warning($t('studio.asset_missing') + ref); return }
+    const el = assetToElement(ref, kind)
+    if (start != null && isFinite(+start)) el.start = Math.max(0, +start)
+    if (x == null || y == null) {
+      // 拖到时间轴/双击：场景中心
+      el.x = Math.round(doc.size.width / 2 - el.w / 2)
+      el.y = Math.round(doc.size.height / 2 - el.h / 2)
+    } else {
+      el.x = Math.round(x - el.w / 2)
+      el.y = Math.round(y - el.h / 2)
+    }
+    el.x = Math.max(0, Math.min(el.x, doc.size.width - el.w))
+    el.y = Math.max(0, Math.min(el.y, doc.size.height - el.h))
+    spliceEls(sc, (a) => a.push(el))
+    sel = {kind: 'element', sceneIndex: i, elId: el.id, elIds: [el.id]}
+    onDocChange()
+    $message.success($t('studio.asset_inserted') + ref)
+  }
+  onInsertAsset = (ref) => onDropAsset({ref})
+  const copyText = async (t) => {
+    try {await navigator.clipboard.writeText(t)} catch (e) {
+      const ta = document.createElement('textarea')
+      ta.value = t
+      document.body.appendChild(ta)
+      ta.select()
+      try {document.execCommand('copy')} catch (e2) { }
+      ta.remove()
+    }
+  }
+
+  // ---- 导出 ----
+  const even2 = (v) => Math.max(16, Math.round((+v || 16) / 2) * 2)
+  // 目标分辨率：orig=文档原始；1080/720/480=按文档宽高比缩放（偶数对齐 H.264）；custom=自定义
+  exSize = () => {
+    const dw = doc ? doc.size.width : 1280, dh = doc ? doc.size.height : 720
+    if (exRes === 'custom') return {w: even2(exW || dw), h: even2(exH || dh)}
+    if (exRes === 'orig') return {w: even2(dw), h: even2(dh)}
+    const h = even2(exRes)
+    return {w: even2((dw / dh) * h), h}
+  }
+  exFpsOf = () => (exFps === 'orig' ? (doc ? doc.fps : 30) : +exFps || 30)
+  // 与 render.js estimateBitrate 同式（码率 bps）
+  const exBitrateEst = (w, h, fps, q) => {
+    const bpp = {low: 0.06, medium: 0.12, high: 0.22}[q] || 0.12
+    return Math.max(500000, Math.min(40000000, Math.round(w * h * fps * bpp)))
+  }
+  exSummary = () => {
+    const st = $refs.stage && $refs.stage.$data
+    const total = st && st.totalFrames ? st.totalFrames : 0
+    const fps = exFpsOf()
+    const {w, h} = exSize()
+    // 时长按文档 fps 恒定；帧数按导出 fps 重算（60fps 导出 = 文档时长 × 60）
+    const docFps = st && st.engine ? st.engine.doc.fps : fps
+    const dur = total / docFps
+    const outF = Math.max(1, Math.round(dur * fps))
+    const mb = (exBitrateEst(w, h, fps, exQuality) * dur + 128000 * dur) / 8 / 1048576
+    return $t('studio.export_summary', {duration: dur.toFixed(1), frames: outF, width: w, height: h, fps, size: mb.toFixed(1)})
+  }
+  doExport = async (opts) => {
+    const {exportVideo} = await import('./video/render.js')
+    exporting = true
+    showExport = false
+    try {
+      const engine = $refs.stage.$data.engine
+      const blob = await exportVideo(engine, {
+        format: opts.format || 'mp4',
+        width: opts.width || 0,
+        height: opts.height || 0,
+        fps: opts.fps || 0,
+        quality: opts.quality || 'medium',
+        bitrate: opts.bitrate,
+        onProgress: (p) => {
+          $refs.stage.$data.setExporting(true, p.pct, p.phase === 'audio' ? $t('studio.mixing') : $t('studio.rendering_frames', {frame: p.frame, total: p.total}))
+        },
+      })
+      return blob
+    } finally {
+      exporting = false
+      $refs.stage.$data.setExporting(false)
+    }
+  }
+
+  // 导出文件扩展名（与格式对应）
+  const exExt = (format) => format === 'wav' ? 'wav' : format === 'mp4' ? 'mp4' : 'webm'
+  // 导出由用户选择任意 $fs 目标，不再写全局 /video/exports
+  startExport = async () => {
+    if (!doc || exporting) return
+    const {w, h} = exSize()
+    const format = exFormat
+    const fname = safeTitle() + '.' + exExt(format)
+    try {
+      const picked = await $mod.$fs.pickSavePath({name: fname, ext: '.' + exExt(format), start: await pickerStart($mod.$fs, curDir)})
+      if (!picked) return
+      $message.info($t('studio.export_started'))
+      const blob = await doExport({format, width: w, height: h, fps: exFpsOf(), quality: exQuality})
+      await fsPut(picked.path, blob)
+      $message.success($t('studio.export_done') + toRef(picked.path))
+    } catch (e) {
+      console.error(e)
+      $message.error($t('studio.export_failed') + (e && e.message ? e.message : e))
+    }
+  }
+
+</script>
+<script>
+  $scope.addCleanup($router.onChange(() => {initPage()}))
+</script>
+<script active>
+  initPage()
+</script>
+<script>
+  // 快捷键（焦点在输入控件时不生效；Cmd/Ctrl 组合键除外）
+  $scope.addEventListener(window, 'keydown', (e) => {
+    const t = e.target
+    const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)
+    const meta = e.metaKey || e.ctrlKey
+    const k = e.key
+
+    // ---- Cmd/Ctrl 组合：undo/redo + 剪贴板 ----
+    if (meta && !typing) {
+      const lk = k.toLowerCase()
+      if (lk === 's') {
+        e.preventDefault()
+        if (e.shiftKey || !curPath) saveAsArchive().catch(error => $message.error($t('studio.save_as_failed') + String(error?.message || error)))
+        else doSave().catch(error => $message.error($t('studio.save_failed') + String(error?.message || error)))
+        return
+      }
+      if (lk === 'z') {e.preventDefault(); e.shiftKey ? redoEdit() : undoEdit(); return }
+      if (lk === 'y') {e.preventDefault(); redoEdit(); return }
+      if (lk === 'c') {copyElement(); return }
+      if (lk === 'v') {pasteElement(); return }
+      if (lk === 'd') {e.preventDefault(); if (sel.kind === 'element') dupElement(sel.elId); return }
+    }
+    if (typing) return
+
+    const st = $refs.stage
+    if (e.code === 'Space') {
+      e.preventDefault()
+      if (st && st.$data.doc) st.$data.togglePlay()
+      return
+    }
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      if (!doc || !curPath) return
+      e.preventDefault()
+      if (sel.kind === 'element') delElements(sel.elIds && sel.elIds.length ? sel.elIds : [sel.elId])
+      else if (sel.kind === 'scene') delScene(sel.sceneIndex)
+      return
+    }
+    if (e.key === 'Escape') {selNone(); return }
+
+    // ---- 选中元素时方向键 = 微调（1px，Shift=10px）----
+    if (sel.kind === 'element' && sel.elIds && sel.elIds.length && curPath &&
+      (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+      e.preventDefault()
+      const d = e.shiftKey ? 10 : 1
+      nudgeSelected(
+        e.key === 'ArrowLeft' ? -d : e.key === 'ArrowRight' ? d : 0,
+        e.key === 'ArrowUp' ? -d : e.key === 'ArrowDown' ? d : 0,
+      )
+      return
+    }
+
+    // ---- 走带控制（Remotion 风格）----
+    if (!st || !st.$data.doc || exporting) return
+    const S = st.$data
+    if (e.key === 'ArrowLeft') {e.preventDefault(); S.stepFrame(e.shiftKey ? -10 : -1)}
+    else if (e.key === 'ArrowRight') {e.preventDefault(); S.stepFrame(e.shiftKey ? 10 : 1)}
+    else if (e.key === 'Home') {e.preventDefault(); S.seekFrame(0)}
+    else if (e.key === 'End') {e.preventDefault(); S.seekFrame(S.totalFrames - 1)}
+    else if (e.key === 'ArrowUp') {e.preventDefault(); jumpScene(-1)}
+    else if (e.key === 'ArrowDown') {e.preventDefault(); jumpScene(1)}
+    else if (k === 'j' || k === 'J') {S.shuttle(-1)}
+    else if (k === 'k' || k === 'K') {S.shuttle(0)}
+    else if (k === 'l' || k === 'L') {S.shuttle(1)}
+  })
+</script>
+
+</html>

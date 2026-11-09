@@ -8,7 +8,7 @@
 
 | 服务 | 用途 |
 | --- | --- |
-| `$fs` | 文件树读写：`readFile(path)`、`writeFile(path, content)`、`list(path)`、`stat(path)`、`mkdir(path)`、`remove(path)`、`move(src, dst)`；`pickFiles(options)` 弹选择器、`pickSavePath(options)` 只选路径（再自己 writeFile）、`resolve(path)` 取媒体 lease（用完 `close()`） |
+| `$fs` | 统一文件树：`readFile(path)`、`writeFile(path, content)`、`list(path)`、`stat(path)`、`mkdir(path)`、`remove(path)`、`move(src, dst)`；`pickFiles(options)` 弹选择器、`pickSavePath(options)` 只选路径（再自己 writeFile）、`resolve(path)` 取媒体 lease（用完 `close()`）、`transfer(src, dst)` 跨端复制 |
 | `$auth` | 用户/会话身份：`$auth.users.get(id)`（同步返回响应式对象）、`$auth.user` |
 | `$ai` | agent 与会话：`$ai.agents.get(id)`、`await $ai.agents.load(id, {force:true})`、`$ai.open({agentId})` |
 | `$hosts` | 设备连接：`await $hosts.openTools(hostId)` 得到连接句柄，`execCall(script, {stdin})` 调设备命令，用完 `close()` |
@@ -17,9 +17,12 @@
 | `$account` | 账户概况（`$account.get()` / `load(options)`） |
 | `$catalog` | 只读目录（`tools` / `modelSchemas` / `quotaProviders`） |
 | `$pageExec` | 页面指令通道（AI 经窗口命令调用页面） |
+| `$message` | 平台通知与确认：`info/success/warning/error/confirm`；技能不自造 toast |
 
 **路径形态**：`$fs` 用完整树路径——`/cloud/...`（云端）、`/page/...`（页面本地）、
-`/{host_id}/...`（设备）。相对路径会被判非法。
+`/{host_id}/...`（设备）。相对路径会被判非法。用户与页面指令使用 `/fs/...` 引用形态，进入 `$fs`
+前去掉 `/fs` 前缀。UI 文档、项目与素材默认都走这里，不另建私有项目库；首页、存档和相对资源契约见
+[ui-storage.md](ui-storage.md)。
 
 ## 2. 资源的统一读法
 

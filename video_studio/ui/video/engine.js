@@ -1,5 +1,5 @@
 /*
- * engine.js — headless timeline video engine for the `video/1` document format.
+ * engine.js — headless timeline video engine for the `video_studio/1` document format.
  * ES module, zero dependencies. NO toolbar, NO injected CSS, NOTHING on window.
  *
  *   import {Video} from './engine.js'
@@ -27,7 +27,7 @@
  */
 
 export const VERSION = "1.0.0";
-export const FORMAT = "video/1";
+export const FORMAT = "video_studio/1";
 
 /* ---------------------------------------------------------------- utils */
 
@@ -76,6 +76,8 @@ const STYLE_OK = {
   color: 1, "background-color": 1, "font-weight": 1, "font-style": 1,
   "text-decoration": 1, "text-decoration-line": 1, "font-size": 1,
   "text-align": 1, "letter-spacing": 1, "line-height": 1, "text-shadow": 1,
+  // 马克笔 highlight（shotcraft C3）：span 背景色块 + 圆角 + 内边距
+  "border-radius": 1, padding: 1,
 };
 function cleanNode(root) {
   let n = root.firstChild;
@@ -411,11 +413,22 @@ export function normalizeDoc(input) {
   doc.scenes = (doc.scenes || []).map((s) => normalizeScene(s, doc));
   // 全局覆盖层（HUD）：元素以全片时间为基准，渲染于所有场景内容之上
   doc.overlay = (doc.overlay || []).map((el, i) => normalizeEl(el, i));
+  // 声明式音效表：全片秒钉帧（逐条注释对应画面动作），预览/导出共用 audioTracks
+  doc.sfx = (doc.sfx || []).map((s, i) => ({
+    id: s.id || "sfx-" + (i + 1),
+    src: s.src || "",
+    t: Math.max(0, +s.t || 0),
+    volume: s.volume != null ? +s.volume : 1,
+    dur: +s.dur > 0 ? +s.dur : 0,
+    srcOffset: Math.max(0, +s.srcOffset || 0),
+    note: s.note || "",
+  }));
   // asset index (relative paths referenced anywhere)
   const assets = new Set();
   const scanEl = (el) => {
     if (el.src && !/^(data:|https?:|blob:)/i.test(el.src)) assets.add(el.src);
     if (el.poster && !/^(data:|https?:|blob:)/i.test(el.poster)) assets.add(el.poster);
+    if (el.asset && !/^(data:|https?:|blob:)/i.test(el.asset)) assets.add(el.asset);
     // three 元素内 geo 对象的网格数据文件（assets/xxx.geo.json）
     if (el.type === "three" && el.scene && Array.isArray(el.scene.objects)) {
       el.scene.objects.forEach((o) => {
@@ -423,11 +436,17 @@ export function normalizeDoc(input) {
       });
     }
   };
-  doc.scenes.forEach((s) => s.elements.forEach(scanEl));
+  doc.scenes.forEach((s) => {
+    s.elements.forEach(scanEl);
+    if (s.voice && s.voice.src && !/^(data:|https?:|blob:)/i.test(s.voice.src)) assets.add(s.voice.src);
+  });
   doc.overlay.forEach(scanEl);
-  ["music", "voice"].forEach((k) => {
+  ["music"].forEach((k) => {
     const a = doc[k];
     if (a && a.src && !/^(data:|https?:|blob:)/i.test(a.src)) assets.add(a.src);
+  });
+  doc.sfx.forEach((s) => {
+    if (s.src && !/^(data:|https?:|blob:)/i.test(s.src)) assets.add(s.src);
   });
   doc._assets = [...assets];
   // frame index
@@ -502,7 +521,110 @@ function normalizeScene(s, doc) {
   s.transitionIn = s.transitionIn != null ? Math.max(0, +s.transitionIn) : 0.6;
   s.background = s.background || doc.theme.background;
   s.elements = (s.elements || []).map((el, i) => normalizeEl(el, i));
+  if (s.camera) s.camera = normalizeCamera(s.camera, doc);
   return s;
+}
+
+/* -------------------------------------------------- 场景运镜（camera）
+ * camera = { keyframes: [{t, x?, y?, zoom?, rotation?, focus?, easing?}],
+ *            shakes: [{t, amp, decay?, dur?, freq?}] }
+ * 语义：内容层绕画面中心的 translate(x,y)·rotate(rotation)·scale(zoom)；
+ * x/y 为文档像素平移，zoom>1 推近。focus:[px,py] 是 convenience：
+ * 规范化时换算为“把该点推到画面中心”的 x/y（含 rotation 补偿）。
+ * shakes 为确定性衰减震屏（撞停冲击）：amp·e^(-k/decay) 正弦抖动。 */
+
+function normalizeCamera(cam, doc) {
+  cam = deepClone(cam || {});
+  const cx = doc.size.width / 2, cy = doc.size.height / 2;
+  cam.keyframes = (Array.isArray(cam.keyframes) ? cam.keyframes : [])
+    .map((k) => {
+      const n = Object.assign({}, k);
+      n.t = Math.max(0, +n.t || 0);
+      n.zoom = n.zoom != null ? Math.max(0.05, +n.zoom) : 1;
+      n.rotation = +n.rotation || 0;
+      if (Array.isArray(n.focus)) {
+        // t = -z·R(r)·(p - c)：focus 点经缩放/旋转后恰好落在画面中心
+        const z = n.zoom, r = (n.rotation * Math.PI) / 180;
+        const vx = (+n.focus[0] || 0) - cx, vy = (+n.focus[1] || 0) - cy;
+        n.x = -z * (Math.cos(r) * vx - Math.sin(r) * vy);
+        n.y = -z * (Math.sin(r) * vx + Math.cos(r) * vy);
+      }
+      n.x = +n.x || 0;
+      n.y = +n.y || 0;
+      return n;
+    })
+    .sort((a, b) => a.t - b.t);
+  cam.shakes = (Array.isArray(cam.shakes) ? cam.shakes : []).map((s) => ({
+    t: Math.max(0, +s.t || 0),
+    amp: Math.max(0, +s.amp || 0),
+    decay: +s.decay > 0 ? +s.decay : 0.06,
+    dur: +s.dur > 0 ? +s.dur : 0.3,
+    freq: +s.freq > 0 ? +s.freq : 25,
+  }));
+  return cam;
+}
+
+/** 采样场景运镜在场景内 t 秒的状态：{x, y, zoom, rotation}（确定性）。 */
+export function cameraState(scene, t) {
+  const out = { x: 0, y: 0, zoom: 1, rotation: 0 };
+  const cam = scene && scene.camera;
+  if (!cam) return out;
+  const kf = cam.keyframes || [];
+  const take = (k) => {
+    out.x = k.x; out.y = k.y; out.zoom = k.zoom; out.rotation = k.rotation;
+  };
+  if (kf.length) {
+    if (t <= kf[0].t) take(kf[0]);
+    else if (t >= kf[kf.length - 1].t) take(kf[kf.length - 1]);
+    else {
+      for (let i = 0; i < kf.length - 1; i++) {
+        const a = kf[i], b = kf[i + 1];
+        if (t >= a.t && t <= b.t) {
+          const p = clamp((t - a.t) / ((b.t - a.t) || 1), 0, 1);
+          const e = easingOf(a.easing || "easeInOut")(p);
+          out.x = a.x + (b.x - a.x) * e;
+          out.y = a.y + (b.y - a.y) * e;
+          out.zoom = a.zoom + (b.zoom - a.zoom) * e;
+          out.rotation = a.rotation + (b.rotation - a.rotation) * e;
+          break;
+        }
+      }
+    }
+  }
+  (cam.shakes || []).forEach((s, i) => {
+    const k = t - s.t;
+    if (k < 0 || k > s.dur || s.amp <= 0) return;
+    const env = s.amp * Math.exp(-k / s.decay);
+    out.x += env * Math.sin(2 * Math.PI * s.freq * k + i * 1.7);
+    out.y += env * Math.sin(2 * Math.PI * s.freq * 1.13 * k + i * 2.3 + 1.1);
+  });
+  return out;
+}
+
+/** 运镜 → CSS transform（transform-origin: center）。 */
+export function cameraCss(cam) {
+  return `translate(${cam.x}px,${cam.y}px) rotate(${cam.rotation}deg) scale(${cam.zoom})`;
+}
+
+/** 运镜 → 仿射矩阵 [a,b,c,d,e,f]（绕画面中心，供 media/three 导出合成叠加）。 */
+export function cameraMatrix(cam, W, H) {
+  const cx = W / 2, cy = H / 2;
+  const r = (cam.rotation * Math.PI) / 180;
+  const a = cam.zoom * Math.cos(r), b = cam.zoom * Math.sin(r);
+  const c = -cam.zoom * Math.sin(r), d = cam.zoom * Math.cos(r);
+  return [a, b, c, d, cx + cam.x - (a * cx + c * cy), cy + cam.y - (b * cx + d * cy)];
+}
+
+/** 仿射矩阵复合 m1∘m2（先作用 m2）。 */
+export function matMul(m1, m2) {
+  return [
+    m1[0] * m2[0] + m1[2] * m2[1],
+    m1[1] * m2[0] + m1[3] * m2[1],
+    m1[0] * m2[2] + m1[2] * m2[3],
+    m1[1] * m2[2] + m1[3] * m2[3],
+    m1[0] * m2[4] + m1[2] * m2[5] + m1[4],
+    m1[1] * m2[4] + m1[3] * m2[5] + m1[5],
+  ];
 }
 
 /* -------------------------------------------------- media 元素池（预览/导出共用） */
@@ -718,7 +840,7 @@ export function exitProgress(el, sceneDur, t) {
  *  scale/rotation/opacity default to 1/0/1; scaleY null = follow scale. */
 export function sampleKeyframes(el, t) {
   const kf = el.keyframes;
-  const out = { x: null, y: null, scale: 1, scaleY: null, rotation: 0, opacity: 1 };
+  const out = { x: null, y: null, scale: 1, scaleY: null, rotation: 0, opacity: 1, blur: null };
   if (!Array.isArray(kf) || !kf.length) return out;
   // kfLoop：时间在关键帧区间内取模循环（环境动画：漂移/走马灯/粒子）
   if (el.kfLoop && kf.length >= 2) {
@@ -736,7 +858,7 @@ export function sampleKeyframes(el, t) {
     if (t >= a.t && t <= b.t) {
       const p = clamp((t - a.t) / ((b.t - a.t) || 1), 0, 1);
       const e = easingOf((a.easing) || "linear")(p);
-      ["x", "y", "scale", "scaleY", "rotation", "opacity"].forEach((k) => {
+      ["x", "y", "scale", "scaleY", "rotation", "opacity", "blur"].forEach((k) => {
         if (a[k] != null && b[k] != null) out[k] = a[k] + (b[k] - a[k]) * e;
         else if (a[k] != null) out[k] = a[k];
         else if (b[k] != null) out[k] = b[k];
@@ -748,7 +870,7 @@ export function sampleKeyframes(el, t) {
   return out;
 }
 function applyKey(out, k) {
-  ["x", "y", "scale", "scaleY", "rotation", "opacity"].forEach((key) => {
+  ["x", "y", "scale", "scaleY", "rotation", "opacity", "blur"].forEach((key) => {
     if (k[key] != null) out[key] = k[key];
   });
   return out;
@@ -765,6 +887,8 @@ export function elementState(el, sceneDur, t) {
   let op = (el.opacity == null ? 1 : el.opacity) * kf.opacity * en * ex;
   const hasKfRot =
     Array.isArray(el.keyframes) && el.keyframes.some((k) => k.rotation != null);
+  const hasKfBlur =
+    Array.isArray(el.keyframes) && el.keyframes.some((k) => k.blur != null);
   const state = {
     opacity: op,
     dx: kf.x != null ? kf.x - (+el.x || 0) : 0,
@@ -772,6 +896,7 @@ export function elementState(el, sceneDur, t) {
     scale: kf.scale,
     scaleY: kf.scaleY,
     rotation: hasKfRot ? kf.rotation : +el.rotation || 0,
+    blur: hasKfBlur ? Math.max(0, +kf.blur || 0) : Math.max(0, +el.blur || 0),
   };
 
   const fx = el.fx;
@@ -1213,7 +1338,8 @@ export function renderElement(el, doc, ctx) {
     `transform:translate(${st.dx}px,${st.dy}px) rotate(${st.rotation}deg) scale(${st.scale},${sy});` +
     `transform-origin:${el.origin || "center"};opacity:${clamp(st.opacity, 0, 1)};`;
   if (el.z != null) css += `z-index:${el.z};`;
-  if (el.blur) css += `filter:blur(${+el.blur || 0}px);`;
+  const frameBlur = st.blur != null ? st.blur : +el.blur || 0;
+  if (frameBlur) css += `filter:blur(${frameBlur}px);`;
   node.style.cssText = css;
 
   if (el.type === "text") {
@@ -1245,8 +1371,22 @@ export function renderElement(el, doc, ctx) {
       el.stagger && !/<[a-z]/i.test(el.html || "")
         ? staggerSpans(el, ctx.t)
         : renderTextHtml(el, doc, ctx);
-    node.innerHTML =
-      '<div style="width:100%">' + inner + "</div>";
+    if (el.reveal) {
+      // 遮罩揭示（mask reveal）：外层 overflow 裁剪，内层从掩体后滑入——
+      // 出版级字卡入场，比 fade-up 更有“被揭开”的质感。dir = 内容滑入方向。
+      const rv = el.reveal;
+      const dur = +rv.dur || 0.7, delay = +rv.delay || 0;
+      const p = easingOf(rv.easing || "bezier(0.16,1,0.3,1)")(clamp((ctx.t - delay) / dur, 0, 1));
+      const dir = rv.dir || "up";
+      const tx = dir === "left" ? 110 * (1 - p) : dir === "right" ? -110 * (1 - p) : 0;
+      const ty = dir === "up" ? 110 * (1 - p) : dir === "down" ? -110 * (1 - p) : 0;
+      node.innerHTML =
+        '<div style="width:100%;overflow:hidden">' +
+        `<div style="transform:translate(${tx.toFixed(2)}%,${ty.toFixed(2)}%)">` + inner + "</div></div>";
+    } else {
+      node.innerHTML =
+        '<div style="width:100%">' + inner + "</div>";
+    }
   } else if (el.type === "shape") {
     node.innerHTML = renderShape(el);
   } else if (el.type === "image") {
@@ -1361,6 +1501,29 @@ export function renderElement(el, doc, ctx) {
   } else {
     node.textContent = el.type || "?";
   }
+  // 单点扫光（sheen）：一道渐变光带划过元素表面，被圆角/overflow 裁剪。
+  // 审美约束（shotcraft Q4）：不群发，一个镜头最多给主角一次。
+  // media/three 不支持（合成项不走 DOM 覆盖层）。
+  if (el.sheen && el.type !== "media" && el.type !== "three") {
+    const sh = el.sheen;
+    const t0 = +sh.t || 0, dur = +sh.dur || 0.9;
+    const lt = ctx.t - t0;
+    if (lt >= 0 && lt <= dur) {
+      const p = lt / dur;
+      node.style.overflow = "hidden";
+      if (el.radius) node.style.borderRadius = el.radius + "px";
+      const wPct = ((+sh.width || 0.35) * 100).toFixed(1);
+      const xPct = (-40 + p * 180).toFixed(2);
+      const skew = -(sh.angle != null ? +sh.angle : 20);
+      const stripe = document.createElement("div");
+      stripe.className = "vd-sheen";
+      stripe.style.cssText =
+        `position:absolute;top:-20%;bottom:-20%;left:${xPct}%;width:${wPct}%;pointer-events:none;` +
+        `transform:skewX(${skew}deg);` +
+        `background:linear-gradient(90deg,transparent,${sh.color || "rgba(255,255,255,0.35)"},transparent);`;
+      node.appendChild(stripe);
+    }
+  }
   return node;
 }
 
@@ -1471,6 +1634,11 @@ export function buildFrame(doc, frame, opts = {}) {
   );
   const ctx = { t: f.localT, assetMap, fields, fps: doc.fps, threeItems: [], mediaItems: [], forExport: !!opts.forExport };
 
+  // 场景运镜：内容层绕画面中心的平移/旋转/缩放（字幕与 overlay 不受运镜影响）
+  const cam = cameraState(f.scene, f.localT);
+  const hasCam = cam.x !== 0 || cam.y !== 0 || cam.zoom !== 1 || cam.rotation !== 0;
+  const camM = hasCam ? cameraMatrix(cam, doc.size.width, doc.size.height) : null;
+
   // transition: incoming scene enter anim + outgoing background crossfade
   const tin = f.scene.transitionIn || 0;
   const inTransition = f.index > 0 && tin > 0 && f.localT < tin;
@@ -1484,32 +1652,41 @@ export function buildFrame(doc, frame, opts = {}) {
     bgPrev.style.opacity = String(1 - e);
     root.appendChild(bgPrev);
     // current background
-    const bgCur = sceneBackgroundNode(f.scene, doc);
-    root.appendChild(bgCur);
+    root.appendChild(sceneBackgroundNode(f.scene, doc));
     // incoming content with enter transform
     const def = TRANSITION_ENTER[f.scene.transition] || TRANSITION_ENTER.fade;
-    // 记录过渡容器变换：media/three 合成项发生在序列化之后，不随 DOM 变换——
-    // render.js 按此叠加 translate/scale/opacity（transform-origin 中心）
-    ctx.anc = {
-      tx: def.dx ? def.dx[0] + (def.dx[1] - def.dx[0]) * e : 0,
-      ty: def.dy ? def.dy[0] + (def.dy[1] - def.dy[0]) * e : 0,
-      scale: def.scale ? def.scale[0] + (def.scale[1] - def.scale[0]) * e : 1,
-      opacity: def.opacity ? def.opacity[0] + (def.opacity[1] - def.opacity[0]) * e : 1,
-      W: doc.size.width, H: doc.size.height,
-    };
+    const tx = def.dx ? def.dx[0] + (def.dx[1] - def.dx[0]) * e : 0;
+    const ty = def.dy ? def.dy[0] + (def.dy[1] - def.dy[0]) * e : 0;
+    const sc = def.scale ? def.scale[0] + (def.scale[1] - def.scale[0]) * e : 1;
+    const op = def.opacity ? def.opacity[0] + (def.opacity[1] - def.opacity[0]) * e : 1;
+    // 记录容器复合变换（过渡 ∘ 运镜）：media/three 合成发生在序列化之后，
+    // 不随 DOM 变换——render.js 按 anc.m 矩阵叠加（文档坐标空间）
+    const cxp = doc.size.width / 2, cyp = doc.size.height / 2;
+    const trM = [sc, 0, 0, sc, cxp + tx - sc * cxp, cyp + ty - sc * cyp];
+    const hasTr = tx !== 0 || ty !== 0 || sc !== 1;
+    ctx.anc = (hasTr || hasCam || op !== 1)
+      ? { m: hasCam ? matMul(trM, camM) : trM, opacity: op }
+      : null;
     const content = buildSceneContent(f.scene, doc, ctx);
     let tr = "";
-    if (def.dx) tr += `translateX(${def.dx[0] + (def.dx[1] - def.dx[0]) * e}px) `;
-    if (def.dy) tr += `translateY(${def.dy[0] + (def.dy[1] - def.dy[0]) * e}px) `;
-    if (def.scale) tr += `scale(${def.scale[0] + (def.scale[1] - def.scale[0]) * e}) `;
-    content.style.opacity = String(def.opacity ? def.opacity[0] + (def.opacity[1] - def.opacity[0]) * e : 1);
+    if (def.dx) tr += `translateX(${tx}px) `;
+    if (def.dy) tr += `translateY(${ty}px) `;
+    if (def.scale) tr += `scale(${sc}) `;
+    if (hasCam) tr += cameraCss(cam);
+    content.style.opacity = String(op);
     if (tr) content.style.transform = tr;
     content.style.transformOrigin = "center";
     root.appendChild(content);
   } else {
-    ctx.anc = null; // 无过渡：合成项无需叠加容器变换
+    // 无过渡：合成项仅需叠加运镜变换
+    ctx.anc = hasCam ? { m: camM, opacity: 1 } : null;
     root.appendChild(sceneBackgroundNode(f.scene, doc));
-    root.appendChild(buildSceneContent(f.scene, doc, ctx));
+    const content = buildSceneContent(f.scene, doc, ctx);
+    if (hasCam) {
+      content.style.transform = cameraCss(cam);
+      content.style.transformOrigin = "center";
+    }
+    root.appendChild(content);
   }
 
   // 全局覆盖层（HUD）：以全片时间渲染，位于场景内容之上、字幕之下；
@@ -1604,7 +1781,9 @@ export class Video {
   }
 
   seek(frame) {
-    this.frame = clamp(Math.floor(frame), 0, Math.max(0, (this.doc ? this.doc.totalFrames : 0) - 1));
+    const next = clamp(Math.floor(frame), 0, Math.max(0, (this.doc ? this.doc.totalFrames : 0) - 1));
+    if (next === this.frame) return this.frame;
+    this.frame = next;
     this.emit("statechange", this.getState());
     return this.frame;
   }
@@ -1646,20 +1825,34 @@ export class Video {
         duration: null,
       });
     }
-    if (d.voice && d.voice.src) {
+    // 声明式 SFX：全片秒钉帧，dur>0 截断播放窗口（拟音与动作严格等长）
+    (d.sfx || []).forEach((s) => {
+      if (!s || !s.src) return;
       out.push({
-        kind: "voice",
-        src: d.voice.src,
-        offset: d.voice.offset || 0,
-        volume: d.voice.volume != null ? d.voice.volume : 1,
+        kind: "sfx",
+        src: s.src,
+        offset: Math.max(0, +s.t || 0),
+        srcOffset: Math.max(0, +s.srcOffset || 0),
+        volume: s.volume != null ? +s.volume : 1,
         loop: false,
-        duration: null,
+        duration: +s.dur > 0 ? +s.dur : null,
       });
-    }
+    });
     d.scenes.forEach((s) => {
       if (s.hidden) return;
       const sceneStart = s._start / d.fps;
       const sceneDur = +s.duration || 1;
+      if (s.voice && s.voice.src) {
+        out.push({
+          kind: "voice",
+          src: s.voice.src,
+          offset: sceneStart + Math.max(0, +s.voice.offset || 0),
+          volume: s.voice.volume != null ? +s.voice.volume : 1,
+          loop: false,
+          duration: null,
+          sceneId: s.id,
+        });
+      }
       (s.elements || []).forEach((el) => {
         // media 元素（含视频自带音轨）按裁剪窗口进混音；muted/hidden 元素静音
         if (el.type !== "media" || !el.src || el.muted || el.hidden) return;

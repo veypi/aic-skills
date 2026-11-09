@@ -1,5 +1,5 @@
 /*
- * three.js — declarative 3D element renderer for the video/1 engine.
+ * three.js — declarative 3D element renderer for the video_studio/1 engine.
  *
  * Element: { type: "three", x, y, w, h, scene: { camera, lights, objects, group } }
  * renderThree(el, t) → dataURL (transparent PNG), synchronous & deterministic
@@ -161,6 +161,7 @@ function buildScene(desc, w, h) {
   const camera = new THREE.PerspectiveCamera(
     (desc.camera && desc.camera.fov) || 45, w / h, 0.1, 100);
   camera.position.set(cam[0], cam[1], cam[2]);
+  camera.lookAt(0, 0, 0);
 
   (desc.lights || []).forEach((l) => {
     let light = null;

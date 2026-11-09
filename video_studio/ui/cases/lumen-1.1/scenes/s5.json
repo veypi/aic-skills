@@ -1,0 +1,367 @@
+{
+  "id": "s5",
+  "duration": 5.5,
+  "transition": "none",
+  "voice": { "src": "assets/voice-s5.mp3", "volume": 1, "offset": 0.25 },
+  "background": "radial-gradient(760px 600px at 69% 46%, #1b2430 0%, #10151d 42%, #0b0d12 78%)",
+  "camera": {
+    "keyframes": [
+      { "t": 0, "zoom": 1.015, "x": -18, "y": 8, "easing": "easeInOut" },
+      { "t": 2.15, "zoom": 1.065, "x": 0, "y": 0, "easing": "bezier(0.4,0,0.2,1)" },
+      { "t": 5.5, "zoom": 1.12, "x": 16, "y": -6 }
+    ]
+  },
+  "elements": [
+    {
+      "id": "orbit-guide-back",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 556,
+      "y": 160,
+      "w": 572,
+      "h": 390,
+      "fill": "transparent",
+      "stroke": "rgba(111,140,255,0.16)",
+      "strokeWidth": 1,
+      "rotation": -13,
+      "opacity": 0.7
+    },
+    {
+      "id": "orbit-guide-front",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 626,
+      "y": 212,
+      "w": 440,
+      "h": 280,
+      "fill": "transparent",
+      "stroke": "rgba(200,245,96,0.12)",
+      "strokeWidth": 1,
+      "rotation": 19,
+      "opacity": 0.8
+    },
+    {
+      "id": "ground-shadow",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 616,
+      "y": 566,
+      "w": 500,
+      "h": 62,
+      "fill": "rgba(111,140,255,0.18)",
+      "blur": 28,
+      "keyframes": [
+        { "t": 0, "opacity": 0.08, "scale": 0.65 },
+        { "t": 2.15, "opacity": 0.75, "scale": 1, "easing": "bezier(0.16,1,0.3,1)" },
+        { "t": 5.5, "opacity": 0.75, "scale": 1 }
+      ]
+    },
+    {
+      "id": "forming-sculpture",
+      "type": "three",
+      "x": 474,
+      "y": 26,
+      "w": 764,
+      "h": 620,
+      "origin": "50% 50%",
+      "scene": {
+        "camera": { "position": [4.8, 2.6, 8.4], "fov": 38 },
+        "lights": [
+          { "type": "ambient", "intensity": 0.34 },
+          { "type": "directional", "position": [4, 7, 6], "intensity": 2.1 },
+          { "type": "point", "position": [-4, 1, 4], "intensity": 58, "color": "#6f8cff" },
+          { "type": "point", "position": [4, -2, 3], "intensity": 42, "color": "#c8f560" },
+          { "type": "point", "position": [0, 4, -3], "intensity": 34, "color": "#ff8066" }
+        ],
+        "group": { "rotation": [0.42, 0.18, 0.012] },
+        "objects": [
+          {
+            "type": "parametric",
+            "eq": "(u,v)=>{const a=u*Math.PI*2;const b=v*Math.PI*2;const r=1.35+0.48*Math.cos(b);return [r*Math.cos(a),0.48*Math.sin(b),r*Math.sin(a)];}",
+            "u0": 0,
+            "u1": 1,
+            "v0": 0,
+            "v1": 1,
+            "segU": 112,
+            "segV": 18,
+            "scale": 1.12,
+            "rotation": [0.018, -0.08, 0.012],
+            "material": { "kind": "standard", "color": "#c8f560", "metalness": 0.82, "roughness": 0.22, "emissive": "#354515", "emissiveIntensity": 0.45 }
+          },
+          {
+            "type": "icosahedron",
+            "args": [0.82, 1],
+            "position": [0, 0, 0],
+            "rotation": [0.11, 0.16, 0.07],
+            "material": { "kind": "standard", "color": "#f3f1ea", "metalness": 0.9, "roughness": 0.16, "emissive": "#6f8cff", "emissiveIntensity": 0.2 }
+          },
+          {
+            "type": "box",
+            "args": [0.34, 0.82, 0.12],
+            "position": [2.35, 0.82, 0],
+            "rotation": [0.21, 0.28, 0.18],
+            "material": { "kind": "standard", "color": "#6f8cff", "metalness": 0.78, "roughness": 0.24 }
+          },
+          {
+            "type": "box",
+            "args": [0.28, 0.68, 0.12],
+            "position": [-2.18, 1.08, 0.4],
+            "rotation": [-0.18, 0.24, -0.22],
+            "material": { "kind": "standard", "color": "#ff8066", "metalness": 0.68, "roughness": 0.28 }
+          },
+          {
+            "type": "box",
+            "args": [0.3, 0.72, 0.12],
+            "position": [1.76, -1.62, -0.3],
+            "rotation": [0.25, -0.2, 0.16],
+            "material": { "kind": "standard", "color": "#c8f560", "metalness": 0.74, "roughness": 0.25 }
+          },
+          {
+            "type": "box",
+            "args": [0.26, 0.6, 0.1],
+            "position": [-1.72, -1.52, 0.6],
+            "rotation": [-0.22, -0.26, 0.2],
+            "material": { "kind": "standard", "color": "#6f8cff", "metalness": 0.8, "roughness": 0.22 }
+          },
+          {
+            "type": "icosahedron",
+            "args": [0.28, 0],
+            "position": [0.42, 2.18, -0.4],
+            "rotation": [0.24, 0.18, -0.16],
+            "material": { "kind": "standard", "color": "#ff8066", "metalness": 0.64, "roughness": 0.3 }
+          },
+          {
+            "type": "icosahedron",
+            "args": [0.24, 0],
+            "position": [-0.32, -2.36, 0],
+            "rotation": [-0.2, 0.22, 0.18],
+            "material": { "kind": "standard", "color": "#f3f1ea", "metalness": 0.84, "roughness": 0.2 }
+          },
+          {
+            "type": "orbiters",
+            "count": 9,
+            "radius": 3.1,
+            "speed": 0.32,
+            "yWave": { "freq": 0.7, "amp": 0.55 },
+            "sizes": [0.025, 0.04, 0.06],
+            "colors": ["#c8f560", "#6f8cff", "#ff8066"],
+            "emissiveIntensity": 0.7
+          }
+        ]
+      },
+      "keyframes": [
+        { "t": 0, "scale": 0.72, "opacity": 0.12, "blur": 14, "easing": "bezier(0.55,0,0.9,0.45)" },
+        { "t": 1.55, "scale": 0.86, "opacity": 0.58, "blur": 5, "easing": "bezier(0.16,1,0.3,1)" },
+        { "t": 2.15, "scale": 1, "opacity": 1, "blur": 0, "easing": "easeOut" },
+        { "t": 2.22, "scale": 1.035, "opacity": 1, "blur": 0, "easing": "easeInOut" },
+        { "t": 2.34, "scale": 1, "opacity": 1, "blur": 0 },
+        { "t": 5.5, "scale": 1, "opacity": 1, "blur": 0 }
+      ]
+    },
+    {
+      "id": "fragment-01",
+      "type": "shape",
+      "shape": "triangle",
+      "x": 512,
+      "y": 108,
+      "w": 42,
+      "h": 54,
+      "fill": "#6f8cff",
+      "origin": "50% 50%",
+      "keyframes": [
+        { "t": 0, "x": 512, "y": 108, "rotation": -28, "scale": 1, "opacity": 0.85, "easing": "bezier(0.55,0,0.9,0.45)" },
+        { "t": 1.5, "x": 746, "y": 260, "rotation": 32, "scale": 0.62, "opacity": 0.9 },
+        { "t": 2.15, "x": 842, "y": 346, "rotation": 88, "scale": 0.08, "opacity": 0 }
+      ]
+    },
+    {
+      "id": "fragment-02",
+      "type": "shape",
+      "shape": "rect",
+      "x": 1148,
+      "y": 126,
+      "w": 20,
+      "h": 64,
+      "fill": "#c8f560",
+      "radius": 3,
+      "origin": "50% 50%",
+      "keyframes": [
+        { "t": 0.08, "x": 1148, "y": 126, "rotation": 38, "scale": 1, "opacity": 0.8, "easing": "bezier(0.55,0,0.9,0.45)" },
+        { "t": 1.58, "x": 980, "y": 260, "rotation": -22, "scale": 0.58, "opacity": 0.9 },
+        { "t": 2.15, "x": 866, "y": 348, "rotation": -90, "scale": 0.08, "opacity": 0 }
+      ]
+    },
+    {
+      "id": "fragment-03",
+      "type": "shape",
+      "shape": "triangle",
+      "x": 1190,
+      "y": 474,
+      "w": 52,
+      "h": 44,
+      "fill": "#ff8066",
+      "origin": "50% 50%",
+      "keyframes": [
+        { "t": 0.16, "x": 1190, "y": 474, "rotation": 18, "scale": 1, "opacity": 0.85, "easing": "bezier(0.55,0,0.9,0.45)" },
+        { "t": 1.66, "x": 1010, "y": 432, "rotation": 76, "scale": 0.55, "opacity": 0.9 },
+        { "t": 2.15, "x": 870, "y": 364, "rotation": 142, "scale": 0.08, "opacity": 0 }
+      ]
+    },
+    {
+      "id": "fragment-04",
+      "type": "shape",
+      "shape": "rect",
+      "x": 566,
+      "y": 550,
+      "w": 54,
+      "h": 18,
+      "fill": "#f3f1ea",
+      "radius": 3,
+      "origin": "50% 50%",
+      "keyframes": [
+        { "t": 0.24, "x": 566, "y": 550, "rotation": -42, "scale": 1, "opacity": 0.65, "easing": "bezier(0.55,0,0.9,0.45)" },
+        { "t": 1.72, "x": 728, "y": 452, "rotation": 12, "scale": 0.52, "opacity": 0.85 },
+        { "t": 2.15, "x": 842, "y": 368, "rotation": 96, "scale": 0.08, "opacity": 0 }
+      ]
+    },
+    {
+      "id": "fragment-05",
+      "type": "shape",
+      "shape": "triangle",
+      "x": 1032,
+      "y": 586,
+      "w": 34,
+      "h": 46,
+      "fill": "#6f8cff",
+      "origin": "50% 50%",
+      "keyframes": [
+        { "t": 0.32, "x": 1032, "y": 586, "rotation": 62, "scale": 1, "opacity": 0.75, "easing": "bezier(0.55,0,0.9,0.45)" },
+        { "t": 1.76, "x": 940, "y": 474, "rotation": 8, "scale": 0.5, "opacity": 0.85 },
+        { "t": 2.15, "x": 862, "y": 370, "rotation": -74, "scale": 0.08, "opacity": 0 }
+      ]
+    },
+    {
+      "id": "fragment-06",
+      "type": "shape",
+      "shape": "rect",
+      "x": 682,
+      "y": 72,
+      "w": 18,
+      "h": 48,
+      "fill": "#ff8066",
+      "radius": 3,
+      "origin": "50% 50%",
+      "keyframes": [
+        { "t": 0.4, "x": 682, "y": 72, "rotation": -68, "scale": 1, "opacity": 0.75, "easing": "bezier(0.55,0,0.9,0.45)" },
+        { "t": 1.8, "x": 788, "y": 238, "rotation": -12, "scale": 0.48, "opacity": 0.85 },
+        { "t": 2.15, "x": 850, "y": 342, "rotation": 64, "scale": 0.08, "opacity": 0 }
+      ]
+    },
+    {
+      "id": "fragment-07",
+      "type": "shape",
+      "shape": "triangle",
+      "x": 496,
+      "y": 360,
+      "w": 36,
+      "h": 42,
+      "fill": "#c8f560",
+      "origin": "50% 50%",
+      "keyframes": [
+        { "t": 0.48, "x": 496, "y": 360, "rotation": 24, "scale": 1, "opacity": 0.7, "easing": "bezier(0.55,0,0.9,0.45)" },
+        { "t": 1.84, "x": 718, "y": 358, "rotation": 90, "scale": 0.44, "opacity": 0.85 },
+        { "t": 2.15, "x": 838, "y": 358, "rotation": 158, "scale": 0.08, "opacity": 0 }
+      ]
+    },
+    {
+      "id": "fragment-08",
+      "type": "shape",
+      "shape": "rect",
+      "x": 1092,
+      "y": 302,
+      "w": 44,
+      "h": 16,
+      "fill": "#f3f1ea",
+      "radius": 3,
+      "origin": "50% 50%",
+      "keyframes": [
+        { "t": 0.56, "x": 1092, "y": 302, "rotation": -16, "scale": 1, "opacity": 0.6, "easing": "bezier(0.55,0,0.9,0.45)" },
+        { "t": 1.88, "x": 978, "y": 336, "rotation": 44, "scale": 0.42, "opacity": 0.8 },
+        { "t": 2.15, "x": 872, "y": 354, "rotation": 110, "scale": 0.08, "opacity": 0 }
+      ]
+    },
+    {
+      "id": "section-label",
+      "type": "text",
+      "x": 82,
+      "y": 82,
+      "w": 400,
+      "h": 32,
+      "html": "THREE / FORM FROM FRAGMENTS",
+      "fontSize": 22,
+      "fontWeight": 650,
+      "letterSpacing": 2.2,
+      "color": "#c8f560",
+      "opacity": 0.86
+    },
+    {
+      "id": "headline",
+      "type": "text",
+      "x": 78,
+      "y": 154,
+      "w": 480,
+      "h": 142,
+      "html": "创意，<br>从碎片成形。",
+      "fontSize": 50,
+      "fontWeight": 720,
+      "lineHeight": 1.25,
+      "letterSpacing": -1.2,
+      "color": "#f3f1ea",
+      "reveal": { "dur": 0.68, "delay": 2.22, "dir": "up", "easing": "bezier(0.16,1,0.3,1)" }
+    },
+    {
+      "id": "subline",
+      "type": "text",
+      "x": 82,
+      "y": 320,
+      "w": 410,
+      "h": 70,
+      "html": "材质、灯光与几何运动，<br>让零散灵感成为完整表达。",
+      "fontSize": 24,
+      "lineHeight": 1.55,
+      "color": "rgba(243,241,234,0.68)",
+      "fx": { "enter": "fade-up", "enterDur": 0.58, "delay": 2.55, "enterEasing": "bezier(0.16,1,0.3,1)" }
+    },
+    {
+      "id": "accent-rule",
+      "type": "shape",
+      "shape": "rect",
+      "x": 82,
+      "y": 424,
+      "w": 88,
+      "h": 4,
+      "fill": "#c8f560",
+      "radius": 2,
+      "origin": "0% 50%",
+      "keyframes": [
+        { "t": 2.62, "scale": 0, "opacity": 0 },
+        { "t": 3.05, "scale": 1, "opacity": 1, "easing": "bezier(0.16,1,0.3,1)" },
+        { "t": 5.5, "scale": 1, "opacity": 1 }
+      ]
+    },
+    {
+      "id": "scene-index",
+      "type": "text",
+      "x": 1060,
+      "y": 56,
+      "w": 140,
+      "h": 28,
+      "html": "05 / 07",
+      "fontSize": 22,
+      "fontWeight": 600,
+      "letterSpacing": 2,
+      "color": "rgba(243,241,234,0.42)",
+      "align": "right"
+    }
+  ]
+}

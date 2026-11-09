@@ -97,6 +97,7 @@ go test ./...         # embed list / metadata / versions / zip round-trip
 
 cd browser/ui && npm test     # zero-dependency: node --test (+ register hook)
 cd cua/ui && npm test
+cd design/ui && npm test
 cd play_with_ai/ui && npm test
 
 # The root Go suite also covers both real MCP examples (initialize + tools/call).

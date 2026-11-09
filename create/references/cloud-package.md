@@ -58,6 +58,7 @@ UI 页面清单放在包根 `manifest.json`，不再写 frontmatter `ui`：
 `ui.pages` 的 key 是不带 `.html` 的包内页面路径，值当前只有 `desc`。设备服务在同一文件的
 `host` 中声明，详见 [device-cli.md](device-cli.md)。`launcher` 段已删除——pages 自动成为 launcher 中该技能的子页面，无需单独声明；
 components 第一阶段仅声明不装配；openers 经统一有序表生效（Profile 用户规则优先，包声明为默认表）。
+注册文件 opener 时，目标页必须实现 `pageDesc` 的 `open` 并消费初始 `$router.query.url`；文档与项目存取统一走 `$fs`，完整契约见 [ui-storage.md](ui-storage.md)。
 迁移旧包已有的 handles 等能力时必须写成对应 opener，不能在格式迁移中丢能力。
 
 内建定版与普通发布不是一套流程：`skills.builtin` 的指纹变化触发自动定版，强制重跑也可手动触发；

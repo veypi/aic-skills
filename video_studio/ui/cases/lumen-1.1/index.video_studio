@@ -1,0 +1,42 @@
+{
+  "format": "video_studio/1",
+  "version": 1,
+  "title": "Lumen · 从想法到成片",
+  "size": { "width": 1280, "height": 720 },
+  "fps": 30,
+  "theme": {
+    "background": "#0b0d12",
+    "color": "#f3f1ea",
+    "accent": "#c8f560",
+    "fontFamily": "system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif",
+    "captionStyle": { "fontSize": 34, "color": "#f3f1ea", "background": "rgba(11,13,18,0.76)", "bottom": 28, "radius": 10, "paddingX": 20, "paddingY": 8 }
+  },
+  "music": { "src": "assets/bgm.wav", "volume": 0.18, "loop": true, "offset": 0 },
+  "sfx": [
+    { "id": "s01", "src": "assets/riser.wav", "t": 0.2, "volume": 0.28, "dur": 1.9, "note": "S1 创意画框蓄势" },
+    { "id": "s02", "src": "assets/sparkle.wav", "t": 2.6, "volume": 0.25, "note": "S1 主角单次扫光" },
+    { "id": "s03", "src": "assets/whoosh.wav", "t": 5.65, "volume": 0.24, "dur": 0.5, "note": "S2  typography 换幕" },
+    { "id": "s04", "src": "assets/pop.wav", "t": 11.25, "volume": 0.30, "note": "S3 视频轨归位" },
+    { "id": "s05", "src": "assets/pop.wav", "t": 11.55, "volume": 0.28, "note": "S3 文字轨归位" },
+    { "id": "s06", "src": "assets/pop.wav", "t": 11.85, "volume": 0.26, "note": "S3 声音轨归位" },
+    { "id": "s07", "src": "assets/sparkle.wav", "t": 19.9, "volume": 0.24, "note": "S4 数据结果落定" },
+    { "id": "s08", "src": "assets/impact.wav", "t": 25.15, "volume": 0.42, "note": "S5 几何主体成形" },
+    { "id": "s09", "src": "assets/whoosh.wav", "t": 28.6, "volume": 0.28, "note": "S6 圆形匹配转场" },
+    { "id": "s10", "src": "assets/sparkle.wav", "t": 30.7, "volume": 0.22, "note": "S6 导出完成" },
+    { "id": "s11", "src": "assets/impact.wav", "t": 34.3, "volume": 0.38, "note": "S7 字标落定" },
+    { "id": "s12", "src": "assets/sparkle.wav", "t": 34.9, "volume": 0.20, "note": "S7 品牌余韵" }
+  ],
+  "overlay": [
+    { "id": "progress-track", "type": "shape", "shape": "rect", "x": 0, "y": 718, "w": 1280, "h": 2, "fill": "rgba(255,255,255,0.05)" },
+    { "id": "progress", "type": "shape", "shape": "rect", "x": -1280, "y": 718, "w": 1280, "h": 2, "fill": "#c8f560", "keyframes": [ { "t": 0, "x": -1280 }, { "t": 39.5, "x": 0, "easing": "linear" } ] }
+  ],
+  "scenes": [
+    "scenes/s1.json",
+    "scenes/s2.json",
+    "scenes/s3.json",
+    "scenes/s4.json",
+    "scenes/s5.json",
+    "scenes/s6.json",
+    "scenes/s7.json"
+  ]
+}

@@ -1,0 +1,583 @@
+{
+  "id": "s4",
+  "duration": 6,
+  "transition": "fade",
+  "transitionIn": 0.5,
+  "voice": { "src": "assets/voice-s4.mp3", "volume": 1, "offset": 0.1 },
+  "background": "#0b0d12",
+  "camera": {
+    "keyframes": [
+      { "t": 0, "zoom": 1 },
+      { "t": 3.2, "zoom": 1.015, "easing": "easeInOut" },
+      { "t": 5.5, "zoom": 1.015 }
+    ]
+  },
+  "elements": [
+    {
+      "id": "header-kicker",
+      "type": "text",
+      "x": 64,
+      "y": 30,
+      "w": 520,
+      "h": 24,
+      "html": "LUMEN / PRODUCTION OVERVIEW",
+      "fontSize": 14,
+      "fontWeight": 650,
+      "letterSpacing": 2,
+      "color": "#6f8cff"
+    },
+    {
+      "id": "header-title",
+      "type": "text",
+      "x": 64,
+      "y": 62,
+      "w": 790,
+      "h": 54,
+      "html": "把复杂制作，变成清晰结果",
+      "fontSize": 40,
+      "fontWeight": 750,
+      "letterSpacing": -1,
+      "color": "#f3f1ea"
+    },
+    {
+      "id": "header-subtitle",
+      "type": "text",
+      "x": 64,
+      "y": 116,
+      "w": 600,
+      "h": 24,
+      "html": "制作周报 · 2026.10.12—10.18",
+      "fontSize": 16,
+      "color": "rgba(243,241,234,0.54)"
+    },
+    {
+      "id": "status-dot",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 1106,
+      "y": 54,
+      "w": 8,
+      "h": 8,
+      "fill": "#c8f560"
+    },
+    {
+      "id": "status-text",
+      "type": "text",
+      "x": 1040,
+      "y": 43,
+      "w": 176,
+      "h": 30,
+      "html": "本周已交付",
+      "fontSize": 18,
+      "fontWeight": 600,
+      "color": "#f3f1ea",
+      "align": "right"
+    },
+    {
+      "id": "status-meta",
+      "type": "text",
+      "x": 960,
+      "y": 80,
+      "w": 256,
+      "h": 24,
+      "html": "WEEK 42 · 7 天",
+      "fontSize": 14,
+      "letterSpacing": 1,
+      "color": "rgba(243,241,234,0.46)",
+      "align": "right"
+    },
+    {
+      "id": "header-rule",
+      "type": "shape",
+      "shape": "rect",
+      "x": 64,
+      "y": 146,
+      "w": 1152,
+      "h": 1,
+      "fill": "rgba(255,255,255,0.08)"
+    },
+
+    {
+      "id": "kpi-panel-1",
+      "type": "shape",
+      "shape": "rect",
+      "x": 64,
+      "y": 170,
+      "w": 222,
+      "h": 112,
+      "radius": 14,
+      "fill": "#141821",
+      "stroke": "rgba(255,255,255,0.08)",
+      "strokeWidth": 1
+    },
+    {
+      "id": "kpi-label-1",
+      "type": "text",
+      "x": 84,
+      "y": 188,
+      "w": 182,
+      "h": 24,
+      "html": "交付镜头",
+      "fontSize": 17,
+      "color": "rgba(243,241,234,0.58)"
+    },
+    {
+      "id": "kpi-value-1",
+      "type": "text",
+      "x": 84,
+      "y": 214,
+      "w": 182,
+      "h": 44,
+      "html": "42 条",
+      "fontSize": 38,
+      "fontWeight": 750,
+      "color": "#f3f1ea",
+      "fx": { "countUp": true, "countUpDur": 1.35, "delay": 0.4 }
+    },
+    {
+      "id": "kpi-delta-1",
+      "type": "text",
+      "x": 84,
+      "y": 256,
+      "w": 182,
+      "h": 20,
+      "html": "较上周 +17%",
+      "fontSize": 14,
+      "fontWeight": 600,
+      "color": "#c8f560",
+      "fx": { "enter": "fade", "enterDur": 0.5, "delay": 1.55 }
+    },
+
+    {
+      "id": "kpi-panel-2",
+      "type": "shape",
+      "shape": "rect",
+      "x": 310,
+      "y": 170,
+      "w": 222,
+      "h": 112,
+      "radius": 14,
+      "fill": "#141821",
+      "stroke": "rgba(255,255,255,0.08)",
+      "strokeWidth": 1
+    },
+    {
+      "id": "kpi-label-2",
+      "type": "text",
+      "x": 330,
+      "y": 188,
+      "w": 182,
+      "h": 24,
+      "html": "平均制作耗时",
+      "fontSize": 17,
+      "color": "rgba(243,241,234,0.58)"
+    },
+    {
+      "id": "kpi-value-2",
+      "type": "text",
+      "x": 330,
+      "y": 214,
+      "w": 182,
+      "h": 44,
+      "html": "18.6 min",
+      "fontSize": 36,
+      "fontWeight": 750,
+      "color": "#f3f1ea",
+      "fx": { "countUp": true, "countUpDur": 1.45, "delay": 0.52 }
+    },
+    {
+      "id": "kpi-delta-2",
+      "type": "text",
+      "x": 330,
+      "y": 256,
+      "w": 182,
+      "h": 20,
+      "html": "较上周 −24%",
+      "fontSize": 14,
+      "fontWeight": 600,
+      "color": "#6f8cff",
+      "fx": { "enter": "fade", "enterDur": 0.5, "delay": 1.75 }
+    },
+
+    {
+      "id": "kpi-panel-3",
+      "type": "shape",
+      "shape": "rect",
+      "x": 556,
+      "y": 170,
+      "w": 222,
+      "h": 112,
+      "radius": 14,
+      "fill": "#141821",
+      "stroke": "rgba(255,255,255,0.08)",
+      "strokeWidth": 1
+    },
+    {
+      "id": "kpi-label-3",
+      "type": "text",
+      "x": 576,
+      "y": 188,
+      "w": 182,
+      "h": 24,
+      "html": "一次通过率",
+      "fontSize": 17,
+      "color": "rgba(243,241,234,0.58)"
+    },
+    {
+      "id": "kpi-value-3",
+      "type": "text",
+      "x": 576,
+      "y": 214,
+      "w": 182,
+      "h": 44,
+      "html": "96%",
+      "fontSize": 38,
+      "fontWeight": 750,
+      "color": "#c8f560",
+      "fx": { "countUp": true, "countUpDur": 1.5, "delay": 0.64 }
+    },
+    {
+      "id": "kpi-delta-3",
+      "type": "text",
+      "x": 576,
+      "y": 256,
+      "w": 182,
+      "h": 20,
+      "html": "质量检查已通过",
+      "fontSize": 14,
+      "color": "rgba(243,241,234,0.48)",
+      "fx": { "enter": "fade", "enterDur": 0.5, "delay": 1.95 }
+    },
+
+    {
+      "id": "chart-panel",
+      "type": "shape",
+      "shape": "rect",
+      "x": 64,
+      "y": 306,
+      "w": 714,
+      "h": 338,
+      "radius": 14,
+      "fill": "#141821",
+      "stroke": "rgba(255,255,255,0.08)",
+      "strokeWidth": 1
+    },
+    {
+      "id": "chart-title",
+      "type": "text",
+      "x": 88,
+      "y": 326,
+      "w": 300,
+      "h": 30,
+      "html": "成片完成趋势",
+      "fontSize": 22,
+      "fontWeight": 650,
+      "color": "#f3f1ea"
+    },
+    {
+      "id": "chart-unit",
+      "type": "text",
+      "x": 540,
+      "y": 330,
+      "w": 214,
+      "h": 24,
+      "html": "单位：条 / 日",
+      "fontSize": 14,
+      "color": "rgba(243,241,234,0.46)",
+      "align": "right"
+    },
+    {
+      "id": "chart-accent",
+      "type": "shape",
+      "shape": "rect",
+      "x": 88,
+      "y": 364,
+      "w": 34,
+      "h": 3,
+      "radius": 1.5,
+      "fill": "#c8f560"
+    },
+    {
+      "id": "completion-chart",
+      "type": "chart",
+      "x": 88,
+      "y": 376,
+      "w": 666,
+      "h": 242,
+      "option": {
+        "draw": 2.05,
+        "drawDelay": 0.35,
+        "drawEasing": "bezier(0.65,0,0.35,1)",
+        "xAxis": { "data": ["周一", "周二", "周三", "周四", "周五", "周六", "周日"] },
+        "series": [
+          { "type": "line", "data": [2, 4, 5, 8, 9, 6, 8] }
+        ],
+        "color": ["#c8f560"]
+      },
+      "fx": { "enter": "fade", "enterDur": 0.45, "delay": 0.1 }
+    },
+
+    {
+      "id": "detail-panel",
+      "type": "shape",
+      "shape": "rect",
+      "x": 802,
+      "y": 170,
+      "w": 414,
+      "h": 474,
+      "radius": 14,
+      "fill": "#141821",
+      "stroke": "rgba(255,255,255,0.08)",
+      "strokeWidth": 1
+    },
+    {
+      "id": "table-title",
+      "type": "text",
+      "x": 826,
+      "y": 190,
+      "w": 250,
+      "h": 30,
+      "html": "镜头交付明细",
+      "fontSize": 22,
+      "fontWeight": 650,
+      "color": "#f3f1ea"
+    },
+    {
+      "id": "table-meta",
+      "type": "text",
+      "x": 826,
+      "y": 220,
+      "w": 366,
+      "h": 22,
+      "html": "42 条镜头 · 按内容类型统计",
+      "fontSize": 14,
+      "color": "rgba(243,241,234,0.46)"
+    },
+    {
+      "id": "delivery-table",
+      "type": "table",
+      "x": 826,
+      "y": 254,
+      "w": 366,
+      "h": 220,
+      "columns": [
+        { "w": 0.46 },
+        { "w": 0.24 },
+        { "w": 0.3 }
+      ],
+      "header": true,
+      "rows": [
+        {
+          "cells": [
+            { "html": "内容类型" },
+            { "html": "数量", "align": "right" },
+            { "html": "完成率", "align": "right" }
+          ]
+        },
+        {
+          "cells": [
+            { "html": "产品开场", "bold": true },
+            { "html": "12 条", "align": "right" },
+            { "html": "100%", "align": "right", "color": "#c8f560" }
+          ]
+        },
+        {
+          "cells": [
+            { "html": "功能演示", "bold": true },
+            { "html": "18 条", "align": "right" },
+            { "html": "94%", "align": "right" }
+          ]
+        },
+        {
+          "cells": [
+            { "html": "三维转场", "bold": true },
+            { "html": "8 条", "align": "right" },
+            { "html": "88%", "align": "right", "color": "#6f8cff" }
+          ]
+        },
+        {
+          "cells": [
+            { "html": "品牌收尾", "bold": true },
+            { "html": "4 条", "align": "right" },
+            { "html": "100%", "align": "right", "color": "#c8f560" }
+          ]
+        }
+      ],
+      "style": {
+        "fontSize": 16,
+        "fontFamily": "system-ui, -apple-system, PingFang SC, Microsoft YaHei, sans-serif",
+        "color": "rgba(243,241,234,0.76)",
+        "headerColor": "#f3f1ea",
+        "headerBg": "rgba(255,255,255,0.045)",
+        "zebra": "rgba(255,255,255,0.018)",
+        "borderColor": "rgba(255,255,255,0.08)",
+        "borderWidth": 1,
+        "cellPadX": 10,
+        "cellPadY": 9,
+        "radius": 8
+      },
+      "fx": { "enter": "fade-up", "enterDur": 0.65, "delay": 0.2 }
+    },
+    {
+      "id": "bars-rule",
+      "type": "shape",
+      "shape": "rect",
+      "x": 826,
+      "y": 490,
+      "w": 366,
+      "h": 1,
+      "fill": "rgba(255,255,255,0.08)"
+    },
+    {
+      "id": "bars-title",
+      "type": "text",
+      "x": 826,
+      "y": 504,
+      "w": 180,
+      "h": 26,
+      "html": "每周交付",
+      "fontSize": 18,
+      "fontWeight": 650,
+      "color": "#f3f1ea"
+    },
+    {
+      "id": "bars-unit",
+      "type": "text",
+      "x": 1022,
+      "y": 506,
+      "w": 170,
+      "h": 22,
+      "html": "近 4 周 · 条",
+      "fontSize": 13,
+      "color": "rgba(243,241,234,0.44)",
+      "align": "right"
+    },
+    {
+      "id": "bar-w39",
+      "type": "shape",
+      "shape": "rect",
+      "x": 850,
+      "y": 574,
+      "w": 38,
+      "h": 36,
+      "radius": 5,
+      "fill": "#6f8cff",
+      "origin": "bottom",
+      "keyframes": [
+        { "t": 0.75, "scaleY": 0 },
+        { "t": 1.45, "scaleY": 1, "easing": "bezier(0.16,1,0.3,1)" },
+        { "t": 5.5, "scaleY": 1 }
+      ]
+    },
+    {
+      "id": "bar-w40",
+      "type": "shape",
+      "shape": "rect",
+      "x": 940,
+      "y": 558,
+      "w": 38,
+      "h": 52,
+      "radius": 5,
+      "fill": "#6f8cff",
+      "origin": "bottom",
+      "keyframes": [
+        { "t": 0.88, "scaleY": 0 },
+        { "t": 1.62, "scaleY": 1, "easing": "bezier(0.16,1,0.3,1)" },
+        { "t": 5.5, "scaleY": 1 }
+      ]
+    },
+    {
+      "id": "bar-w41",
+      "type": "shape",
+      "shape": "rect",
+      "x": 1030,
+      "y": 542,
+      "w": 38,
+      "h": 68,
+      "radius": 5,
+      "fill": "#6f8cff",
+      "origin": "bottom",
+      "keyframes": [
+        { "t": 1.01, "scaleY": 0 },
+        { "t": 1.79, "scaleY": 1, "easing": "bezier(0.16,1,0.3,1)" },
+        { "t": 5.5, "scaleY": 1 }
+      ]
+    },
+    {
+      "id": "bar-w42",
+      "type": "shape",
+      "shape": "rect",
+      "x": 1120,
+      "y": 534,
+      "w": 38,
+      "h": 76,
+      "radius": 5,
+      "fill": "#c8f560",
+      "origin": "bottom",
+      "keyframes": [
+        { "t": 1.14, "scaleY": 0 },
+        { "t": 1.96, "scaleY": 1, "easing": "bezier(0.16,1,0.3,1)" },
+        { "t": 5.5, "scaleY": 1 }
+      ]
+    },
+    {
+      "id": "bars-baseline",
+      "type": "shape",
+      "shape": "rect",
+      "x": 826,
+      "y": 610,
+      "w": 366,
+      "h": 1,
+      "fill": "rgba(255,255,255,0.08)"
+    },
+    {
+      "id": "bar-label-w39",
+      "type": "text",
+      "x": 834,
+      "y": 616,
+      "w": 70,
+      "h": 20,
+      "html": "W39",
+      "fontSize": 13,
+      "color": "rgba(243,241,234,0.44)",
+      "align": "center"
+    },
+    {
+      "id": "bar-label-w40",
+      "type": "text",
+      "x": 924,
+      "y": 616,
+      "w": 70,
+      "h": 20,
+      "html": "W40",
+      "fontSize": 13,
+      "color": "rgba(243,241,234,0.44)",
+      "align": "center"
+    },
+    {
+      "id": "bar-label-w41",
+      "type": "text",
+      "x": 1014,
+      "y": 616,
+      "w": 70,
+      "h": 20,
+      "html": "W41",
+      "fontSize": 13,
+      "color": "rgba(243,241,234,0.44)",
+      "align": "center"
+    },
+    {
+      "id": "bar-label-w42",
+      "type": "text",
+      "x": 1104,
+      "y": 616,
+      "w": 70,
+      "h": 20,
+      "html": "W42",
+      "fontSize": 13,
+      "fontWeight": 650,
+      "color": "#c8f560",
+      "align": "center"
+    }
+  ]
+}
