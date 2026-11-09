@@ -4,9 +4,16 @@
 
 两个版本面：**模块版本**（本文件 / tag `vX.Y.Z`，Go 依赖面）与**技能版本**（各 `SKILL.md` frontmatter 的 `version:`，进入 `skills.builtin` 指纹）。内容更新 bump 技能版本以触发自动定版；事件执行时无条件整包覆盖，不做版本大小比较。契约或结构变化 bump 模块版本。
 
-## 未发布
+## 0.4.3 — 2026-11-10
 
-- `browser`（1.2.12 → 1.2.14）：彻底移除前台激活路径：页面改用 `/devtools/page/<target>` WebSocket 直连并缓存，不再调用会激活可见 Chrome 的 `Target.attachToTarget`；原始 CDP 禁止 `Target.activateTarget` / `Page.bringToFront` / `Browser.setWindowBounds`，新建标签强制 `background:true`。可见窗口与外部 CDP 接入保留，截图、求值和 UI screencast 均在后台工作。
+- `browser`（1.2.12 → 1.2.14）：彻底移除前台激活路径：页面改用 `/devtools/page/<target>` WebSocket 直连并缓存，不再调用会激活可见 Chrome 的 `Target.attachToTarget`；原始 CDP 禁止 `Target.activateTarget` / `Page.bringToFront` / `Browser.setWindowBounds`，新建标签强制 `background:true`。可见窗口与外部 CDP 接入保留，截图、求值和 UI screencast 均在后台工作；macOS 可见浏览器启动与既有实例接入逻辑同步修正。
+- **新增内建技能 `design`（0.1.2）**：对话式 UI/UX 设计方法、真实 HTML 实样、原始 Prompt、主题 Token 与证据化评审；主交互留在对话框，不引入私有设计项目存档。
+- `video_studio`（1.0.5 → 1.1.9）：重构首页与 Studio，补齐可迁移存档、镜头卡、节拍分析、预览与导出文档；统一文件存储、双语、路由激活装载与平台通知。
+- `3d_maker`（1.0.0 → 1.0.1）：拆分首页与 Studio，整理核心、第三方库与参考文档目录；补齐最近文件、案例、存储测试和中英文案。
+- `office_studio`（1.0.6 → 1.0.7）、`ppt_studio`（1.0.6 → 1.0.7）：页面迁移到共享 UI 组件，修正路由与编辑器状态处理，补齐 Office 双语和路由测试。
+- `create`（1.0.12 → 1.0.14）：补齐 `$fs` 文档存储、路由资源 `active` 装载、页面反馈与平台组件使用契约，新增契约测试。
+- `cua`（1.1.9 → 1.1.10）：统一页面设备调用与错误处理；`blender`（0.3.6 → 0.3.7）手册同步到现成 `blender-mcp` 服务形态。
+- 中英文 README 技能版本表同步；模块版本 0.4.2 → 0.4.3。
 
 ## 0.4.2 — 2026-11-08
 

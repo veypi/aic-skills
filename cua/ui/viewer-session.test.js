@@ -43,7 +43,10 @@ async function fixture(t) {
       close: async () => {},
       execCall: async (command, options) => {
         if (command === 'commands info cua --schema') {
-          return {content: JSON.stringify([{name: 'get_desktop_state', inputSchema: {properties: {session: {}, max_image_dimension: {}}}}]), attrs: {exit_code: '0'}};
+          return {content: JSON.stringify([
+            {name: 'check_permissions', inputSchema: {properties: {session: {}, prompt: {}}}},
+            {name: 'get_desktop_state', inputSchema: {properties: {session: {}, max_image_dimension: {}}}},
+          ]), attrs: {exit_code: '0'}};
         }
         const name = command.split(' ')[1], args = JSON.parse(options.stdin);
         calls.push({hostId, name, args});

@@ -1,6 +1,6 @@
 ---
 name: 3d_maker
-version: 1.0.0
+version: 1.0.1
 nickname: 3D Maker
 description: 浏览器内专业 3D 模型设计：参数化 CAD 建模、多部件装配、打印就绪检测与 STL/OBJ/GLB/3MF 导出（内置 JS 内核 / OCCT 高性能内核）
 keywords: [3d, cad, 建模, 打印, stl, obj, glb, 3mf, occt, 布尔, 圆角, 车削, 齿轮, 装配]

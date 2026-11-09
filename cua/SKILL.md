@@ -1,6 +1,6 @@
 ---
 name: cua
-version: 1.1.9
+version: 1.1.10
 description: 通过设备上的官方 CuaDriver MCP 操作应用、原生窗口和浏览器。
 ---
 

@@ -48,7 +48,10 @@ function fixture(t, {hosts = [enabledHost('desktop')], load, onCall, beforeFrame
       const connection = {hostId, closed: false, async close() {connection.closed = true;},
         async execCall(command, options) {
           if (command === 'commands info cua --schema') {
-            return {content: JSON.stringify([{name: 'get_desktop_state', inputSchema: {properties: {session: {}, max_image_dimension: {}}}}]), attrs: {exit_code: '0'}};
+            return {content: JSON.stringify([
+              {name: 'check_permissions', inputSchema: {properties: {session: {}, prompt: {}}}},
+              {name: 'get_desktop_state', inputSchema: {properties: {session: {}, max_image_dimension: {}}}},
+            ]), attrs: {exit_code: '0'}};
           }
           const tool = command.split(' ')[1], args = JSON.parse(options.stdin);
           calls.push({hostId, tool, args});
