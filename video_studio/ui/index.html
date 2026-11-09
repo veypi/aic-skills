@@ -150,14 +150,6 @@
     commands: [
       {name: 'status', desc: '首页状态与最近记录', handler: async () => ({content: JSON.stringify({ok: true, recent: loadRecent(), cases})})},
       {name: 'list_video', desc: '列出最近打开记录和内置样例，不扫描文件系统', handler: async () => ({content: JSON.stringify({ok: true, files: loadRecent().map(item => ({...item, path: toRef(item.path)})), cases})})},
-      {name: 'open_video', desc: '打开 /fs 路径的 .video_studio 存档', help: '--path /fs/.../demo.video_studio', handler: async argv => {
-        const args = argv || []
-        const index = args.indexOf('--path')
-        const path = index >= 0 ? args[index + 1] : args[0]
-        if (!path) return {content: JSON.stringify({ok: false, error: '需要 --path'})}
-        openPath(path)
-        return {content: JSON.stringify({ok: true, path: toRef(path)})}
-      }},
     ],
   }
 

@@ -2,7 +2,8 @@
 <html>
 
 <head>
-  <meta name="description" content="Video Studio — browser video workspace with scenes, timeline, preview and WebCodecs export" />
+  <meta name="description"
+    content="Video Studio — browser video workspace with scenes, timeline, preview and WebCodecs export" />
   <title>Video Studio</title>
 </head>
 <style>
@@ -52,7 +53,9 @@
     cursor: pointer;
   }
 
-  .brand:hover { color: var(--color-primary); }
+  .brand:hover {
+    color: var(--color-primary);
+  }
 
   .brand .logo {
     width: 16px;
@@ -149,13 +152,23 @@
     margin-left: 6px;
   }
 
-  .tbtn.primary:after { content: ' →'; }
+  .tbtn.primary:after {
+    content: ' →';
+  }
 
-  .tbtn.primary:hover { color: var(--color-primary-hover); }
+  .tbtn.primary:hover {
+    color: var(--color-primary-hover);
+  }
 
-  .tbtn.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .tbtn.primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 
-  .tbtn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .tbtn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
 
   .panel-switches {
     flex: none;
@@ -182,28 +195,96 @@
     transition: color 0.15s, border-color 0.15s;
   }
 
-  .panel-switch:hover { color: var(--color-primary); }
+  .panel-switch:hover {
+    color: var(--color-primary);
+  }
 
   .panel-switch.active {
     color: var(--color-primary);
     border-bottom-color: var(--color-primary);
   }
 
-  .panel-icon { width: 15px; height: 15px; display: block; }
+  .panel-icon {
+    width: 15px;
+    height: 15px;
+    display: block;
+  }
 
-  .more-actions { display: none; position: relative; }
-  .more-actions summary { padding: 4px 5px; border-bottom: 1px solid transparent; color: var(--text-color-tertiary); cursor: pointer; list-style: none; font-size: 10px; line-height: 18px; white-space: nowrap; }
-  .more-actions summary::-webkit-details-marker { display: none; }
-  .more-actions summary:hover, .more-actions[open] summary { color: var(--color-primary); border-bottom-color: var(--color-primary); }
-  .more-menu { position: absolute; top: 36px; right: 0; width: 142px; box-sizing: border-box; padding: 6px; border: 1px solid var(--text-color-tertiary); background: var(--bg-color); box-shadow: var(--shadow-lg); z-index: 45; }
-  .more-menu button { width: 100%; min-height: 32px; display: flex; align-items: center; padding: 4px 7px; border: 0; border-bottom: 1px solid var(--border-color); background: transparent; color: var(--text-color-secondary); cursor: pointer; text-align: left; font-size: 12px; }
-  .more-menu button:last-child { border-bottom: 0; }
-  .more-menu button:hover { color: var(--color-primary); }
-  .more-menu button:disabled { opacity: .45; cursor: not-allowed; }
+  .more-actions {
+    display: none;
+    position: relative;
+  }
+
+  .more-actions summary {
+    padding: 4px 5px;
+    border-bottom: 1px solid transparent;
+    color: var(--text-color-tertiary);
+    cursor: pointer;
+    list-style: none;
+    font-size: 10px;
+    line-height: 18px;
+    white-space: nowrap;
+  }
+
+  .more-actions summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .more-actions summary:hover,
+  .more-actions[open] summary {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+  }
+
+  .more-menu {
+    position: absolute;
+    top: 36px;
+    right: 0;
+    width: 142px;
+    box-sizing: border-box;
+    padding: 6px;
+    border: 1px solid var(--text-color-tertiary);
+    background: var(--bg-color);
+    box-shadow: var(--shadow-lg);
+    z-index: 45;
+  }
+
+  .more-menu button {
+    width: 100%;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    padding: 4px 7px;
+    border: 0;
+    border-bottom: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-color-secondary);
+    cursor: pointer;
+    text-align: left;
+    font-size: 12px;
+  }
+
+  .more-menu button:last-child {
+    border-bottom: 0;
+  }
+
+  .more-menu button:hover {
+    color: var(--color-primary);
+  }
+
+  .more-menu button:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+  }
 
   @container (max-width: 900px) {
-    .topbar > .file-action { display: none; }
-    .more-actions { display: block; }
+    .topbar>.file-action {
+      display: none;
+    }
+
+    .more-actions {
+      display: block;
+    }
   }
 
   /* ---- 工作区三栏 ---- */
@@ -233,6 +314,7 @@
     display: flex;
     border-bottom: 1px solid color-mix(in srgb, var(--text-color) 7%, transparent);
   }
+
   .left .ltabs button {
     flex: 1;
     padding: 9px 0;
@@ -244,8 +326,15 @@
     cursor: pointer;
     letter-spacing: 0.5px;
   }
-  .left .ltabs button:hover { color: var(--text-color); }
-  .left .ltabs button.on { color: var(--text-color); border-bottom-color: var(--color-primary); }
+
+  .left .ltabs button:hover {
+    color: var(--text-color);
+  }
+
+  .left .ltabs button.on {
+    color: var(--text-color);
+    border-bottom-color: var(--color-primary);
+  }
 
   .left video-scenes,
   .left video-assets {
@@ -306,13 +395,48 @@
   }
 
   /* ---- 面板拖拽分割条 ---- */
-  .pd { flex: none; position: relative; background: transparent; z-index: 5; }
-  .pd.v { width: 5px; cursor: col-resize; }
-  .pd.h { height: 5px; cursor: row-resize; }
-  .pd::after { content: ''; position: absolute; background: transparent; transition: background 0.12s; }
-  .pd.v::after { left: 2px; top: 0; bottom: 0; width: 1px; }
-  .pd.h::after { top: 2px; left: 0; right: 0; height: 1px; }
-  .pd:hover::after, .pd.dragging::after { background: var(--color-primary); }
+  .pd {
+    flex: none;
+    position: relative;
+    background: transparent;
+    z-index: 5;
+  }
+
+  .pd.v {
+    width: 5px;
+    cursor: col-resize;
+  }
+
+  .pd.h {
+    height: 5px;
+    cursor: row-resize;
+  }
+
+  .pd::after {
+    content: '';
+    position: absolute;
+    background: transparent;
+    transition: background 0.12s;
+  }
+
+  .pd.v::after {
+    left: 2px;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+  }
+
+  .pd.h::after {
+    top: 2px;
+    left: 0;
+    right: 0;
+    height: 1px;
+  }
+
+  .pd:hover::after,
+  .pd.dragging::after {
+    background: var(--color-primary);
+  }
 
   .popover {
     position: absolute;
@@ -371,17 +495,57 @@
   }
 
   /* ---- 导出设置弹层 ---- */
-  .exf-t { font-size: 13px; font-weight: 600; color: var(--text-color); padding: 4px 6px 8px; }
-  .exf-r { display: flex; align-items: center; gap: 8px; padding: 4px 6px; }
-  .exf-r label { flex: none; width: 52px; font-size: 12px; color: var(--text-color-tertiary); }
-  .exf-r .hint { font-size: 11px; color: var(--text-color-tertiary); line-height: 1.6; }
-  .exf-sel, .exf-in {
-    flex: 1; min-width: 0; background: color-mix(in srgb, var(--text-color) 6%, transparent); color: var(--text-color);
-    border: 1px solid color-mix(in srgb, var(--text-color) 12%, transparent); border-radius: 4px;
-    font-size: 12px; padding: 5px 7px; outline: none;
+  .exf-t {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-color);
+    padding: 4px 6px 8px;
   }
-  .exf-in { flex: none; width: 72px; }
-  .exf-b { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 6px 4px; }
+
+  .exf-r {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 6px;
+  }
+
+  .exf-r label {
+    flex: none;
+    width: 52px;
+    font-size: 12px;
+    color: var(--text-color-tertiary);
+  }
+
+  .exf-r .hint {
+    font-size: 11px;
+    color: var(--text-color-tertiary);
+    line-height: 1.6;
+  }
+
+  .exf-sel,
+  .exf-in {
+    flex: 1;
+    min-width: 0;
+    background: color-mix(in srgb, var(--text-color) 6%, transparent);
+    color: var(--text-color);
+    border: 1px solid color-mix(in srgb, var(--text-color) 12%, transparent);
+    border-radius: 4px;
+    font-size: 12px;
+    padding: 5px 7px;
+    outline: none;
+  }
+
+  .exf-in {
+    flex: none;
+    width: 72px;
+  }
+
+  .exf-b {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 10px 6px 4px;
+  }
 
   .pop-title {
     padding: 6px 8px 4px;
@@ -392,6 +556,7 @@
     align-items: center;
     gap: 8px;
   }
+
   .pop-title .pop-link {
     color: var(--color-primary);
     text-decoration: none;
@@ -401,13 +566,16 @@
     border-radius: 5px;
     padding: 1px 7px;
   }
+
   .pop-title .pop-link:hover {
     background: color-mix(in srgb, var(--color-primary) 20%, transparent);
     color: var(--color-primary);
   }
 
   @container (max-width: 1100px) {
-    .left, .right {
+
+    .left,
+    .right {
       position: absolute;
       top: 0;
       bottom: 0;
@@ -415,9 +583,18 @@
       max-width: calc(100% - 32px);
       box-shadow: 0 12px 36px color-mix(in srgb, var(--text-color) 45%, transparent);
     }
-    .left { left: 0; }
-    .right { right: 0; }
-    .ws > .pd.v { display: none; }
+
+    .left {
+      left: 0;
+    }
+
+    .right {
+      right: 0;
+    }
+
+    .ws>.pd.v {
+      display: none;
+    }
   }
 
   @container (max-width: 720px) {
@@ -427,8 +604,18 @@
       min-height: 44px;
       padding: 4px 10px;
     }
-    .brand { font-size: 11px; line-height: 18px; gap: 5px; }
-    .brand .logo { width: 16px; height: 16px; }
+
+    .brand {
+      font-size: 11px;
+      line-height: 18px;
+      gap: 5px;
+    }
+
+    .brand .logo {
+      width: 16px;
+      height: 16px;
+    }
+
     .doc-title {
       flex: 1;
       min-width: 72px;
@@ -437,88 +624,176 @@
       font-size: 11px;
       line-height: 18px;
     }
-    .save-state { display: none; }
-    .topbar > .spacer { display: none; }
-    .topbar > .tbtn { padding: 3px 4px; font-size: 10px; line-height: 16px; }
-    .popover { top: 44px; max-width: calc(100cqw - 16px); }
+
+    .save-state {
+      display: none;
+    }
+
+    .topbar>.spacer {
+      display: none;
+    }
+
+    .topbar>.tbtn {
+      padding: 3px 4px;
+      font-size: 10px;
+      line-height: 16px;
+    }
+
+    .popover {
+      top: 44px;
+      max-width: calc(100cqw - 16px);
+    }
+
     .panel-switches {
       order: initial;
       flex: none;
       justify-content: center;
     }
-    .panel-switch { width: 30px; }
-    .left, .right { max-width: calc(100% - 24px); }
-    .bottom { max-height: 42vh; }
+
+    .panel-switch {
+      width: 30px;
+    }
+
+    .left,
+    .right {
+      max-width: calc(100% - 24px);
+    }
+
+    .bottom {
+      max-height: 42vh;
+    }
+
     body .vd-controls {
       flex-wrap: wrap;
       min-width: 0;
       gap: 6px;
       padding: 6px 8px;
     }
-    body .vd-seek { flex: 1 1 120px; min-width: 80px; }
-    body .vd-time { min-width: 0; font-size: 11px; }
-    body .vd-vol { width: 48px; }
+
+    body .vd-seek {
+      flex: 1 1 120px;
+      min-width: 80px;
+    }
+
+    body .vd-time {
+      min-width: 0;
+      font-size: 11px;
+    }
+
+    body .vd-vol {
+      width: 48px;
+    }
   }
 
   @container (max-width: 480px) {
-    .topbar { gap: 4px; padding-inline: 8px; }
-    .brand { font-size: 11px; margin-right: 2px; }
-    .brand .logo { display: none; }
-    .doc-title { max-width: 80px; font-size: 11px; }
-    .doc-title:before { margin-right: 6px; }
-    .panel-switch { width: 23px; }
-    .topbar > .tbtn.primary { margin-left: 2px; }
+    .topbar {
+      gap: 4px;
+      padding-inline: 8px;
+    }
+
+    .brand {
+      font-size: 11px;
+      margin-right: 2px;
+    }
+
+    .brand .logo {
+      display: none;
+    }
+
+    .doc-title {
+      max-width: 80px;
+      font-size: 11px;
+    }
+
+    .doc-title:before {
+      margin-right: 6px;
+    }
+
+    .panel-switch {
+      width: 23px;
+    }
+
+    .topbar>.tbtn.primary {
+      margin-left: 2px;
+    }
   }
 
   @container (max-width: 390px) {
-    .doc-title { display: none; }
+    .doc-title {
+      display: none;
+    }
   }
 
   .resource-error {
-    flex: none; padding: 7px 12px; color: var(--color-danger); background: color-mix(in srgb, var(--color-danger) 10%, transparent);
-    border-bottom: 1px solid color-mix(in srgb, var(--color-danger) 25%, transparent); font-size: var(--font-size-xs);
+    flex: none;
+    padding: 7px 12px;
+    color: var(--color-danger);
+    background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--color-danger) 25%, transparent);
+    font-size: var(--font-size-xs);
   }
-
 </style>
 
 <body>
   <div class="topbar">
-    <button class="brand" @click="goHome()" :title="$t('studio.back_home')"><span class="logo">▶</span> Video Studio</button>
-    <div class="doc-title" :class="{ empty: !curPath && !curTitle }" @click="selNone()" :title="curPath ? toRef(curPath) : $t('studio.archive_settings')">{{ curTitle ||
+    <button class="brand" @click="goHome()" :title="$t('studio.back_home')"><span class="logo">▶</span> Video
+      Studio</button>
+    <div class="doc-title" :class="{ empty: !curPath && !curTitle }" @click="selNone()"
+      :title="curPath ? toRef(curPath) : $t('studio.archive_settings')">{{ curTitle ||
       curName || $t('studio.no_archive') }}</div>
-    <span class="save-state" :class="{ dirty: saveState === '_studio.unsaved', fail: saveState === '_studio.failed' }">{{ saveState ? $t(saveState) : '' }}</span>
+    <span class="save-state"
+      :class="{ dirty: saveState === '_studio.unsaved', fail: saveState === '_studio.failed' }">{{ saveState ?
+      $t(saveState) : '' }}</span>
     <div class="spacer"></div>
     <div class="panel-switches" role="group" :aria-label="$t('studio.panel_switches')">
-      <button class="panel-switch" :class="{ active: showLeft }" :aria-pressed="showLeft" @click="showLeft = !showLeft" :title="$t('studio.scenes_assets')" :aria-label="$t('studio.toggle_scenes_assets')">
-        <svg class="panel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/>
+      <button class="panel-switch" :class="{ active: showLeft }" :aria-pressed="showLeft" @click="showLeft = !showLeft"
+        :title="$t('studio.scenes_assets')" :aria-label="$t('studio.toggle_scenes_assets')">
+        <svg class="panel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <path d="M9 3v18" />
         </svg>
       </button>
-      <button class="panel-switch" :class="{ active: showRight }" :aria-pressed="showRight" @click="showRight = !showRight" :title="$t('studio.properties')" :aria-label="$t('studio.toggle_properties')">
-        <svg class="panel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3"/>
-          <path d="M14 2v4M8 10v4M16 18v4"/>
+      <button class="panel-switch" :class="{ active: showRight }" :aria-pressed="showRight"
+        @click="showRight = !showRight" :title="$t('studio.properties')" :aria-label="$t('studio.toggle_properties')">
+        <svg class="panel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3" />
+          <path d="M14 2v4M8 10v4M16 18v4" />
         </svg>
       </button>
-      <button class="panel-switch" :class="{ active: showTimeline }" :aria-pressed="showTimeline" @click="showTimeline = !showTimeline" :title="$t('studio.timeline')" :aria-label="$t('studio.toggle_timeline')">
-        <svg class="panel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M8 2v20"/>
+      <button class="panel-switch" :class="{ active: showTimeline }" :aria-pressed="showTimeline"
+        @click="showTimeline = !showTimeline" :title="$t('studio.timeline')" :aria-label="$t('studio.toggle_timeline')">
+        <svg class="panel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="16" rx="2" />
+          <path d="M3 10h18M3 15h18M8 2v20" />
         </svg>
       </button>
     </div>
     <button class="tbtn file-action" @click="chooseOpen()">{{ $t('common.open') }}</button>
     <button class="tbtn file-action" @click="chooseNew()">{{ $t('common.new') }}</button>
-    <button class="tbtn file-action" @click="saveAsArchive()" :disabled="!doc || exporting">{{ $t('common.save_as') }}</button>
-    <button class="tbtn file-action" @click="undoEdit()" :disabled="!undoStack.length" :title="$t('studio.undo_hint')">{{ $t('common.undo') }}</button>
-    <button class="tbtn file-action" @click="redoEdit()" :disabled="!redoStack.length" :title="$t('studio.redo_hint')">{{ $t('common.redo') }}</button>
-    <details class="more-actions" ref="moreActions"><summary>{{ $t('common.more') }}</summary><div class="more-menu">
-      <button @click="chooseOpen(); $refs.moreActions.open = false">{{ $t('common.open') }}</button>
-      <button @click="chooseNew(); $refs.moreActions.open = false">{{ $t('common.new') }}</button>
-      <button @click="saveAsArchive(); $refs.moreActions.open = false" :disabled="!doc || exporting">{{ $t('common.save_as') }}</button>
-      <button @click="undoEdit(); $refs.moreActions.open = false" :disabled="!undoStack.length">{{ $t('common.undo') }}</button>
-      <button @click="redoEdit(); $refs.moreActions.open = false" :disabled="!redoStack.length">{{ $t('common.redo') }}</button>
-    </div></details>
-    <button class="tbtn primary" @click="showExport = !showExport" :disabled="exporting || !doc">{{ $t('common.export') }}</button>
+    <button class="tbtn file-action" @click="saveAsArchive()" :disabled="!doc || exporting">{{ $t('common.save_as')
+      }}</button>
+    <button class="tbtn file-action" @click="undoEdit()" :disabled="!undoStack.length"
+      :title="$t('studio.undo_hint')">{{ $t('common.undo') }}</button>
+    <button class="tbtn file-action" @click="redoEdit()" :disabled="!redoStack.length"
+      :title="$t('studio.redo_hint')">{{ $t('common.redo') }}</button>
+    <details class="more-actions" ref="moreActions">
+      <summary>{{ $t('common.more') }}</summary>
+      <div class="more-menu">
+        <button @click="chooseOpen(); $refs.moreActions.open = false">{{ $t('common.open') }}</button>
+        <button @click="chooseNew(); $refs.moreActions.open = false">{{ $t('common.new') }}</button>
+        <button @click="saveAsArchive(); $refs.moreActions.open = false" :disabled="!doc || exporting">{{
+          $t('common.save_as') }}</button>
+        <button @click="undoEdit(); $refs.moreActions.open = false" :disabled="!undoStack.length">{{ $t('common.undo')
+          }}</button>
+        <button @click="redoEdit(); $refs.moreActions.open = false" :disabled="!redoStack.length">{{ $t('common.redo')
+          }}</button>
+      </div>
+    </details>
+    <button class="tbtn primary" @click="showExport = !showExport" :disabled="exporting || !doc">{{ $t('common.export')
+      }}</button>
   </div>
 
   <div class="popover" v-if="showExport" style="width: 330px" @mousedown.stop>
@@ -536,7 +811,8 @@
       <div class="exf-r">
         <label>{{ $t('studio.resolution') }}</label>
         <select class="exf-sel" :value="exRes" @change="exRes = $event.target.value">
-          <option value="orig" :selected="exRes === 'orig'">{{ $t('studio.original_size', {width: doc ? doc.size.width : 0, height: doc ? doc.size.height : 0}) }}</option>
+          <option value="orig" :selected="exRes === 'orig'">{{ $t('studio.original_size', {width: doc ? doc.size.width :
+            0, height: doc ? doc.size.height : 0}) }}</option>
           <option value="1080" :selected="exRes === '1080'">1080p {{ $t('studio.full_hd') }}</option>
           <option value="720" :selected="exRes === '720'">720p {{ $t('studio.hd') }}</option>
           <option value="480" :selected="exRes === '480'">480p {{ $t('studio.sd') }}</option>
@@ -551,7 +827,8 @@
       <div class="exf-r">
         <label>{{ $t('studio.fps') }}</label>
         <select class="exf-sel" :value="exFps" @change="exFps = $event.target.value">
-          <option value="orig" :selected="exFps === 'orig'">{{ $t('studio.original_fps', {fps: doc ? doc.fps : 30}) }}</option>
+          <option value="orig" :selected="exFps === 'orig'">{{ $t('studio.original_fps', {fps: doc ? doc.fps : 30}) }}
+          </option>
           <option value="24" :selected="exFps === '24'">24 fps</option>
           <option value="25" :selected="exFps === '25'">25 fps</option>
           <option value="30" :selected="exFps === '30'">30 fps</option>
@@ -571,7 +848,8 @@
     <div class="exf-r" v-else><span class="hint">{{ $t('studio.wav_hint') }}</span></div>
     <div class="exf-b">
       <button class="tbtn" @click="showExport = false">{{ $t('common.cancel') }}</button>
-      <button class="tbtn primary" @click="startExport()" :disabled="exporting">{{ exporting ? $t('studio.exporting') : $t('studio.start_export') }}</button>
+      <button class="tbtn primary" @click="startExport()" :disabled="exporting">{{ exporting ? $t('studio.exporting') :
+        $t('studio.start_export') }}</button>
     </div>
   </div>
 
@@ -581,34 +859,40 @@
         <button :class="{ on: ltab === 'scenes' }" @click="ltab = 'scenes'">{{ $t('common.scenes') }}</button>
         <button :class="{ on: ltab === 'assets' }" @click="ltab = 'assets'">{{ $t('common.assets') }}</button>
       </div>
-      <video-scenes v-show="ltab === 'scenes'" :scenes="doc ? doc.scenes : []" :cur="activeSceneIdx()" :readonly="!curPath" :ver="sceneVer"
-        @pick="onPickScene" @add="addScene" @dup="dupScene" @del="delScene" @move="moveScene"></video-scenes>
-      <video-assets v-show="ltab === 'assets'" :files="assetFiles" :readonly="!curPath"
-        @upload="onUploadAssets" @del="onDelAsset" @pick="onPickAsset" @insert="onInsertAsset"></video-assets>
+      <video-scenes v-show="ltab === 'scenes'" :scenes="doc ? doc.scenes : []" :cur="activeSceneIdx()"
+        :readonly="!curPath" :ver="sceneVer" @pick="onPickScene" @add="addScene" @dup="dupScene" @del="delScene"
+        @move="moveScene"></video-scenes>
+      <video-assets v-show="ltab === 'assets'" :files="assetFiles" :readonly="!curPath" @upload="onUploadAssets"
+        @del="onDelAsset" @pick="onPickAsset" @insert="onInsertAsset"></video-assets>
     </div>
-    <div class="pd v" v-if="showLeft" :class="{ dragging: resizing === 'left' }" @mousedown="startResize('left', $event)" :title="$t('studio.resize_left')"></div>
+    <div class="pd v" v-if="showLeft" :class="{ dragging: resizing === 'left' }"
+      @mousedown="startResize('left', $event)" :title="$t('studio.resize_left')"></div>
     <div class="center">
       <video-stage ref="stage" :editable="!!curPath && !exporting" :selid="sel.kind === 'element' ? sel.elId : ''"
-        @select="onStageSelect" @mutate="onStageChange" @ctxdel="delElements" @dropasset="onDropAsset" @framechange="onFrameChange"></video-stage>
+        @select="onStageSelect" @mutate="onStageChange" @ctxdel="delElements" @dropasset="onDropAsset"
+        @framechange="onFrameChange"></video-stage>
     </div>
-    <div class="pd v" v-if="showRight" :class="{ dragging: resizing === 'right' }" @mousedown="startResize('right', $event)" :title="$t('studio.resize_right')"></div>
+    <div class="pd v" v-if="showRight" :class="{ dragging: resizing === 'right' }"
+      @mousedown="startResize('right', $event)" :title="$t('studio.resize_right')"></div>
     <div class="right" v-if="showRight" :style="{ width: rightW + 'px' }">
       <div class="rbody">
-        <video-inspector :doc="doc" :sel="sel" :frame="curFrame" :readonly="!curPath"
-          :uploadasset="uploadAsset" @mutate="onDocChange" @saveas="saveAsArchive" @pickel="onPickEl"
-          @delel="delElement" @dupel="dupElement"></video-inspector>
+        <video-inspector :doc="doc" :sel="sel" :frame="curFrame" :readonly="!curPath" :uploadasset="uploadAsset"
+          @mutate="onDocChange" @saveas="saveAsArchive" @pickel="onPickEl" @delel="delElement"
+          @dupel="dupElement"></video-inspector>
       </div>
     </div>
   </div>
 
-  <div class="pd h" v-if="showTimeline" :class="{ dragging: resizing === 'bottom' }" @mousedown="startResize('bottom', $event)" :title="$t('studio.resize_timeline')"></div>
+  <div class="pd h" v-if="showTimeline" :class="{ dragging: resizing === 'bottom' }"
+    @mousedown="startResize('bottom', $event)" :title="$t('studio.resize_timeline')"></div>
   <div class="bottom" v-if="showTimeline" :style="{ height: bottomH + 'px' }">
     <video-timeline :doc="doc" :frame="curFrame" :sel="sel" :readonly="!curPath" :ver="sceneVer" @seek="onSeek"
-      @pickscene="onPickScene" @pickel="onPickEl" @addel="onAddEl" @docchange="onDocChange"
-      @movescene="moveSceneTo" @dropasset="onDropAsset"></video-timeline>
+      @pickscene="onPickScene" @pickel="onPickEl" @addel="onAddEl" @docchange="onDocChange" @movescene="moveSceneTo"
+      @dropasset="onDropAsset"></video-timeline>
   </div>
 
-  <div class="resource-error" v-if="missingAssets.length">{{ $t('studio.missing_assets') }} {{ missingAssets.join(', ') }}</div>
+  <div class="resource-error" v-if="missingAssets.length">{{ $t('studio.missing_assets') }} {{ missingAssets.join(', ')
+    }}</div>
 </body>
 
 <script setup>
@@ -826,16 +1110,6 @@
         }
       },
       {
-        name: 'open_video', desc: '打开 /fs 路径的 .video_studio 存档',
-        help: '--path /fs/.../demo.video_studio',
-        handler: async (argv) => {
-          try {
-            await openArchive(arg(argv, 'path'))
-            return reply({ok: true, path: toRef(curPath), title: curTitle})
-          } catch (e) {return reply(errReply(e))}
-        }
-      },
-      {
         name: 'save_video', desc: '保存当前存档',
         handler: async () => {
           try {
@@ -897,7 +1171,7 @@
         name: 'gen_voice', desc: '逐场景生成配音素材（--text 必填；--name 可选文件名；--set voice|music 可选：voice 配置到当前场景，music 配置为全片音乐）。TTS 限流约 3s/个',
         handler: async (argv) => {
           try {
-            if (!curPath) throw new Error('请先打开存档（new_video 或 open_video）')
+            if (!curPath) throw new Error('请先打开存档（new_video 或 open）')
             const text = String(arg(argv, 'text', '') || '').trim()
             if (!text) throw new Error('--text 必填')
             if (text.length > 5000) throw new Error('文本超长（最多 5000 字）')
@@ -1013,7 +1287,7 @@
             const AC = window.AudioContext || window.webkitAudioContext
             const ac = new AC()
             let audio
-            try { audio = await ac.decodeAudioData(await blob.arrayBuffer()) } finally { ac.close() }
+            try {audio = await ac.decodeAudioData(await blob.arrayBuffer())} finally {ac.close()}
             // 多声道混单声道（节拍分析只需包络）
             const n = audio.length
             const mono = new Float32Array(n)
@@ -1053,7 +1327,8 @@
           } catch (e) {return reply(errReply(e))}
         }
       },
-    ]}
+    ]
+  }
 
   const errReply = (e) => ({ok: false, error: String((e && e.message) || e)})
   const reply = (obj) => ({content: JSON.stringify(obj)})
@@ -1102,14 +1377,14 @@
     TAU: Math.PI * 2,
     lerp: (a, b, t) => a + (b - a) * t,
     clamp: (v, a, b) => Math.max(a, Math.min(b, v)),
-    smoothstep: (a, b, v) => { const t = Math.max(0, Math.min(1, (v - a) / (b - a))); return t * t * (3 - 2 * t) },
+    smoothstep: (a, b, v) => {const t = Math.max(0, Math.min(1, (v - a) / (b - a))); return t * t * (3 - 2 * t)},
     map: (v, a, b, c, d) => c + (d - c) * ((v - a) / (b - a)),
     deg: (r) => (r * 180) / Math.PI,
     rad: (d) => (d * Math.PI) / 180,
-    round: (v, n) => { const p = Math.pow(10, n == null ? 2 : n); return Math.round(v * p) / p },
+    round: (v, n) => {const p = Math.pow(10, n == null ? 2 : n); return Math.round(v * p) / p},
     range: (n, a, b) => Array.from({length: Math.max(0, n | 0)}, (_, i) => a == null ? i : a + (b - a) * (n <= 1 ? 0 : i / (n - 1))),
     // mulberry32 种子随机（可复现）
-    rand: (seed) => { let s = (seed >>> 0) || 1; return () => { s = (s + 0x6d2b79f5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296 } },
+    rand: (seed) => {let s = (seed >>> 0) || 1; return () => {s = (s + 0x6d2b79f5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296}},
     easing, easingOf, bezier: bezierEasing, spring: springPhysics, interpolate,
   })
   // three.js 核心纯数学/几何类（无 WebGL 依赖），首次 run_js 用时才懒加载（691KB 不进首屏）
@@ -1129,10 +1404,10 @@
       'PlaneGeometry', 'RingGeometry', 'ShapeGeometry', 'SphereGeometry', 'TetrahedronGeometry',
       'TorusGeometry', 'TorusKnotGeometry', 'TubeGeometry', 'WireframeGeometry', 'EdgesGeometry', 'MathUtils']
     const T = {}
-    keys.forEach((k) => { if (m[k]) T[k] = m[k] })
+    keys.forEach((k) => {if (m[k]) T[k] = m[k]})
     // 建模辅助：几何体 → geo json（引擎 three geo 元素格式；法线由引擎 computeVertexNormals 补齐）
     T.geoPack = (g) => {
-      const out = { positions: Array.from(g.attributes.position.array) }
+      const out = {positions: Array.from(g.attributes.position.array)}
       if (g.attributes.uv) out.uvs = Array.from(g.attributes.uv.array)
       if (g.index) out.index = Array.from(g.index.array)
       return out
@@ -1152,7 +1427,7 @@
           const a = j * (nu + 1) + i, b = a + 1, c = a + nu + 1, d = c + 1
           index.push(a, b, d, b, c, d)
         }
-      return { positions, index }
+      return {positions, index}
     }
     return T
   }
@@ -1162,14 +1437,14 @@
     const fmtVal = (v) => {
       if (typeof v === 'string') return v
       if (v === undefined) return 'undefined'
-      try { return JSON.stringify(v) } catch (e) { return String(v) }
+      try {return JSON.stringify(v)} catch (e) {return String(v)}
     }
     const fakeConsole = {}
-    ;['log', 'info', 'warn', 'error', 'debug'].forEach((k) => { fakeConsole[k] = (...a) => logs.push('[' + k + '] ' + a.map(fmtVal).join(' ')) })
+      ;['log', 'info', 'warn', 'error', 'debug'].forEach((k) => {fakeConsole[k] = (...a) => logs.push('[' + k + '] ' + a.map(fmtVal).join(' '))})
     const copy = (v) => {
       copied = true
       const text = typeof v === 'string' ? v : fmtVal(v)
-      copyText(text).catch(() => {}) // 写系统剪贴板（尽力而为，无手势可能失败，但返回值不受影响）
+      copyText(text).catch(() => { }) // 写系统剪贴板（尽力而为，无手势可能失败，但返回值不受影响）
     }
     let fn
     try {
@@ -1184,7 +1459,7 @@
     if (result === undefined) out = null
     else if (typeof result === 'string') out = result.length > 200000 ? result.slice(0, 200000) + '…[截断]' : result
     else {
-      try { out = JSON.parse(JSON.stringify(result)) } catch (e) { out = String(result) }
+      try {out = JSON.parse(JSON.stringify(result))} catch (e) {out = String(result)}
     }
     return {ok: true, result: out, result_type: typeof result, logs, copied}
   }
@@ -1355,7 +1630,7 @@
       if (!picked) return
       target = assertArchivePath(picked.path)
     }
-    if (target === curPath) {await doSave(); return}
+    if (target === curPath) {await doSave(); return }
     if (curPath) await doSave()
     const targetDir = parentOf(target)
     // 先复制全部素材，再写主存档；任何一步失败都不切换当前路径。
@@ -1535,7 +1810,7 @@
     if (!curPath || !storageReady()) return
     saveState = '_studio.unsaved'
     clearTimeout(saveTimer)
-    saveTimer = setTimeout(() => {doSave().catch(() => {})}, 600)
+    saveTimer = setTimeout(() => {doSave().catch(() => { })}, 600)
   }
   // 写盘（对齐 ppt_studio 分页拆分）：拆分结构（cur_split）按引用逐场景写回，
   // 主 .video_studio 保持引用数组；编辑器新增/复制的场景自动分配 scenes/scene_N.json；
@@ -1611,7 +1886,7 @@
     const target = curPath
     const snapshot = JSON.parse(JSON.stringify(doc))
     saveState = '_studio.saving'
-    saveQueue = saveQueue.catch(() => {}).then(async () => {
+    saveQueue = saveQueue.catch(() => { }).then(async () => {
       await writeProject(target, snapshot)
       if (target === curPath) {
         saveState = '_studio.saved'
@@ -1923,7 +2198,7 @@
   onDelAsset = async (ref) => {
     // 删除前确认：素材文件从项目目录移除，不可恢复
     let ok = false
-    try { ok = await $message.confirm($t('studio.delete_asset_confirm', {name: String(ref).replace(/^assets\//, '')})) } catch (e) { }
+    try {ok = await $message.confirm($t('studio.delete_asset_confirm', {name: String(ref).replace(/^assets\//, '')}))} catch (e) { }
     if (!ok) return
     try {
       await fsRm(resolveRef(projDir(), ref))
@@ -2055,19 +2330,28 @@
 
   // 导出文件扩展名（与格式对应）
   const exExt = (format) => format === 'wav' ? 'wav' : format === 'mp4' ? 'mp4' : 'webm'
-  // 导出由用户选择任意 $fs 目标，不再写全局 /video/exports
+  const downloadBlob = (blob, filename) => {
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    link.style.display = 'none'
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
+  // 成品直接下载到浏览器，不占用存档所在的 $fs 位置
   startExport = async () => {
     if (!doc || exporting) return
     const {w, h} = exSize()
     const format = exFormat
     const fname = safeTitle() + '.' + exExt(format)
     try {
-      const picked = await $mod.$fs.pickSavePath({name: fname, ext: '.' + exExt(format), start: await pickerStart($mod.$fs, curDir)})
-      if (!picked) return
       $message.info($t('studio.export_started'))
       const blob = await doExport({format, width: w, height: h, fps: exFpsOf(), quality: exQuality})
-      await fsPut(picked.path, blob)
-      $message.success($t('studio.export_done') + toRef(picked.path))
+      downloadBlob(blob, fname)
+      $message.success($t('studio.export_done') + fname)
     } catch (e) {
       console.error(e)
       $message.error($t('studio.export_failed') + (e && e.message ? e.message : e))
@@ -2075,13 +2359,11 @@
   }
 
 </script>
-<script>
-  $scope.addCleanup($router.onChange(() => {initPage()}))
-</script>
 <script active>
   initPage()
 </script>
 <script>
+  $scope.addCleanup($router.onChange(() => {initPage()}))
   // 快捷键（焦点在输入控件时不生效；Cmd/Ctrl 组合键除外）
   $scope.addEventListener(window, 'keydown', (e) => {
     const t = e.target

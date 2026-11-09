@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="description" content="3D Maker — parametric CAD workspace with inspection, analysis and export" />
+  <title>3D Maker</title>
+</head>
+<style>
+  body { height: 100%; min-height: 0; overflow: hidden; container-type: inline-size; }
+  button, select, input { font: inherit; }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+  select:focus, select:focus-visible { outline: none; }
+  .studio { height: 100%; min-height: 0; display: flex; flex-direction: column; position: relative; }
+  .topbar { flex: none; min-height: 48px; display: flex; align-items: center; gap: 7px; padding: 0 12px; border-bottom: 1px solid var(--border-color); position: relative; z-index: 30; min-width: 0; }
+  .brand { flex: none; padding: 4px 0; border: 0; border-bottom: 1px solid transparent; background: transparent; color: var(--text-color); cursor: pointer; font-size: 12px; font-weight: var(--font-weight-medium); white-space: nowrap; }
+  .brand:hover { color: var(--color-primary); border-bottom-color: currentColor; }
+  .file-title { min-width: 0; max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-color-secondary); font-size: 11px; }
+  .file-title:before { content: '/'; margin: 0 9px 0 3px; color: var(--text-color-tertiary); }
+  .save-state { flex: none; color: var(--text-color-tertiary); font-size: 10px; white-space: nowrap; }
+  .save-state.unsaved { color: var(--color-warning); }
+  .spacer { flex: 1; }
+  .group { flex: none; display: flex; align-items: center; gap: 3px; }
+  .label { margin-left: 5px; color: var(--text-color-tertiary); font-size: 10px; white-space: nowrap; }
+  .select, .number, .filter { box-sizing: border-box; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-color); color: var(--text-color); }
+  .select { min-height: 29px; max-width: 112px; padding: 3px 6px; font-size: 11px; cursor: pointer; }
+  .tbtn { flex: none; min-height: 30px; padding: 3px 5px; border: 0; border-bottom: 1px solid transparent; border-radius: 0; background: transparent; color: var(--text-color-tertiary); cursor: pointer; font-size: 11px; white-space: nowrap; }
+  .tbtn:hover, .tbtn.on { color: var(--color-primary); border-bottom-color: currentColor; }
+  .tbtn.primary { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+  .tbtn:disabled { opacity: .45; cursor: not-allowed; }
+  .more-actions { display: none; position: relative; }
+  .more-actions summary { padding: 4px 5px; border-bottom: 1px solid transparent; color: var(--text-color-tertiary); cursor: pointer; list-style: none; font-size: 11px; }
+  .more-actions summary::-webkit-details-marker { display: none; }
+  .more-actions summary:hover, .more-actions[open] summary { color: var(--color-primary); border-bottom-color: currentColor; }
+  .more-menu { position: absolute; top: 36px; right: 0; width: 150px; box-sizing: border-box; padding: 6px; border: 1px solid var(--border-color); background: var(--bg-color); box-shadow: var(--shadow-lg); }
+  .more-menu button { width: 100%; min-height: 32px; padding: 4px 7px; border: 0; border-bottom: 1px solid var(--border-color); background: transparent; color: var(--text-color-secondary); cursor: pointer; text-align: left; font-size: 12px; }
+  .more-menu button:last-child { border-bottom: 0; }
+  .more-menu button:hover { color: var(--color-primary); }
+  .pop { position: absolute; top: calc(100% + 6px); z-index: 40; width: 250px; box-sizing: border-box; padding: 14px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-color); box-shadow: var(--shadow-lg); }
+  .pop.left { left: 12px; }
+  .pop.right { right: 12px; }
+  .pop h4, .inspector h4 { margin: 0 0 10px; color: var(--text-color-secondary); font-size: 11px; font-weight: var(--font-weight-medium); letter-spacing: .04em; }
+  .workspace { flex: 1; min-height: 0; min-width: 0; display: flex; position: relative; overflow: hidden; }
+  .viewport { flex: 1; min-width: 0; min-height: 0; position: relative; background: var(--bg-color-tertiary); }
+  #gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; }
+  .inspector { position: absolute; top: 10px; right: 10px; bottom: 10px; z-index: 20; width: 310px; min-height: 0; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--bg-color) 68%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: var(--shadow-lg); }
+  .tabs { position: sticky; top: 0; z-index: 5; display: flex; padding: 0 12px; border-bottom: 1px solid var(--border-color); background: transparent; }
+  .tabs button { flex: 1; min-height: 39px; padding: 0; border: 0; border-bottom: 1px solid transparent; background: transparent; color: var(--text-color-tertiary); cursor: pointer; font-size: 11px; }
+  .tabs button:hover, .tabs button.on { color: var(--color-primary); border-bottom-color: currentColor; }
+  .inspector section { padding: 15px 14px; border-bottom: 1px solid var(--border-color); }
+  .row { display: flex; align-items: center; gap: 8px; min-height: 30px; }
+  .row label { flex: none; max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-color-tertiary); font-size: var(--font-size-xs); }
+  .row input[type="range"] { flex: 1; min-width: 40px; accent-color: var(--color-primary); }
+  .number { flex: none; width: 62px; padding: 4px 5px; font-size: var(--font-size-xs); }
+  .row input[type="color"] { width: 42px; height: 26px; padding: 0; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: transparent; cursor: pointer; }
+  .val { flex: none; min-width: 42px; color: var(--text-color-tertiary); font-family: var(--font-family-mono, monospace); font-size: 10px; text-align: right; }
+  .check { display: inline-flex; align-items: center; gap: 6px; color: var(--text-color-secondary); cursor: pointer; font-size: var(--font-size-xs); }
+  .check input { accent-color: var(--color-primary); }
+  .kv { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; color: var(--text-color-tertiary); font-size: var(--font-size-xs); }
+  .kv > span:last-child { color: var(--text-color); font-family: var(--font-family-mono, monospace); text-align: right; }
+  .btns { display: flex; flex-wrap: wrap; gap: 13px; margin-top: 9px; }
+  .btns button { padding: 2px 0; border: 0; border-bottom: 1px solid transparent; background: transparent; color: var(--text-color-tertiary); cursor: pointer; font-size: var(--font-size-xs); }
+  .btns button:hover, .btns button.on { color: var(--color-primary); border-bottom-color: currentColor; }
+  .filter { width: 100%; margin-bottom: 7px; padding: 6px 8px; font-size: var(--font-size-xs); }
+  .tree, .steps { max-height: 260px; overflow-y: auto; }
+  .titem { display: flex; align-items: center; gap: 7px; min-height: 28px; padding: 3px 6px; border-radius: var(--radius-sm); cursor: pointer; font-size: var(--font-size-xs); }
+  .titem:hover { background: var(--bg-color-secondary); }
+  .titem.sel { color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 9%, transparent); }
+  .eye { flex: none; width: 22px; color: var(--text-color-tertiary); text-align: center; }
+  .tname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tvol { color: var(--text-color-tertiary); font-family: var(--font-family-mono, monospace); font-size: 10px; }
+  .slicecv { width: 100%; margin-top: 8px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-color-secondary); }
+  .ghead { display: flex; align-items: center; gap: 6px; padding: 5px 4px; color: var(--text-color-secondary); cursor: pointer; font-size: var(--font-size-xs); }
+  .gname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gcount { color: var(--text-color-tertiary); font-size: 10px; }
+  .step { display: flex; gap: 8px; padding: 3px 5px 3px 18px; font-size: var(--font-size-xs); }
+  .sno { flex: none; width: 24px; color: var(--text-color-tertiary); font-family: var(--font-family-mono, monospace); text-align: right; }
+  .stext { flex: 1; min-width: 0; }
+  .step.minor .stext { color: var(--text-color-tertiary); }
+  .empty { padding: 22px 14px; color: var(--text-color-tertiary); font-size: var(--font-size-xs); line-height: 1.7; text-align: center; }
+  .statusbar { flex: none; min-height: 30px; display: flex; align-items: center; gap: 16px; padding: 0 12px; border-top: 1px solid var(--border-color); color: var(--text-color-tertiary); font-family: var(--font-family-mono, monospace); font-size: 10px; white-space: nowrap; overflow-x: auto; }
+  .statusbar .ok { color: var(--color-success); }
+  .statusbar .busy { color: var(--color-warning); }
+  .statusbar .error { color: var(--color-danger); }
+  .statusbar .measure { color: var(--color-primary); }
+  .kload { display: inline-flex; align-items: center; gap: 7px; }
+  .kbar { width: 90px; height: 3px; overflow: hidden; border-radius: 2px; background: var(--border-color); }
+  .kbar i { display: block; height: 100%; background: var(--color-primary); transition: width var(--transition-base); }
+  @container (max-width: 1050px) {
+    .topbar > .file-action { display: none; }
+    .more-actions { display: block; }
+    .save-state { display: none; }
+  }
+  @container (max-width: 820px) {
+    .label { display: none; }
+    .file-title { max-width: 140px; }
+    .inspector { width: min(330px, 88cqw); }
+  }
+  @container (max-width: 620px) {
+    .topbar { padding: 0 8px; gap: 4px; }
+    .file-title { display: none; }
+    .select { max-width: 88px; }
+    .statusbar .secondary { display: none; }
+  }
+</style>
+<body>
+  <main class="studio">
+    <header class="topbar">
+      <button class="brand" @click="goHome">3D Maker</button>
+      <span class="file-title" :title="curFile">{{ curFile ? modelName(curFile) : $t('editor.untitled') }}</span>
+      <span v-if="curFile" class="save-state" :class="{unsaved: isNew}">{{ isNew ? $t('editor.unsaved') : saveState }}</span>
+      <div class="group">
+        <span class="label">{{ $t('toolbar.view') }}</span>
+        <select ref="viewSel" class="select" :value="viewMode" @change="onViewSel"><option v-for="m in viewModes" :value="m">{{ $t('_view.' + m) }}</option></select>
+        <span class="label">{{ $t('toolbar.pick') }}</span>
+        <select ref="pickSel" class="select" :value="pickMode" @change="onPickSel"><option v-for="m in pickModes" :value="m">{{ $t('_pick.' + m) }}</option></select>
+      </div>
+      <div class="group">
+        <button class="tbtn" :class="{on: measureOn}" @click="toggleMeasure">{{ $t('toolbar.measure') }}</button>
+        <button class="tbtn" @click="fit">{{ $t('toolbar.fit') }}</button>
+        <button class="tbtn" :class="{on: projection === 'orthographic'}" @click="toggleProj">{{ projection === 'orthographic' ? $t('toolbar.orthographic') : $t('toolbar.perspective') }}</button>
+        <button class="tbtn" :class="{on: showSettings}" @click="toggleSettings">{{ $t('toolbar.display') }}</button>
+        <button class="tbtn" :class="{on: kernelName === 'occt'}" @click="toggleKernel" :disabled="kernelLoading">{{ kernelName === 'occt' ? 'OCCT' : 'JS' }}</button>
+      </div>
+      <span class="spacer"></span>
+      <button class="tbtn file-action" @click="onOpenModel">{{ $t('common.open') }}</button>
+      <button class="tbtn file-action primary" @click="onSaveModel">{{ $t('common.save') }}</button>
+      <select ref="expSel" class="select" @change="onExportSel"><option value="">{{ $t('toolbar.export') }}</option><option v-for="f in exportFormats" :value="f">{{ $t('_format.' + f) }}</option></select>
+      <button class="tbtn" :class="{on: isMobile ? mobileShowSide : showSide}" @click="togglePanel">{{ $t('toolbar.inspector') }}</button>
+      <details class="more-actions"><summary>{{ $t('common.more') }}</summary><div class="more-menu"><button @click="onOpenModel">{{ $t('common.open') }}</button><button @click="onSaveModel">{{ $t('common.save') }}</button></div></details>
+
+      <div class="pop left" v-if="viewMode === 'section'">
+        <h4>{{ $t('section.title') }}</h4>
+        <div class="row"><label>{{ $t('section.plane') }}</label><select ref="secAxis" class="select" :value="section.axis" @change="onSecAxis"><option value="XY">XY</option><option value="XZ">XZ</option><option value="YZ">YZ</option></select></div>
+        <div class="row"><label>{{ $t('section.offset') }}</label><input ref="secOff" type="range" :min="section.min" :max="section.max" step="0.5" :value="section.offset" @input="onSecOff"><span class="val">{{ fmtOff(section.offset) }}</span></div>
+        <div class="row"><label class="check"><input type="checkbox" :checked="section.invert" @click="toggleInvert"> {{ $t('section.invert') }}</label></div>
+      </div>
+      <div class="pop right" v-if="showSettings">
+        <h4>{{ $t('display.title') }}</h4>
+        <div class="row"><label class="check"><input type="checkbox" :checked="settings.grid" @click="toggleSet('grid')"> {{ $t('display.grid') }}</label></div>
+        <div class="row"><label class="check"><input type="checkbox" :checked="settings.axes" @click="toggleSet('axes')"> {{ $t('display.axes') }}</label></div>
+        <div class="row"><label class="check"><input type="checkbox" :checked="settings.ground" @click="toggleSet('ground')"> {{ $t('display.ground') }}</label></div>
+        <div class="row"><label class="check"><input type="checkbox" :checked="settings.shadows" @click="toggleSet('shadows')"> {{ $t('display.shadows') }}</label></div>
+        <div class="row"><label>{{ $t('display.transparency') }}</label><input ref="setT" type="range" min="0.05" max="0.95" step="0.05" :value="settings.transparency" @input="onSetT"><span class="val">{{ settings.transparency }}</span></div>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <div class="viewport"><canvas id="gl" ref="gl" tabindex="0"></canvas></div>
+      <aside class="inspector" v-show="isMobile ? mobileShowSide : showSide">
+        <nav class="tabs"><button v-for="t in sideTabs" :class="{on: sideTab === t}" @click="sideTab = t">{{ $t('_tab.' + t) }}</button></nav>
+        <div v-show="sideTab === 'info'">
+          <section v-if="params.length"><h4>{{ $t('params.title') }}</h4><div class="row" v-for="p in params"><label :title="p.name">{{ p.label }}</label><input type="range" :min="p.min" :max="p.max" :step="p.step" v:value="p.value" @input="onParam(p)"><input class="number" type="number" :min="p.min" :max="p.max" :step="p.step" v:value="p.value" @change="onParam(p)"></div></section>
+          <section><h4>{{ $t('model.title') }}</h4><div class="kv"><span>{{ $t('model.volume') }}</span><span>{{ stats ? fmtVol(stats.volume) : '-' }}</span></div><div class="kv"><span>{{ $t('model.area') }}</span><span>{{ stats ? fmtArea(stats.area) : '-' }}</span></div><div class="kv"><span>{{ $t('model.bounds_x') }}</span><span>{{ stats ? fmtLen(stats.boundingBox.size[0]) : '-' }}</span></div><div class="kv"><span>{{ $t('model.bounds_y') }}</span><span>{{ stats ? fmtLen(stats.boundingBox.size[1]) : '-' }}</span></div><div class="kv"><span>{{ $t('model.bounds_z') }}</span><span>{{ stats ? fmtLen(stats.boundingBox.size[2]) : '-' }}</span></div></section>
+          <section><h4>{{ $t('geometry.title') }}</h4><div class="kv"><span>{{ $t('geometry.vertices') }}</span><span>{{ stats ? fmtInt(stats.mesh.vertices) : '-' }}</span></div><div class="kv"><span>{{ $t('geometry.triangles') }}</span><span>{{ stats ? fmtInt(stats.mesh.triangles) : '-' }}</span></div><div class="kv"><span>{{ $t('geometry.edges') }}</span><span>{{ stats ? fmtInt(stats.mesh.edges) : '-' }}</span></div><div class="kv"><span>{{ $t('geometry.parts') }}</span><span>{{ stats ? stats.partCount : '-' }}</span></div><div class="kv" v-if="stats && stats.interferenceCount > 0"><span>{{ $t('geometry.conflicts') }}</span><span :style="{color: 'var(--color-danger)'}">{{ stats.interferenceCount }}</span></div></section>
+          <section><h4>{{ $t('material.title') }}</h4><div class="row"><label>{{ $t('material.color') }}</label><input ref="matC" type="color" :value="material.color" @input="onMat"></div><div class="row"><label>{{ $t('material.metalness') }}</label><input ref="matM" type="range" min="0" max="1" step="0.05" :value="material.metalness" @input="onMat"><span class="val">{{ material.metalness }}</span></div><div class="row"><label>{{ $t('material.roughness') }}</label><input ref="matR" type="range" min="0" max="1" step="0.05" :value="material.roughness" @input="onMat"><span class="val">{{ material.roughness }}</span></div></section>
+        </div>
+        <div v-show="sideTab === 'analysis'">
+          <section v-if="printInfo"><h4>{{ $t('print.title') }}</h4><template v-if="!printInfo.skipped"><div class="kv"><span>{{ $t('print.watertight') }}</span><span :style="{color: printInfo.watertight ? 'var(--color-success)' : 'var(--color-danger)'}">{{ printInfo.watertight ? $t('print.pass') : $t('print.fail') }}</span></div><div class="kv" v-if="!printInfo.watertight"><span>{{ $t('print.open_edges') }}</span><span>{{ printInfo.openEdges }} / {{ printInfo.openLoops }}</span></div><div class="kv" v-if="printInfo.nonManifoldEdges"><span>{{ $t('print.non_manifold') }}</span><span>{{ printInfo.nonManifoldEdges }}</span></div><div class="kv"><span>{{ $t('print.overhang') }}</span><span>{{ fmtArea(printInfo.overhangArea) }} / {{ fmtPct(printInfo.overhangRatio) }}</span></div><div class="kv"><span>{{ $t('print.regions') }}</span><span>{{ printInfo.regions }} / {{ printInfo.featureEdges }}</span></div><div class="btns"><button :class="{on: showOpenEdges}" @click="toggleOpenEdges">{{ $t('print.show_open') }}</button><button :class="{on: showOverhang}" @click="toggleOverhang">{{ $t('print.show_overhang') }}</button></div></template><div class="empty" v-else>{{ printInfo.reason }}</div></section>
+          <section><h4>{{ $t('slice.title') }}</h4><div class="row"><label class="check"><input type="checkbox" :checked="slicing" @click="toggleSlicing"> {{ $t('slice.enable') }}</label></div><template v-if="slicing"><div class="row"><label>{{ $t('slice.layer_height') }}</label><select ref="layerHSel" class="select" @change="onSliceUI"><option value="0.1">0.1 mm</option><option value="0.15">0.15 mm</option><option value="0.2" selected>0.2 mm</option><option value="0.3">0.3 mm</option></select><span class="val">{{ layerCount() }}</span></div><div class="row"><label>Z</label><input type="range" :min="sliceRange[0]" :max="sliceRange[1]" step="0.05" v:value="sliceZ" @input="onSliceZ"><span class="val">{{ Number(sliceZ).toFixed(2) }}</span></div><canvas ref="sliceCv" class="slicecv" width="280" height="180"></canvas><div class="kv"><span>{{ $t('slice.loops') }}</span><span>{{ sliceLoops }} / {{ sliceSegs }}</span></div></template></section>
+          <section v-if="stepGroups.length"><h4>{{ $t('steps.title') }}</h4><div class="steps"><div v-for="g in stepGroups.slice(0, 200)"><div class="ghead" @click="g.open = !g.open"><span>{{ g.open ? '▾' : '▸' }}</span><span class="gname">{{ g.name }}</span><span class="gcount">{{ g.steps.length }}</span></div><div v-if="g.open"><div class="step" v-for="s in g.steps" :class="{minor: s.minor}" :title="s.src"><span class="sno">{{ s.seq }}</span><span class="stext">{{ s.text }}</span></div></div></div></div></section>
+        </div>
+        <div v-show="sideTab === 'detail'">
+          <section v-if="pick"><h4>{{ $t('pick.title') }}</h4><div class="kv"><span>{{ $t('pick.part') }}</span><span>{{ pick.partName }}</span></div><div class="kv" v-if="pick.none"><span>{{ $t('pick.hint') }}</span><span>{{ pick.message }}</span></div><template v-if="pick.mode === 'vertex'"><div class="kv"><span>X / Y / Z</span><span>{{ fmtPt(pick.point) }}</span></div></template><template v-if="pick.mode === 'edge' && !pick.none"><div class="kv"><span>{{ $t('pick.type') }}</span><span>{{ pick.closed ? $t('pick.closed') : $t('pick.open') }}</span></div><div class="kv"><span>{{ $t('pick.length') }}</span><span>{{ fmtLen(pick.length) }}</span></div><div class="kv"><span>{{ $t('pick.segments') }}</span><span>{{ pick.segments }}</span></div><div class="kv" v-if="!pick.closed"><span>A</span><span>{{ fmtPt(pick.a) }}</span></div><div class="kv" v-if="!pick.closed"><span>B</span><span>{{ fmtPt(pick.b) }}</span></div></template><template v-if="pick.mode === 'face' && !pick.none"><div class="kv"><span>{{ $t('pick.type') }}</span><span>{{ pick.kind }}</span></div><div class="kv"><span>{{ $t('model.area') }}</span><span>{{ fmtArea(pick.area) }}</span></div><div class="kv" v-if="pick.normal"><span>{{ $t('pick.normal') }}</span><span>{{ fmtVec(pick.normal) }}</span></div><div class="kv"><span>{{ $t('geometry.triangles') }}</span><span>{{ pick.triangles }}</span></div><div class="kv"><span>{{ $t('pick.point') }}</span><span>{{ fmtPt(pick.point) }}</span></div></template></section>
+          <section v-if="selection.length"><h4>{{ $t('selection.title') }}</h4><div class="kv" v-for="s in selection"><span>{{ s.name }}</span><span>{{ fmtVol(s.volume) }}</span></div><div class="btns"><button @click="isolate">{{ $t('selection.isolate') }}</button><button @click="hideSel">{{ $t('selection.hide') }}</button><button @click="showAll">{{ $t('selection.show_all') }}</button></div></section>
+          <section v-if="parts.length > 1"><h4>{{ $t('parts.title') }}</h4><input class="filter" :placeholder="$t('parts.filter')" v:value="partQuery" @input="onPartQuery"><div class="tree"><div class="titem" v-for="t in partRows" :class="{sel: selIdx.includes(t.index)}" @click="treeSelect(t, $event)"><span class="eye" @click.stop="treeToggle(t)">{{ t.visible ? '●' : '○' }}</span><span class="tname">{{ t.name }}</span><span class="tvol">{{ fmtVol(t.volume) }}</span></div></div></section>
+          <section v-if="parts.length > 1"><h4>{{ $t('explode.title') }}</h4><div class="row"><label>{{ $t('explode.amount') }}</label><input type="range" min="0" max="1" step="0.01" v:value="explodeVal" @input="onExplode"><span class="val">{{ Math.round(explodeVal * 100) }}%</span></div></section>
+          <div class="empty" v-if="!pick && !selection.length && parts.length <= 1">{{ $t('detail.empty') }}</div>
+        </div>
+      </aside>
+    </div>
+
+    <footer class="statusbar">
+      <span :class="{ok: statusType === 'ok', busy: statusType === 'busy', error: statusType === 'error'}">{{ statusText }}</span>
+      <span class="secondary">{{ $t('geometry.vertices') }}: {{ stats ? fmtInt(stats.mesh.vertices) : '-' }}</span>
+      <span class="secondary">{{ $t('geometry.triangles') }}: {{ stats ? fmtInt(stats.mesh.triangles) : '-' }}</span>
+      <span>{{ $t('model.volume') }}: {{ stats ? fmtVol(stats.volume) : '-' }}</span>
+      <span class="secondary">{{ $t('editor.time') }}: {{ lastTime }}</span>
+      <span v-if="kernelLoading" class="kload"><span>{{ kernelLoadText }}</span><span class="kbar"><i :style="{width: kernelProgress + '%'}"></i></span><span>{{ kernelProgress }}%</span></span>
+      <span class="measure">{{ measureText }}</span>
+    </footer>
+  </main>
+</body>
+<script setup>
+  import Viewer from './core/viewer.js'
+  import {createOCCTClient} from './core/occt-client.js'
+  import {MODEL_EXT, toTree, toRef, baseName, parentOf, modelName, assertModelPath} from './storage.js'
+  import {pushRecent} from './recent.js'
+
+  fmtInt = Viewer.fmtInt
+  fmtVol = Viewer.fmtVol
+  fmtArea = Viewer.fmtArea
+  fmtLen = Viewer.fmtLen
+  fmtOff = value => Number(value).toFixed(1)
+  fmtPct = ratio => (ratio * 100).toFixed(1) + '%'
+  fmtPt = point => point ? `(${point.map(value => Number(value).toFixed(2)).join(', ')})` : '-'
+  fmtVec = vector => vector ? `(${vector.map(value => Number(value).toFixed(3)).join(', ')})` : '-'
+
+  bv = null
+  viewModes = ['solid', 'wireframe', 'hidden', 'transparent', 'xray', 'section']
+  pickModes = ['part', 'face', 'edge', 'vertex']
+  exportFormats = ['stl', 'stl-ascii', 'obj', 'glb', '3mf', 'json']
+  sideTabs = ['info', 'analysis', 'detail']
+  viewMode = 'solid'
+  pickMode = 'part'
+  projection = 'perspective'
+  measureOn = false
+  measureText = ''
+  showSettings = false
+  showSide = false
+  isMobile = false
+  mobileShowSide = false
+  sideTab = 'info'
+  statusType = 'ok'
+  statusText = $t('editor.initializing')
+  stats = null
+  lastTime = '-'
+  params = []
+  selection = []
+  parts = []
+  partRows = []
+  partQuery = ''
+  selIdx = []
+  explodeVal = 0
+  pick = null
+  stepGroups = []
+  printInfo = null
+  showOpenEdges = false
+  showOverhang = false
+  slicing = false
+  sliceZ = 0
+  sliceRange = [0, 0]
+  sliceSegs = 0
+  sliceLoops = 0
+  layerH = 0.2
+  section = {axis: 'XY', offset: 0, invert: false, min: -100, max: 100}
+  settings = {grid: true, axes: true, ground: true, shadows: true, transparency: 0.5}
+  material = {color: '#8fa3bf', metalness: 0.1, roughness: 0.6}
+  curFile = ''
+  isNew = false
+  saveState = ''
+  routeKey = ''
+  kernelLoading = false
+  kernelProgress = 0
+  kernelLoadText = $t('kernel.loading')
+  kernelName = 'builtin'
+
+  const EXTS = {stl: 'stl', 'stl-ascii': 'stl', obj: 'obj', glb: 'glb', json: 'json', '3mf': '3mf'}
+  const errMsg = error => String(error?.message || error)
+  const pickFs = () => {
+    const fs = $mod?.$fs
+    if (!fs) throw new Error('$fs unavailable')
+    return fs
+  }
+  const startDir = () => parentOf(curFile)
+  const reply = value => ({content: JSON.stringify(value)})
+  const argOf = (argv, key, fallback = '') => {
+    const args = argv || []
+    const index = args.indexOf('--' + key)
+    return index >= 0 ? args[index + 1] : fallback
+  }
+  const resultOrThrow = result => {
+    if (!result) throw new Error('Viewer unavailable')
+    if (result.success === false) throw new Error(result.message || 'Model failed')
+    return result
+  }
+
+  goHome = () => $router.push('index')
+  runFileByPath = async path => {
+    const file = assertModelPath(path)
+    const response = await pickFs().readFile(toTree(file))
+    if (response?.ok === false) throw new Error(response.message || 'Read failed')
+    const code = typeof response.content === 'string' ? response.content : await response.content.text()
+    const result = resultOrThrow(await bv?.run(code))
+    curFile = file
+    isNew = false
+    saveState = ''
+    pushRecent(file, baseName(file))
+    return result
+  }
+  onOpenModel = async () => {
+    try {
+      const picked = await pickFs().pickFiles({accept: ['.js'], multiple: false, start: startDir()})
+      if (picked) await runFileByPath(picked.path)
+    } catch (error) { $message.error($t('editor.open_failed') + errMsg(error)) }
+  }
+  saveModel = async target => {
+    const code = bv?.getCode()
+    if (!code) throw new Error($t('editor.no_code'))
+    let file = target ? assertModelPath(target) : curFile
+    if (!file) {
+      const picked = await pickFs().pickSavePath({name: $t('home.untitled') + MODEL_EXT, ext: MODEL_EXT, accept: ['.js'], start: startDir()})
+      if (!picked) return {ok: false, cancelled: true}
+      file = assertModelPath(picked.path)
+    }
+    const response = await pickFs().writeFile(toTree(file), code)
+    if (response?.ok === false) throw new Error(response.message || 'Save failed')
+    curFile = toRef(file)
+    isNew = false
+    saveState = $t('editor.saved')
+    pushRecent(curFile, baseName(curFile))
+    return {ok: true, path: curFile, bytes: response?.bytes || code.length}
+  }
+  onSaveModel = async () => {
+    try { await saveModel() } catch (error) { $message.error($t('editor.save_failed') + errMsg(error)) }
+  }
+  doExport = async format => {
+    const ext = EXTS[format] || format
+    try {
+      const filename = (modelName(curFile) || 'model') + '.' + ext
+      const result = await bv?.download(format, filename)
+      if (!result) throw new Error('Export unavailable')
+      $message.success($t('editor.export_done') + result.filename)
+    } catch (error) { $message.error($t('editor.export_failed') + errMsg(error)) }
+  }
+
+  loadExample = async name => {
+    const response = await fetch('examples/' + encodeURIComponent(name) + '.js')
+    if (!response.ok) throw new Error('HTTP ' + response.status)
+    return resultOrThrow(await bv?.run(await response.text()))
+  }
+  initPage = async () => {
+    if (!bv) return
+    const query = $router.query || {}
+    const url = String(query.url || '')
+    const example = String(query.case || '')
+    const fresh = String(query.new || '') === '1'
+    const key = url + '|' + example + '|' + fresh
+    if (key === routeKey) return
+    routeKey = key
+    try {
+      if (url && fresh) {
+        curFile = assertModelPath(url)
+        isNew = true
+        saveState = $t('editor.unsaved')
+        await loadExample('lego-brick')
+      } else if (url) {
+        await runFileByPath(url)
+      } else if (example) {
+        curFile = ''
+        isNew = false
+        saveState = ''
+        await loadExample(example)
+      } else if (!stats) {
+        curFile = ''
+        await loadExample('lego-brick')
+      }
+    } catch (error) {
+      routeKey = ''
+      $message.error($t('editor.open_failed') + errMsg(error))
+    }
+  }
+
+  loadOCCT = async () => {
+    if (!bv || kernelLoading) return
+    kernelLoading = true
+    kernelProgress = 0
+    try {
+      const kernel = await createOCCTClient((percent, text) => {
+        kernelProgress = percent
+        if (text) kernelLoadText = text
+      })
+      const result = await bv.setKernel(kernel, {name: 'occt'})
+      if (result?.kernelFallback) $message.warning($t('kernel.fallback'))
+      else if (result && !result.success) $message.info($t('kernel.incompatible'))
+    } catch (error) {
+      console.warn('[OCCT]', error)
+      $message.warning($t('kernel.unavailable') + errMsg(error))
+    } finally { kernelLoading = false }
+  }
+  toggleKernel = () => {
+    if (kernelLoading) return
+    if (kernelName === 'occt') bv?.setKernel(null, {name: 'builtin'})
+    else loadOCCT()
+  }
+
+  setMode = mode => { showSettings = false; bv?.setViewMode(mode) }
+  onViewSel = () => setMode($refs.viewSel.value)
+  onPickSel = () => bv?.setPickMode($refs.pickSel.value)
+  toggleMeasure = () => bv?.enableMeasurement(!measureOn)
+  fit = () => bv?.fitToView()
+  toggleProj = () => bv?.toggleProjection()
+  toggleSettings = () => { showSettings = !showSettings }
+  onExportSel = () => {
+    const select = $refs.expSel
+    const format = select.value
+    select.value = ''
+    if (format) doExport(format)
+  }
+  togglePanel = () => {
+    if (isMobile) mobileShowSide = !mobileShowSide
+    else showSide = !showSide
+  }
+  toggleSet = key => { settings[key] = !settings[key]; applySettings() }
+  applySettings = () => bv?.setDisplay({grid: settings.grid, axes: settings.axes, ground: settings.ground, shadows: settings.shadows, transparency: Number(settings.transparency)})
+  onSetT = () => { settings.transparency = Number($refs.setT.value); applySettings() }
+  toggleInvert = () => { section.invert = !section.invert; applySection() }
+  onSecAxis = () => { section.axis = $refs.secAxis.value; applySection() }
+  onSecOff = () => { section.offset = Number($refs.secOff.value); applySection() }
+  applySection = () => {
+    if (!bv) return
+    bv.setSectionPlane(section.axis, Number(section.offset), section.invert)
+    const range = bv.getSectionRange()
+    if (range) { section.min = range.min; section.max = range.max }
+  }
+  onMat = () => {
+    material.color = $refs.matC.value
+    material.metalness = Number($refs.matM.value)
+    material.roughness = Number($refs.matR.value)
+    bv?.setMaterial({color: material.color, metalness: material.metalness, roughness: material.roughness})
+  }
+  let paramTimer = null
+  onParam = param => {
+    param.value = Number(param.value)
+    if (paramTimer) $scope.clearTimeout(paramTimer)
+    paramTimer = $scope.setTimeout(() => bv?.setParam(param.name, param.value), 350)
+  }
+  onPartQuery = () => {
+    const query = partQuery.trim().toLowerCase()
+    partRows = (query ? parts.filter(part => part.name.toLowerCase().includes(query)) : parts).slice(0, 200)
+  }
+  treeToggle = part => bv?.setPartVisible(part.index, !part.visible)
+  treeSelect = (part, event) => bv?.selectPart(part.index, !!event?.shiftKey)
+  onExplode = () => { explodeVal = Number(explodeVal); bv?.setExplode(explodeVal) }
+  isolate = () => bv?.isolateSelected()
+  hideSel = () => bv?.hideSelected()
+  showAll = () => bv?.showAllParts()
+  toggleOpenEdges = () => { showOpenEdges = !showOpenEdges; bv?.setShowOpenEdges(showOpenEdges) }
+  toggleOverhang = () => { showOverhang = !showOverhang; bv?.setShowOverhang(showOverhang) }
+  toggleSlicing = () => { slicing = !slicing; bv?.setSlicing(slicing) }
+  onSliceZ = () => { sliceZ = Number(sliceZ); bv?.setSliceZ(sliceZ) }
+  onSliceUI = () => { layerH = Number($refs.layerHSel.value) }
+  layerCount = () => sliceRange[1] > sliceRange[0] ? Math.ceil((sliceRange[1] - sliceRange[0]) / layerH) : 0
+  drawSlice = result => {
+    const canvas = $refs.sliceCv
+    if (!canvas) return
+    const context = canvas.getContext('2d')
+    context.clearRect(0, 0, canvas.width, canvas.height)
+    if (!result?.loops.length || !stats) return
+    const bounds = stats.boundingBox
+    const width = Math.max(bounds.max[0] - bounds.min[0], 1e-6)
+    const height = Math.max(bounds.max[1] - bounds.min[1], 1e-6)
+    const scale = Math.min((canvas.width - 16) / width, (canvas.height - 16) / height)
+    const offsetX = (canvas.width - width * scale) / 2
+    const offsetY = (canvas.height - height * scale) / 2
+    const X = x => offsetX + (x - bounds.min[0]) * scale
+    const Y = y => canvas.height - (offsetY + (y - bounds.min[1]) * scale)
+    context.strokeStyle = getComputedStyle($node).getPropertyValue('--color-primary').trim()
+    context.lineWidth = 1.2
+    for (const loop of result.loops) {
+      context.beginPath()
+      loop.points.forEach((point, index) => index === 0 ? context.moveTo(X(point[0]), Y(point[1])) : context.lineTo(X(point[0]), Y(point[1])))
+      if (loop.closed) context.closePath()
+      context.stroke()
+    }
+  }
+
+  const openCommand = async argv => {
+    try { return reply(await runFileByPath(argOf(argv, 'path', argv?.[0]))) }
+    catch (error) { return reply({ok: false, code: error?.code || 'RUN_FILE_ERROR', message: errMsg(error)}) }
+  }
+  pageDesc = {
+    desc: '3D Maker Studio：单文件 .3d.js 参数化模型，任意 /fs 位置打开与保存；CAD/OCCT、打印检查、拾取、切片和导出',
+    commands: [
+      {name: 'open', desc: '打开任意 /fs 位置的 .3d.js 模型', help: '--path /fs/.../model.3d.js', handler: openCommand},
+      {name: 'run_file', desc: '运行任意 /fs 位置的 .3d.js 模型并设为当前文件', help: '--path /fs/.../model.3d.js', handler: openCommand},
+      {name: 'run_code', desc: '执行一段建模代码', help: '--code <源码>', handler: async argv => {
+        const code = argOf(argv, 'code', argv?.[0])
+        if (!code) return reply({success: false, code: 'NO_CODE', message: 'run_code requires --code'})
+        try { return reply(resultOrThrow(await bv?.run(code))) } catch (error) { return reply({success: false, message: errMsg(error)}) }
+      }},
+      {name: 'save_code', desc: '保存当前模型代码；省略路径时仅返回代码', help: '--path /fs/.../model.3d.js', handler: async argv => {
+        const path = argOf(argv, 'path', argv?.[0])
+        const code = bv?.getCode()
+        if (!code) return reply({ok: false, message: 'No model code'})
+        if (!path) return reply({ok: true, code})
+        try { return reply(await saveModel(path)) } catch (error) { return reply({ok: false, code: 'SAVE_CODE_ERROR', message: errMsg(error)}) }
+      }},
+      {name: 'save', desc: '保存当前模型；无关联文件时打开另存为选择器', handler: async () => {
+        try { return reply(await saveModel()) } catch (error) { return reply({ok: false, message: errMsg(error)}) }
+      }},
+      {name: 'status', desc: '查询页面、内核和模型状态', handler: async () => reply({ok: true, ready: !!bv, busy: bv?.running || false, kernel: kernelName, kernelLoading, stats: stats || null, file: curFile || null, isNew})},
+      {name: 'shot', desc: '截图保存到指定的 /fs 图片路径', help: '--path /fs/.../shot.png（必填）', handler: async argv => {
+        try {
+          const raw = argOf(argv, 'path', argv?.[0])
+          if (!raw || raw.includes('..')) return reply({ok: false, code: 'INVALID_PATH', message: 'shot requires a full /fs path'})
+          const path = toRef(raw)
+          const tree = toTree(path)
+          if (!/^\/(cloud|page)\//.test(tree) && !/^\/[0-9a-f]{32}\//i.test(tree)) return reply({ok: false, code: 'INVALID_PATH', message: 'shot requires a full /fs path'})
+          const image = await bv?.shot()
+          if (!image) throw new Error('Viewer unavailable')
+          const response = await pickFs().writeFile(tree, image.blob)
+          return reply({ok: true, path, width: image.width, height: image.height, bytes: response?.bytes || 0})
+        } catch (error) { return reply({ok: false, code: 'SHOT_ERROR', message: errMsg(error)}) }
+      }},
+      {name: 'parts_audit', desc: '逐部件打印问题清单', help: '--min-wall <mm>', handler: async argv => {
+        try {
+          const minWall = Number(argOf(argv, 'min-wall', '1.2'))
+          if (!bv) throw new Error('Viewer unavailable')
+          return reply(bv.audit({minWall: Number.isFinite(minWall) ? minWall : 1.2}))
+        } catch (error) { return reply({success: false, code: 'AUDIT_ERROR', message: errMsg(error)}) }
+      }},
+      {name: 'set_theme', desc: '切换画布主题', help: '--theme dark|light|auto', handler: async argv => {
+        const theme = String(argOf(argv, 'theme', argv?.[0] || 'light')).toLowerCase()
+        if (!['dark', 'light', 'auto'].includes(theme)) return reply({success: false, message: 'Invalid theme'})
+        bv?.setTheme(theme)
+        return reply({success: true, theme})
+      }},
+      {name: 'set_kernel', desc: '切换几何内核', help: '--kernel builtin|occt', handler: async argv => {
+        const kernel = String(argOf(argv, 'kernel', argv?.[0])).toLowerCase()
+        if (!['builtin', 'occt'].includes(kernel)) return reply({success: false, message: 'Invalid kernel'})
+        if (kernelLoading) return reply({success: false, kernel: kernelName, message: 'Kernel is loading'})
+        if (kernel === 'occt' && kernelName !== 'occt') { loadOCCT(); return reply({success: true, kernel, loading: true}) }
+        if (kernel === 'builtin' && kernelName !== 'builtin') bv?.setKernel(null, {name: 'builtin'})
+        return reply({success: true, kernel})
+      }},
+    ],
+  }
+</script>
+<script>
+  bv = new Viewer($refs.gl, {theme: 'light', shadows: true, grid: true, axes: true, groundPlane: true})
+  bv.on('status', value => { statusType = value.type; statusText = value.text })
+  bv.on('shapeLoaded', result => {
+    stats = result.stats
+    lastTime = result.executionTime + ' ms'
+    params = bv.extractParams()
+    printInfo = result.stats.printability || null
+    const groups = result.steps?.groups || []
+    groups.forEach(group => { group.open = false })
+    stepGroups = groups
+    parts = (result.parts || []).map((part, index) => ({index, name: part.name, color: part.color, visible: true, volume: part.volume}))
+    selIdx = []
+    partRows = parts
+    partQuery = ''
+  })
+  bv.on('error', result => $message.error(result.message || $t('editor.model_error')))
+  bv.on('warnings', warnings => { if (warnings.length) $message.info(warnings[0]) })
+  bv.on('viewModeChange', mode => { viewMode = mode })
+  bv.on('projectionChange', mode => { projection = mode })
+  bv.on('measureModeChange', value => { measureOn = value })
+  bv.on('measure', value => { measureText = value ? value.text : '' })
+  bv.on('selectionChange', list => { selection = list; selIdx = list.map(item => item.index); if (list.length) sideTab = 'detail' })
+  bv.on('pickModeChange', mode => { pickMode = mode; pick = null })
+  bv.on('pick', value => { pick = value; if (value) sideTab = 'detail' })
+  bv.on('explodeChange', value => { explodeVal = value })
+  bv.on('sliceChange', result => {
+    if (!result) { slicing = false; sliceSegs = 0; sliceLoops = 0; drawSlice(null); return }
+    sliceZ = result.z
+    sliceRange = [result.min, result.max]
+    sliceSegs = result.segments
+    sliceLoops = result.loops.length
+    drawSlice(result)
+  })
+  bv.on('visibilityChange', list => {
+    const visible = new Map(list.map(part => [part.index, part.visible]))
+    parts.forEach(part => { if (visible.has(part.index)) part.visible = visible.get(part.index) })
+  })
+  bv.on('sectionRange', range => {
+    section.axis = range.axis
+    section.min = range.min
+    section.max = range.max
+    section.offset = range.value
+    if (viewMode === 'section') applySection()
+  })
+  bv.on('reset', () => {
+    stats = null
+    lastTime = '-'
+    params = []
+    selection = []
+    parts = []
+    partRows = []
+    partQuery = ''
+    selIdx = []
+    explodeVal = 0
+    pick = null
+    printInfo = null
+    stepGroups = []
+    measureText = ''
+  })
+  bv.on('kernelChange', kernel => { kernelName = kernel.name })
+  loadOCCT()
+  $scope.addCleanup($router.onChange(() => initPage()))
+  const resizeObserver = new ResizeObserver(entries => {
+    const width = entries[0]?.contentRect.width || 0
+    isMobile = width > 0 && width <= 820
+    if (!isMobile) mobileShowSide = false
+  })
+  resizeObserver.observe($node)
+  $scope.addCleanup(() => resizeObserver.disconnect())
+</script>
+<script active>
+  initPage()
+</script>
+<script dispose>
+  bv?.dispose()
+  bv = null
+</script>
+</html>

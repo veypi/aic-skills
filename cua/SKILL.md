@@ -1,6 +1,6 @@
 ---
 name: cua
-version: 1.1.8
+version: 1.1.9
 description: 通过设备上的官方 CuaDriver MCP 操作应用、原生窗口和浏览器。
 ---
 
@@ -62,7 +62,7 @@ UI `/skills/cloud/cua` 经 `$hosts.openTools(hostId)` 的 `execCall` 调用同�
 
 窗口列表只保留可见、非最小化且有有效尺寸的候选，不逐个截图探测。若选中后发现窗口已最小化或没有渲染内容，移出列表、清空画面并暂停刷新；恢复窗口后可刷新列表或重试，不自动激活或恢复窗口。桌面截图参数读取当前设备 `cua get_desktop_state --help` 的实际 schema，只有明确支持时才传 `max_image_dimension`，每次重连重新读取。
 
-默认只读，切到控制后支持点击、双击、右键、拖动、滚轮、文字及快捷键。窗口默认后台输入，应用不支持时可手动选择前台输入（激活窗口）；macOS 窗口拖动需要前台模式。Pod 保留上游 structuredContent 与 capture_id，图片 `_meta["aic.dev/image-preview"]` 记录 `source_width/source_height/width/height`；预览坐标先映射回上游截图像素，不重复换算 DPI。文字与按键按序发送，操作与预览失败均不自动重放；切换目标、隐藏或离开页面时停止输入与截图刷新，退出时结束查看会话。保留 `check_permissions({prompt:false})` 诊断，页面不自动触发系统授权。
+默认只读，切到控制后支持点击、双击、右键、拖动、滚轮、文字及快捷键。窗口默认后台输入，应用不支持时可手动选择前台输入（激活窗口）；macOS 窗口拖动需要前台模式。Pod 保留上游 structuredContent 与 capture_id，图片 `_meta["aic.dev/image-preview"]` 记录 `source_width/source_height/width/height`；预览坐标先映射回上游截图像素，不重复换算 DPI。文字与按键按序发送，操作与预览失败均不自动重放；切换目标、隐藏或离开页面时停止输入与截图刷新，退出时结束查看会话。权限诊断读取当前设备 `check_permissions` 的实际 schema，仅向声明了 `prompt` 的驱动传 `{prompt:false}`（Windows 等无此参数的驱动不传），页面不自动触发系统授权。
 
 截图经 RTC 工具响应分块传输，总上限保持 16 MiB；预览能力需同步更新 AIC 前端及 Pod，技能升级通过 AIC 后端内置包发布。UI 不维护 MCP 连接或工具注册，不提供音频、任意显示器选择或浏览器以外的连续视频推流。
 

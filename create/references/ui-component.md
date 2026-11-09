@@ -52,7 +52,54 @@
 - `setup` 只在实例创建时运行一次；普通 `<script>` 在挂载时运行一次；`<script active>` 在首次挂载、缓存路由重新进入和页面恢复可见时运行。
 - 路由参数驱动的装载放进 `<script active>`，每次激活读取当前 `$router.query`；页内持续监听再配 `$router.onChange`。用 `url|case|new` 之类的路由 key 防重，不把参数快照藏在只执行一次的初始化里。
 
-## 4. 样式（视觉统一）
+**`active` 与 `onChange` 都必须保留，不能互相替代**：`active` 覆盖首次挂载、缓存页重新进入和恢复可见；页面已经 active 时，从 `?url=A` 原地切到 `?url=B` 属于 query-only 变化，不会重新激活，只能由 `onChange` 捕获。不要在 `setup` 或普通 `<script>` 中只调用一次装载函数。标准模板：
+
+```html
+<script setup>
+  let lastRoute = ''
+  initPage = async () => {
+    const url = String($router.query.url || '')
+    const caseId = String($router.query.case || '')
+    const fresh = String($router.query.new || '')
+    const key = url + '|' + caseId + '|' + fresh
+    if (key === lastRoute) return
+    lastRoute = key
+    try {
+      if (url) await openDocument(url, {newFile: fresh === '1'})
+      else if (caseId) await openCase(caseId)
+    } catch (error) {
+      if (key === lastRoute) lastRoute = '' // 允许重新激活时重试
+      $message.error(String(error?.message || error))
+    }
+  }
+</script>
+<script>
+  $scope.addCleanup($router.onChange(() => { initPage() }))
+</script>
+<script active>
+  initPage()
+</script>
+```
+
+`openDocument` 必须读取当前 URL 指向的真实资源，不能只在旧文档上刷新界面；路由 key 只负责去重，不能用来跳过不同 URL 的加载。
+
+## 4. 样式与官方组件
+
+**优先使用平台官方 `vhtml-ui`，不要重复造按钮、输入框、卡片、表格、标签页、弹窗或 toast。**
+开发前先查询当前平台的真实组件文档（不是凭记忆猜属性）：
+
+```sh
+# exec _host=cloud
+curl /v/README.md
+
+# 只查某个组件；可继续用 grep/head/tail 组合缩小上下文
+curl /v/README.md | grep -n -A 30 '^## Button'
+```
+
+文档包含组件清单、Props、Events、Slots、`$message` 和主题服务。常用标签包括 `<v-btn>`、
+`<v-input>`、`<v-form>`、`<v-card>`、`<v-tag>`、`<v-alert>`、`<v-table>`、`<v-tabs>`、
+`<v-dialog>`、`<v-dropdown>`；全局反馈直接用 `$message`。官方组件能满足结构或交互时，自定义
+CSS 只负责业务布局与少量外观调整；确有缺失再写本地组件，并沿用同一套 token 与状态规范。
 
 平台基调是"轻量工作面板"：简洁、克制、信息密度中高。规则只有几条，但违反会明显跑偏：
 

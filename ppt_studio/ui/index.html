@@ -20,8 +20,8 @@
     flex: none;
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-sm) var(--spacing-md);
+    gap: 8px;
+    padding: 5px 10px;
     border-bottom: 1px solid var(--border-color);
     background: var(--bg-color-secondary);
     position: relative;
@@ -29,24 +29,32 @@
   }
 
   .brand {
-    font-size: var(--font-size-lg);
+    font-size: 15px;
+    line-height: 20px;
     font-weight: var(--font-weight-bold);
     color: var(--color-primary);
     white-space: nowrap;
+    display: flex;
+    align-items: center;
+    margin: 0;
   }
 
   .doc-meta {
     display: flex;
     flex-direction: column;
     min-width: 0;
-    margin-left: var(--spacing-sm);
+    margin: 0 0 0 4px;
   }
 
   .doc-title {
-    font-size: var(--font-size-md);
+    font-size: 13px;
+    line-height: 20px;
+    display: flex;
+    align-items: center;
+    margin: 0;
     font-weight: var(--font-weight-medium);
     color: var(--text-color);
-    max-width: 300px;
+    max-width: 240px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -54,11 +62,12 @@
 
   .kind-chip {
     display: inline-block;
-    vertical-align: 2px;
-    margin-right: 6px;
-    padding: 1px 7px;
+    vertical-align: 0;
+    margin: 0 4px 0 0;
+    padding: 0 5px;
+    line-height: 14px;
     border-radius: var(--radius-full);
-    font-size: 10px;
+    font-size: 9px;
     font-weight: var(--font-weight-semibold);
     letter-spacing: 0.5px;
     background: color-mix(in srgb, var(--color-warning) 24%, transparent);
@@ -66,6 +75,7 @@
   }
 
   .doc-sub {
+    display: none;
     font-size: var(--font-size-xs);
     color: var(--text-color-tertiary);
     max-width: 320px;
@@ -89,9 +99,10 @@
   .seg button {
     border: none;
     background: transparent;
-    padding: 5px 14px;
+    padding: 3px 10px;
     cursor: pointer;
-    font-size: var(--font-size-sm);
+    font-size: 11px;
+    line-height: 16px;
     color: var(--text-color-secondary);
     transition: background var(--transition-fast), color var(--transition-fast);
   }
@@ -105,9 +116,13 @@
     border: 1px solid var(--border-color);
     background: var(--bg-color-secondary);
     border-radius: var(--radius-md);
-    padding: 5px 12px;
+    padding: 4px 10px;
     cursor: pointer;
-    font-size: var(--font-size-sm);
+    font-size: 12px;
+    line-height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     color: var(--text-color-secondary);
     transition: border-color var(--transition-fast), background var(--transition-fast);
     white-space: nowrap;
@@ -133,9 +148,11 @@
   }
 
   .save-state {
-    font-size: var(--font-size-xs);
+    font-size: 10px;
+    line-height: 16px;
     color: var(--text-color-tertiary);
-    min-width: 70px;
+    min-width: 0;
+    margin: 0;
     text-align: right;
     white-space: nowrap;
   }
@@ -339,11 +356,41 @@
     line-height: 1.5;
   }
 
-  /* ---- 主区域：stage-box + 右侧切换式侧栏 ---- */
+  .panel-switches {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    padding: 2px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--text-color) 4%, transparent);
+  }
+
+  .panel-switch {
+    width: 28px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-color-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .panel-switch:hover { background: color-mix(in srgb, var(--text-color) 8%, transparent); color: var(--text-color); }
+  .panel-switch.active { background: color-mix(in srgb, var(--color-primary) 18%, transparent); color: var(--color-primary); }
+  .panel-icon { width: 15px; height: 15px; display: block; }
+
+  /* ---- 主区域：中央画布优先，附属面板按需覆盖 ---- */
   .main {
     flex: 1;
     min-height: 0;
     display: flex;
+    position: relative;
   }
 
   .stage-box {
@@ -364,13 +411,19 @@
 
   /* ---- 右侧切换式侧栏（AI 助手 / 属性 双 tab） ---- */
   .side-pane {
-    flex: none;
-    width: 380px;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 15;
+    width: 320px;
+    max-width: calc(100% - 32px);
     min-height: 0;
     display: flex;
     flex-direction: column;
     border-left: 1px solid var(--border-color);
     background: var(--bg-color-secondary);
+    box-shadow: -12px 0 32px color-mix(in srgb, var(--text-color) 10%, transparent);
   }
 
   .side-body {
@@ -408,12 +461,11 @@
   /* ---- 底部悬浮控制条（放映丸 + 缩放丸） ---- */
   .stage-cluster {
     position: absolute;
-    left: 50%;
-    bottom: 14px;
-    transform: translateX(-50%);
+    right: 12px;
+    bottom: 10px;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 6px;
     z-index: 10;
   }
 
@@ -424,11 +476,11 @@
     border: 1px solid var(--border-color);
     border-radius: var(--radius-full);
     box-shadow: var(--shadow-md);
-    padding: 4px;
+    padding: 2px;
   }
 
   button.pill {
-    padding: 7px 18px;
+    padding: 4px 10px;
     cursor: pointer;
     color: var(--text-color-secondary);
     font-size: var(--font-size-sm);
@@ -450,9 +502,9 @@
     background: transparent;
     cursor: pointer;
     color: var(--text-color-secondary);
-    font-size: 13px;
-    min-width: 28px;
-    height: 26px;
+    font-size: 12px;
+    min-width: 24px;
+    height: 22px;
     border-radius: var(--radius-full);
     transition: color var(--transition-fast);
   }
@@ -462,23 +514,21 @@
   }
 
   .pill.zoom .zv {
-    min-width: 54px;
-    font-size: var(--font-size-xs);
+    min-width: 42px;
+    font-size: 10px;
     font-variant-numeric: tabular-nums;
   }
 
   @container (max-width: 960px) {
-    .side-pane {
-      width: 300px;
-    }
+    .side-pane { width: 300px; }
+    .doc-title { max-width: 140px; }
+  }
 
-    .doc-title {
-      max-width: 140px;
-    }
-
-    .doc-sub {
-      max-width: 160px;
-    }
+  @container (max-width: 720px) {
+    .topbar { gap: 5px; padding-inline: 8px; }
+    .doc-meta, .save-state { display: none; }
+    .btn { padding: 3px 7px; font-size: 11px; line-height: 16px; }
+    .seg button { padding-inline: 7px; }
   }
 </style>
 
@@ -491,6 +541,20 @@
       <span class="doc-sub">{{ cur_kind === 'case' ? 'cases/' + cur_case : (cur_path || $t('noFile')) }}</span>
     </div>
     <div class="spacer"></div>
+    <div class="panel-switches" role="group" aria-label="面板开关">
+      <button class="panel-switch" :class="{ active: showSlides }" :aria-pressed="showSlides" @click="showSlides = !showSlides" title="幻灯片列表" aria-label="显示或隐藏幻灯片列表">
+        <svg class="panel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M7 21h10M8 8h8M8 12h5"/></svg>
+      </button>
+      <button class="panel-switch" :class="{ active: showTools }" :aria-pressed="showTools" @click="showTools = !showTools" title="编辑工具" aria-label="显示或隐藏编辑工具">
+        <svg class="panel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3"/><path d="M14 2v4M8 10v4M16 18v4"/></svg>
+      </button>
+      <button class="panel-switch" :class="{ active: showProps }" :aria-pressed="showProps" @click="showProps = !showProps" title="属性" aria-label="显示或隐藏属性面板">
+        <svg class="panel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18M18 8h1M18 12h1M18 16h1"/></svg>
+      </button>
+      <button class="panel-switch" :class="{ active: showFooter }" :aria-pressed="showFooter" @click="showFooter = !showFooter" title="缩放控件" aria-label="显示或隐藏缩放控件">
+        <svg class="panel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5M7.5 10.5h6M10.5 7.5v6"/></svg>
+      </button>
+    </div>
     <div class="fpop-wrap">
       <button class="btn" @click.stop="toggleCases">✦ {{ $t('btn.cases') }}</button>
       <div class="fpop" v-if="show_cases">
@@ -550,13 +614,12 @@
       }}</button>
     <span class="save-state">{{ save_state }}</span>
   </div>
-  <ppt-toolbar v-if="mode === 'edit' && stage_ready" :st="st" @cmd="onToolbarCmd"></ppt-toolbar>
+  <ppt-toolbar v-if="showTools && mode === 'edit' && stage_ready" :st="st" @cmd="onToolbarCmd"></ppt-toolbar>
   <div class="main" @click="show_files = false; show_cases = false">
     <div class="stage-box">
-      <ppt-stage ref="stage" @update="onDocChange" @slidechange="onSlideChange" @presentclose="onPresentClose"
+      <ppt-stage ref="stage" :show-slides="showSlides" @update="onDocChange" @slidechange="onSlideChange" @presentclose="onPresentClose"
         @statechange="onStateChange" @error="onStageError"></ppt-stage>
-      <div class="stage-cluster" v-if="mode === 'edit' && stage_ready">
-        <button class="pill" @click="runPresent" :disabled="presenting">▶ {{ $t('btn.present') }}</button>
+      <div class="stage-cluster" v-if="showFooter && mode === 'edit' && stage_ready">
         <span class="pill zoom">
           <button @click="zoomOut" :title="'Ctrl-'">−</button>
           <button class="zv" @click="zoomReset" :title="'Ctrl+0'">{{ st.zoom || 100 }}%</button>
@@ -564,7 +627,7 @@
         </span>
       </div>
     </div>
-    <aside class="side-pane" v-if="mode === 'edit'">
+    <aside class="side-pane" v-if="showProps && mode === 'edit'">
       <div class="side-body">
         <ppt-panel class="side-props" :st="st" @cmd="onToolbarCmd"></ppt-panel>
       </div>
@@ -595,6 +658,10 @@
   show_cases = false
   cases_loading = false
   st = {}                // 引擎状态快照（statechange），驱动编辑工具栏
+  showSlides = false   // 左右栏、手动工具与 Footer 默认隐藏，Header 保持紧凑常驻
+  showTools = false
+  showProps = false
+  showFooter = false
 
   // ---- 私有 ----
   let saveTimer = null

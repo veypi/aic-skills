@@ -6,7 +6,7 @@
  * 职责边界：
  *   - 本文件只做「数据处理 + 相关事件」：几何内核执行、Three.js 渲染、
  *     选择 / 测量 / 剖切 / 导出等能力，并通过事件向外暴露状态。
- *   - 不创建任何 DOM / 样式 / 界面元素；UI 全部由宿主页面（index.html）实现。
+ *   - 不创建任何 DOM / 样式 / 界面元素；UI 全部由宿主页面（studio.html）实现。
  *   - 构造函数接收一个 <canvas> 元素作为渲染目标。
  *
  * 用法：
@@ -40,9 +40,9 @@
  * ============================================================================
  */
 
-import * as THREE from './three.module.js';
-import { OrbitControls } from './orbit-controls.js';
-import { GLTFExporter } from './gltf-exporter.js';
+import * as THREE from '../vendor/three.module.js';
+import { OrbitControls } from '../vendor/orbit-controls.js';
+import { GLTFExporter } from '../vendor/gltf-exporter.js';
 import { runCodeAndAnalyze, makeErrorResult } from './run-core.js';
 import {
   GeomError, Shape, KERNEL_API, kernelCtrl,
@@ -474,11 +474,11 @@ export class Viewer {
       opts.onProgress?.(60);
 
       if (!result.success) {
-        // 内核级失败（OCCT 对开放网格 B-Rep 重建限 2 万三角面，超限报错）：自动回退内置内核重跑一次。
-        // 只对“重建超限”类错误回退（不掩盖用户代码 bug）；重跑成功的结果带 kernelFallback 标记，
+        // 内核级失败（OCCT 网格重建超限或三角化为空）：自动回退内置内核重跑一次。
+        // 只对“网格重建”类错误回退（不掩盖用户代码 bug）；重跑成功的结果带 kernelFallback 标记，
         // 保证「切 OCCT 后重跑大模型」不炸——超限模型仍内置渲染，小模型照常 OCCT。
         const msg = String(result.message || result.errorType || '');
-        if (kernel && !opts._fallback && /rebuild|too large|B-Rep|Brep|BRep|reconstruct/i.test(msg)) {
+        if (kernel && !opts._fallback && /rebuild|too large|B-Rep|Brep|BRep|reconstruct|empty mesh/i.test(msg)) {
           const prevKernelName = this._kernelName;
           console.warn('[Viewer] 内核执行失败，自动回退内置内核重试:', msg);
           this.options.kernel = null;
@@ -488,7 +488,7 @@ export class Viewer {
           const r2 = await this.run(code, { ...opts, _fallback: true });
           if (r2 && r2.success) {
             r2.kernelFallback = { from: prevKernelName, reason: msg };
-            r2.warnings = (r2.warnings || []).concat([`当前模型超出 ${prevKernelName} 的网格重建限额，已自动用内置内核渲染（${msg}）`]);
+            r2.warnings = (r2.warnings || []).concat([`${prevKernelName} 未能重建当前模型，已自动用内置内核渲染（${msg}）`]);
           }
           return r2;
         }

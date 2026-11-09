@@ -8,7 +8,7 @@
 
 > 你是独立视频质检员。存档：/fs/{source}/.../demo.video_studio（按所属端用 fs 工具读取）。
 > 输入：主 .video_studio（含分镜 brief.md）、镜头卡名清单、审美准则。
-> 步骤：1) 读 brief.md 与主存档；2) 打开 Video Studio 页面（open /skills/cloud/{skill_id}），open_video --path /fs/.../demo.video_studio；
+> 步骤：1) 读 brief.md 与主存档；2) 用平台 `open /fs/.../demo.video_studio` 经 opener 打开 Studio（已打开 Studio 时也可调用 `{win_id}.open --path /fs/.../demo.video_studio`）；
 > 3) 逐场景 shot_video 抽关键帧（入场帧/动作帧/hold 帧各一），fs.read 查看；
 > 4) 按下方清单逐条出报告，每条带帧号证据；5) 只报告不修改。
 

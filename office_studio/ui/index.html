@@ -1,146 +1,104 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
   <meta charset="UTF-8">
-  <meta name="description" content="Office Studio — 统一首页：打开/新建 xlsx、docx，共享最近打开历史，点击进入对应编辑器" />
+  <meta name="description" content="Office Studio — open, create and revisit Office documents" />
   <title>Office Studio</title>
 </head>
 <style>
   body {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 0;
-    overflow: hidden;
-    container-type: inline-size;
+    --display-font: "Iowan Old Style", "Palatino Linotype", "Songti SC", "Noto Serif CJK SC", serif;
+    height: 100%; min-height: 0; overflow: hidden; container-type: inline-size;
+    font-size: clamp(11px, .9cqw, 13px);
   }
-
-  .home {
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--spacing-lg);
-    overflow: auto;
+  button { font: inherit; }
+  button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+  .home { height: 100%; min-height: 0; display: flex; flex-direction: column; }
+  .homebar { flex: none; min-height: 56px; display: flex; align-items: center; gap: 18px; padding: 0 clamp(18px, 4cqw, 44px); border-bottom: 1px solid var(--border-color); }
+  .brand { font-family: var(--display-font); font-size: clamp(20px, 2.1cqw, 26px); line-height: 1; font-weight: 500; letter-spacing: -.035em; }
+  .actions { margin-left: auto; display: flex; align-items: center; gap: 20px; }
+  .action { position: relative; min-height: 34px; display: inline-flex; align-items: center; gap: 7px; padding: 0; border: 0; background: transparent; color: var(--text-color-secondary); cursor: pointer; font-size: clamp(11px, .9cqw, 13px); white-space: nowrap; }
+  .action:hover, .action.primary { color: var(--color-primary); }
+  .action.primary { border-bottom: 1px solid var(--color-primary); }
+  .content { flex: 1; min-height: 0; overflow: auto; }
+  .shelf { width: min(1280px, 100%); box-sizing: border-box; margin: 0 auto; padding: 0 clamp(18px, 4cqw, 44px) 56px; }
+  .group { margin-top: clamp(30px, 4cqw, 46px); }
+  .section-head { min-height: 38px; display: flex; align-items: baseline; gap: 10px; }
+  .section-title { font-family: var(--display-font); font-size: clamp(20px, 2cqw, 25px); font-weight: 500; letter-spacing: -.02em; }
+  .count { color: var(--text-color-tertiary); font-family: var(--font-family-mono, monospace); font-size: 10px; }
+  .text-btn { flex: none; padding: 4px 0; border: 0; background: transparent; color: var(--text-color-tertiary); cursor: pointer; font-size: var(--font-size-xs); }
+  .section-head .text-btn { margin-left: auto; }
+  .text-btn:hover { color: var(--color-primary); }
+  .text-btn.confirm { color: var(--color-danger); }
+  .rows { margin-top: 9px; border-top: 1px solid var(--border-color); }
+  .row { display: grid; grid-template-columns: 50px minmax(0, 1fr) auto auto; gap: 14px; align-items: center; min-height: 68px; border-bottom: 1px solid var(--border-color); cursor: pointer; }
+  .row:hover { border-bottom-color: var(--text-color-tertiary); }
+  .row:hover .name { color: var(--color-primary); }
+  .index { color: var(--text-color-tertiary); font-family: var(--display-font); font-size: clamp(18px, 1.8cqw, 23px); line-height: 1; font-variant-numeric: tabular-nums; }
+  .meta { min-width: 0; }
+  .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--display-font); font-size: clamp(18px, 1.7cqw, 22px); line-height: 1.25; font-weight: 500; letter-spacing: -.02em; }
+  .path { margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-color-tertiary); font-family: var(--font-family-mono, monospace); font-size: 10px; }
+  .kind { color: var(--text-color-tertiary); font-family: var(--font-family-mono, monospace); font-size: 10px; text-transform: uppercase; }
+  .empty { padding: 24px 0; color: var(--text-color-tertiary); font-size: var(--font-size-sm); }
+  .error { margin: 16px 0 0; padding-left: 12px; border-left: 2px solid var(--color-danger); color: var(--color-danger); font-size: var(--font-size-xs); white-space: pre-wrap; }
+  @container (max-width: 720px) {
+    .homebar { min-height: 52px; gap: 12px; }
+    .actions { gap: 14px; }
+    .row { grid-template-columns: 38px minmax(0, 1fr) auto; gap: 10px; min-height: 66px; }
+    .kind { display: none; }
   }
-
-  .home-card { width: min(620px, 100%); }
-  .home-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 16px; }
-  .home-head .hb { font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); color: var(--color-primary); }
-  .home-head .sub { font-size: var(--font-size-xs); opacity: .7; }
-  .home-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
-
-  button {
-    padding: 4px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    background: var(--bg-color-tertiary);
-    font-size: var(--font-size-sm);
-    cursor: pointer;
-    color: inherit;
-    transition: border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
-  }
-
-  button:hover { border-color: var(--border-color-hover); }
-
-  button.primary {
-    padding: 8px 20px;
-    font-size: var(--font-size-md);
-    background: var(--color-primary);
-    border-color: transparent;
-    color: var(--color-primary-text);
-  }
-
-  button.primary:hover { background: var(--color-primary-hover); color: var(--color-primary-text); }
-
-  .recent-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
-  .recent-title { font-size: var(--font-size-xs); opacity: .65; }
-  .clear-btn { padding: 2px 10px; font-size: var(--font-size-xs); border-radius: var(--radius-md); }
-  .clear-btn.confirm { color: var(--color-danger); border-color: var(--color-danger); }
-
-  .recent-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 10px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    margin-bottom: 6px;
-    cursor: pointer;
-    transition: border-color var(--transition-fast), background var(--transition-fast);
-  }
-
-  .recent-row:hover { border-color: var(--border-color-hover); background: color-mix(in srgb, var(--text-color) 6%, transparent); }
-  .recent-row > i { flex: none; opacity: .9; }
-  .recent-row > i.k-excel { color: color-mix(in srgb, #1d6f42 78%, var(--text-color)); }
-  .recent-row > i.k-word { color: color-mix(in srgb, #2b579a 78%, var(--text-color)); }
-  .recent-row .meta { min-width: 0; flex: 1; display: flex; flex-direction: column; }
-  .recent-row .name { font-weight: var(--font-weight-medium); }
-  .recent-row .rpath { font-size: var(--font-size-xs); opacity: .6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-
-  .del-btn { flex: none; padding: 2px 8px; font-size: var(--font-size-xs); border-radius: var(--radius-md); opacity: .55; }
-  .del-btn:hover { opacity: 1; color: var(--color-danger); border-color: var(--color-danger); }
-
-  .empty { font-size: var(--font-size-xs); opacity: .6; }
-  .home-err { margin-top: 12px; font-size: var(--font-size-xs); color: var(--color-danger); word-break: break-all; }
-
-  /* ===== 响应式（@container = 窗口宽度，不要用 @media） ===== */
-  @container (max-width: 640px) {
-    .home { padding: var(--spacing-md); }
+  @container (max-width: 500px) {
+    .homebar { flex-wrap: wrap; padding: 10px 16px; }
+    .actions { width: 100%; margin-left: 0; justify-content: space-between; gap: 10px; }
+    .brand { font-size: 22px; }
+    .action { font-size: 11px; }
+    .path { display: none; }
   }
 </style>
-
 <body>
-  <div class="home">
-    <div class="home-card">
-      <div class="home-head">
-        <span class="hb">Office Studio</span>
-        <span class="sub">打开或新建 office 文件（xlsx / docx），点击后进入编辑器</span>
+  <main class="home">
+    <header class="homebar">
+      <div class="brand">Office Studio</div>
+      <div class="actions">
+        <button class="action" @click="onOpen">{{ $t('home.open') }}</button>
+        <button class="action" @click="onNew('excel')">{{ $t('home.new_excel') }}</button>
+        <button class="action primary" @click="onNew('word')">{{ $t('home.new_word') }} →</button>
       </div>
-      <div class="home-actions">
-        <button class="primary" @click="onOpen">打开文件</button>
-        <button @click="onNew('excel')">新建表格</button>
-        <button @click="onNew('word')">新建文档</button>
-      </div>
-      <div v-if="recent.length">
-        <div class="recent-head">
-          <span class="recent-title">最近打开</span>
-          <button class="clear-btn" :class="{ confirm: pending_clear }" @click="onClear">{{ pending_clear ? '确认清空？' : '清空' }}</button>
+    </header>
+    <div class="content"><div class="shelf">
+      <div v-if="home_err" class="error" role="alert">{{ home_err }}</div>
+      <section class="group">
+        <div class="section-head">
+          <span class="section-title">{{ $t('home.recent') }}</span>
+          <span v-if="recent.length" class="count">{{ recent.length }}</span>
+          <button v-if="recent.length" class="text-btn" :class="{confirm: pending_clear}" @click="onClear">{{ pending_clear ? $t('home.clear_confirm') : $t('home.clear') }}</button>
         </div>
-        <div class="recent-row" v-for="r in recent" @click="go(r.path)">
-          <i class="fa-solid" :class="r.kind === 'word' ? 'fa-file-word k-word' : 'fa-file-excel k-excel'"></i>
-          <div class="meta">
-            <span class="name">{{ r.name }}</span>
-            <span class="rpath">{{ r.path }}</span>
+        <div class="rows">
+          <div v-if="!recent.length" class="empty">{{ $t('home.empty') }}</div>
+          <div v-for="(r, index) in recent" class="row" @click="go(r.path)">
+            <span class="index">{{ String(index + 1).padStart(2, '0') }}</span>
+            <div class="meta"><div class="name">{{ r.name }}</div><div class="path">{{ displayPath(r.path) }}</div></div>
+            <span class="kind">{{ r.kind }}</span>
+            <button class="text-btn" @click.stop="onRemove(r.path)">{{ $t('common.remove') }}</button>
           </div>
-          <button class="del-btn" @click.stop="onRemove(r.path)">移除</button>
         </div>
-      </div>
-      <div v-if="!recent.length" class="empty">还没有打开过文件</div>
-      <div v-if="home_err" class="home-err">{{ home_err }}</div>
-    </div>
-  </div>
+      </section>
+    </div></div>
+  </main>
 </body>
-
 <script setup>
-  import { loadRecent, removeRecent, clearRecent, kindOf } from './recent.js'
+  import {loadRecent, removeRecent, clearRecent, kindOf} from './recent.js'
 
-  // ===== 界面状态 =====
   recent = loadRecent()
   home_err = ''
   pending_clear = false
 
-  const errMsg = (e) => String((e && e.message) || e)
-
-  // 打开/跳转：按类型进入对应编辑器子页面（同窗导航；裸赋值注册 $data，模板事件才能解析）
-  go = (p) => {
-    const page = kindOf(p) === 'word' ? 'word' : 'excel'
-    $router.push(page + '?url=' + encodeURIComponent(p))
+  const errMsg = e => String((e && e.message) || e)
+  displayPath = path => String(path || '').startsWith('/fs/') ? path : '/fs' + path
+  go = path => {
+    const page = kindOf(path) === 'word' ? 'word' : 'excel'
+    $router.push(page + '?url=' + encodeURIComponent(path))
   }
-
-  // 另存为对话框的初始目录：最近打开文件所在目录（无历史则根）
   const startDir = () => {
     const first = (recent[0] && recent[0].path) || ''
     if (!first) return ''
@@ -148,39 +106,28 @@
     seg.pop()
     return seg.length ? '/' + seg.join('/') : ''
   }
-
-  // ===== 用户界面事件 =====
   onOpen = async () => {
     try {
       home_err = ''
-      const f = await $mod.$fs.pickFiles({ accept: ['.xlsx', '.xls', '.docx', '.doc'] })
-      if (!f) return
-      go(f.path)
-    } catch (e) { home_err = '打开失败：' + errMsg(e) }
+      const file = await $mod.$fs.pickFiles({accept: ['.xlsx', '.xls', '.docx', '.doc'], multiple: false})
+      if (file) go(file.path)
+    } catch (error) { home_err = $t('home.open_failed') + errMsg(error) }
   }
-
-  // 新建：先弹出另存为对话框选路径（只返回路径、不落盘，点「保存」时才写入）
-  onNew = async (kind) => {
+  onNew = async kind => {
     try {
       home_err = ''
       const isWord = kind === 'word'
-      const f = await $mod.$fs.pickSavePath({
-        name: isWord ? '未命名.docx' : '未命名.xlsx',
+      const file = await $mod.$fs.pickSavePath({
+        name: isWord ? $t('home.untitled_word') : $t('home.untitled_excel'),
         ext: isWord ? '.docx' : '.xlsx',
         accept: [isWord ? '.docx' : '.xlsx'],
         start: startDir(),
       })
-      if (!f) return
-      const page = isWord ? 'word' : 'excel'
-      $router.push(page + '?url=' + encodeURIComponent(f.path) + '&new=1')
-    } catch (e) { home_err = '新建失败：' + errMsg(e) }
+      if (!file) return
+      $router.push((isWord ? 'word' : 'excel') + '?url=' + encodeURIComponent(file.path) + '&new=1')
+    } catch (error) { home_err = $t('home.new_failed') + errMsg(error) }
   }
-
-  onRemove = (p) => {
-    removeRecent(p)
-    recent = loadRecent()
-  }
-
+  onRemove = path => { removeRecent(path); recent = loadRecent() }
   onClear = () => {
     if (!pending_clear) { pending_clear = true; return }
     clearRecent()
@@ -188,14 +135,11 @@
     pending_clear = false
   }
 
-  // ===== 平台操控面 =====
   pageDesc = {
     desc: 'Office Studio 首页：统一打开/新建 xlsx、docx，展示共享最近打开历史',
     commands: [
-      { name: 'status', desc: '首页状态（最近打开列表）',
-        handler: async () => ({ content: JSON.stringify({ ok: true, recent: loadRecent().map((r) => ({ path: r.path, name: r.name, kind: r.kind })) }) }) },
+      {name: 'status', desc: '首页状态（最近打开列表）', handler: async () => ({content: JSON.stringify({ok: true, recent: loadRecent().map(r => ({path: r.path, name: r.name, kind: r.kind}))})})},
     ],
   }
 </script>
-
 </html>

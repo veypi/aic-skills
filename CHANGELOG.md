@@ -4,8 +4,13 @@
 
 两个版本面：**模块版本**（本文件 / tag `vX.Y.Z`，Go 依赖面）与**技能版本**（各 `SKILL.md` frontmatter 的 `version:`，进入 `skills.builtin` 指纹）。内容更新 bump 技能版本以触发自动定版；事件执行时无条件整包覆盖，不做版本大小比较。契约或结构变化 bump 模块版本。
 
+## 未发布
+
+- `browser`（1.2.12 → 1.2.14）：彻底移除前台激活路径：页面改用 `/devtools/page/<target>` WebSocket 直连并缓存，不再调用会激活可见 Chrome 的 `Target.attachToTarget`；原始 CDP 禁止 `Target.activateTarget` / `Page.bringToFront` / `Browser.setWindowBounds`，新建标签强制 `background:true`。可见窗口与外部 CDP 接入保留，截图、求值和 UI screencast 均在后台工作。
+
 ## 0.4.2 — 2026-11-08
 
+- `cua`（1.1.8 → 1.1.9）：权限诊断按当前设备 `check_permissions` schema 条件传参；Windows 不声明 `prompt` 时不再发送 `{prompt:false}`，修复连接阶段 `unknown argument prompt` 导致无法显示桌面的问题。
 - **新增内建技能 `3d_maker`（1.0.0）**：自 `test_skills/3d_maker` 迁入——浏览器内参数化 CAD 建模、多部件装配、打印就绪检测与 STL/OBJ/GLB/3MF 导出（内置 JS 内核 / OCCT 高性能内核）。frontmatter 的 `ui:` 段改为包根 `manifest.json`（schema 1）；手册与 UI 中残留的 `1host` 全部改为 `_host`；开发笔记 `docs/todo.md` 不入库。embed 列表与契约测试期望 11 → 12，README 中英文版本表与 docs/index.md 同步。
 
 ## 0.4.1 — 2026-11-03

@@ -31,11 +31,15 @@ function fixture(t, handle, options = {}) {
       execCall: async (command, options) => {
         if (command === 'commands info cua --schema') {
           describes.push({hostId, options});
-          // 设备命令面返回该服务全部工具的原始描述（数组）；夹具只暴露一个工具，
-          // 名字缺省补成 get_desktop_state。
+          // 设备命令面返回该服务全部工具的原始描述（数组）。自定义 describe
+          // 只覆盖桌面截图工具，权限工具按各平台是否支持 prompt 生成。
           const tool = await (optionsForSchema?.(hostId, options) ||
             {inputSchema: {type: 'object', properties: {session: {}, max_image_dimension: {}}}});
-          return encode([{name: 'get_desktop_state', ...tool}]);
+          const permissionProperties = permissionPrompt ? {session: {}, prompt: {}} : {session: {}};
+          return encode([
+            {name: 'check_permissions', inputSchema: {type: 'object', properties: permissionProperties}},
+            {name: 'get_desktop_state', ...tool},
+          ]);
         }
         const match = command.match(/^cua ([a-z_]+) --input - --json( --image-preview 1280x720)?$/);
         assert.ok(match, 'CUA uses the fixed exec command and JSON stdin');
@@ -48,7 +52,7 @@ function fixture(t, handle, options = {}) {
     connections.push(connection);
     return connection;
   };
-  const {describe: optionsForSchema, ...sessionOptions} = options;
+  const {describe: optionsForSchema, permissionPrompt = true, ...sessionOptions} = options;
   let sequence = 0;
   const session = new CuaSession({
     hosts: {openTools: async id => makeConnection(id)},
@@ -104,6 +108,15 @@ test('a view uses one independent session and persistent connection, with read-o
   assert.equal(calls.filter(call => call.name === 'end_session').length, 2);
   assert.equal(session.state.phase, 'closed');
   assert.equal(session.state.connected, false);
+});
+
+test('permission diagnostics omit prompt when the current device schema does not declare it', async t => {
+  const {session, calls, describes} = fixture(t, null, {permissionPrompt: false});
+  await ready(session);
+  assert.deepEqual(calls.find(call => call.name === 'check_permissions').args, {session: 'view-1'});
+  await session.checkPermissions();
+  assert.equal(describes.length, 2, 'permission and desktop schemas are cached per connection');
+  assert.equal(calls.filter(call => call.name === 'check_permissions').length, 2);
 });
 
 test('window actions use image-bound click once, explicit delivery and a fresh post-action screenshot', async t => {
@@ -389,6 +402,7 @@ test('duplicate metadata reads share a host-scoped request; old host results nev
   const permissionRead = session.checkPermissions(), windowRead = session.listWindows();
   assert.equal(session.checkPermissions(), permissionRead);
   assert.equal(session.listWindows(), windowRead);
+  await tick();
   await session.connect('device-b');
   const replacementWindows = session.state.windows, replacementPermissions = session.state.permissions;
   permissions.resolve(result({old: true}));
@@ -447,15 +461,15 @@ test('desktop capture follows the current device schema and caches it only for t
   })});
   await ready(session);
   await session.capture();
-  assert.equal(describes.length, 1);
+  assert.equal(describes.length, 2);
   const first = calls.filter(call => call.name === 'get_desktop_state');
   assert.equal(first.length, 2);
   assert.ok(first.every(call => Object.keys(call.args).join(',') === 'session'));
   await session.connect('device-b');
-  assert.equal(describes.length, 2);
+  assert.equal(describes.length, 4);
   assert.equal(calls.at(-1).args.max_image_dimension, 1280);
   await session.connect('device-a');
-  assert.equal(describes.length, 3, 'a new connection re-reads its current driver contract');
+  assert.equal(describes.length, 6, 'a new connection re-reads its current driver contract');
   assert.equal(calls.at(-1).args.max_image_dimension, undefined);
 });
 
@@ -682,7 +696,7 @@ test('only screenshot calls opt into a device-side 720p preview and forwarding o
     assert.equal(Object.hasOwn(call.options, 'imagePreview'), false);
     assert.equal(Object.hasOwn(call.args, 'imagePreview'), false);
   }
-  assert.equal(describes.length, 1);
+  assert.equal(describes.length, 2);
   assert.equal(Object.hasOwn(describes[0].options, 'imagePreview'), false);
   const commands = [];
   await cuaCall({execCall: async (command, options) => {

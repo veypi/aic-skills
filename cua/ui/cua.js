@@ -245,11 +245,28 @@ export class CuaSession {
       ? {max_image_dimension: this.maxDimension} : {};
   }
 
+  async _permissionArguments() {
+    const generation = this.hostEpoch;
+    if (this.permissionSchema?.generation !== generation) {
+      const tool = await this._call('check_permissions', {}, {describe: true});
+      if (this.closed || generation !== this.hostEpoch) {
+        throw failure('stale_context', 'CUA device changed');
+      }
+      const properties = tool.inputSchema?.properties;
+      if (!properties || typeof properties !== 'object' || Array.isArray(properties)) {
+        throw new Error('CUA returned an invalid permissions schema');
+      }
+      this.permissionSchema = {generation, properties};
+    }
+    return Object.hasOwn(this.permissionSchema.properties, 'prompt') ? {prompt: false} : {};
+  }
+
   async _disconnect() {
     const connection = this.connection, session = this.sessionId;
     this.connection = null;
     this.sessionId = null;
     this.desktopSchema = null;
+    this.permissionSchema = null;
     this._publish();
     for (const request of this.requests) request.abort();
     if (!connection) return;
@@ -297,7 +314,8 @@ export class CuaSession {
     this.permissionJob = job;
     job.promise = (async () => {
       try {
-        const result = await this._call('check_permissions', {prompt: false});
+        const args = await this._permissionArguments();
+        const result = await this._call('check_permissions', args);
         const permissions = resultData(result);
         if (!this.closed && generation === this.hostEpoch) this._publish({permissions});
         return permissions;

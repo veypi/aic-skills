@@ -711,7 +711,7 @@ export class BrowserSession {
 
   createPage(hostId = this.state.selectedHostId, url = 'about:blank') {
     return this.act(async () => {
-      const result = await this.cdp('Target.createTarget', { url }, '', hostId);
+      const result = await this.cdp('Target.createTarget', { url, background: true }, '', hostId);
       if (!result?.targetId) throw new Error('Target.createTarget returned no targetId');
       await this.call('attach', { target_id: result.targetId }, hostId);
       this.state.selectedHostId = hostId;

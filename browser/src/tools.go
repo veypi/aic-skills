@@ -139,6 +139,23 @@ func (s *service) server() *mcp.Server {
 	return srv
 }
 
+// backgroundCDPParams 禁止所有已知的前台激活入口；新建标签始终后台创建。
+func backgroundCDPParams(method string, params map[string]any) (map[string]any, error) {
+	switch method {
+	case "Target.activateTarget", "Page.bringToFront", "Browser.setWindowBounds":
+		return nil, fmt.Errorf("%s is disabled: browser skill never activates a foreground window", method)
+	case "Target.createTarget":
+		copyParams := make(map[string]any, len(params)+1)
+		for key, value := range params {
+			copyParams[key] = value
+		}
+		copyParams["background"] = true
+		return copyParams, nil
+	default:
+		return params, nil
+	}
+}
+
 // browserLevelDomains 是浏览器级 CDP 域：这些命令只能发给浏览器会话，
 // 其余域（Page/Runtime/DOM/Network/Input/…）属于页面会话。
 var browserLevelDomains = map[string]bool{
@@ -235,6 +252,11 @@ func (s *service) toolCDP(ctx context.Context, _ *mcp.CallToolRequest, in cdpInp
 	if strings.TrimSpace(in.Method) == "" {
 		return nil, nil, fmt.Errorf("method is required")
 	}
+	params, err := backgroundCDPParams(in.Method, in.Params)
+	if err != nil {
+		return nil, nil, err
+	}
+	in.Params = params
 	b, err := s.ensure(ctx)
 	if err != nil {
 		return nil, nil, err

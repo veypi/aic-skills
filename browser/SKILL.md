@@ -1,6 +1,6 @@
 ---
 name: browser
-version: 1.2.12
+version: 1.2.14
 description: 用设备上的 Chrome 实时查看与操作网页：CDP 通道供 AI 驱动浏览器，UI 提供同一浏览器的实时画面与人工交互。
 ---
 
@@ -90,7 +90,7 @@ MCP 工具（`browser <tool> --input '{...}' --json`，标量参数自动映射�
 | `cast_stats` | 画面链路只读自检（会话、订阅者数、收/发帧数、页面 ack 数、ack 失败数、丢弃帧数、被摘除的僵尸订阅者数） |
 
 页面级工具接受可选 `target_id`；UI 始终显式传递，避免并行操作抢改共享 session。
-AI 可先 `attach` 选定当前页后省略。元素引用取自最近一次快照；先看 schema 再传参。
+AI 可先 `attach` 选定当前页后省略。attach 使用页面级 WebSocket 直连并缓存连接，不经过会激活可见 Chrome 的 `Target.attachToTarget`。页面级命令不会激活标签页或抢占系统窗口焦点；原始 CDP 入口也禁止 `Target.activateTarget`、`Page.bringToFront` 和 `Browser.setWindowBounds`，新建标签强制后台创建。元素引用取自最近一次快照；先看 schema 再传参。
 
 复杂参数走 stdin：
 
@@ -116,7 +116,7 @@ echo '{"url":"https://example.com/"}' | browser navigate --input - --json
 | `BROWSER_SECURE_ORIGINS` | 逗号/换行分隔的 http origin，绕开 Chrome 自动 HTTPS 升级 |
 | `BROWSER_WINDOW_SIZE` | 视口尺寸，默认 `1280x720`（720p）；影响截图帧的比例 |
 | `BROWSER_PROFILE` | Chrome 资料目录，默认 `~/.aic/chrome-profile`（固定目录，登录态跨重启保留；`~` 会展开，目录自动创建） |
-| `BROWSER_HEADLESS` | 默认 `1` = 不显示窗口；`0`/`false` = 弹出可见窗口，可直接人工操作 |
+| `BROWSER_HEADLESS` | 默认 `1` = 不显示窗口；`0`/`false` = 可见窗口。macOS 用 `open -g` 启动；所有实例均带 `--no-startup-window`，启动阶段不创建窗口、不抢前台 |
 | `BROWSER_CDP_URL` | 接入**已经在运行**的浏览器：`host:port` / `http://…` / `ws://…`（前两种会自动问 `/json/version` 换 WebSocket）。设了就不起本地 Chrome，关闭只断连、绝不杀对方进程；`BROWSER_PROFILE`/`BROWSER_HEADLESS` 等启动项在此模式下无效 |
 | `BROWSER_PROXY` | Chrome 代理地址 |
 | `BROWSER_CHROME_ARGS` | 额外 Chrome 参数 |

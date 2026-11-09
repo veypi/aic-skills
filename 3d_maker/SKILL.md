@@ -15,11 +15,11 @@ icon: fa-solid fa-cubes
 ## 0. 代码如何送达页面执行（page exec 接口）
 
 **你的可见性边界（重要）**：你的信息来源只有两部分——① 本文档（SKILL.md）注入的知识；② 页面注册的指令（见下）。
-模型代码文件默认存放在**本地文件根 `/3d/`**：你用 `fs` 工具（_host=page）直接读写，页面经 `$mod.$fs` 访问同一份文件（页面本地 OPFS），两边完全同步。
-页面工具栏的「📂 打开 / 💾 保存 / ⬇ 导出」全部走平台原生文件对话框（`$fs.pickFiles` / `$fs.pickSavePath`），可读写**任意端**（cloud/page/host）的 `.js` 模型代码与导出文件（不再内置自建文件面板）。
+模型采用**单个 `*.3d.js` 存档文件**，可位于任意 `$fs` 端和目录。技能不维护私有模型目录，也不在 localStorage 缓存代码正文；首页只保存最近打开路径。
+页面工具栏的「打开 / 保存」走平台原生文件对话框（`$fs.pickFiles` / `$fs.pickSavePath`），可读写 cloud/page/host 上的模型；「导出」选择格式后直接浏览器下载成品。新建时先选择目标路径，保存时才写入代码。
 页面注册指令的完整清单见 §0.3。
 
-建模代码通过 `exec` 工具（`_host=page`）推送到 3D Maker 页面执行。先 `page open` 打开页面（`open --url /skills/{skill_id}`，skill_id 取自 skill 列表，记录返回的 win_id），之后按 `{win_id}.{指令}` 调用：
+建模代码通过 `exec` 工具（`_host=page`）推送到 3D Maker Studio 执行。先 `page open` 打开工作台（`open --url /skills/cloud/{skill_id}/studio`，skill_id 取自 skill 列表，记录返回的 win_id），之后按 `{win_id}.{指令}` 调用：
 
 ### 0.1 run_code —— 直接执行代码字符串
 
@@ -29,28 +29,20 @@ icon: fa-solid fa-cubes
 exec {"_host":"page", "action":"{win_id}.run_code", "argv":["--code", "return box(20, 15, 10);"]}
 ```
 
-### 0.2 run_file —— 执行代码文件（本地 /3d/ 或任意端 fs 路径）
+### 0.2 open / run_file —— 打开任意 $fs 位置的模型
 
-适合完整模型文件：先用 `fs write` 把代码写入 `/3d/`，再让页面加载执行：
+先用 `fs` 工具把代码写到用户指定的位置，再让 Studio 打开。对外统一使用 `/fs/...` 完整路径：
 
 ```
-# 1. 写代码文件（_host=page，页面本地存储 /3d/）
-fs {"_host":"page", "action":"write", "path":"/3d/bracket.js", "content":"..."}
+# 1. 写入单个模型存档（示例为 cloud；也可写 page 或授权 host）
+fs {"_host":"cloud", "action":"write", "path":"/u/{uid}/models/bracket.3d.js", "content":"..."}
 
-# 2. 通知页面加载执行
- exec {"_host":"page", "action":"{win_id}.run_file", "argv":["--path", "/3d/bracket.js"]}
+# 2. 通知 Studio 打开执行
+exec {"_host":"page", "action":"{win_id}.open", "argv":["--path", "/fs/cloud/u/{uid}/models/bracket.3d.js"]}
 ```
 
-`--path` 接受三类路径（页面经 `$mod.$fs` 读取，跨端统一）：
-
-| path 示例 | 对应位置 | 用途 |
-| --- | --- | --- |
-| `/3d/xxx.js`、`xxx.js` | 本地 /3d/（推荐默认位置；相对路径自动补 `/page/3d/` 前缀） | 模型代码 |
-| `/fs/cloud/u/{uid}/x.js` | 任意端的 fs 绝对路径（/fs/ 形式） | 云盘/本机等处的模型代码 |
-| `/cloud/u/{uid}/x.js`、`/page/3d/x.js` | 同上（树路径形式，省去 `/fs` 前缀） | 简写 |
-
-run_file 特有错误码（在返回 JSON 的 `code` 字段）：`INVALID_PATH`（路径非法/含 `..`）、`RUN_FILE_ERROR`（读取/执行失败）。
-run_file（及页面「📂 打开」）成功后，页面「当前关联文件」更新为该文件——页面「💾 保存」将写回该路径。
+`open` 与 `run_file` 共用同一实现；路径必须是合法的 `*.3d.js`，禁止相对路径、私有默认目录与 `..`。树路径 `/cloud/...`、`/page/...`、`/{host_id}/...` 会在协议边界归一为 `/fs/...`。
+打开成功后，该文件成为当前关联文件，「保存」写回原路径；只有打开或保存成功才更新最近记录。错误码：`INVALID_PATH`（路径或扩展名非法）、`RUN_FILE_ERROR`（读取或执行失败）。
 
 ### 0.3 指令表
 
@@ -59,10 +51,11 @@ run_file（及页面「📂 打开」）成功后，页面「当前关联文件�
 | 指令 | 说明 | 参数 | 返回要点 |
 | --- | --- | --- | --- |
 | `run_code` | 执行一段建模代码字符串 | `--code <源码>`（或 argv[0]） | `{success, stats, parts, warnings, executionTime}`；失败 `{success:false, code, message}` |
-| `run_file` | 执行建模代码文件（本地 /3d/ 或任意端 fs 路径；成功后设为「当前关联文件」） | `--path <路径>`（如 `/3d/x.js`、`/fs/cloud/u/{uid}/x.js`） | 同 run_code；特有 code：`INVALID_PATH`/`RUN_FILE_ERROR` |
-| `save_code` | 保存当前模型代码（最近一次运行的代码，含 @param 调整值）到指定路径 | `--path <路径>`（同 run_file 路径形态；省略则只返回代码文本） | `{ok, path, bytes}`；省略 --path → `{ok, code}` |
-| `status` | 查询页面状态 | 无 | `{ok, ready, busy, kernel, kernelLoading, stats, file}`（file=当前关联文件路径） |
-| `shot` | 截取当前 3D 视图保存为本地图片 | `--path <路径>`（默认 `/3d/shot.png`） | `{ok, path, width, height, bytes}`；**只落盘不返回图片**，看图需再 `fs.read` 读回 |
+| `open` / `run_file` | 打开并执行任意端 `.3d.js` 模型；成功后设为当前关联文件 | `--path /fs/.../model.3d.js` | 同 run_code；特有 code：`INVALID_PATH`/`RUN_FILE_ERROR` |
+| `save_code` | 保存当前模型代码（最近一次运行的代码，含 @param 调整值）到指定路径 | `--path /fs/.../model.3d.js`（省略则只返回代码文本） | `{ok, path, bytes}`；省略 --path → `{ok, code}` |
+| `save` | 保存当前模型；无关联文件时弹另存为 | 无 | `{ok, path, bytes}` |
+| `status` | 查询页面状态 | 无 | `{ok, ready, busy, kernel, kernelLoading, stats, file, isNew}` |
+| `shot` | 截取当前 3D 视图保存到指定 `$fs` 路径 | `--path /fs/.../shot.png`（必填） | `{ok, path, width, height, bytes}`；**只落盘不返回图片**，看图需再 `fs.read` 读回 |
 | `parts_audit` | 逐部件打印问题清单（水密/非流形/悬空/薄壁/干涉） | `--min-wall <最小壁厚 mm>`（默认 1.2） | `{summary, parts:[…]}`；不修改模型，只做分析 |
 | `set_kernel` | 切换几何内核（builtin=内置 JS / occt=高性能） | `--kernel builtin|occt` | `{success, kernel, message?}`；**尽力切换**：当前模型超 OCCT 重建限额（>2 万三角面/开放网格）时自动回退内置渲染并返回 `kernelFallback` 提示，重跑小模型后 OCCT 自动生效 |
 | `set_theme` | 切换观感主题（dark=深影棚背景，展示模型观感更佳） | `--theme dark|light|auto` | `{success, theme}` |
@@ -72,16 +65,16 @@ run_file（及页面「📂 打开」）成功后，页面「当前关联文件�
 
 ### 0.4 事件契约
 
-- 页面未打开时指令无响应：先 `page open`（`open --url /skills/{skill_id}`，记下返回的 win_id），`page exec action=commands` 确认指令列表后再调用。
+- 页面未打开时指令无响应：先 `page open`（`open --url /skills/cloud/{skill_id}/studio`，记下返回的 win_id），`page exec action=commands` 确认指令列表后再调用。
 - argv 风格 `--key val`（或位置参数）；指令**不要并行调用**，一轮一个（建模是 CPU 密集计算）。
-- 页面打开时默认加载最近一次成功运行的模型（本地缓存），无缓存则加载乐高积木案例。
+- 直接打开空 Studio 时加载乐高案例；带 `?url=` 时打开对应模型，带 `&new=1` 时以案例作为新模型起点但不提前写盘。页面不自动恢复 localStorage 中的代码。
 - 结果以 `content` 中的 JSON 为准（`success: false` 时看 `code`/`message`），不要凭猜测复述统计。
-- **看图闭环（阶段 0）**：`shot` 只把截图落到本地 `/3d/`（content 返回 path），**不直接返回图片**——平台图片投递收敛只认 `fs.read`（§2.2：只有 fs.read 能把图片带进消息），所以看图必须两步：`{win_id}.shot` → `fs.read`（_host=page, path=`/3d/shot.png`）。图片经标准链落盘进消息（msg.Files），模型侧直接识图，无需用户截图中转。
+- **看图闭环（阶段 0）**：`shot --path /fs/.../shot.png` 只负责把截图写到指定位置，**不直接返回图片**；随后对同一路径执行 `fs.read`，把图片带进消息。
 
 ### 0.5 如何选择：小模型用 run_code，大模型用 run_file
 
 - **小模型 / 简单验证**（几个图元、一两次布尔）：直接用 `run_code`，一步到位
-- **大模型 / 复杂设计**（多部件、参数化、反复调整）：**先用 `fs write` 把代码编辑成文本文件，再通过 `run_file` 执行渲染看结果**。之后每次修改都用 `fs edit` 改文件、再 `run_file` 重跑，形成「编辑 → 渲染 → 看结果 → 再编辑」的迭代闭环；代码保存到本地 /3d/，可复用、可追溯
+- **大模型 / 复杂设计**（多部件、参数化、反复调整）：**先用 `fs write` 把代码写成用户指定位置的 `.3d.js` 文件，再通过 `run_file` 执行渲染看结果**。之后每次修改都用 `fs edit` 改文件、再 `run_file` 重跑，形成「编辑 → 渲染 → 看结果 → 再编辑」的迭代闭环
 
 ## 1. 快速开始
 
@@ -241,7 +234,7 @@ const prof = []; for (let i = 0; i < 20; i++) { const a = i / 20 * Math.PI * 2; 
 return sweep(prof, path);
 ```
 
-工具栏「📦 案例… → 有机花瓶（loft+displace）」可一键载入完整案例。
+首页「内置案例 → 有机花瓶」可一键载入完整案例（loft+displace）。
 
 ### 6.8 贴面浮雕 API（relief / surfaceHit）
 
@@ -308,8 +301,8 @@ return filletR > 0 ? shape.fillet(filletR) : shape;
 
 ### 模型导出
 
-用户可在页面工具栏「⬇ 导出」把模型导出为文件——**走平台原生另存为对话框选择保存位置**（`$fs.pickSavePath` + `$fs.writeFile`；对话框不可用时回退浏览器下载）。格式：STL（二进制/文本）、OBJ、GLB、**3MF**（3D 打印格式，保留部件名称与颜色，含 rgba 透明色）、JSON（模型）。
-页面文件操作一览：「📂 打开」= 原生打开对话框载入任意端的 `.js` 代码并运行；「💾 保存」= 把当前模型代码（含 @param 调整值）写回关联文件，无关联文件时弹另存为。
+用户在页面工具栏「导出」中选择格式后，成品直接通过浏览器下载，不写 `$fs`，也不弹另存为对话框。格式：STL（二进制/文本）、OBJ、GLB、**3MF**（3D 打印格式，保留部件名称与颜色，含 rgba 透明色）、JSON（模型）。
+页面文件操作：「打开」载入任意端的 `.3d.js` 单文件模型并运行；「保存」把当前模型代码（含 @param 调整值）写回关联文件，无关联文件时弹另存为。
 
 ### 成功
 
@@ -419,7 +412,7 @@ return filletR > 0 ? shape.fillet(filletR) : shape;
 ## 12. 完整示例
 
 > 以下示例的**代码已完整内联在本文档**——需要时直接复制代码用 `run_code` 执行。
-> 页面工具栏「📦 案例…」下拉也提供这些案例（页面从 skill 包内 `ui/examples/` 直接下载代码执行）。
+> 首页「内置案例」也提供这些案例（Studio 从技能包 `ui/examples/` 下载代码执行）。
 > ⚠️ **你无法预知 skill 包内文件的内容**，因此不要依赖 `run_file` 加载案例文件；需要案例模型时用 `run_code` 内联本文档中的代码。
 
 ### 乐高积木 2×4
@@ -469,7 +462,7 @@ return revolve([
 
 ### 复杂装配体参考：两级齿轮减速器
 
-内置案例「两级齿轮减速器」（页面工具栏 📦 案例… → 两级齿轮减速器）展示了当前能力的上限，要点：
+首页内置案例「两级齿轮减速器」展示了当前能力的上限，要点：
 
 - **真实工程关系**：齿轮中心距 = m(z1+z2)/2，齿顶/齿根啮合间隙 0.5mm
 - **全参数化布局**：箱体、轴系、地脚全部由模数/齿厚推导，改 @param 自动重排
@@ -572,10 +565,10 @@ sphere(11, 40, 28).scale(1, 0.7, 0.9)   // 扁椭球大灯透镜
 
 ## 15. 高级完整样例：保时捷 911（115 部件）
 
-> 完整源码由页面提供（工具栏「📦 案例… → 保时捷 911」，页面从 skill 包内 `ui/examples/` 直接下载执行）。
+> 完整源码由页面提供（首页「内置案例 → 保时捷 911」，Studio 从技能包 `ui/examples/` 下载执行）。
 > ⚠️ 该文件对你**不可预知**——你的知识来源是下方内联代码 + §14 技法库，
 > 生成同类模型时直接内联代码用 `run_code`，不要依赖 `run_file` 加载案例文件。
-> 页面工具栏「📦 案例… → 保时捷 911」亦可一键载入。
+> 首页「内置案例 → 保时捷 911」亦可一键载入。
 
 ```js
 // 保时捷 911 精致模型 v5 - 高级配色 + 圆角精细化
@@ -671,10 +664,10 @@ return parts;
 
 ## 16. 大模型协作工作流
 
-1. **直接用截图看图迭代**：`shot` 截取当前视图 → `fs.read`（_host=page）读回即图，平台自动落盘进消息可直接识图。每轮只做小改动（`fs edit` 改几处 → `run_file` 重跑 → `shot` + `fs.read` 自检），不再依赖用户截图中转；关键视觉确认（颜色/比例等主观项）仍可请用户过目。
+1. **直接用截图看图迭代**：`shot` 截取当前视图到指定 `/fs` 路径 → 在对应端用 `fs.read` 读回即图，平台自动落盘进消息可直接识图。每轮只做小改动（`fs edit` 改几处 → `run_file` 重跑 → `shot` + `fs.read` 自检），不再依赖用户截图中转；关键视觉确认（颜色/比例等主观项）仍可请用户过目。
 1.5. **修模先定位再动手**：`parts_audit` 给出逐部件问题清单（水密/非流形/悬空/薄壁/干涉）——先看 `issues` 定位坏件/薄壁位置，再有针对性地改代码，不要全模型重写。
 2. **打印质量你可直接判断**：`stats.printability` 的 watertight/openEdges/悬空面是你的打印反馈——交付打印模型前确认 `watertight: true`，否则按 §10 打印设计规范调整或提醒用户启用 OCCT 内核。
-3. **复杂模型必须走文件流**：`fs write /3d/xxx.js`（_host=page）→ `run_file --path /3d/xxx.js` 执行；迭代用 `fs edit` 增量修改。代码存本地 /3d/ 可复用、可追溯，用户也能经页面「📂 打开」自行重载。
+3. **复杂模型必须走文件流**：先与用户确认保存位置，写入 `name.3d.js` → `run_file --path /fs/.../name.3d.js` 执行；迭代用 `fs edit` 增量修改。用户可从首页或 Studio 的「打开」重新载入。
 4. **部件命名规范**：中文名 + 左右标注（如 `前左轮胎`、`后视镜壳(右)`），用户在属性面板可按部件隔离/隐藏，命名清晰是可用性的一部分。
 5. **run_code/run_file 结果可疑时**（如返回的统计与修改不符）：可能是页面断连后回放了上一帧缓存——先请用户刷新页面再重跑。
 6. **规模参考**：精致展示模型 60~120 个部件为宜；布尔运算集中的部件（如 10 辐条 fuse）建议封进函数复用；整体三角面超过 100 万会触发警告，切 OCCT 内核通常可降 96%。

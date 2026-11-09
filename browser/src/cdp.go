@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -36,9 +37,11 @@ type launchOptions struct {
 
 // Browser 持有一个 Chrome 进程与一条 DevTools Protocol 连接。
 type Browser struct {
-	cmd    *exec.Cmd
-	conn   *websocket.Conn
-	stderr *tailBuffer
+	cmd            *exec.Cmd
+	pid            int // open -g 启动的可见实例不是当前进程的子进程
+	conn           *websocket.Conn
+	targetWSOrigin string
+	stderr         *tailBuffer
 
 	mu             sync.Mutex
 	writeMu        sync.Mutex
@@ -49,8 +52,11 @@ type Browser struct {
 	closed         bool
 	eventMu        sync.Mutex
 	handlers       []func(method string, sessionID string, params json.RawMessage)
-	readySessions  map[string]bool   // Chrome 已确认就绪的会话
-	targetSessions map[string]string // targetId → 会话 id
+	readySessions  map[string]bool            // Chrome 已确认就绪的会话
+	targetSessions map[string]string          // targetId → 会话 id
+	directSessions map[string]*websocket.Conn // 页面直连 session → 页面 WebSocket
+	directSeq      uint64
+	pendingSession map[int64]string // 等待中的调用所属 session（直连故障单独回收）
 }
 
 type cdpResponse struct {
@@ -74,6 +80,8 @@ func buildChromeArgs(opts launchOptions, profile string) []string {
 		"--user-data-dir=" + profile,
 		"--no-first-run",
 		"--no-default-browser-check",
+		// 可见实例也不能在启动阶段创建窗口并自行激活；页面随后由 CDP 后台创建。
+		"--no-startup-window",
 		// Chromium 的 Safe Storage 默认走 macOS 钥匙串：每次启动都会弹授权窗
 		// （无头/重启场景下反复弹）。测试构建用 mock keychain，不碰系统钥匙串。
 		"--use-mock-keychain",
@@ -136,6 +144,24 @@ func Launch(ctx context.Context, opts launchOptions) (*Browser, error) {
 		return nil, err
 	}
 	log.Printf("browser: chrome profile=%s headless=%v", profile, opts.Headless)
+	// open -g 的可见实例不属于服务进程组；若服务被强制重启，接管同 profile
+	// 的存活实例，而不是重复启动或报 profile in use。
+	if port, pagePath, ok := runningDevToolsEndpoint(profile); ok {
+		pid, pidErr := chromeProfilePID(profile)
+		if pidErr != nil {
+			return nil, pidErr
+		}
+		conn, _, dialErr := websocket.DefaultDialer.DialContext(ctx, fmt.Sprintf("ws://127.0.0.1:%d%s", port, pagePath), nil)
+		if dialErr == nil {
+			b := &Browser{
+				pid: pid, conn: conn, targetWSOrigin: fmt.Sprintf("ws://127.0.0.1:%d", port),
+				pending: map[int64]chan cdpResponse{}, pendingSession: map[int64]string{},
+			}
+			go b.readLoop(conn, "")
+			log.Printf("browser: adopted running Chrome pid=%d", pid)
+			return b, nil
+		}
+	}
 	// 固定资料目录下，上一实例留下的 DevToolsActivePort 是过期端点：不删掉就会
 	// 在新 Chrome 写出端点之前读到旧端口，去 dial 一个已经死掉的地址。但文件
 	// 也可能属于活着的实例（profile 被另一个 Chrome 占用）：先探端口，只在
@@ -143,26 +169,48 @@ func Launch(ctx context.Context, opts launchOptions) (*Browser, error) {
 	if err := removeStaleDevToolsPort(profile); err != nil {
 		return nil, err
 	}
-	cmd := exec.Command(opts.ChromePath, buildChromeArgs(opts, profile)...)
 	// Chrome 的 stderr 保留尾巴：它在沙箱里起不来时，日志是唯一的死因线索。
 	tail := &tailBuffer{}
-	cmd.Stdout = nil
-	cmd.Stderr = tail
-	if err := cmd.Start(); err != nil {
+	cmd, err := startChrome(opts, profile, tail)
+	if err != nil {
 		return nil, fmt.Errorf("start chrome: %w", err)
+	}
+	cleanup := func() {
+		if cmd != nil && cmd.Process != nil {
+			_ = cmd.Process.Kill()
+			_, _ = cmd.Process.Wait()
+			return
+		}
+		if pid, pidErr := chromeProfilePID(profile); pidErr == nil && pid > 0 {
+			if process, processErr := os.FindProcess(pid); processErr == nil {
+				_ = process.Kill()
+			}
+		}
 	}
 	port, path, err := waitDevToolsEndpoint(ctx, profile)
 	if err != nil {
-		_ = cmd.Process.Kill()
+		cleanup()
 		return nil, fmt.Errorf("%w (chrome stderr: %s)", err, tail.String())
 	}
 	conn, _, err := websocket.DefaultDialer.DialContext(ctx, fmt.Sprintf("ws://127.0.0.1:%d%s", port, path), nil)
 	if err != nil {
-		_ = cmd.Process.Kill()
+		cleanup()
 		return nil, fmt.Errorf("dial devtools: %w (chrome stderr: %s)", err, tail.String())
 	}
-	b := &Browser{cmd: cmd, conn: conn, pending: map[int64]chan cdpResponse{}, stderr: tail}
-	go b.readLoop()
+	pid := 0
+	if cmd == nil {
+		pid, err = chromeProfilePID(profile)
+		if err != nil {
+			_ = conn.Close()
+			cleanup()
+			return nil, err
+		}
+	}
+	b := &Browser{
+		cmd: cmd, pid: pid, conn: conn, targetWSOrigin: fmt.Sprintf("ws://127.0.0.1:%d", port),
+		pending: map[int64]chan cdpResponse{}, pendingSession: map[int64]string{}, stderr: tail,
+	}
+	go b.readLoop(conn, "")
 	return b, nil
 }
 
@@ -180,10 +228,71 @@ func Connect(ctx context.Context, rawURL string) (*Browser, error) {
 	if err != nil {
 		return nil, fmt.Errorf("dial devtools %s: %w", wsURL, err)
 	}
-	b := &Browser{conn: conn, pending: map[int64]chan cdpResponse{}}
-	go b.readLoop()
+	u, err := url.Parse(wsURL)
+	if err != nil {
+		_ = conn.Close()
+		return nil, fmt.Errorf("parse devtools websocket: %w", err)
+	}
+	b := &Browser{
+		conn: conn, targetWSOrigin: u.Scheme + "://" + u.Host,
+		pending: map[int64]chan cdpResponse{}, pendingSession: map[int64]string{},
+	}
+	go b.readLoop(conn, "")
 	log.Printf("browser: attached to %s", wsURL)
 	return b, nil
+}
+
+// AttachPage 直连页面级 WebSocket，不使用会在可见 Chrome 上激活窗口的
+// Target.attachToTarget。返回值仍是内部 session id，后续所有页面命令无差别复用。
+func (b *Browser) AttachPage(ctx context.Context, targetID string) (string, error) {
+	if b.targetWSOrigin == "" {
+		return "", errors.New("browser target websocket origin is unavailable")
+	}
+	conn, _, err := websocket.DefaultDialer.DialContext(ctx,
+		b.targetWSOrigin+"/devtools/page/"+targetID, nil)
+	if err != nil {
+		return "", fmt.Errorf("connect page target %s: %w", targetID, err)
+	}
+	b.mu.Lock()
+	b.directSeq++
+	session := fmt.Sprintf("direct-%d-%s", b.directSeq, targetID)
+	if b.directSessions == nil {
+		b.directSessions = map[string]*websocket.Conn{}
+	}
+	b.directSessions[session] = conn
+	b.mu.Unlock()
+	b.rememberTargetSession(targetID, session)
+	b.markSessionReady(session)
+	go b.readLoop(conn, session)
+	return session, nil
+}
+
+func ensurePendingSessions(current map[int64]string) map[int64]string {
+	if current == nil {
+		return map[int64]string{}
+	}
+	return current
+}
+
+func runningDevToolsEndpoint(profile string) (int, string, bool) {
+	data, err := os.ReadFile(filepath.Join(profile, "DevToolsActivePort"))
+	if err != nil {
+		return 0, "", false
+	}
+	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+	if len(lines) < 2 {
+		return 0, "", false
+	}
+	var port int
+	if _, err := fmt.Sscanf(strings.TrimSpace(lines[0]), "%d", &port); err != nil || port <= 0 {
+		return 0, "", false
+	}
+	conn, err := net.DialTimeout("tcp", "127.0.0.1:"+strconv.Itoa(port), 500*time.Millisecond)
+	if err != nil {
+		return 0, "", false
+	}
+	_ = conn.Close()
+	return port, strings.TrimSpace(lines[1]), true
 }
 
 // removeStaleDevToolsPort 清理 profile 里的过期 DevToolsActivePort。文件指向
@@ -346,11 +455,17 @@ func eventSession(msg cdpMessage) string {
 }
 
 // readLoop 分发 CDP 响应：带 id 的进等待队列，事件交给处理器。
-func (b *Browser) readLoop() {
+// directSession 非空表示页面级 WebSocket，连接故障只回收该页面，不杀整个浏览器。
+func (b *Browser) readLoop(conn *websocket.Conn, directSession string) {
 	for {
-		_, data, err := b.conn.ReadMessage()
+		_, data, err := conn.ReadMessage()
 		if err != nil {
-			b.failAll(err)
+			if directSession == "" {
+				b.failAll(err)
+			} else {
+				b.failSession(directSession, err)
+				b.forgetSession(directSession)
+			}
 			return
 		}
 		var msg cdpMessage
@@ -363,6 +478,9 @@ func (b *Browser) readLoop() {
 			// 顶层 sessionId 是空的。取错会让后续命令带着空会话发出去，
 			// Chrome 直接断连（1006），事件通道随之死掉。
 			session := eventSession(msg)
+			if directSession != "" {
+				session = directSession
+			}
 			if msg.Method == "Target.attachedToTarget" {
 				// 会话就绪信号：收到它之前往该会话发命令会让 Chrome 断连。
 				b.markSessionReady(session)
@@ -376,10 +494,10 @@ func (b *Browser) readLoop() {
 					b.rememberTargetSession(p.TargetInfo.TargetID, p.SessionID)
 				}
 			}
-			if msg.Method == "Target.detachedFromTarget" {
+			if msg.Method == "Target.detachedFromTarget" && directSession == "" {
 				b.forgetSession(session)
 			}
-			if msg.Method == "Target.targetDestroyed" {
+			if msg.Method == "Target.targetDestroyed" && directSession == "" {
 				var p struct {
 					TargetID string `json:"targetId"`
 				}
@@ -396,6 +514,8 @@ func (b *Browser) readLoop() {
 		}
 		b.mu.Lock()
 		ch, ok := b.pending[msg.ID]
+		delete(b.pending, msg.ID)
+		delete(b.pendingSession, msg.ID)
 		b.mu.Unlock()
 		if !ok {
 			continue
@@ -511,7 +631,12 @@ func (b *Browser) forgetSession(session string) {
 	if b.session == session {
 		b.session = ""
 	}
+	conn := b.directSessions[session]
+	delete(b.directSessions, session)
 	b.mu.Unlock()
+	if conn != nil {
+		_ = conn.Close()
+	}
 }
 
 // dispatchEvent 把 CDP 事件分发给已注册的处理器。
@@ -525,6 +650,22 @@ func (b *Browser) dispatchEvent(method, sessionID string, params json.RawMessage
 	b.eventMu.Unlock()
 	for _, fn := range handlers {
 		fn(method, sessionID, params)
+	}
+}
+
+func (b *Browser) failSession(session string, err error) {
+	b.mu.Lock()
+	var pending []chan cdpResponse
+	for id, ch := range b.pending {
+		if b.pendingSession[id] == session {
+			pending = append(pending, ch)
+			delete(b.pending, id)
+			delete(b.pendingSession, id)
+		}
+	}
+	b.mu.Unlock()
+	for _, ch := range pending {
+		ch <- cdpResponse{Error: &cdpError{Code: -1, Message: err.Error()}}
 	}
 }
 
@@ -550,6 +691,13 @@ func (b *Browser) Call(ctx context.Context, method string, params map[string]any
 	id := b.nextID
 	ch := make(chan cdpResponse, 1)
 	b.pending[id] = ch
+	b.pendingSession = ensurePendingSessions(b.pendingSession)
+	b.pendingSession[id] = sessionID
+	conn := b.conn
+	if direct := b.directSessions[sessionID]; direct != nil {
+		conn = direct
+		sessionID = "" // 页面 WebSocket 已天然绑定页面，不能再套浏览器 sessionId。
+	}
 	msg := map[string]any{"id": id, "method": method}
 	if len(params) > 0 {
 		msg["params"] = params
@@ -560,10 +708,10 @@ func (b *Browser) Call(ctx context.Context, method string, params map[string]any
 	raw, err := json.Marshal(msg)
 	if err != nil {
 		delete(b.pending, id)
+		delete(b.pendingSession, id)
 		b.mu.Unlock()
 		return nil, err
 	}
-	conn := b.conn
 	b.mu.Unlock()
 
 	b.writeMu.Lock()
@@ -572,6 +720,7 @@ func (b *Browser) Call(ctx context.Context, method string, params map[string]any
 	if err != nil {
 		b.mu.Lock()
 		delete(b.pending, id)
+		delete(b.pendingSession, id)
 		b.mu.Unlock()
 		return nil, fmt.Errorf("send %s: %w", method, err)
 	}
@@ -579,6 +728,7 @@ func (b *Browser) Call(ctx context.Context, method string, params map[string]any
 	case <-ctx.Done():
 		b.mu.Lock()
 		delete(b.pending, id)
+		delete(b.pendingSession, id)
 		b.mu.Unlock()
 		return nil, ctx.Err()
 	case resp := <-ch:
@@ -627,14 +777,26 @@ func (b *Browser) Close() error {
 		b.mu.Lock()
 		b.closed = true
 		conn := b.conn
+		var direct []*websocket.Conn
+		for _, pageConn := range b.directSessions {
+			direct = append(direct, pageConn)
+		}
 		cmd := b.cmd
+		pid := b.pid
 		b.mu.Unlock()
 		if conn != nil {
 			_ = conn.Close()
 		}
+		for _, pageConn := range direct {
+			_ = pageConn.Close()
+		}
 		if cmd != nil && cmd.Process != nil {
 			_ = cmd.Process.Kill()
 			_, _ = cmd.Process.Wait()
+		} else if pid > 0 {
+			if process, err := os.FindProcess(pid); err == nil {
+				_ = process.Kill()
+			}
 		}
 	})
 	return nil

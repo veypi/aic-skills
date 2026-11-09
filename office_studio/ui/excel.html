@@ -7,87 +7,51 @@
   <title>Office Studio · Excel</title>
 </head>
 <style>
-  body {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 0;
-    overflow: hidden;
-    container-type: inline-size;
-  }
-
-  .ed {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 0;
-  }
-
-  .topbar {
-    flex: none;
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: var(--spacing-sm);
-    padding: 6px 12px;
-    border-bottom: 1px solid var(--border-color);
-    background: var(--bg-color-secondary);
-  }
-
-  .brand { font-weight: var(--font-weight-semibold); color: var(--color-primary); white-space: nowrap; }
-  .path { font-size: var(--font-size-xs); opacity: .75; max-width: 46%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  body { height: 100%; min-height: 0; overflow: hidden; container-type: inline-size; }
+  button { font: inherit; }
+  button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+  .ed { height: 100%; min-height: 0; display: flex; flex-direction: column; }
+  .topbar { flex: none; height: 46px; min-height: 46px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 12px; border-bottom: 1px solid var(--border-color); min-width: 0; }
+  .brand { flex: none; height: 30px; display: inline-flex; align-items: center; padding: 0; border: 0; border-bottom: 1px solid transparent; background: transparent; color: var(--text-color); cursor: pointer; font-size: 12px; font-weight: var(--font-weight-medium); line-height: 1; white-space: nowrap; }
+  .brand:hover { color: var(--color-primary); border-bottom-color: currentColor; }
+  .doc-title { min-width: 0; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-color-secondary); font-size: 11px; }
   .grow { flex: 1; }
-  .st { font-size: var(--font-size-xs); opacity: .75; white-space: nowrap; }
-  .err { font-size: var(--font-size-xs); color: var(--color-danger); white-space: nowrap; }
-
-  button {
-    padding: 4px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    background: var(--bg-color-tertiary);
-    font-size: var(--font-size-sm);
-    cursor: pointer;
-    color: inherit;
-    transition: border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
-  }
-
-  button:hover { border-color: var(--border-color-hover); }
-
+  .st { max-width: 300px; overflow: hidden; text-overflow: ellipsis; color: var(--text-color-tertiary); font-size: 10px; white-space: nowrap; }
+  .err { color: var(--color-danger); }
+  .tbtn { flex: none; min-height: 30px; padding: 3px 5px; border: 0; border-bottom: 1px solid transparent; border-radius: 0; background: transparent; color: var(--text-color-tertiary); cursor: pointer; font-size: 11px; white-space: nowrap; }
+  .tbtn:hover { color: var(--color-primary); border-bottom-color: currentColor; }
+  .tbtn.primary { color: var(--color-primary); border-bottom-color: var(--color-primary); }
   .wrap { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
   .app { flex: 1; min-height: 0; }
-
-  .empty-hint {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: var(--font-size-sm);
-    color: var(--text-color-tertiary);
-    pointer-events: none;
+  .empty-hint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; color: var(--text-color-tertiary); font-size: var(--font-size-sm); text-align: center; pointer-events: none; }
+  .load-error { position: absolute; left: 50%; top: 50%; z-index: 3; width: min(560px, calc(100% - 40px)); box-sizing: border-box; transform: translate(-50%, -50%); padding: 16px 18px; border-left: 2px solid var(--color-danger); background: var(--bg-color); box-shadow: var(--shadow-md); color: var(--color-danger); font-size: var(--font-size-sm); line-height: 1.65; overflow-wrap: anywhere; }
+  .load-error strong { display: block; margin-bottom: 5px; font-weight: var(--font-weight-medium); }
+  @container (max-width: 680px) {
+    .doc-title { max-width: 180px; }
+    .st { display: none; }
   }
-
-  /* ===== 响应式（@container = 窗口宽度，不要用 @media） ===== */
-  @container (max-width: 640px) {
-    .brand, .path { display: none; }
+  @container (max-width: 430px) {
+    .topbar { padding: 0 8px; gap: 5px; }
+    .brand { font-size: 11px; }
+    .doc-title { display: none; }
   }
 </style>
 
 <body>
   <div class="ed">
-    <div class="topbar">
-      <button @click="goHome">首页</button>
-      <button @click="onOpen">打开</button>
-      <button @click="onSave">保存</button>
-      <span class="brand">Office Studio · Excel</span>
-      <span class="path">{{ file_path || '未打开文件' }}</span>
+    <header class="topbar">
+      <button class="brand" @click="goHome">Office Studio</button>
+      <span class="doc-title" :title="file_path">{{ file_path ? fileName() : $t('editor.no_file') }}</span>
       <span class="grow"></span>
-      <span class="st">{{ status_text }}</span>
-      <span v-if="boot_err" class="err">· {{ boot_err }}</span>
-    </div>
+      <span v-if="boot_err" class="st err">{{ boot_err }}</span>
+      <span v-else class="st">{{ status_text }}</span>
+      <button class="tbtn" @click="onOpen">{{ $t('common.open') }}</button>
+      <button class="tbtn primary" @click="onSave">{{ $t('common.save') }}</button>
+    </header>
     <div class="wrap">
-      <div :id="host_id" class="app"></div>
-      <div class="empty-hint" v-if="!file_path">未打开文件 — 从「首页」选择文件，或点「打开」</div>
+      <div :id="host_id" class="app" v-show="!load_error"></div>
+      <div class="load-error" v-if="load_error" role="alert"><strong>{{ $t('editor.open_failed') }}</strong>{{ load_error }}</div>
+      <div class="empty-hint" v-if="!file_path && !load_error">{{ $t('editor.empty_excel') }}</div>
     </div>
   </div>
 </body>
@@ -99,6 +63,7 @@
   ready = false
   boot_err = ''
   status_text = ''
+  load_error = ''
   file_path = ''
   is_new = false         // 新建（未保存）模式：保存时写入目标路径
   last_pick = ''         // 上次“打开”选择器返回的原始信息（诊断）
@@ -108,14 +73,15 @@
   modRef = null
   univerRef = null
   apiRef = null
-  _route_off = null      // $router.onChange 取消函数（dispose 时调用）
-  _last_route = ''       // 已处理的路由 fullPath（同页 query 变化去重）
+  _last_route = ''       // 已处理的 url + new（同页 query 变化去重）
+  _route_seq = 0         // 仅清理当前路由的失败标记
   // 本页面实例的容器 id：平台是“单文档多窗口”，全局 getElementById('app')
   // 会命中第一个窗口的容器——每实例生成唯一 id（模板 :id 绑定），确保只命中自己的容器
   host_id = 'excel-host-' + Math.random().toString(36).slice(2, 8)
 
   const toTree = (p) => String(p || '').replace(/^\/fs(?=\/)/, '')
   const nameOf = (p) => String(p || '').split('/').filter(Boolean).pop() || 'workbook.xlsx'
+  fileName = () => nameOf(file_path)
   const reply = (o) => ({ content: JSON.stringify(o) })
   const errReply = (e) => ({ content: JSON.stringify({ ok: false, error: String((e && e.message) || e) }) })
   const argOf = (argv, key, def) => {
@@ -185,6 +151,7 @@
   const openPath = async (p, opts = {}) => {
     if (!p) throw new Error('需要文件路径')
     const asNew = !!(opts && opts.newFile)
+    load_error = ''
     try {
       status_text = '加载中…'
       await ensureEngine()
@@ -229,6 +196,9 @@
       return { ok: true, path: p, size: blob.size }
     } catch (e) {
       const msg = String((e && e.message) || e)
+      load_error = msg
+      file_path = ''
+      is_new = false
       status_text = '打开失败：' + msg
       throw e
     }
@@ -306,22 +276,26 @@
     if (!p || !looksLikeFsPath(p)) return null
     return { path: p, newFile: String(($router.query && $router.query.new) || '') === '1' }
   }
-  const applyRoute = () => {
-    const fp = String(($router.current && $router.current.fullPath) || '')
-    if (fp && fp === _last_route) return
-    const t = routeTask()
-    if (!t) return
-    _last_route = fp
-    openPath(t.path, { newFile: t.newFile }).catch(() => { /* openPath 已置状态 */ })
+  applyRoute = async () => {
+    const task = routeTask()
+    if (!task) return
+    const key = task.path + '|' + task.newFile
+    if (key === _last_route) return
+    _last_route = key
+    const seq = ++_route_seq
+    try { await openPath(task.path, {newFile: task.newFile}) }
+    catch (error) { if (seq === _route_seq) _last_route = '' }
   }
-  applyRoute()
-  _route_off = $router.onChange(applyRoute)
 </script>
-
+<script>
+  $scope.addCleanup($router.onChange(() => applyRoute()))
+</script>
+<script active>
+  applyRoute()
+</script>
 <script dispose>
-  // 页面销毁：释放 Univer 实例与路由订阅（页面缓存复用时不触发）
+  // 页面销毁：释放 Univer 实例（页面缓存复用时不触发）
   try { if (univerRef && typeof univerRef.dispose === 'function') univerRef.dispose() } catch (e) { /* 忽略 */ }
-  try { if (_route_off) _route_off() } catch (e) { /* 忽略 */ }
 </script>
 
 </html>

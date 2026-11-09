@@ -1,0 +1,12 @@
+{
+  "cases": [
+    {"id": "lego-brick", "kind": "parametric"},
+    {"id": "gear", "kind": "parametric"},
+    {"id": "pipe-joint", "kind": "assembly"},
+    {"id": "flanged-bracket", "kind": "cad"},
+    {"id": "organic-vase", "kind": "organic"},
+    {"id": "gear-reducer", "kind": "assembly"},
+    {"id": "robot", "kind": "assembly"},
+    {"id": "porsche-911", "kind": "advanced"}
+  ]
+}

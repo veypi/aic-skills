@@ -19,10 +19,22 @@ test('home owns open, new, recent and examples; studio has no project/sample pop
   assert.match(studio, /class="more-actions"/)
   assert.match(studio, /class="tbtn file-action"/)
   assert.match(studio, /name: 'open'/)
+  assert.doesNotMatch(home, /name: 'open_video'/)
+  assert.doesNotMatch(studio, /name: 'open_video'/)
   assert.match(studio, /\$router\.query\.url/)
   assert.doesNotMatch(studio, /showProjects|showCases|listProjects|deleteProject|video_studio_last/)
   assert.doesNotMatch(studio, /\$t\('studio\.(?:opened|created|case_loaded)'/)
   assert.doesNotMatch(studio, /showToast|toastTimer|class="toast"|\btoast\s*=/)
+})
+
+test('video export downloads the rendered blob without writing to $fs', () => {
+  const studio = read('ui/studio.html')
+  const start = studio.indexOf('  startExport = async')
+  const end = studio.indexOf('\n  }\n', start)
+  const body = studio.slice(start, end)
+  assert.ok(start >= 0 && end > start)
+  assert.match(body, /downloadBlob\(blob, fname\)/)
+  assert.doesNotMatch(body, /pickSavePath|fsPut|writeFile/)
 })
 
 test('studio uses one archive path and never forces page-local storage', () => {

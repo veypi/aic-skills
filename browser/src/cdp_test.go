@@ -25,6 +25,7 @@ func TestBuildChromeArgs(t *testing.T) {
 		"--remote-debugging-port=0",
 		"--user-data-dir=/tmp/profile",
 		"--use-mock-keychain",
+		"--no-startup-window",
 		"--headless=new",
 		"--proxy-server=http://127.0.0.1:7897",
 		"--window-size=1280,720",
@@ -51,6 +52,19 @@ func TestBuildChromeArgsWithoutHeadless(t *testing.T) {
 		if strings.HasPrefix(arg, "--headless") {
 			t.Fatalf("headless must be opt-out: %v", args)
 		}
+	}
+}
+
+func TestBackgroundCDPParams(t *testing.T) {
+	for _, method := range []string{"Target.activateTarget", "Page.bringToFront", "Browser.setWindowBounds"} {
+		if _, err := backgroundCDPParams(method, nil); err == nil {
+			t.Fatalf("%s was not rejected", method)
+		}
+	}
+	original := map[string]any{"url": "about:blank", "background": false}
+	params, err := backgroundCDPParams("Target.createTarget", original)
+	if err != nil || params["background"] != true || original["background"] != false {
+		t.Fatalf("createTarget params=%v original=%v err=%v", params, original, err)
 	}
 }
 
@@ -87,8 +101,8 @@ func TestBrowserCallRoutesResponseByID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("dial fake devtools: %v", err)
 	}
-	b := &Browser{conn: conn, pending: map[int64]chan cdpResponse{}}
-	go b.readLoop()
+	b := &Browser{conn: conn, pending: map[int64]chan cdpResponse{}, pendingSession: map[int64]string{}}
+	go b.readLoop(conn, "")
 	defer b.Close()
 
 	result, err := b.Call(context.Background(), "Page.navigate", map[string]any{"url": "https://example.com"}, "")
@@ -138,8 +152,8 @@ func TestBrowserCallReportsCDPError(t *testing.T) {
 	if err != nil {
 		t.Fatalf("dial fake devtools: %v", err)
 	}
-	b := &Browser{conn: conn, pending: map[int64]chan cdpResponse{}}
-	go b.readLoop()
+	b := &Browser{conn: conn, pending: map[int64]chan cdpResponse{}, pendingSession: map[int64]string{}}
+	go b.readLoop(conn, "")
 	defer b.Close()
 
 	if _, err := b.Call(context.Background(), "Page.navigate", nil, ""); err == nil {

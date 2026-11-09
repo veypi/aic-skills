@@ -3,7 +3,7 @@
  * occt-client.js —— OCCT Worker 主线程门面（viewer 的 kernel 对象）
  * ============================================================================
  *
- * 用法（index.html）：
+ * 用法（studio.html）：
  *   import { createOCCTClient } from './occt-client.js';
  *   const kernel = await createOCCTClient((pct, text) => { ...进度条... });
  *   await viewer.setKernel(kernel, { name: 'occt' });

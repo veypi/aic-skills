@@ -13,10 +13,11 @@ import (
 )
 
 type fakeCDP struct {
-	mu          sync.Mutex
-	attachCount int
-	nextSession int
-	readyCalls  int
+	mu            sync.Mutex
+	attachCount   int
+	activateCount int
+	nextSession   int
+	readyCalls    int
 }
 
 func (f *fakeCDP) session() string {
@@ -29,6 +30,11 @@ func newFakeBrowser(t *testing.T) (*Browser, *fakeCDP) {
 	fake := &fakeCDP{}
 	upgrader := websocket.Upgrader{}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/devtools/page/") {
+			fake.mu.Lock()
+			fake.attachCount++
+			fake.mu.Unlock()
+		}
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			return
@@ -64,6 +70,8 @@ func newFakeBrowser(t *testing.T) (*Browser, *fakeCDP) {
 				})
 				_ = conn.WriteMessage(websocket.TextMessage, event)
 				result["sessionId"] = session
+			case "Target.activateTarget":
+				fake.activateCount++
 			case "Runtime.evaluate":
 				fake.readyCalls++
 				value := "complete"
@@ -84,8 +92,11 @@ func newFakeBrowser(t *testing.T) (*Browser, *fakeCDP) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	b := &Browser{conn: conn, pending: map[int64]chan cdpResponse{}}
-	go b.readLoop()
+	b := &Browser{
+		conn: conn, targetWSOrigin: "ws" + strings.TrimPrefix(srv.URL, "http"),
+		pending: map[int64]chan cdpResponse{}, pendingSession: map[int64]string{},
+	}
+	go b.readLoop(conn, "")
 	t.Cleanup(func() { _ = b.Close() })
 	return b, fake
 }
@@ -106,6 +117,9 @@ func TestAttachTargetReusesReadySession(t *testing.T) {
 	}
 	if fake.attachCount != 1 {
 		t.Fatalf("attach count = %d, want 1", fake.attachCount)
+	}
+	if fake.activateCount != 0 {
+		t.Fatalf("attach activated the browser window %d times", fake.activateCount)
 	}
 	b.forgetSession(first)
 	third, err := s.attachTarget(context.Background(), b, "page-a")

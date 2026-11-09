@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
 )
 
 // targetInput 是所有页面级工具的显式寻址。为空时才使用当前页面，方便 AI
@@ -25,35 +24,13 @@ func (s *service) attachTarget(ctx context.Context, b *Browser, targetID string)
 	}
 	session := b.TargetSession(targetID)
 	if session == "" || !b.SessionReady(session) {
-		result, err := b.Call(ctx, "Target.attachToTarget", map[string]any{
-			"targetId": targetID, "flatten": true,
-		}, "")
+		var err error
+		session, err = b.AttachPage(ctx, targetID)
 		if err != nil {
-			// 页面已关闭（常见于关闭标签后拿旧列表 attach）：给可行动的错误。
-			if strings.Contains(err.Error(), "No target with given id found") {
-				return "", fmt.Errorf("target %s not found (already closed?); run targets to refresh the page list", targetID)
-			}
 			return "", err
 		}
-		var payload struct {
-			SessionID string `json:"sessionId"`
-		}
-		if err := json.Unmarshal(result, &payload); err != nil {
-			return "", fmt.Errorf("decode attach result: %w", err)
-		}
-		if payload.SessionID == "" {
-			return "", fmt.Errorf("attach returned no sessionId: %s", string(result))
-		}
-		if err := b.AwaitSession(ctx, payload.SessionID, 5*time.Second); err != nil {
-			return "", err
-		}
-		session = payload.SessionID
-		b.rememberTargetSession(targetID, session)
 	}
 	b.SetSession(session)
-	if _, err := b.Call(ctx, "Target.activateTarget", map[string]any{"targetId": targetID}, ""); err != nil {
-		return "", err
-	}
 	if s.hasCastPeers() {
 		s.switchCast(ctx, b, session)
 	}

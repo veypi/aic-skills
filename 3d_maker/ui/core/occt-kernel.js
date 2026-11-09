@@ -27,7 +27,7 @@ const CDN_BASES = [
 ];
 
 // 有机形态网格操作（builtin 侧纯网格实现，OCCT 侧复用其网格变换后再 Sewing 重建）
-import { subdivide as _subdivideMesh, displace as _displaceMesh, smooth as _smoothMesh } from './kernel.js';
+import { loft as _loftMesh, subdivide as _subdivideMesh, displace as _displaceMesh, smooth as _smoothMesh } from './kernel.js';
 /** 本地缓存键（绑定内核版本，升级内核时改这里即可使旧缓存失效） */
 const WASM_CACHE_KEY = "opencascade.js@2.0.0-beta.533428a";
 let oc = null,
@@ -671,6 +671,10 @@ class OCCTShape {
   subdivide(levels = 1) {
     const s = _subdivideMesh(this, levels);
     const out = _occtFromMesh(s.positions, s.indices, { kind: 'subdivide', params: { levels } });
+    if (!out.triangleCount) {
+      console.warn('[OCCT] subdivide 重建为空，保留内置网格');
+      return s;
+    }
     _recTrace('subdivide', [levels], { targetId: this.id, resultId: out.id });
     return out;
   }
@@ -679,6 +683,10 @@ class OCCTShape {
   displace(amp = 1, opts = {}) {
     const s = _displaceMesh(this, amp, opts);
     const out = _occtFromMesh(s.positions, s.indices, { kind: 'displace', params: { amp, ...opts } });
+    if (!out.triangleCount) {
+      console.warn('[OCCT] displace 重建为空，保留内置网格');
+      return s;
+    }
     _recTrace('displace', [amp, opts], { targetId: this.id, resultId: out.id });
     return out;
   }
@@ -687,6 +695,10 @@ class OCCTShape {
   smooth(iterations = 1) {
     const s = _smoothMesh(this, iterations);
     const out = _occtFromMesh(s.positions, s.indices, { kind: 'smooth', params: { iterations } });
+    if (!out.triangleCount) {
+      console.warn('[OCCT] smooth 重建为空，保留内置网格');
+      return s;
+    }
     _recTrace('smooth', [iterations], { targetId: this.id, resultId: out.id });
     return out;
   }
@@ -815,7 +827,12 @@ function _loftOCCT(sections, opts = {}) {
   const build = _fn(ts, 'Build_1', 'Build');
   try { build(_progressRange()); } catch (_) { try { build(); } catch (_) {} }
   const shape = _fn(ts, 'Shape')();
-  return new OCCTShape(_positive(shape), { kind: 'loft', params: { sections: secs.length } });
+  const out = new OCCTShape(_positive(shape), { kind: 'loft', params: { sections: secs.length } });
+  if (!out.triangleCount) {
+    console.warn('[OCCT] loft 三角化为空，回退内置网格');
+    return _loftMesh(sections, opts);
+  }
+  return out;
 }
 
 /** sweep：profile 沿 path 扫掠（MakePipeShell 优先，MakePipe 兜底） */
@@ -1055,13 +1072,13 @@ export async function createOCCTKernel(cdnBase, onProgress) {
       return _sweepOCCT(profile, path, opts);
     },
     subdivide(shape, levels = 1) {
-      return shape.subdivide(levels);
+      return shape?._oc ? shape.subdivide(levels) : _subdivideMesh(shape, levels);
     },
     displace(shape, amp = 1, opts = {}) {
-      return shape.displace(amp, opts);
+      return shape?._oc ? shape.displace(amp, opts) : _displaceMesh(shape, amp, opts);
     },
     smooth(shape, iterations = 1) {
-      return shape.smooth(iterations);
+      return shape?._oc ? shape.smooth(iterations) : _smoothMesh(shape, iterations);
     },
     hole(r, h, opts = {}) {
       _traceSuspend(); // 内部图元/布尔不单独记录

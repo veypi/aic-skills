@@ -135,9 +135,9 @@ if (target) await $fs.writeFile(target.path, serializeDocument())
 编辑页必须：
 
 1. 声明 `pageDesc.commands` 中的 `open`，接收 `/fs/...` 文件路径；
-2. 初始化时读取 `$router.query.url`，调用与 `open` 相同的打开函数；
-3. 监听后续同页打开请求，避免 query 改变后仍显示旧文档；
-4. 首页、平台 opener 和 AI 指令共用同一个打开实现，不各写一套。
+2. 在 `<script active>` 中读取当前 `$router.query.url`，调用与 `open` 相同的打开函数；不能只在 `setup` 或 mounted 中初始化，因为它们只运行一次；
+3. 同时保留 `$router.onChange`：缓存页重新进入由 `active` 负责，active 状态下的 query-only 切换由 `onChange` 负责。两者共用 `initPage`，再以 `url|new` 防重；完整模板见 `ui-component.md` §3；
+4. 首页、平台 opener 和 AI 指令共用同一个打开实现，不各写一套；不同 URL 必须重新读取 `$fs` 内容，不能只更新标题或路径。
 
 ## 7. 保存与页面指令
 

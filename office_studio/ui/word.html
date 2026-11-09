@@ -7,244 +7,148 @@
   <title>Office Studio · Word</title>
 </head>
 <style>
-  body {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 0;
-    overflow: hidden;
-    container-type: inline-size;
-  }
-
-  /* ===== 编辑器视图 ===== */
-  .ed {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 0;
-  }
-
-  .topbar {
-    flex: none;
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: var(--spacing-sm);
-    padding: 6px 12px;
-    border-bottom: 1px solid var(--border-color);
-    background: var(--bg-color-secondary);
-  }
-
-  .brand { font-weight: var(--font-weight-semibold); color: var(--color-primary); white-space: nowrap; }
-  .path { font-size: var(--font-size-xs); opacity: .75; max-width: 38%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  body { height: 100%; min-height: 0; overflow: hidden; container-type: inline-size; }
+  button, input { font: inherit; }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+  .ed { height: 100%; min-height: 0; display: flex; flex-direction: column; }
+  .topbar { flex: none; height: 46px; min-height: 46px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 12px; border-bottom: 1px solid var(--border-color); min-width: 0; position: relative; z-index: 10; }
+  .brand { flex: none; height: 30px; display: inline-flex; align-items: center; padding: 0; border: 0; border-bottom: 1px solid transparent; background: transparent; color: var(--text-color); cursor: pointer; font-size: 12px; font-weight: var(--font-weight-medium); line-height: 1; white-space: nowrap; }
+  .brand:hover { color: var(--color-primary); border-bottom-color: currentColor; }
+  .doc-title { min-width: 0; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-color-secondary); font-size: 11px; }
   .grow { flex: 1; }
-  .st { font-size: var(--font-size-xs); opacity: .75; white-space: nowrap; }
-  .err { font-size: var(--font-size-xs); color: var(--color-danger); white-space: nowrap; }
-  .rev-label { display: inline-flex; align-items: center; gap: 4px; font-size: var(--font-size-xs); opacity: .75; white-space: nowrap; }
-
-  button {
-    padding: 4px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    background: var(--bg-color-tertiary);
-    font-size: var(--font-size-sm);
-    cursor: pointer;
-    color: inherit;
-    transition: border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
-  }
-
-  button:hover { border-color: var(--border-color-hover); }
-  button.primary { background: var(--color-primary); border-color: transparent; color: var(--color-primary-text); }
-  button.primary:hover { background: var(--color-primary-hover); color: var(--color-primary-text); }
-  button.ai { background: var(--color-secondary); border-color: transparent; color: var(--color-secondary-text); }
-  button.ai:hover { background: var(--color-secondary-hover); color: var(--color-secondary-text); }
-
+  .st { max-width: 220px; overflow: hidden; text-overflow: ellipsis; color: var(--text-color-tertiary); font-size: 10px; white-space: nowrap; }
+  .err { color: var(--color-danger); }
+  .rev-label { flex: none; display: inline-flex; align-items: center; gap: 5px; color: var(--text-color-tertiary); font-size: 10px; white-space: nowrap; }
+  .rev-label input { accent-color: var(--color-primary); }
+  .tbtn { flex: none; min-height: 30px; padding: 3px 5px; border: 0; border-bottom: 1px solid transparent; border-radius: 0; background: transparent; color: var(--text-color-tertiary); cursor: pointer; font-size: 11px; white-space: nowrap; }
+  .tbtn:hover { color: var(--color-primary); border-bottom-color: currentColor; }
+  .tbtn.primary { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+  .more-actions { display: none; position: relative; }
+  .more-actions summary { padding: 4px 5px; border-bottom: 1px solid transparent; color: var(--text-color-tertiary); cursor: pointer; list-style: none; font-size: 11px; }
+  .more-actions summary::-webkit-details-marker { display: none; }
+  .more-actions summary:hover, .more-actions[open] summary { color: var(--color-primary); border-bottom-color: currentColor; }
+  .more-menu { position: absolute; top: 36px; right: 0; width: 150px; box-sizing: border-box; padding: 6px; border: 1px solid var(--border-color); background: var(--bg-color); box-shadow: var(--shadow-lg); }
+  .more-menu button { width: 100%; min-height: 32px; padding: 4px 7px; border: 0; border-bottom: 1px solid var(--border-color); background: transparent; color: var(--text-color-secondary); cursor: pointer; text-align: left; font-size: 12px; }
+  .more-menu button:last-child { border-bottom: 0; }
+  .more-menu button:hover { color: var(--color-primary); }
   .main { flex: 1; min-height: 0; display: flex; position: relative; }
-
-  .empty-hint {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: var(--font-size-sm);
-    color: var(--text-color-tertiary);
-    pointer-events: none;
-    z-index: 2;
-  }
-
-  /* ===== 文档渲染区 ===== */
-  /* 注意：docx-preview 的 DOM 是运行时创建的 —— 选择器必须带 body 前缀穿透组件作用域 */
+  .empty-hint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; color: var(--text-color-tertiary); font-size: var(--font-size-sm); text-align: center; pointer-events: none; z-index: 2; }
+  .load-error { position: absolute; left: 50%; top: 50%; z-index: 3; width: min(560px, calc(100% - 40px)); box-sizing: border-box; transform: translate(-50%, -50%); padding: 16px 18px; border-left: 2px solid var(--color-danger); background: var(--bg-color); box-shadow: var(--shadow-md); color: var(--color-danger); font-size: var(--font-size-sm); line-height: 1.65; overflow-wrap: anywhere; }
+  .load-error strong { display: block; margin-bottom: 5px; font-weight: var(--font-weight-medium); }
   .doc-wrap { flex: 1; min-width: 0; overflow: auto; background: var(--bg-color-tertiary); }
-  body .doc-wrap .docx-wrapper { background: transparent; padding: 16px; }
+  body .doc-wrap .docx-wrapper { background: transparent; padding: 24px 16px; }
   body .doc-wrap .docx-wrapper > section.docx { max-width: 100%; box-shadow: var(--shadow-md); }
-  /* 文档语言与平台 UI 语言解耦：docx-preview 默认注入 .docx{hyphens:auto}，断字词典跟随
-     <html lang>（平台切语言会改 documentElement.lang）→ 断词与否决定两端对齐的空格拉伸。
-     固定为 Word 默认：自动断字关闭（文档 w:autoHyphenation 尚未支持，默认即关） */
   body .doc-wrap section.docx { hyphens: none; }
-  /* 修订样式：红=删除，绿=插入（docx-preview renderChanges 输出真实 ins/del 标签） */
   body .doc-wrap ins { color: color-mix(in srgb, var(--color-success) 80%, var(--text-color)); text-decoration: underline; background: color-mix(in srgb, var(--color-success) 16%, transparent); }
   body .doc-wrap del { color: color-mix(in srgb, var(--color-danger) 80%, var(--text-color)); text-decoration: line-through; background: color-mix(in srgb, var(--color-danger) 14%, transparent); }
   body .doc-wrap p[data-para-id]:hover { outline: 1px dashed color-mix(in srgb, var(--color-primary) 50%, transparent); }
   body .doc-wrap p.para-selected { outline: 2px solid var(--color-primary); outline-offset: 2px; }
-  /* 编辑定位短闪：AI/用户编辑后目标段落闪一下（引擎渲染后自动添加 .para-flash） */
   body .doc-wrap p.para-flash { animation: para-flash 1.6s ease-out; }
-  @keyframes para-flash {
-    0% { background: color-mix(in srgb, var(--color-primary) 30%, transparent); }
-    100% { background: transparent; }
-  }
-
-  /* ===== 侧面板 ===== */
-  .side {
-    flex: none;
-    width: 320px;
-    display: flex;
-    flex-direction: column;
-    border-left: 1px solid var(--border-color);
-    background: var(--bg-color-secondary);
-    min-height: 0;
-  }
-
-  .panel { padding: 8px 10px; border-bottom: 1px solid var(--border-color); }
-  .panel h3 { font-size: var(--font-size-xs); text-transform: uppercase; letter-spacing: .04em; margin: 0 0 6px; opacity: .6; }
-
-  /* ===== 审阅队列 ===== */
+  @keyframes para-flash { 0% { background: color-mix(in srgb, var(--color-primary) 30%, transparent); } 100% { background: transparent; } }
+  .side { flex: none; width: 320px; display: none; flex-direction: column; border-left: 1px solid var(--border-color); background: var(--bg-color); min-height: 0; }
+  .side.open { display: flex; }
+  .panel { padding: 14px; border-bottom: 1px solid var(--border-color); }
+  .panel h3 { margin: 0 0 9px; color: var(--text-color-secondary); font-size: 11px; font-weight: var(--font-weight-medium); letter-spacing: .06em; text-transform: uppercase; }
   .review-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
   .review-head h3 { margin: 0; }
-  .review-stat { font-size: var(--font-size-xs); color: var(--text-color-tertiary); white-space: nowrap; }
-  .batch-row { display: flex; gap: 6px; margin-top: 6px; }
-  .batch-row button { padding: 3px 10px; font-size: var(--font-size-xs); }
-  .review-list { flex: 1; overflow: auto; padding: 6px 8px; min-height: 0; }
-  .rev-empty { text-align: center; color: var(--text-color-tertiary); padding: 24px 0; font-size: var(--font-size-xs); }
-  .rev-item { padding: 6px 8px; border-radius: var(--radius-md); cursor: pointer; margin-bottom: 4px; }
-  .rev-item:hover { background: color-mix(in srgb, var(--text-color) 6%, transparent); }
-  .rev-item .row1 { display: flex; align-items: flex-start; gap: 6px; }
-  .rev-tag { flex: none; font-size: var(--font-size-xs); line-height: 18px; padding: 0 6px; border-radius: var(--radius-full); }
+  .review-stat { color: var(--text-color-tertiary); font-size: var(--font-size-xs); white-space: nowrap; }
+  .batch-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; }
+  .batch-row button, .rev-ops button { padding: 2px 0; border: 0; border-bottom: 1px solid transparent; border-radius: 0; background: transparent; color: var(--text-color-tertiary); cursor: pointer; font-size: var(--font-size-xs); }
+  .batch-row button:hover, .rev-ops button:hover { color: var(--color-primary); border-bottom-color: currentColor; }
+  .review-list { flex: 1; overflow: auto; padding: 8px; min-height: 0; }
+  .rev-empty { padding: 28px 12px; color: var(--text-color-tertiary); font-size: var(--font-size-xs); text-align: center; }
+  .rev-item { padding: 10px; border-radius: var(--radius-md); cursor: pointer; margin-bottom: 5px; background: var(--bg-color-secondary); }
+  .rev-item:hover { outline: 1px solid var(--border-color); }
+  .rev-item .row1 { display: flex; align-items: flex-start; gap: 7px; }
+  .rev-tag { flex: none; padding: 0 5px; border-radius: var(--radius-sm); font-size: 10px; line-height: 18px; }
   .rev-tag.t-del { background: color-mix(in srgb, var(--color-danger) 14%, transparent); color: var(--color-danger); }
   .rev-tag.t-ins { background: color-mix(in srgb, var(--color-success) 14%, transparent); color: var(--color-success); }
   .rev-tag.t-move, .rev-tag.t-cell { background: color-mix(in srgb, var(--color-warning) 16%, transparent); color: var(--color-warning); }
   .rev-tag.t-cmt { background: color-mix(in srgb, var(--color-info) 14%, transparent); color: var(--color-info); }
-  .rev-text { flex: 1; min-width: 0; font-size: var(--font-size-xs); word-break: break-all; }
-  .rev-item .row2 { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 4px; padding-left: 2px; }
-  .rev-sub { font-size: var(--font-size-xs); color: var(--text-color-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .rev-ops { display: flex; gap: 4px; flex: none; }
-  .rev-ops button { padding: 2px 10px; font-size: var(--font-size-xs); border-radius: var(--radius-md); }
-
-  .sel-info {
-    font-size: var(--font-size-xs);
-    color: var(--color-info);
-    background: color-mix(in srgb, var(--color-info) 14%, transparent);
-    border-radius: var(--radius-md);
-    padding: 4px 8px;
-    margin-bottom: 6px;
-    min-height: 24px;
-    word-break: break-all;
-  }
-
-  input[type="text"] {
-    width: 100%;
-    padding: 4px 8px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    font-size: var(--font-size-sm);
-    margin-bottom: 5px;
-    background: var(--bg-color);
-    color: inherit;
-  }
-
-  .op-row { display: flex; gap: 6px; margin-bottom: 5px; }
-  .op-row input { flex: 1; min-width: 0; margin-bottom: 0; }
+  .rev-text { flex: 1; min-width: 0; color: var(--text-color-secondary); font-size: var(--font-size-xs); line-height: 1.55; word-break: break-all; }
+  .rev-item .row2 { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 7px; }
+  .rev-sub { min-width: 0; color: var(--text-color-tertiary); font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rev-ops { display: flex; gap: 10px; flex: none; }
+  .sel-info { min-height: 32px; box-sizing: border-box; padding: 7px 9px; margin-bottom: 10px; border-left: 2px solid var(--color-info); background: var(--bg-color-secondary); color: var(--text-color-secondary); font-size: var(--font-size-xs); line-height: 1.5; word-break: break-all; }
+  input[type="text"] { width: 100%; box-sizing: border-box; padding: 7px 9px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-color); color: var(--text-color); font-size: var(--font-size-sm); }
+  .op-row { display: flex; gap: 8px; margin-top: 8px; }
+  .op-row input { flex: 1; min-width: 0; }
   .op-row button { flex: none; }
-
-  /* ===== 响应式（@container = 窗口宽度，不要用 @media） ===== */
   .panel-toggle { display: none; }
-
-  /* 窄窗：侧栏收为浮层抽屉，顶栏出现「面板」开关 */
+  @container (max-width: 1100px) { .st { display: none; } }
   @container (max-width: 960px) {
-    .panel-toggle { display: inline-block; }
-    .side {
-      position: absolute;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      width: min(340px, 88cqw);
-      display: none;
-      z-index: 6;
-      box-shadow: var(--shadow-lg);
-    }
+    .panel-toggle { display: inline-flex; }
+    .side { position: absolute; top: 0; right: 0; bottom: 0; width: min(340px, 88cqw); display: none; z-index: 6; box-shadow: var(--shadow-lg); }
     .side.open { display: flex; }
   }
-
-  @container (max-width: 720px) {
-    .brand { display: none; }
+  @container (max-width: 760px) {
+    .topbar > .file-action { display: none; }
+    .more-actions { display: block; }
+    .rev-label { display: none; }
     body .doc-wrap .docx-wrapper { padding: 8px; }
   }
-
-  @container (max-width: 560px) {
-    .path { display: none; }
+  @container (max-width: 520px) {
+    .topbar { padding: 0 8px; gap: 5px; }
+    .doc-title { display: none; }
   }
 </style>
 
 <body>
   <div class="ed">
-    <div class="topbar">
-      <button @click="goHome">首页</button>
-      <button @click="onOpen">打开</button>
-      <button @click="onSave">保存</button>
-      <button @click="onInsertImage">插入图片</button>
-      <button class="panel-toggle" @click="onTogglePanel">面板</button>
-      <span class="brand">Office Studio · Word</span>
-      <span class="path">{{ file_path || '未打开文件' }}</span>
+    <header class="topbar">
+      <button class="brand" @click="goHome">Office Studio</button>
+      <span class="doc-title" :title="file_path">{{ file_path ? fileName() : $t('editor.no_file') }}</span>
       <span class="grow"></span>
-      <label class="rev-label"><input type="checkbox" :checked="rev_render" @change="onToggleRev"> 显示修订</label>
-      <span class="st">{{ status_text }}</span>
-      <span v-if="boot_err" class="err">· {{ boot_err }}</span>
-    </div>
+      <span v-if="boot_err" class="st err">{{ boot_err }}</span>
+      <span v-else class="st">{{ status_text }}</span>
+      <label class="rev-label"><input type="checkbox" :checked="rev_render" @change="onToggleRev"> {{ $t('editor.show_revisions') }}</label>
+      <button class="tbtn file-action" @click="onOpen">{{ $t('common.open') }}</button>
+      <button class="tbtn file-action" @click="onInsertImage">{{ $t('editor.insert_image') }}</button>
+      <button class="tbtn primary" @click="onSave">{{ $t('common.save') }}</button>
+      <button class="tbtn panel-toggle" @click="onTogglePanel">{{ $t('editor.panel') }}</button>
+      <details class="more-actions">
+        <summary>{{ $t('common.more') }}</summary>
+        <div class="more-menu">
+          <button @click="onOpen">{{ $t('common.open') }}</button>
+          <button @click="onInsertImage">{{ $t('editor.insert_image') }}</button>
+          <button @click="onTogglePanel">{{ $t('editor.panel') }}</button>
+        </div>
+      </details>
+    </header>
     <div class="main">
-      <div class="doc-wrap" :id="host_id"></div>
-      <div class="empty-hint" v-if="!file_path">未打开文件 — 从「首页」选择文件，或点「打开」</div>
-      <div class="side" :class="{ open: panel_open }">
+      <div class="doc-wrap" :id="host_id" v-show="!load_error"></div>
+      <div class="load-error" v-if="load_error" role="alert"><strong>{{ $t('editor.open_failed') }}</strong>{{ load_error }}</div>
+      <div class="empty-hint" v-if="!file_path && !load_error">{{ $t('editor.empty_word') }}</div>
+      <aside class="side" :class="{open: panel_open}">
         <div class="panel">
-          <div class="review-head">
-            <h3>审阅</h3>
-            <span class="review-stat">{{ rev_stat }}</span>
-          </div>
+          <div class="review-head"><h3>{{ $t('review.title') }}</h3><span class="review-stat">{{ rev_stat }}</span></div>
           <div class="batch-row">
-            <button @click="onAcceptAI">接受 AI 修订</button>
-            <button @click="onAcceptAll">接受全部</button>
-            <button @click="onRejectAll">拒绝全部</button>
+            <button @click="onAcceptAI">{{ $t('review.accept_ai') }}</button>
+            <button @click="onAcceptAll">{{ $t('review.accept_all') }}</button>
+            <button @click="onRejectAll">{{ $t('review.reject_all') }}</button>
           </div>
         </div>
         <div class="review-list">
-          <div class="rev-empty" v-if="!rev_items.length">没有待审的修订</div>
+          <div class="rev-empty" v-if="!rev_items.length">{{ $t('review.empty') }}</div>
           <div class="rev-item" v-for="it in rev_items" @click="() => onItemLocate(it)">
-            <div class="row1">
-              <span class="rev-tag" :class="'t-' + it.type">{{ it.tag }}</span>
-              <span class="rev-text">{{ it.display }}</span>
-            </div>
+            <div class="row1"><span class="rev-tag" :class="'t-' + it.type">{{ it.tag }}</span><span class="rev-text">{{ it.display }}</span></div>
             <div class="row2">
               <span class="rev-sub">{{ it.sub }}</span>
               <span class="rev-ops">
-                <button v-if="it.kind === 'rev'" @click.stop="onRevAccept(it)">接受</button>
-                <button v-if="it.kind === 'rev'" @click.stop="onRevReject(it)">拒绝</button>
-                <button v-if="it.kind === 'cmt'" @click.stop="onCommentDelete(it)">{{ pending_delete_comment === it.id ? '确认删除？' : '删除' }}</button>
+                <button v-if="it.kind === 'rev'" @click.stop="onRevAccept(it)">{{ $t('review.accept') }}</button>
+                <button v-if="it.kind === 'rev'" @click.stop="onRevReject(it)">{{ $t('review.reject') }}</button>
+                <button v-if="it.kind === 'cmt'" @click.stop="onCommentDelete(it)">{{ pending_delete_comment === it.id ? $t('review.delete_confirm') : $t('review.delete') }}</button>
               </span>
             </div>
           </div>
         </div>
         <div class="panel">
-          <h3>选区操作</h3>
-          <div class="sel-info">{{ sel_text || '在文档中选择文字后操作' }}</div>
-          <div class="op-row">
-            <input type="text" v:value="op_replace" placeholder="替换为……（回车提交）" @keyup.enter="onHumanReplace" />
-            <button class="primary" @click="onHumanReplace">替换</button>
-          </div>
-          <div class="op-row">
-            <input type="text" v:value="op_comment" placeholder="批注内容……（回车提交）" @keyup.enter="onHumanComment" />
-            <button @click="onHumanComment">批注</button>
-          </div>
+          <h3>{{ $t('selection.title') }}</h3>
+          <div class="sel-info">{{ sel_text || $t('selection.empty') }}</div>
+          <div class="op-row"><input type="text" v:value="op_replace" :placeholder="$t('selection.replace_placeholder')" @keyup.enter="onHumanReplace" /><button class="tbtn primary" @click="onHumanReplace">{{ $t('selection.replace') }}</button></div>
+          <div class="op-row"><input type="text" v:value="op_comment" :placeholder="$t('selection.comment_placeholder')" @keyup.enter="onHumanComment" /><button class="tbtn" @click="onHumanComment">{{ $t('selection.comment') }}</button></div>
         </div>
-      </div>
+      </aside>
     </div>
   </div>
 </body>
@@ -256,6 +160,7 @@
   ready = false
   boot_err = ''
   status_text = ''
+  load_error = ''
   file_path = ''
   is_new = false         // 新建（未保存）模式：保存时写入目标路径
   rev_items = []         // 审阅队列条目（修订 + 批注）
@@ -264,8 +169,8 @@
   sel_text = ''          // 当前选区描述
   op_replace = ''
   op_comment = ''
-  rev_render = true
-  panel_open = false     // 窄窗（≤960px）下侧栏抽屉是否展开
+  rev_render = false
+  panel_open = false     // 审阅栏默认关闭；显示修订或点击面板时展开
   active_para = ''       // 最近点击选中的段落 id（插入图片等的默认锚点）
   home_armed = false     // 「首页」未保存退出二次确认（再次点击才真正离开）
 
@@ -273,8 +178,8 @@
   modRef = null
   reviewRef = null       // createDocxReview 返回组合
   selRef = null          // 最近一次选区 {paragraphId, start, end, text}
-  _route_off = null      // $router.onChange 取消函数（dispose 时调用）
-  _last_route = ''       // 已处理的路由 fullPath（同页 query 变化去重）
+  _last_route = ''       // 已处理的 url + new（同页 query 变化去重）
+  _route_seq = 0         // 仅清理当前路由的失败标记
   // 本页面实例的文档容器 id：平台是“单文档多窗口”，全局 getElementById('docx-host')
   // 会命中第一个窗口的容器——每实例生成唯一 id（模板 :id 绑定），确保只命中自己的容器
   host_id = 'docx-host-' + Math.random().toString(36).slice(2, 8)
@@ -288,6 +193,7 @@
 
   const toTree = (p) => String(p || '').replace(/^\/fs(?=\/)/, '')
   const nameOf = (p) => String(p || '').split('/').filter(Boolean).pop() || 'document.docx'
+  fileName = () => nameOf(file_path)
   const reply = (o) => ({ content: JSON.stringify(o) })
   const errReply = (e) => ({ content: JSON.stringify({ ok: false, error: String((e && e.message) || e) }) })
   const argOf = (argv, key, def) => {
@@ -450,6 +356,7 @@
   const openPath = async (p, opts = {}) => {
     if (!p) throw new Error('需要文件路径')
     const asNew = !!(opts && opts.newFile)
+    load_error = ''
     const forceReload = !!(opts && opts.reload)
     // 同一文件重复打开防护：有未保存修改时不静默重载（防丢编辑；open --reload 强制）
     if (!asNew && !forceReload && file_path === p && reviewRef && reviewRef.doc.loaded
@@ -498,6 +405,15 @@
       return { ok: true, path: p, size: blob.size, paragraphs: info.bookmarks.paragraphCount }
     } catch (e) {
       const msg = String((e && e.message) || e)
+      load_error = msg
+      file_path = ''
+      is_new = false
+      rev_items = []
+      rev_stat = ''
+      selRef = null
+      sel_text = ''
+      active_para = ''
+      panel_open = false
       status_text = '打开失败：' + msg
       throw e
     }
@@ -585,6 +501,7 @@
 
   onToggleRev = async (e) => {
     rev_render = !!(e && e.target && e.target.checked)
+    panel_open = rev_render
     if (reviewRef) {
       reviewRef.view.opts.revisionRendering = rev_render
       await reviewRef.refresh()
@@ -781,21 +698,25 @@
     if (!p || !looksLikeFsPath(p)) return null
     return { path: p, newFile: String(($router.query && $router.query.new) || '') === '1' }
   }
-  const applyRoute = () => {
-    const fp = String(($router.current && $router.current.fullPath) || '')
-    if (fp && fp === _last_route) return
-    const t = routeTask()
-    if (!t) return
-    _last_route = fp
-    openPath(t.path, { newFile: t.newFile }).catch(() => { /* openPath 已置状态 */ })
+  applyRoute = async () => {
+    const task = routeTask()
+    if (!task) return
+    const key = task.path + '|' + task.newFile
+    if (key === _last_route) return
+    _last_route = key
+    const seq = ++_route_seq
+    try { await openPath(task.path, {newFile: task.newFile}) }
+    catch (error) { if (seq === _route_seq) _last_route = '' }
   }
-  applyRoute()
-  _route_off = $router.onChange(applyRoute)
 </script>
-
+<script>
+  $scope.addCleanup($router.onChange(() => applyRoute()))
+</script>
+<script active>
+  applyRoute()
+</script>
 <script dispose>
-  // 页面销毁：取消路由订阅（页面缓存复用时不触发）
-  try { if (_route_off) _route_off() } catch (e) { /* 忽略 */ }
+  // 页面销毁：释放页面资源（路由订阅由 $scope 自动清理）
 </script>
 
 </html>
