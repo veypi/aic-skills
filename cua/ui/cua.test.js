@@ -13,6 +13,12 @@ const screenshot = (id, extra = {}) => ({
   structuredContent: {capture_id: id, screenshot_width: 800, screenshot_height: 600, ...extra},
   content: [{type: 'image', mimeType: 'image/png', data: 'aW1hZ2U='}],
 });
+// JPEG 预览帧：上游 0.47.19 的 screenshot_format:"jpeg" 不返回 capture_id，
+// 但仍注册 action capture；坐标动作需先补抓一张带 capture_id 的绑定帧。
+const jpegScreenshot = (extra = {}) => ({
+  structuredContent: {capture_id: null, screenshot_width: 800, screenshot_height: 600, ...extra},
+  content: [{type: 'image', mimeType: 'image/jpeg', data: 'aW1hZ2U='}],
+});
 const encode = data => ({content: JSON.stringify(data), attrs: {exit_code: '0'}});
 const observation = frame => ({captureId: frame.captureId, frameId: frame.frameId, epoch: frame.epoch});
 
@@ -36,9 +42,13 @@ function fixture(t, handle, options = {}) {
           const tool = await (optionsForSchema?.(hostId, options) ||
             {inputSchema: {type: 'object', properties: {session: {}, max_image_dimension: {}}}});
           const permissionProperties = permissionPrompt ? {session: {}, prompt: {}} : {session: {}};
+          const windowProperties = {session: {}, pid: {}, window_id: {}, include_accessibility_tree: {},
+            include_screenshot: {}, max_image_dimension: {}};
+          if (windowJpeg) windowProperties.screenshot_format = {};
           return encode([
             {name: 'check_permissions', inputSchema: {type: 'object', properties: permissionProperties}},
             {name: 'get_desktop_state', ...tool},
+            {name: 'get_window_state', inputSchema: {type: 'object', properties: windowProperties}},
           ]);
         }
         const match = command.match(/^cua ([a-z_]+) --input - --json( --image-preview 1280x720)?$/);
@@ -52,7 +62,7 @@ function fixture(t, handle, options = {}) {
     connections.push(connection);
     return connection;
   };
-  const {describe: optionsForSchema, permissionPrompt = true, ...sessionOptions} = options;
+  const {describe: optionsForSchema, permissionPrompt = true, windowJpeg = true, ...sessionOptions} = options;
   let sequence = 0;
   const session = new CuaSession({
     hosts: {openTools: async id => makeConnection(id)},
@@ -134,7 +144,8 @@ test('window actions use image-bound click once, explicit delivery and a fresh p
     capture_id: before.captureId, session: 'view-1'});
   assert.ok(frames.at(-1).frameId > before.frameId);
   assert.equal(calls.at(-1).name, 'get_window_state');
-  assert.equal(calls.at(-1).args.max_dimension, 1280);
+  assert.equal(calls.at(-1).args.max_image_dimension, 1280);
+  assert.equal(calls.at(-1).args.screenshot_format, 'jpeg');
   await session.action('scroll', {direction: 'down', amount: 3, delivery_mode: 'foreground'}, observation(frames.at(-1)));
   const scroll = calls.find(call => call.name === 'scroll');
   assert.equal(scroll.args.capture_id, undefined);
@@ -155,6 +166,45 @@ test('older drivers without capture_id still require a fresh local frameId', asy
   assert.equal(calls.find(call => call.name === 'click').args.capture_id, undefined);
   assert.ok(frames.at(-1).frameId > before.frameId);
   await assert.rejects(session.action('click', {x: 2, y: 3}, observation(before)), error => error.code === 'stale_capture');
+});
+
+test('a JPEG preview frame without capture_id binds coordinates through a fresh capture', async t => {
+  const {session, calls, frames} = fixture(t, (call, fallback) => {
+    if (call.name !== 'get_window_state') return fallback(call);
+    // 预览帧不带 capture_id（JPEG），补抓的绑定帧带。
+    return call.args.screenshot_format === 'jpeg' ? jpegScreenshot() : screenshot('bound-capture');
+  });
+  await ready(session);
+  session.selectTarget({kind: 'window', pid: 41, window_id: 7});
+  await tick();
+  session.setControl(true);
+  const before = frames.at(-1);
+  assert.equal(before.captureId, null, 'the JPEG preview carries no capture id');
+  await session.action('click', {x: 20, y: 30, button: 'left', count: 1}, observation(before));
+  const click = calls.find(call => call.name === 'click');
+  assert.equal(click.args.capture_id, 'bound-capture', 'coordinates are bound to a fresh capture');
+  assert.equal(click.args.delivery_mode, 'background');
+  const bind = calls.filter(call => call.name === 'get_window_state'
+    && call.args.screenshot_format !== 'jpeg').at(-1);
+  assert.ok(bind, 'a binding capture was requested before the coordinate action');
+  assert.equal(bind.args.include_accessibility_tree, false);
+  assert.equal(bind.args.max_image_dimension, 1280,
+    'the binding capture uses the preview size so coordinates share one space');
+});
+
+test('a binding capture whose size differs from the preview is refused', async t => {
+  const {session, calls, frames} = fixture(t, (call, fallback) => {
+    if (call.name !== 'get_window_state') return fallback(call);
+    return call.args.screenshot_format === 'jpeg' ? jpegScreenshot() : screenshot('bound', {screenshot_width: 1024, screenshot_height: 768});
+  });
+  await ready(session);
+  session.selectTarget({kind: 'window', pid: 41, window_id: 7});
+  await tick();
+  session.setControl(true);
+  const before = frames.at(-1);
+  await assert.rejects(session.action('click', {x: 20, y: 30}, observation(before)),
+    error => error.code === 'stale_capture' && /changed/.test(error.message));
+  assert.equal(calls.some(call => call.name === 'click'), false, 'no click is dispatched for mismatched geometry');
 });
 
 test('captures are single-flight; gestures and hidden views pause automatic polling', async t => {
@@ -696,7 +746,7 @@ test('only screenshot calls opt into a device-side 720p preview and forwarding o
     assert.equal(Object.hasOwn(call.options, 'imagePreview'), false);
     assert.equal(Object.hasOwn(call.args, 'imagePreview'), false);
   }
-  assert.equal(describes.length, 2);
+  assert.equal(describes.length, 3, 'permission, desktop and window schemas are cached per connection');
   assert.equal(Object.hasOwn(describes[0].options, 'imagePreview'), false);
   const commands = [];
   await cuaCall({execCall: async (command, options) => {

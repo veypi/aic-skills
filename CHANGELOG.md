@@ -6,6 +6,7 @@
 
 ## 未发布
 
+- `cua`（1.1.12 → 1.1.13）：查看端画面提速。窗口预览帧改走上游 0.47.19 的 `screenshot_format:"jpeg"`（载荷约为 PNG 的十分之一，且仍注册 action capture），空闲刷新间隔 1000 → 400 毫秒；因 JPEG 帧不带 `capture_id`，坐标动作（click/drag/scroll）前补抓一张同尺寸绑定帧并带上其 `capture_id`，绑定帧与预览帧尺寸不一致时拒绝动作。老驱动无 `screenshot_format` 时按实际 schema 回退 PNG。实测窗口态设备端单帧 207 → 166 毫秒。
 - `cua`（1.1.11 → 1.1.12）：手册同步 Desktop 随包 cua-driver 版本 0.33.2 → 0.47.19。上游本次改了感知协议（`get_window_state` 默认只返紧凑 Markdown 树，结构化 `elements` 需显式请求；`element_token` 变为 `<snapshot_id>:N`；新增 `since` 差分读、`display_only`、`screenshot_format:"jpeg"`；新增 `run_steps`/`run_script`/`browser_select`/`get_guide` 四个工具，无删除），工具面与参数由上游提供、本包手册只描述安装与调用方式，故仅更新版本号并保留参数以当前 `cua <tool> --help` 为准的约定。
 
 ## 0.4.4 — 2026-11-12

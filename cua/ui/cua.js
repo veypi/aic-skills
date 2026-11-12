@@ -152,7 +152,7 @@ function unavailableCapture(error) {
 // Mutations are never replayed. Observation IDs bind queued input to a shown frame.
 export class CuaSession {
   constructor({hosts, changed = () => {}, frame = () => {}, error = () => {},
-    intervalMS = 1000, maxDimension = 1280,
+    intervalMS = 400, maxDimension = 1280,
     createSessionId = () => `ui-${globalThis.crypto.randomUUID()}`} = {}) {
     this.hosts = hosts;
     this.changed = changed;
@@ -243,6 +243,41 @@ export class CuaSession {
     }
     return Object.hasOwn(this.desktopSchema.properties, 'max_image_dimension')
       ? {max_image_dimension: this.maxDimension} : {};
+  }
+
+  // 窗口预览参数。上游 0.47.19 起支持 screenshot_format:"jpeg"（载荷比 PNG 小
+  // 一个数量级，且仍注册 action capture，坐标动作照常受理）。老驱动没有这个
+  // 参数，按实际 schema 决定，不硬塞。
+  //
+  // 尺寸参数（max_image_dimension / 老驱动的 max_dimension）与预览帧、绑定帧
+  // 必须一致：坐标是窗口内像素，两帧尺寸不同则坐标指向另一个画面。
+  async _windowArguments(target, signal) {
+    const generation = this.hostEpoch;
+    if (this.windowSchema?.generation !== generation) {
+      const tool = await this._call('get_window_state', {}, {describe: true, signal});
+      if (this.closed || generation !== this.hostEpoch || signal.aborted) {
+        throw failure('stale_context', 'CUA device or target changed');
+      }
+      const properties = tool.inputSchema?.properties;
+      if (!properties || typeof properties !== 'object' || Array.isArray(properties)) {
+        throw new Error('CUA returned an invalid window capture schema');
+      }
+      this.windowSchema = {generation, properties};
+    }
+    const properties = this.windowSchema.properties;
+    const args = {pid: target.pid, window_id: target.window_id,
+      include_accessibility_tree: false, include_screenshot: true};
+    if (Object.hasOwn(properties, 'screenshot_format')) args.screenshot_format = 'jpeg';
+    Object.assign(args, this._windowSizeArguments());
+    return args;
+  }
+
+  // _windowSizeArguments 返回当前驱动支持的窗口截图尺寸参数。
+  _windowSizeArguments() {
+    const properties = this.windowSchema?.properties || {};
+    if (Object.hasOwn(properties, 'max_image_dimension')) return {max_image_dimension: this.maxDimension};
+    if (Object.hasOwn(properties, 'max_dimension')) return {max_dimension: this.maxDimension};
+    return {};
   }
 
   async _permissionArguments() {
@@ -479,8 +514,7 @@ export class CuaSession {
     this._publish({capturing: true});
     try {
       const args = target.kind === 'desktop' ? await this._desktopArguments(controller.signal)
-        : {pid: target.pid, window_id: target.window_id,
-          include_accessibility_tree: false, include_screenshot: true, max_dimension: this.maxDimension};
+        : await this._windowArguments(target, controller.signal);
       if (!this._current(epoch) || !this.active || controller.signal.aborted) {job.resolve(null); return;}
       const result = await this._call(target.kind === 'desktop' ? 'get_desktop_state' : 'get_window_state', args, {signal: controller.signal, imagePreview: true});
       if (!this._current(epoch) || !this.active || failureRevision !== this.failureRevision) {
@@ -521,6 +555,36 @@ export class CuaSession {
     }
   }
 
+  // _bindCapture 补抓一张可绑定坐标的帧（带 capture_id）。
+  //
+  // 预览帧走 JPEG 时上游不返回 capture_id，而驱动要求坐标动作绑定一个 capture
+  // （否则 screenshot_context_missing）。这里现抓一张 PNG 绑定帧：它的尺寸必须
+  // 与用户看到的那一帧一致，否则坐标指向另一个画面，直接拒绝而不是误点。
+  async _bindCapture(target, job) {
+    const controller = new AbortController();
+    this.requests.add(controller);
+    try {
+      // 绑定帧必须与预览帧同尺寸：坐标是窗口内像素，尺寸不同则坐标指向另一个画面。
+      // 预览帧用 max_image_dimension 缩放过，绑定帧沿用同一参数。
+      const args = {pid: target.pid, window_id: target.window_id,
+        include_accessibility_tree: false, include_screenshot: true,
+        ...this._windowSizeArguments()};
+      const result = await this._call('get_window_state', args, {signal: controller.signal});
+      if (!this._current(job.epoch) || !this.active) throw failure('stale_context', 'CUA target changed');
+      const data = resultData(result);
+      const captureId = data.capture_id;
+      if (!captureId) throw failure('invalid_response', 'CUA returned no capture binding for the coordinates');
+      const frame = this.lastFrame;
+      if (frame && Number.isInteger(frame.width) && Number.isInteger(frame.height)
+          && (data.screenshot_width !== frame.width || data.screenshot_height !== frame.height)) {
+        throw failure('stale_capture', 'CUA window changed; use the latest screenshot');
+      }
+      return {captureId};
+    } finally {
+      this.requests.delete(controller);
+    }
+  }
+
   async _act(job) {
     let started = false;
     try {
@@ -528,7 +592,15 @@ export class CuaSession {
       const target = {...this.state.target};
       const args = {...job.args, target};
       if (target.kind === 'window' && !args.delivery_mode) args.delivery_mode = 'background';
-      if (job.name === 'click' && job.captureId) args.capture_id = job.captureId;
+      // 坐标动作必须绑定一个 capture：预览帧走 JPEG（载荷小一个数量级）时不带
+      // capture_id，先补抓一张绑定帧再发动作。绑定帧尺寸必须与预览帧一致，
+      // 否则坐标属于另一个画面，寧可拒绝也不误点。
+      if (COORDINATE_ACTIONS.has(job.name) && !job.captureId && target.kind === 'window') {
+        const bound = await this._bindCapture(target, job);
+        args.capture_id = bound.captureId;
+      } else if (job.name === 'click' && job.captureId) {
+        args.capture_id = job.captureId;
+      }
       // Text and keys may also change layout. They may continue in order, but
       // pointer actions need a screenshot captured after any preceding mutation.
       this.coordinateFrameConsumed = true;
