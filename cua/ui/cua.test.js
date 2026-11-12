@@ -168,6 +168,14 @@ test('older drivers without capture_id still require a fresh local frameId', asy
   await assert.rejects(session.action('click', {x: 2, y: 3}, observation(before)), error => error.code === 'stale_capture');
 });
 
+test('the default refresh interval keeps the view responsive without busy-looping', async t => {
+  const {session} = fixture(t);
+  assert.equal(session.intervalMS, 150,
+    'screenshot latency dominates the frame period, so the wait stays short');
+  const fast = fixture(t, null, {intervalMS: 40});
+  assert.equal(fast.session.intervalMS, 100, 'the floor keeps the device from being hammered');
+});
+
 test('a JPEG preview frame without capture_id binds coordinates through a fresh capture', async t => {
   const {session, calls, frames} = fixture(t, (call, fallback) => {
     if (call.name !== 'get_window_state') return fallback(call);

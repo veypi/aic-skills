@@ -151,8 +151,11 @@ function unavailableCapture(error) {
 // A controller owns a labelled CUA session and one persistent device connection.
 // Mutations are never replayed. Observation IDs bind queued input to a shown frame.
 export class CuaSession {
+  // 刷新间隔。截图本身在 macOS 约 120ms、Windows 桌面态约 290ms（Windows 走
+  // GDI 全屏 BitBlt，UIA/DirectComposition 还会多截一遍），因此间隔是帧率
+  // 的主项：400ms 时约 1.4fps，150ms 时约 2.3fps（Windows 桌面态）。
   constructor({hosts, changed = () => {}, frame = () => {}, error = () => {},
-    intervalMS = 400, maxDimension = 1280,
+    intervalMS = 150, maxDimension = 1280,
     createSessionId = () => `ui-${globalThis.crypto.randomUUID()}`} = {}) {
     this.hosts = hosts;
     this.changed = changed;

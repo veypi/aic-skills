@@ -14,7 +14,7 @@ binaries shipped with the release.
 | Skill | Version | Shape |
 | --- | --- | --- |
 | `browser` | 1.2.15 | Prose + UI + device service: a Go service inside the package driving its own Chrome over CDP (AI tools + live view + human input) |
-| `cua` | 1.1.13 | Prose + UI + device launcher: remote view and control through the official `cua-driver` (0.47.19) MCP |
+| `cua` | 1.1.14 | Prose + UI + device launcher: remote view and control through the official `cua-driver` (0.47.19) MCP |
 | `blender` | 0.3.7 | Prose + device launcher: runs the off-the-shelf `blender-mcp` service (inspect / render / run Python) |
 | `create` | 1.0.15 | Guide + templates + intro page: the ivec extension authoring manual (cloud / page / host) and a human-facing capability page |
 | `design` | 0.1.2 | Guide + live examples + tools: conversational UI/UX design, original prompts, theme tokens and evidence-based review |
