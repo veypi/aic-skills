@@ -4,6 +4,15 @@
 
 两个版本面：**模块版本**（本文件 / tag `vX.Y.Z`，Go 依赖面）与**技能版本**（各 `SKILL.md` frontmatter 的 `version:`，进入 `skills.builtin` 指纹）。内容更新 bump 技能版本以触发自动定版；事件执行时无条件整包覆盖，不做版本大小比较。契约或结构变化 bump 模块版本。
 
+## 0.4.4 — 2026-11-12
+
+- `browser`（1.2.14 → 1.2.15）：画面链路里长时间不确认的订阅者不再被摘除——停止喂帧但保留连接（每 10s 探活帧），页面补一次确认就恢复喂帧；`cast_stats` 的「僵尸订阅者」口径改为「停止喂帧的订阅者数」。UI 侧设备选择改用平台公共组件 `<widgets-host-connector>`，移除自造下拉与在线判断；手册补坐标钳制、错误分作用域、页面确认与窗口不可见放流四条画面协议约束。
+- `cua`（1.1.10 → 1.1.11）：UI 改用平台公共组件 `<widgets-host-connector>`，`connect` 支持传入外部连接以复用组件已建立的工具连接；移除自造 device-select、连接状态条与 capture-badge。
+- `video_studio`（1.0.5 → 1.1.9）：4K H.264 改用 High 5.1 档位（`avc1.640033`，Main 4.0 只覆盖到 1080p）；舞台在存档与素材加载期间显示加载态；新增 `references/screen-recording.md` 录屏参考。
+- `create`（1.0.14 → 1.0.15）：手册补多页/复杂 UI 的可视确认门与静态 mock 流程、公共组件 `<widgets-*>` 与共享服务 `$hosts`（含 `<widgets-host-connector>` 的属性、事件与连接生命周期）、自定义组件写完整开闭标签、动态 i18n key 需显式补齐双语；红线新增「界面不自造设备选择」，验收清单与分篇索引同步。
+- `vhtml`（0.5.1 → 0.5.2）：手册同步自闭合标签禁令与动态 i18n key 约束。
+- 中英文 README 技能版本表同步；模块版本 0.4.3 → 0.4.4。
+
 ## 0.4.3 — 2026-11-10
 
 - `browser`（1.2.12 → 1.2.14）：彻底移除前台激活路径：页面改用 `/devtools/page/<target>` WebSocket 直连并缓存，不再调用会激活可见 Chrome 的 `Target.attachToTarget`；原始 CDP 禁止 `Target.activateTarget` / `Page.bringToFront` / `Browser.setWindowBounds`，新建标签强制 `background:true`。可见窗口与外部 CDP 接入保留，截图、求值和 UI screencast 均在后台工作；macOS 可见浏览器启动与既有实例接入逻辑同步修正。
