@@ -71,32 +71,40 @@ function fixture(t, {hosts = [enabledHost('desktop')], load, onCall, beforeFrame
       connections.push(connection); return connection;
     }},
     $refs: {canvas: {}, keyboard: {}, screenPanel}, $t: key => key, document,
-    matchMedia: () => ({matches: mobile}), console,
+    $watch: () => () => {}, matchMedia: () => ({matches: mobile}), console,
   });
   runInContext(setup, state, {filename: 'cua/index.html setup'});
   t.after(() => state.disposeCua());
-  return {state, calls, connections, viewers, document, listeners, hosts,
+  const connect = async hostId => {
+    const host = hosts.find(item => item.id === hostId);
+    state.resetDevice();
+    state.selectedHostId = hostId;
+    const connection = await state.$hosts.openTools(hostId);
+    await state.connectDevice({hostId, host, connection});
+    await tick();
+    await tick();
+  };
+  return {state, calls, connections, viewers, document, listeners, hosts, connect,
     get queryDisposed() {return queryDisposed;},
-    async ready() {state.activateCua(); await tick(); await tick();},
+    async ready(hostId = hosts[0].id) {state.activateCua(); await tick(); await connect(hostId);},
     async hidden(value) {document.hidden = value; listeners.get('visibilitychange')?.(); await tick();},
   };
 }
 
-test('page keeps unavailable devices visible, chooses a usable device, and starts read-only', async t => {
+test('page uses the connector selected device and starts read-only', async t => {
   const f = fixture(t, {hosts: [
     {...enabledHost('offline'), last_seen: '2000-01-01T00:00:00Z'},
     {...enabledHost('disabled'), status: 'disabled'},
     {...enabledHost('legacy'), caps: {}}, enabledHost('linux', 'linux'),
   ]});
-  await f.ready();
-  assert.equal(f.state.devices.length, 4);
-  assert.equal(f.state.selectedHostId, 'linux', 'Linux is permitted rather than silently hard-disabled');
+  await f.ready('linux');
+  assert.equal(f.state.selectedHostId, 'linux');
+  assert.equal(f.state.selectedHost.id, 'linux');
   assert.equal(f.connections.length, 1);
   assert.equal(f.connections[0].hostId, 'linux');
   assert.equal(f.state.hasFrame, true);
   assert.equal(f.state.sessionState.control, false);
   assert.equal(f.viewers[0].platform, 'linux');
-  assert.match(f.state.devices[0].unavailable, /offline/);
   f.state.windowSearch = 'notes';
   assert.equal(f.state.filteredWindows().length, 1);
   f.state.windowSearch = 'browser';
@@ -195,34 +203,29 @@ test('capture errors retry the selected window on its existing connection and pr
   assert.ok(f.calls.filter(call => call.tool === 'check_permissions').every(call => call.args.prompt === false));
 });
 
-test('page clears device selection without permanently closing its reusable controller', async t => {
-  const hosts = [enabledHost('desktop')];
-  const f = fixture(t, {hosts});
-  await f.ready();
-  hosts[0].status = 'disabled';
-  await f.state.refreshDevices();
-  assert.equal(f.state.selectedHostId, '');
+test('switching the connector selection clears old windows before connecting the new device', async t => {
+  const f = fixture(t, {hosts: [enabledHost('desktop'), enabledHost('linux', 'linux')]});
+  await f.ready('desktop');
+  assert.equal(f.state.sessionState.windows.length, 2);
+  const switching = f.connect('linux');
+  assert.equal(f.state.sessionState.windows.length, 0);
   assert.equal(f.state.hasFrame, false);
-  hosts[0].status = 'enabled';
-  await f.state.refreshDevices();
-  await tick();
-  assert.equal(f.state.selectedHostId, 'desktop');
+  await switching;
+  assert.equal(f.state.selectedHostId, 'linux');
+  assert.equal(f.state.sessionState.hostId, 'linux');
+  assert.equal(f.state.sessionState.windows.length, 2);
   assert.equal(f.state.hasFrame, true);
 });
 
-test('dispose removes DOM listeners, releases the query, and ignores pending discovery', async t => {
-  let resolve;
-  const f = fixture(t, {load: () => new Promise(done => {resolve = done;})});
-  f.state.activateCua();
-  await tick();
+test('dispose removes DOM listeners and closes the current connection', async t => {
+  const f = fixture(t);
+  await f.ready();
   f.state.disposeCua();
-  resolve([enabledHost('late')]);
   await tick();
-  assert.equal(f.queryDisposed, true);
   assert.equal(f.listeners.size, 0);
   assert.equal(f.viewers[0].closed, true);
-  assert.equal(f.connections.length, 0);
-  assert.equal(f.state.devices.length, 0);
+  assert.equal(f.connections.length, 1);
+  assert.equal(f.connections[0].closed, true);
 });
 
 test('fullscreen state and mobile permissions stay reachable; all translation keys exist', async t => {

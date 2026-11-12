@@ -279,7 +279,7 @@ export class CuaSession {
     } catch {} finally { clearTimeout(timer); await connection.close().catch(() => {}); }
   }
 
-  async connect(hostId) {
+  async connect(hostId, {connection: providedConnection = null} = {}) {
     if (this.closed) throw failure('closed', 'CUA view is closed');
     const hostEpoch = ++this.hostEpoch;
     this._invalidate();
@@ -290,7 +290,7 @@ export class CuaSession {
     await this._disconnect();
     if (this.closed || hostEpoch !== this.hostEpoch || !hostId) return;
     try {
-      const connection = await this.hosts.openTools(hostId);
+      const connection = providedConnection || await this.hosts.openTools(hostId);
       if (this.closed || hostEpoch !== this.hostEpoch) { await connection.close(); return; }
       this.connection = connection;
       this.sessionId = this.createSessionId();
