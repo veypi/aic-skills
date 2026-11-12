@@ -209,7 +209,7 @@
     <section class="permissions" v-if="permissionsOpen" role="dialog" :aria-label="$t('cua.permissions')">
       <div class="permissions-heading"><strong>{{$t('cua.permissions')}}</strong><button class="icon-button" @click="refreshPermissions" :disabled="!connected() || checkingPermissions" :title="$t('cua.refresh')" :aria-label="$t('cua.refresh')"><i class="fa-solid fa-arrows-rotate" :class="{'fa-spin': checkingPermissions}" aria-hidden="true"></i></button><button class="icon-button" @click="permissionsOpen = false" :title="$t('cua.close')" :aria-label="$t('cua.close')"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></div>
       <strong>{{$t('cua.state')}}</strong><pre v-if="sessionState.permissions">{{permissionReport()}}</pre><p class="subtle" v-else>{{checkingPermissions ? $t('cua.checking_permissions') : $t('cua.no_permission_report')}}</p>
-      <div class="guide"><strong>{{$t('cua.guide_title')}}</strong><ol><li>{{$t('cua.guide_step1')}}</li><li>{{$t('cua.guide_step2')}}</li><li v-html="$t('cua.guide_step3')"></li><li v-html="$t('cua.guide_step4')"></li></ol></div>
+      <div class="guide"><strong>{{$t('cua.guide_title')}}</strong><ol><li>{{$t('cua.guide_step1')}}</li><li>{{$t('cua.guide_step2')}}</li><li><div v-html="$t('cua.guide_step3')"></div></li><li><div v-html="$t('cua.guide_step4')"></div></li></ol></div>
     </section>
   </main>
   </div>
