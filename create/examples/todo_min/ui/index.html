@@ -60,10 +60,7 @@
     draft = ''
     priority = '0'
 
-    // 指令助手
-    reply = (obj) => ({ content: JSON.stringify(obj) })
-    errReply = (msg) => ({ content: JSON.stringify({ ok: false, error: String(msg) }) })
-    argsGet = (argv, flag) => { const i = argv.indexOf(flag); return i >= 0 ? argv[i + 1] : null }
+    // 页面展示助手
     priorityLabel = (p) => ['普通', '重要', '紧急'][Number(p)] || '普通'
     doneCount = () => items.filter((it) => it.done).length
     genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
@@ -107,46 +104,45 @@
       await load()
     }
 
-    // ===== pageDesc：窗口指令（外部 AI 经 {win_id}.{cmd} 调用） =====
+    // ===== pageDesc：AI 在 page exec JS 中经 win(id).command(data) 调用 =====
     pageDesc = {
       desc: '待办清单页面（todo_min 示例）',
       commands: [
         {
-          name: 'todo_status', desc: '待办统计', help: '无参数。返回 {"ok","total","done"}',
-          handler: async () => { await load(); return reply({ ok: true, total: items.length, done: doneCount() }) },
+          name: 'todo_status', desc: '待办统计', help: 'win(id).todo_status()；返回 {ok, total, done}',
+          handler: async () => { await load(); return { ok: true, total: items.length, done: doneCount() } },
         },
         {
-          name: 'todo_add', desc: '新增待办', help: '--title <标题>（必填）[--priority <0-2>]',
-          handler: async (argv) => {
-            const t = argsGet(argv, '--title')
-            if (!t) return errReply('--title is required')
-            const id = await add(t, argsGet(argv, '--priority'))
-            return id ? reply({ ok: true, id: id }) : errReply('empty title')
+          name: 'todo_add', desc: '新增待办', help: 'win(id).todo_add({title, priority?})',
+          handler: async (data) => {
+            const title = String(data?.title || '').trim()
+            if (!title) throw new Error('todo_add: title required')
+            const id = await add(title, data?.priority)
+            if (!id) throw new Error('todo_add: empty title')
+            return { ok: true, id }
           },
         },
         {
-          name: 'todo_toggle', desc: '切换/设置完成状态', help: '--id <id> [--done <0/1>]（缺省翻转）',
-          handler: async (argv) => {
-            const id = argsGet(argv, '--id')
-            const item = items.find((it) => it.id === id)
-            if (!item) return errReply('not found: ' + id)
-            await toggle(item, argsGet(argv, '--done'))
-            return reply({ ok: true })
+          name: 'todo_toggle', desc: '切换/设置完成状态', help: 'win(id).todo_toggle({id, done?})；done 缺省时翻转',
+          handler: async (data) => {
+            const item = items.find((it) => it.id === data?.id)
+            if (!item) throw new Error('todo_toggle: not found: ' + data?.id)
+            await toggle(item, data?.done)
+            return { ok: true }
           },
         },
         {
-          name: 'todo_remove', desc: '删除待办', help: '--id <id>',
-          handler: async (argv) => {
-            const id = argsGet(argv, '--id')
-            const item = items.find((it) => it.id === id)
-            if (!item) return errReply('not found: ' + id)
+          name: 'todo_remove', desc: '删除待办', help: 'win(id).todo_remove({id})',
+          handler: async (data) => {
+            const item = items.find((it) => it.id === data?.id)
+            if (!item) throw new Error('todo_remove: not found: ' + data?.id)
             await remove(item)
-            return reply({ ok: true })
+            return { ok: true }
           },
         },
         {
-          name: 'todo_clear_done', desc: '清除全部已完成', help: '无参数',
-          handler: async () => { await clearDone(); return reply({ ok: true, total: items.length }) },
+          name: 'todo_clear_done', desc: '清除全部已完成', help: 'win(id).todo_clear_done()',
+          handler: async () => { await clearDone(); return { ok: true, total: items.length } },
         },
       ],
     }

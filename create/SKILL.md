@@ -1,6 +1,6 @@
 ---
 name: create
-version: 1.0.15
+version: 1.0.16
 nickname: create 技能包
 description: AIC 扩展作者手册——把一句人话需求拆成云端/界面/设备三端的实际改动：技能包与数据、界面与页面指令、Host/Pod 脚本批量调用技能 API、桌面档案规则、设备命令与常驻服务；含判定流程、字段契约、红线与验收。
 keywords: [create, 扩展, 技能包, 界面, 档案, 规则, 设备, 命令, 服务, 模板, API, 批处理, 批量上传]
@@ -56,7 +56,8 @@ AIC 的扩展落在三个端上，每端有自己的持久化机制和交互协�
 
 私有包目录默认只读。建行、授权、写文件是三件事，顺序不能反：
 
-1. 建行：`exec _host=page` → `curl /api/skills -X POST -H 'Content-Type: application/json' -d '{"name":"example"}'`
+1. 建行：`exec _host=page` 的 `script` 是 async JavaScript 函数体，执行
+   `const res = await fetch('/api/skills', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name: 'example'})}); if (!res.ok) throw new Error('HTTP ' + res.status); return await res.json()`
    → 返回 `skill_id` 与 `url_prefix`，并落一份 SKILL.md 骨架
 2. 授权：`grant fs /skills/{skill_id}`
 3. 写文件：fs 工具写 `/skills/{skill_id}/...`（fs 路径，与页面 URL 不同段）
@@ -82,7 +83,7 @@ AIC 的扩展落在三个端上，每端有自己的持久化机制和交互协�
 
 ### ⑥ 验收
 
-按 §4 的清单逐条验。**没验证不算做完**——尤其档案规则要看 `profile inspect` 的生效表与被拒清单。
+按 §4 的清单逐条验。**没验证不算做完**——尤其档案规则要看 `profile({action: 'inspect'})` 的生效表与被拒清单。
 
 ## 2. 红线（违反会被平台拒绝或静默失效）
 
@@ -103,13 +104,14 @@ AIC 的扩展落在三个端上，每端有自己的持久化机制和交互协�
 
 | 动作 | 怎么调 |
 |---|---|
-| 调技能数据 API | Page/Host/Pod 均可：`curl {url_prefix}/api/...`；页面内则用 `$fetch('api/...')` |
-| 调平台管理接口 | `exec _host=page` → `curl /api/...`；不要把技能 API 的三端支持扩展到管理接口 |
+| 调技能数据 API | 页面内 `$fetch('api/...')`；AI 的 page exec 用同源 `fetch('{url_prefix}/api/...')` 并检查 `res.ok`；Host/Pod 用 `curl {url_prefix}/api/...` |
+| 调平台管理接口 | `exec _host=page` 的 async JS 函数体里用同源 `fetch('/api/...')`；不要把技能 API 的三端支持扩展到管理接口 |
 | 建包 / 授权 / 写包 | 见 §1 ④；写文件用 fs 工具，路径 `/skills/{id}/...` |
 | 读写用户文件 | fs 工具，路径 `/u/{uid}/...` |
 | UI 打开/另存为 | 页面内 `$fs.pickFiles` / `$fs.pickSavePath`，再用 `$fs.readFile/writeFile`；跨端复制用 `$fs.transfer` |
-| 操作桌面档案 | `exec _host=page` → `profile list` / `save <name>` / `apply <name>` / `revert` / `inspect` |
-| 开窗口 | `exec _host=page` → `open <url>` / `list` / `close <win_id>` / `reload` |
+| 操作桌面档案 | `exec _host=page` → `profile({action: 'list' | 'save' | 'apply' | 'revert' | 'inspect', name?})` |
+| 开窗口 | `exec _host=page` → `open({url})` / `list()` / `close({id})` / `reload({id?})` |
+| 调用页面指令 | `return await commands()` 发现；多步调用 `await win('w1').todo_add({title: 'x'})`，handler 为 `(data, ctx)` 并直接返回业务数据 |
 | 调设备命令 | `exec _host=<设备ID>` → `<alias>` 列工具 / `<alias> <tool> --help` 看参数 / `<alias> <tool> --input '{...}' --json` 调用（`mcp ...` 仅调试直通） |
 | 页面调设备 | `$hosts.openTools(hostId)` → `execCall(script, {stdin})` → 用完 `close()` |
 
@@ -118,7 +120,7 @@ AIC 的扩展落在三个端上，每端有自己的持久化机制和交互协�
 - **界面**：能打开；资源无 404；亮/暗主题都正常；声明的页面命令能被 AI 调通；可见文案双语完整；路由资源在 `active` 中装载并保留 `onChange` 处理 active 状态下的 query-only 切换；通知走平台 `$message`。正常打开、新建与切换不弹成功提示。多页静态设计阶段的所有导航都有已注册目标或占位页，占位页可返回首页；展示出来的主动作有本地可见结果，不是死按钮；复杂 UI 在接业务前取得用户对实际页面的确认。涉及设备时用平台公共组件 `<widgets-host-connector>` 或 `$hosts.openTools`，没有自造设备下拉框与在线判断。
 - **文件型 UI**：无文档时显示打开/新建/最近记录首页；文件可保存到用户选择的 `/fs` 位置；项目资源使用相对路径；移动或跨端复制后可重新打开。
 - **数据**：接口通；换账号看不到别人的数据；包内无真实用户数据；有批处理脚本时，Host/Pod 至少实测一次读写、一条失败即停和结果读回。
-- **档案**：`profile inspect` 里 aliases/slots 在生效表；被拒项在 rejected 里可查；改 aliases/slots 后 reload 生效。
+- **档案**：`profile({action: 'inspect'})` 里 aliases/slots 在生效表；被拒项在 rejected 里可查；改 aliases/slots 后 reload 生效。
 - **包**：SKILL.md 可执行、引用完整；包内无二进制/密钥/用户数据；发布前自查过。
 - **设备**：源码在包内、产物不在；正文写全安装/依赖/路径/调用；设备上跑得通。
 

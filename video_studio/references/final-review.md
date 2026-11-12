@@ -8,7 +8,7 @@
 
 > 你是独立视频质检员。存档：/fs/{source}/.../demo.video_studio（按所属端用 fs 工具读取）。
 > 输入：主 .video_studio（含分镜 brief.md）、镜头卡名清单、审美准则。
-> 步骤：1) 读 brief.md 与主存档；2) 用平台 `open /fs/.../demo.video_studio` 经 opener 打开 Studio（已打开 Studio 时也可调用 `{win_id}.open --path /fs/.../demo.video_studio`）；
+> 步骤：1) 读 brief.md 与主存档；2) 在 page exec 中用平台 `open({url: '/fs/.../demo.video_studio'})` 经 opener 打开 Studio（已打开 Studio 时也可调用 `win(id).open({url: '/fs/.../demo.video_studio'})`）；
 > 3) 逐场景 shot_video 抽关键帧（入场帧/动作帧/hold 帧各一），fs.read 查看；
 > 4) 按下方清单逐条出报告，每条带帧号证据；5) 只报告不修改。
 
@@ -30,7 +30,7 @@
 - [ ] 每幕入场/动作/hold 至少三帧截图并实际查看；拼图用于总览，可疑处必须再看全尺寸单帧
 - [ ] 无越界/穿帮/意外抖动（Q3）；Three 主体完整且取景中心正确
 - [ ] 视觉对齐：文字有正确的 align/valign，多行标题共轴，状态图标贴近实际文字，轨道标签各自对准槽位（Q12/Q13）
-- [ ] 特写文字锐度：素材分辨率够（Q2），shot_video --scale 2 裁剪放大验
+- [ ] 特写文字锐度：素材分辨率够（Q2），win(id).shot_video({scale: 2}) 裁剪放大验
 - [ ] 有效字高：字幕 ≥5% 帧高、辅助 ≥3%；缩到 480px 宽仍可读（Q11）
 - [ ] sheen 不群发、被圆角裁剪（Q4）
 - [ ] 飞入元素落在真实槽位（Q9）

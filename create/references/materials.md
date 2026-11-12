@@ -16,7 +16,7 @@
 | `$skills` | 技能目录（查自己的/广场的技能） |
 | `$account` | 账户概况（`$account.get()` / `load(options)`） |
 | `$catalog` | 只读目录（`tools` / `modelSchemas` / `quotaProviders`） |
-| `$pageExec` | 页面指令通道（AI 经窗口命令调用页面） |
+| `$pageExec` | 页面指令通道（AI 在 page exec JS 中经 `win(id).command(data)` 调用页面） |
 | `$message` | 平台通知与确认：`info/success/warning/error/confirm`；技能不自造 toast |
 | `<widgets-*>` | 平台公共组件（全局别名 `/widgets`，页面直接写标签，不手拼前缀）：`<widgets-host-connector>` 设备选择器、`<widgets-fs-picker>`/`<widgets-fs-browser>` 文件选择与浏览、`<widgets-viewer-md>`/`<widgets-viewer-json>`/`<widgets-viewer-preview>` 文件预览；契约见 [ui-component.md](ui-component.md) |
 
@@ -40,8 +40,8 @@
 | 通道 | 方向 | 载体 | 例子 |
 |---|---|---|---|
 | 技能 HTTP API | Page/Host/Pod ↔ 云端 | 页面同源请求；exec/vsh 内建 curl 请求 `{url_prefix}/api/...` | `$fetch('api/todos')`、设备脚本批量 POST |
-| 平台管理 HTTP | 页面 ↔ 云端 | 同源请求（cookie 身份） | `curl /api/skills` |
-| 页面指令 | AI ↔ 页面 | 页面声明 `pageDesc.commands`，AI 按命令名调用 | `{窗口ID}.{命令名}` |
+| 平台管理 HTTP | 页面 ↔ 云端 | 同源请求（cookie 身份） | page exec 中 `fetch('/api/skills')`，检查 `res.ok` |
+| 页面指令 | AI ↔ 页面 | 页面声明 `pageDesc.commands`，AI 在 page exec JS 中调用 | `win(id).command(data)` |
 | 设备命令 | AI/页面 ↔ 设备 | vsh 服务命令（MCP/TCP 等），复杂参数走 stdin | `browser snapshot --json` |
 
 **身份**：来自已认证连接，**不能通过工具参数覆盖** user_id、owner 或审批事实；
@@ -53,7 +53,7 @@ exec 会话身份。自动身份注入只承诺 `/skills/cloud/{skill_id}/api/..
 ## 4. 页面指令的发现与投递
 
 - 页面在 `<script setup>` 里声明 `pageDesc`（`desc` + `commands[]`）。
-- AI 通过页面的 `:commands` 发现、`:resolve` 分发；窗口命令命名空间是 `{窗口ID}.{命令名}`。
+- AI 用 `return await commands()` 发现业务函数，用 `await win(id).command(data)` 调用；handler 签名为 `(data, ctx)`，直接返回对象、数组或字符串。
 - 同页重复注册由后注册者覆盖；同 session 多标签用 queue 单次投递；子会话沿用父会话通道。
 - 页面/云端/UI **都不接入 MCP 协议**——MCP 只在设备侧。
 

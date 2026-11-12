@@ -194,44 +194,20 @@
   const toTree = (p) => String(p || '').replace(/^\/fs(?=\/)/, '')
   const nameOf = (p) => String(p || '').split('/').filter(Boolean).pop() || 'document.docx'
   fileName = () => nameOf(file_path)
-  const reply = (o) => ({ content: JSON.stringify(o) })
-  const errReply = (e) => ({ content: JSON.stringify({ ok: false, error: String((e && e.message) || e) }) })
-  const argOf = (argv, key, def) => {
-    const a = argv || []
-    for (let i = 0; i < a.length; i++) if (a[i] === '--' + key) return a[i + 1]
-    return def
+  const requireDoc = () => {
+    if (!reviewRef || !reviewRef.doc.loaded) throw new Error('未打开文件')
+    return reviewRef.doc
   }
-  const firstPos = (argv) => (argv || []).find((x) => !String(x).startsWith('--'))
+  const runDoc = async (action, payload) => {
+    const r = await requireDoc().run('ai', action, payload)
+    await refreshAll()
+    if (!r.ok) throw new Error(r.error)
+    return r.result
+  }
   const sha256Hex = async (buf) => {
     const d = await crypto.subtle.digest('SHA-256', buf)
     return Array.from(new Uint8Array(d)).map((b) => b.toString(16).padStart(2, '0')).join('')
   }
-  // insert_table --data：JSON 二维数组（[["a","b"],["c","d"]]）或旧式 "a|b;c|d"（支持 \| \; \\ 转义）
-  const parseTableData = (s) => {
-    const raw = String(s)
-    if (/^\s*\[/.test(raw)) {
-      let j = null
-      try { j = JSON.parse(raw) } catch (e) { throw new Error('--data JSON 解析失败：' + String((e && e.message) || e)) }
-      if (!Array.isArray(j)) throw new Error('--data 需要二维数组')
-      return j.map((row) => (Array.isArray(row) ? row.map((c) => (c == null ? '' : String(c))) : [String(row)]))
-    }
-    const splitEscaped = (str, delim) => {
-      const out = []
-      let cur = ''
-      let esc = false
-      for (const ch of String(str)) {
-        if (esc) { cur += ch; esc = false; continue }
-        if (ch === '\\') { esc = true; continue }
-        if (ch === delim) { out.push(cur); cur = ''; continue }
-        cur += ch
-      }
-      if (esc) cur += '\\'
-      out.push(cur)
-      return out
-    }
-    return raw.split(';').filter((x) => x.length).map((rowS) => splitEscaped(rowS, '|'))
-  }
-
   // ===== 引擎资源：本地优先，CDN 回退（构建产物随仓库发布）=====
   // ENGINE_V：引擎与空白模板资源版本——更新 vendor 资源后递增以破浏览器缓存
   const CDN_VENDOR = 'https://cdn.jsdelivr.net/gh/veypi/aic-skills@main/office_studio/ui/vendor/'
@@ -358,11 +334,11 @@
     const asNew = !!(opts && opts.newFile)
     load_error = ''
     const forceReload = !!(opts && opts.reload)
-    // 同一文件重复打开防护：有未保存修改时不静默重载（防丢编辑；open --reload 强制）
+    // 同一文件重复打开防护：有未保存修改时不静默重载（防丢编辑；open({url, reload:true}) 强制）
     if (!asNew && !forceReload && file_path === p && reviewRef && reviewRef.doc.loaded
       && reviewRef.doc._seq > _saved_seq) {
-      status_text = '未重载：有未保存修改（可用 open --reload 强制重载）'
-      throw new Error('该文件已打开且有未保存修改；如确认从磁盘重载请用 open --reload，或先 save')
+      status_text = '未重载：有未保存修改（可用 open({url, reload:true}) 强制重载）'
+      throw new Error('该文件已打开且有未保存修改；如确认从磁盘重载请用 open({url, reload:true})，或先 save()')
     }
     try {
       status_text = '加载中…'
@@ -422,7 +398,7 @@
   const saveNow = async (opts = {}) => {
     if (!reviewRef || !reviewRef.doc.loaded) throw new Error('未打开文件（可先 open <fs 路径>）')
     if (!file_path) throw new Error('无保存路径')
-    // 保存前冲突检测：磁盘内容与打开/上次保存时不一致 → 拒绝覆盖（save --force 可跳过）
+    // 保存前冲突检测：磁盘内容与打开/上次保存时不一致 → 拒绝覆盖（save({force:true}) 可跳过）
     if (!is_new && !opts.force) {
       let conflict = false
       try {
@@ -435,7 +411,7 @@
         }
       } catch (e) { conflict = false }
       if (conflict) {
-        throw new Error('文件已被外部修改（磁盘与打开时不一致）。如确认覆盖请用 save --force，或重新打开该文件')
+        throw new Error('文件已被外部修改（磁盘与打开时不一致）。如确认覆盖请用 save({force:true})，或重新打开该文件')
       }
     }
     const bytes = await reviewRef.exportBytes()
@@ -590,104 +566,189 @@
     try { await reviewRef.doc.rejectAll(); await refreshAll() } catch (e) { status_text = '拒绝失败：' + String((e && e.message) || e) }
   }
 
-  // ===== 平台操控面（pageDesc：AI 经 {win_id}.{cmd} 调用）=====
+  // ===== 平台操控面（pageDesc：AI 经 win(id).command(data) 调用）=====
   // AI 编辑默认 author='AI'（红字修订）；人类在页面上的操作记 'Human Reviewer'。
   pageDesc = {
     desc: 'Office Studio Word 工作台（docx 审阅）：打开、读取、替换、批注、接受/拒绝修订、保存；AI 与用户共用同一文档（人类在页面上实时看到 AI 的每次修改）',
     commands: [
-      { name: 'open', desc: '打开一个 /fs 路径的 docx 文件',
-        help: 'open /fs/cloud/u/<uid>/xxx.docx（平台打开协议派发同此指令）；同一文件有未保存修改时拒绝静默重载，--reload 强制',
-        handler: async (argv) => { try { const p = firstPos(argv) || argOf(argv, 'path'); if (!p) throw new Error('需要 /fs 文件路径'); const reload = !!(argv && argv.includes('--reload')); return reply(await openPath(p, { reload })) } catch (e) { return errReply(e) } } },
+      { name: 'open', desc: '打开一个 /fs 路径的 docx 文件（平台 opener 使用）',
+        help: 'win(id).open({url, paths?, reload?})；同一文件有未保存修改时拒绝静默重载，reload:true 强制',
+        handler: async (data) => {
+          const path = data?.paths?.[0] || data?.url
+          if (!path) throw new Error('open: url required')
+          return await openPath(path, { reload: data?.reload === true })
+        } },
       { name: 'status', desc: '页面与文档状态（未就绪时也可调用）',
-        handler: async () => reply({ ok: true, ready, boot_err, path: file_path, is_new, status: status_text, pending: rev_items.length, canSave: !!(reviewRef && reviewRef.doc.loaded), dirty: !!(reviewRef && reviewRef.doc.loaded && reviewRef.doc._seq > _saved_seq), loads: _load_seq, saves: _save_seq }) },
-      { name: 'list_revisions', desc: '列出待处理修订与批注（结构化 JSON）',
-        help: '无参数。返回 {ok, revisions:[{id,type,author,text,paraId}], comments:[...]}',
-        handler: async () => { try { if (!reviewRef || !reviewRef.doc.loaded) throw new Error('未打开文件'); const revisions = reviewRef.doc.listRevisions().filter((r) => !r.commentMark).map(({ id, type, author, text, paraId }) => ({ id, type, author, text, paraId })); const comments = (await reviewRef.doc.getComments()).map(({ id, author, text, anchoredParagraphId, paragraphId }) => ({ id, author, text, paraId: anchoredParagraphId || paragraphId })); return reply({ ok: true, revisions, comments }) } catch (e) { return errReply(e) } } },
-      { name: 'read_text', desc: '读文档文本：无参返回段落索引 [{id,text}]；--para <id> 单段全文；--offset/--limit 分页（含空段）；--empty 只列空段；--ids 指定段落',
-        help: 'read_text / read_text --para _bk_xxxx / read_text --offset 100 --limit 50 / read_text --empty / read_text --ids _bk_a,_bk_b',
-        handler: async (argv) => {
-          try {
-            if (!reviewRef || !reviewRef.doc.loaded) throw new Error('未打开文件')
-            const pid = argOf(argv, 'para')
-            if (pid) {
-              const p = reviewRef.doc.readParagraphs({}).paragraphs.find((x) => x.id === pid)
-              if (!p) throw new Error('段落不存在：' + pid)
-              return reply({ ok: true, id: p.id, text: p.text })
-            }
-            const idsArg = argOf(argv, 'ids')
-            if (idsArg != null) {
-              const ids = String(idsArg).split(',').map((s) => s.trim()).filter(Boolean)
-              const r = reviewRef.doc.readParagraphs({ nodeIds: ids })
-              return reply({ ok: true, ...r })
-            }
-            const offset = argOf(argv, 'offset')
-            const limit = argOf(argv, 'limit')
-            const empty = !!(argv && argv.includes('--empty'))
-            if (empty || offset != null || limit != null) {
-              const r = reviewRef.doc.readParagraphIndex({
-                empty,
-                offset: offset != null ? Number(offset) : undefined,
-                limit: limit != null ? Number(limit) : undefined,
-              })
-              return reply({ ok: true, ...r })
-            }
-            const ps = reviewRef.doc.readParagraphs({}).paragraphs
-            return reply({ ok: true, paragraphs: ps })
-          } catch (e) { return errReply(e) }
+        handler: async () => ({ ok: true, ready, boot_err, path: file_path, is_new, status: status_text, pending: rev_items.length, canSave: !!(reviewRef && reviewRef.doc.loaded), dirty: !!(reviewRef && reviewRef.doc.loaded && reviewRef.doc._seq > _saved_seq), loads: _load_seq, saves: _save_seq }) },
+      { name: 'list_revisions', desc: '列出待处理修订与批注',
+        help: 'win(id).list_revisions()；返回 {ok, revisions, comments}',
+        handler: async () => {
+          const doc = requireDoc()
+          const revisions = doc.listRevisions().filter((r) => !r.commentMark).map(({ id, type, author, text, paraId }) => ({ id, type, author, text, paraId }))
+          const comments = (await doc.getComments()).map(({ id, author, text, anchoredParagraphId, paragraphId }) => ({ id, author, text, paraId: anchoredParagraphId || paragraphId }))
+          return { ok: true, revisions, comments }
+        } },
+      { name: 'read_text', desc: '读文档文本：无参返回段落索引；para 单段全文；offset/limit 分页；empty 只列空段；ids 指定段落',
+        help: 'win(id).read_text({para?, ids?, offset?, limit?, empty?})',
+        handler: async (data) => {
+          const doc = requireDoc()
+          if (data?.para) {
+            const p = doc.readParagraphs({}).paragraphs.find((x) => x.id === data.para)
+            if (!p) throw new Error('段落不存在：' + data.para)
+            return { ok: true, id: p.id, text: p.text }
+          }
+          if (data?.ids != null) {
+            if (!Array.isArray(data.ids)) throw new Error('read_text: ids must be an array')
+            return { ok: true, ...doc.readParagraphs({ nodeIds: data.ids }) }
+          }
+          if (data?.empty || data?.offset != null || data?.limit != null) {
+            return { ok: true, ...doc.readParagraphIndex({
+              empty: data.empty === true,
+              offset: data.offset != null ? Number(data.offset) : undefined,
+              limit: data.limit != null ? Number(data.limit) : undefined,
+            }) }
+          }
+          return { ok: true, paragraphs: doc.readParagraphs({}).paragraphs }
         } },
       { name: 'read_tables', desc: '读表格结构：全部表格的行列、单元格文本、段落 id、空单元格标记（含合并信息）',
-        help: 'read_tables [--index N]（只列第 N 张表）',
-        handler: async (argv) => { try { if (!reviewRef || !reviewRef.doc.loaded) throw new Error('未打开文件'); const idx = argOf(argv, 'index'); const r = reviewRef.doc.listTables(idx != null && idx !== '' ? { index: Number(idx) } : {}); return reply({ ok: true, ...r }) } catch (e) { return errReply(e) } } },
+        help: 'win(id).read_tables({index?})',
+        handler: async (data) => {
+          const r = requireDoc().listTables(data?.index != null ? { index: Number(data.index) } : {})
+          return { ok: true, ...r }
+        } },
       { name: 'search_text', desc: '按文本搜索段落（子串匹配）',
-        help: 'search_text --q "条款"',
-        handler: async (argv) => { try { if (!reviewRef || !reviewRef.doc.loaded) throw new Error('未打开文件'); const q = argOf(argv, 'q') || firstPos(argv); if (!q) throw new Error('需要 --q'); const ps = reviewRef.doc.readParagraphs({}).paragraphs; const hits = ps.filter((p) => p.text.includes(q)).map((p) => ({ id: p.id, text: p.text })); return reply({ ok: true, query: q, hits }) } catch (e) { return errReply(e) } } },
+        help: 'win(id).search_text({q: "条款"})',
+        handler: async (data) => {
+          const q = String(data?.q || '')
+          if (!q) throw new Error('search_text: q required')
+          const ps = requireDoc().readParagraphs({}).paragraphs
+          const hits = ps.filter((p) => p.text.includes(q)).map((p) => ({ id: p.id, text: p.text }))
+          return { ok: true, query: q, hits }
+        } },
       { name: 'replace_text', desc: '替换段落内文本（唯一匹配；默认产生 AI 红字修订）',
-        help: 'replace_text --para <id> --find "原文" --replace "新文" [--author AI]；也可 --plain 直接改（无修订）',
-        handler: async (argv) => { try { if (!reviewRef || !reviewRef.doc.loaded) throw new Error('未打开文件'); const para = argOf(argv, 'para'); const find = argOf(argv, 'find'); const repl = argOf(argv, 'replace'); if (!para || find == null || repl == null) throw new Error('需要 --para --find --replace'); const plain = argv && argv.includes('--plain'); const author = plain ? undefined : (argOf(argv, 'author', 'AI')); const r = await reviewRef.doc.run('ai', 'replace_text', { paragraphId: para, findText: find, replaceText: repl, author }); await refreshAll(); if (!r.ok) throw new Error(r.error); return reply({ ok: true, ...r.result, author: author || '(plain)' }) } catch (e) { return errReply(e) } } },
+        help: 'win(id).replace_text({para, find, replace, author?, plain?})',
+        handler: async (data) => {
+          if (!data?.para || data.find == null || data.replace == null) throw new Error('replace_text: para, find and replace required')
+          const author = data.plain ? undefined : (data.author || 'AI')
+          const result = await runDoc('replace_text', { paragraphId: data.para, findText: data.find, replaceText: data.replace, author })
+          return { ok: true, ...result, author: author || '(plain)' }
+        } },
       { name: 'replace_range', desc: '按字符范围替换段落文本（默认 AI 红字）',
-        help: 'replace_range --para <id> --start 5 --end 18 --replace "新文" [--author AI]',
-        handler: async (argv) => { try { if (!reviewRef || !reviewRef.doc.loaded) throw new Error('未打开文件'); const para = argOf(argv, 'para'); const start = Number(argOf(argv, 'start')); const end = Number(argOf(argv, 'end')); const repl = argOf(argv, 'replace'); if (!para || Number.isNaN(start) || Number.isNaN(end) || repl == null) throw new Error('需要 --para --start --end --replace'); const r = await reviewRef.doc.run('ai', 'replace_range', { paragraphId: para, start, end, replaceText: repl, author: argOf(argv, 'author', 'AI') }); await refreshAll(); if (!r.ok) throw new Error(r.error); return reply({ ok: true, ...r.result }) } catch (e) { return errReply(e) } } },
+        help: 'win(id).replace_range({para, start, end, replace, author?})',
+        handler: async (data) => {
+          const start = Number(data?.start)
+          const end = Number(data?.end)
+          if (!data?.para || Number.isNaN(start) || Number.isNaN(end) || data.replace == null) throw new Error('replace_range: para, start, end and replace required')
+          const result = await runDoc('replace_range', { paragraphId: data.para, start, end, replaceText: data.replace, author: data.author || 'AI' })
+          return { ok: true, ...result }
+        } },
       { name: 'insert_paragraph', desc: '插入新段落（默认 AI 红字）：锚点段落前后，或文档首/末',
-        help: 'insert_paragraph --anchor <id> [--pos after|before] --text "新段落" [--from <段落id> 指定格式源，默认取锚点]；或 --anchor @start|@end 插入到文档首/末（空文档写首段）[--author AI]；支持 \\n\\n 分多段',
-        handler: async (argv) => { try { if (!reviewRef || !reviewRef.doc.loaded) throw new Error('未打开文件'); const anchor = argOf(argv, 'anchor'); const text = argOf(argv, 'text'); const pos = (argOf(argv, 'pos', 'after') || 'after').toUpperCase(); if (!anchor || text == null) throw new Error('需要 --anchor --text'); const r = await reviewRef.doc.run('ai', 'insert_paragraph', { anchorNodeId: anchor, relativePosition: pos, newText: text, styleSourceId: argOf(argv, 'from') || undefined, author: argOf(argv, 'author', 'AI') }); await refreshAll(); if (!r.ok) throw new Error(r.error); return reply({ ok: true, ...r.result }) } catch (e) { return errReply(e) } } },
-      { name: 'comment', desc: '加批注：--para + --find 按文本匹配，或 --para + --start/--end 按范围',
-        help: 'comment --para <id> --find "要批注的文字" --text "批注内容" [--author AI]（或 --start 5 --end 18）',
-        handler: async (argv) => { try { if (!reviewRef || !reviewRef.doc.loaded) throw new Error('未打开文件'); const para = argOf(argv, 'para'); const text = argOf(argv, 'text'); const find = argOf(argv, 'find'); const start = argOf(argv, 'start'); const end = argOf(argv, 'end'); if (!para || text == null) throw new Error('需要 --para 与 --text'); let r; if (find != null) { r = await reviewRef.doc.run('ai', 'comment_on_text', { paragraphId: para, findText: find, text, author: argOf(argv, 'author', 'AI') }) } else if (start != null && end != null) { r = await reviewRef.doc.run('ai', 'add_comment', { paragraphId: para, start: Number(start), end: Number(end), text, author: argOf(argv, 'author', 'AI') }) } else { throw new Error('需要 --find 或 --start/--end') } await refreshAll(); if (!r.ok) throw new Error(r.error); return reply({ ok: true, ...r.result }) } catch (e) { return errReply(e) } } },
+        help: 'win(id).insert_paragraph({anchor, text, pos?, from?, author?})；anchor 可为 @start/@end，text 支持 \\n\\n 分段',
+        handler: async (data) => {
+          if (!data?.anchor || data.text == null) throw new Error('insert_paragraph: anchor and text required')
+          const result = await runDoc('insert_paragraph', { anchorNodeId: data.anchor, relativePosition: String(data.pos || 'after').toUpperCase(), newText: data.text, styleSourceId: data.from || undefined, author: data.author || 'AI' })
+          return { ok: true, ...result }
+        } },
+      { name: 'comment', desc: '加批注：para + find 按文本匹配，或 para + start/end 按范围',
+        help: 'win(id).comment({para, find?, start?, end?, text, author?})',
+        handler: async (data) => {
+          if (!data?.para || data.text == null) throw new Error('comment: para and text required')
+          let result
+          if (data.find != null) result = await runDoc('comment_on_text', { paragraphId: data.para, findText: data.find, text: data.text, author: data.author || 'AI' })
+          else if (data.start != null && data.end != null) result = await runDoc('add_comment', { paragraphId: data.para, start: Number(data.start), end: Number(data.end), text: data.text, author: data.author || 'AI' })
+          else throw new Error('comment: find or start/end required')
+          return { ok: true, ...result }
+        } },
       { name: 'set_cell_text', desc: '填/改单元格文本（默认 AI 红字）：空单元格写入；非空替换首段',
-        help: 'set_cell_text --table 0 --row 1 --col 2 --text "内容" [--mode replace|append] [--plain] [--author AI]',
-        handler: async (argv) => { try { if (!reviewRef || !reviewRef.doc.loaded) throw new Error('未打开文件'); const t = argOf(argv, 'table'); const row = argOf(argv, 'row'); const col = argOf(argv, 'col'); const text = argOf(argv, 'text'); if (t == null || row == null || col == null || text == null) throw new Error('需要 --table --row --col --text'); const plain = argv && argv.includes('--plain'); const r = await reviewRef.doc.run('ai', 'set_cell_text', { tableIndex: Number(t), row: Number(row), col: Number(col), text, mode: argOf(argv, 'mode', 'replace'), author: plain ? undefined : argOf(argv, 'author', 'AI') }); await refreshAll(); if (!r.ok) throw new Error(r.error); return reply({ ok: true, ...r.result }) } catch (e) { return errReply(e) } } },
+        help: 'win(id).set_cell_text({table, row, col, text, mode?, plain?, author?})',
+        handler: async (data) => {
+          if (data?.table == null || data.row == null || data.col == null || data.text == null) throw new Error('set_cell_text: table, row, col and text required')
+          const result = await runDoc('set_cell_text', { tableIndex: Number(data.table), row: Number(data.row), col: Number(data.col), text: data.text, mode: data.mode || 'replace', author: data.plain ? undefined : (data.author || 'AI') })
+          return { ok: true, ...result }
+        } },
       { name: 'add_table_row', desc: '表格加行（默认 AI 行修订：接受=行保留，拒绝=删行）',
-        help: 'add_table_row --table 1 [--at 2] [--cells "A|B|C"] [--plain] [--author AI]',
-        handler: async (argv) => { try { if (!reviewRef || !reviewRef.doc.loaded) throw new Error('未打开文件'); const t = argOf(argv, 'table'); if (t == null) throw new Error('需要 --table'); const cellsArg = argOf(argv, 'cells'); const cells = cellsArg != null ? String(cellsArg).split('|') : undefined; const plain = argv && argv.includes('--plain'); const r = await reviewRef.doc.run('ai', 'add_table_row', { tableIndex: Number(t), at: argOf(argv, 'at'), cells, plain, author: argOf(argv, 'author', 'AI') }); await refreshAll(); if (!r.ok) throw new Error(r.error); return reply({ ok: true, ...r.result }) } catch (e) { return errReply(e) } } },
+        help: 'win(id).add_table_row({table, at?, cells?, plain?, author?})；cells 为字符串数组',
+        handler: async (data) => {
+          if (data?.table == null) throw new Error('add_table_row: table required')
+          if (data.cells != null && !Array.isArray(data.cells)) throw new Error('add_table_row: cells must be an array')
+          const result = await runDoc('add_table_row', { tableIndex: Number(data.table), at: data.at, cells: data.cells, plain: data.plain === true, author: data.author || 'AI' })
+          return { ok: true, ...result }
+        } },
       { name: 'add_table_col', desc: '表格加列（默认 AI 单元格修订：接受=列保留，拒绝=删列）',
-        help: 'add_table_col --table 1 [--at 3] [--plain] [--author AI]',
-        handler: async (argv) => { try { if (!reviewRef || !reviewRef.doc.loaded) throw new Error('未打开文件'); const t = argOf(argv, 'table'); if (t == null) throw new Error('需要 --table'); const plain = argv && argv.includes('--plain'); const r = await reviewRef.doc.run('ai', 'add_table_col', { tableIndex: Number(t), at: argOf(argv, 'at'), plain, author: argOf(argv, 'author', 'AI') }); await refreshAll(); if (!r.ok) throw new Error(r.error); return reply({ ok: true, ...r.result }) } catch (e) { return errReply(e) } } },
+        help: 'win(id).add_table_col({table, at?, plain?, author?})',
+        handler: async (data) => {
+          if (data?.table == null) throw new Error('add_table_col: table required')
+          const result = await runDoc('add_table_col', { tableIndex: Number(data.table), at: data.at, plain: data.plain === true, author: data.author || 'AI' })
+          return { ok: true, ...result }
+        } },
       { name: 'insert_table', desc: '插入新表格（直接插入；可带二维初始数据）',
-        help: 'insert_table --anchor <段落id>|@end [--pos after|before] --rows 2 --cols 3 [--data "a|b;c|d" 或 JSON [["a","b"],["c","d"]]；旧格式支持 \\| \\; 转义]',
-        handler: async (argv) => { try { if (!reviewRef || !reviewRef.doc.loaded) throw new Error('未打开文件'); const anchor = argOf(argv, 'anchor', '@end'); const rows = Number(argOf(argv, 'rows', '2')) || 2; const cols = Number(argOf(argv, 'cols', '3')) || 3; const dataArg = argOf(argv, 'data'); const data = dataArg != null ? parseTableData(dataArg) : undefined; const pos = (argOf(argv, 'pos', 'after') || 'after').toUpperCase(); const r = await reviewRef.doc.run('ai', 'insert_table', { anchorNodeId: anchor, relativePosition: pos, rows, cols, data }); await refreshAll(); if (!r.ok) throw new Error(r.error); return reply({ ok: true, ...r.result }) } catch (e) { return errReply(e) } } },
+        help: 'win(id).insert_table({anchor?, pos?, rows?, cols?, data?})；data 为二维数组',
+        handler: async (data) => {
+          const tableData = data?.data
+          if (tableData != null && (!Array.isArray(tableData) || tableData.some((row) => !Array.isArray(row)))) throw new Error('insert_table: data must be a two-dimensional array')
+          const normalized = tableData?.map((row) => row.map((cell) => cell == null ? '' : String(cell)))
+          const result = await runDoc('insert_table', { anchorNodeId: data?.anchor || '@end', relativePosition: String(data?.pos || 'after').toUpperCase(), rows: Number(data?.rows || 2), cols: Number(data?.cols || 3), data: normalized })
+          return { ok: true, ...result }
+        } },
       { name: 'insert_image', desc: '在段落前/后插入图片（png/jpg/gif/bmp；默认 AI 红字修订）',
-        help: 'insert_image --src <fs路径> [--anchor <段落id>|@end] [--pos after|before] [--from <段落id> 格式源，默认取锚点] [--width px] [--height px] [--alt "说明"] [--plain] [--author AI]',
-        handler: async (argv) => { try { if (!reviewRef || !reviewRef.doc.loaded) throw new Error('未打开文件'); const src = argOf(argv, 'src') || firstPos(argv); if (!src) throw new Error('需要 --src <fs 路径>'); const r0 = await $mod.$fs.readFile(toTree(src)); if (r0 && r0.ok === false) throw new Error(r0.message || '读取图片失败'); const content = r0 && r0.content; const blob = (content instanceof Blob) ? content : new Blob([content]); const bytes = new Uint8Array(await blob.arrayBuffer()); const anchor = argOf(argv, 'anchor', '@end'); const pos = (argOf(argv, 'pos', 'after') || 'after').toUpperCase(); const w = argOf(argv, 'width'); const h = argOf(argv, 'height'); const plain = argv && argv.includes('--plain'); const r = await reviewRef.doc.run('ai', 'insert_image', { bytes, ext: '', paragraphId: anchor, position: pos, styleSourceId: argOf(argv, 'from') || undefined, widthPx: w != null ? Number(w) : undefined, heightPx: h != null ? Number(h) : undefined, altText: argOf(argv, 'alt'), author: plain ? undefined : argOf(argv, 'author', 'AI') }); await refreshAll(); if (!r.ok) throw new Error(r.error); return reply({ ok: true, ...r.result, src }) } catch (e) { return errReply(e) } } },
+        help: 'win(id).insert_image({src, anchor?, pos?, from?, width?, height?, alt?, plain?, author?})',
+        handler: async (data) => {
+          if (!data?.src) throw new Error('insert_image: src required')
+          const r0 = await $mod.$fs.readFile(toTree(data.src))
+          if (r0 && r0.ok === false) throw new Error(r0.message || '读取图片失败')
+          const content = r0 && r0.content
+          const blob = (content instanceof Blob) ? content : new Blob([content])
+          const bytes = new Uint8Array(await blob.arrayBuffer())
+          const result = await runDoc('insert_image', { bytes, ext: '', paragraphId: data.anchor || '@end', position: String(data.pos || 'after').toUpperCase(), styleSourceId: data.from || undefined, widthPx: data.width != null ? Number(data.width) : undefined, heightPx: data.height != null ? Number(data.height) : undefined, altText: data.alt, author: data.plain ? undefined : (data.author || 'AI') })
+          return { ok: true, ...result, src: data.src }
+        } },
       { name: 'delete_paragraph', desc: '删除段落（默认 AI 红字修订：接受=删段，拒绝=恢复）',
-        help: 'delete_paragraph --para <id> [--plain 直接删除] [--author AI]',
-        handler: async (argv) => { try { if (!reviewRef || !reviewRef.doc.loaded) throw new Error('未打开文件'); const para = argOf(argv, 'para'); if (!para) throw new Error('需要 --para'); const plain = !!(argv && argv.includes('--plain')); const r = await reviewRef.doc.run('ai', 'delete_paragraph', { paragraphId: para, author: plain ? undefined : argOf(argv, 'author', 'AI'), plain }); await refreshAll(); if (!r.ok) throw new Error(r.error); return reply({ ok: true, ...r.result }) } catch (e) { return errReply(e) } } },
+        help: 'win(id).delete_paragraph({para, plain?, author?})',
+        handler: async (data) => {
+          if (!data?.para) throw new Error('delete_paragraph: para required')
+          const result = await runDoc('delete_paragraph', { paragraphId: data.para, author: data.plain ? undefined : (data.author || 'AI'), plain: data.plain === true })
+          return { ok: true, ...result }
+        } },
       { name: 'move_paragraph', desc: '移动段落（默认修订式：目标处插入+原处删除；接受=移动生效，拒绝=原位保留）',
-        help: 'move_paragraph --para <id> --anchor <id|@start|@end> [--pos after|before] [--plain] [--author AI]',
-        handler: async (argv) => { try { if (!reviewRef || !reviewRef.doc.loaded) throw new Error('未打开文件'); const para = argOf(argv, 'para'); const anchorNode = argOf(argv, 'anchor'); if (!para || !anchorNode) throw new Error('需要 --para 与 --anchor'); const pos = (argOf(argv, 'pos', 'after') || 'after').toUpperCase(); const plain = !!(argv && argv.includes('--plain')); const r = await reviewRef.doc.run('ai', 'move_paragraph', { paragraphId: para, anchorNodeId: anchorNode, relativePosition: pos, author: plain ? undefined : argOf(argv, 'author', 'AI'), plain }); await refreshAll(); if (!r.ok) throw new Error(r.error); return reply({ ok: true, ...r.result }) } catch (e) { return errReply(e) } } },
+        help: 'win(id).move_paragraph({para, anchor, pos?, plain?, author?})',
+        handler: async (data) => {
+          if (!data?.para || !data.anchor) throw new Error('move_paragraph: para and anchor required')
+          const result = await runDoc('move_paragraph', { paragraphId: data.para, anchorNodeId: data.anchor, relativePosition: String(data.pos || 'after').toUpperCase(), author: data.plain ? undefined : (data.author || 'AI'), plain: data.plain === true })
+          return { ok: true, ...result }
+        } },
       { name: 'style_report', desc: '样式与标题结构报告（只读）：段落样式统计 + 标题大纲（含解析后的自动编号）',
-        help: 'style_report（无参数）；返回 {total, styles, headings:[{id,text,level,source,style_name,number,num_id,ilvl}], numbering_groups}',
-        handler: async () => { try { if (!reviewRef || !reviewRef.doc.loaded) throw new Error('未打开文件'); return reply({ ok: true, ...reviewRef.doc.styleReport() }) } catch (e) { return errReply(e) } } },
+        help: 'win(id).style_report()',
+        handler: async () => ({ ok: true, ...requireDoc().styleReport() }) },
       { name: 'accept_ai', desc: '接受 AI 的修订（其余作者修订保留）',
-        help: 'accept_ai [--author AI]',
-        handler: async (argv) => { try { const author = argOf(argv, 'author', 'AI'); const r = await reviewRef.doc.acceptAIEdits({ author }); await refreshAll(); return reply({ ok: true, selected: r.selectedIds, ...r.result }) } catch (e) { return errReply(e) } } },
+        help: 'win(id).accept_ai({author?})',
+        handler: async (data) => {
+          const r = await requireDoc().acceptAIEdits({ author: data?.author || 'AI' })
+          await refreshAll()
+          return { ok: true, selected: r.selectedIds, ...r.result }
+        } },
       { name: 'reject_ai', desc: '拒绝 AI 的修订（恢复 AI 改动前状态，其余修订保留）',
-        help: 'reject_ai [--author AI]',
-        handler: async (argv) => { try { const author = argOf(argv, 'author', 'AI'); const r = await reviewRef.doc.rejectAIEdits({ author }); await refreshAll(); return reply({ ok: true, selected: r.selectedIds, ...r.result }) } catch (e) { return errReply(e) } } },
-      { name: 'accept_all', desc: '接受全部修订', handler: async () => { try { const r = await reviewRef.doc.acceptAll(); await refreshAll(); return reply({ ok: true, ...r }) } catch (e) { return errReply(e) } } },
-      { name: 'reject_all', desc: '拒绝全部修订', handler: async () => { try { const r = await reviewRef.doc.rejectAll(); await refreshAll(); return reply({ ok: true, ...r }) } catch (e) { return errReply(e) } } },
-      { name: 'save', desc: '把当前文档写回打开时的 /fs 路径（docx）；磁盘被外部修改时拒绝覆盖（--force 强制）',
-        help: '无参数；可选 --path <fs 路径> 另存；--force 跳过外部修改检测',
-        handler: async (argv) => { try { const p = argOf(argv, 'path'); if (p) file_path = p; const force = !!(argv && argv.includes('--force')); return reply(await saveNow({ force })) } catch (e) { return errReply(e) } } },
+        help: 'win(id).reject_ai({author?})',
+        handler: async (data) => {
+          const r = await requireDoc().rejectAIEdits({ author: data?.author || 'AI' })
+          await refreshAll()
+          return { ok: true, selected: r.selectedIds, ...r.result }
+        } },
+      { name: 'accept_all', desc: '接受全部修订', handler: async () => {
+        const r = await requireDoc().acceptAll()
+        await refreshAll()
+        return { ok: true, ...r }
+      } },
+      { name: 'reject_all', desc: '拒绝全部修订', handler: async () => {
+        const r = await requireDoc().rejectAll()
+        await refreshAll()
+        return { ok: true, ...r }
+      } },
+      { name: 'save', desc: '把当前文档写回打开时的 /fs 路径（docx）；磁盘被外部修改时拒绝覆盖',
+        help: 'win(id).save({path?, force?})；force:true 跳过外部修改检测',
+        handler: async (data) => {
+          if (data?.path) file_path = data.path
+          return await saveNow({ force: data?.force === true })
+        } },
     ],
   }
 

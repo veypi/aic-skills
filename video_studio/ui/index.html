@@ -148,8 +148,8 @@
   pageDesc = {
     desc: 'Video Studio 片架：打开、新建 .video_studio 存档，展示最近记录与内置实样',
     commands: [
-      {name: 'status', desc: '首页状态与最近记录', handler: async () => ({content: JSON.stringify({ok: true, recent: loadRecent(), cases})})},
-      {name: 'list_video', desc: '列出最近打开记录和内置样例，不扫描文件系统', handler: async () => ({content: JSON.stringify({ok: true, files: loadRecent().map(item => ({...item, path: toRef(item.path)})), cases})})},
+      {name: 'status', desc: '首页状态与最近记录', handler: async () => ({ok: true, recent: loadRecent(), cases})},
+      {name: 'list_video', desc: '列出最近打开记录和内置样例，不扫描文件系统', handler: async () => ({ok: true, files: loadRecent().map(item => ({...item, path: toRef(item.path)})), cases})},
     ],
   }
 

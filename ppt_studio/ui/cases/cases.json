@@ -1,6 +1,13 @@
 {
-  "default": "k3",
+  "default": "agents",
   "cases": [
+    {
+      "id": "agents",
+      "title": "agents调研报告",
+      "desc": "agents报告",
+      "slides": 12,
+      "accent": "#222AcD"
+    },
     {
       "id": "k3",
       "title": "Kimi K3 全球发布",
@@ -14,13 +21,6 @@
       "desc": "Qwen3.8 全球发布",
       "slides": 10,
       "accent": "#FF6A4D"
-    },
-    {
-      "id": "agents",
-      "title": "agents调研报告",
-      "desc": "agents报告",
-      "slides": 12,
-      "accent": "#222AcD"
     },
     {
       "id": "weekly-report",

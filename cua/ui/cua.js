@@ -176,6 +176,30 @@ export class CuaSession {
     this.actions = [];
     this.completed = [];
     this.requests = new Set();
+    this.frameTimes = [];
+  }
+
+  // frameRate 返回近窗口内的实际到达帧率（每帧到达时的时间戳滑窗）。
+  // 反映设备真实吞吐（截图耗时 + 传输），而不是配置的间隔。
+  // 用相邻帧间隔的中位数而不是首尾跨度：连着两帧落在同一毫秒时跨度会算成 0。
+  frameRate() {
+    const times = this.frameTimes;
+    if (times.length < 2) return 0;
+    const gaps = [];
+    for (let i = 1; i < times.length; i++) {
+      const gap = times[i] - times[i - 1];
+      if (gap > 0) gaps.push(gap);
+    }
+    if (!gaps.length) return 0;
+    gaps.sort((a, b) => a - b);
+    const median = gaps[Math.floor(gaps.length / 2)];
+    return median > 0 ? 1000 / median : 0;
+  }
+
+  _recordFrame() {
+    const now = Date.now();
+    this.frameTimes.push(now);
+    if (this.frameTimes.length > 12) this.frameTimes.shift();
   }
 
   _publish(patch = {}) {
@@ -183,6 +207,7 @@ export class CuaSession {
     this.state.connected = !!this.connection && !this.connection.closed;
     this.state.busy = this.state.capturing || this.state.acting || this.state.phase === 'connecting'
       || this.actions.length > 0 || this.completed.length > 0;
+    this.state.fps = this.frameRate();
     this.changed({...this.state});
   }
 
@@ -195,6 +220,7 @@ export class CuaSession {
     this.lastFrame = null;
     this.coordinateFrameConsumed = false;
     this.interacting = false;
+    this.frameTimes = [];
     this.captureController?.abort();
     if (this.captureJob) this.captureJob.resolve(null);
     this.captureJob = null;
@@ -544,6 +570,7 @@ export class CuaSession {
         target, epoch};
       this.lastFrame = frame;
       this.coordinateFrameConsumed = false;
+      this._recordFrame();
       this._publish({phase: 'ready', error: '', unavailableReason: ''});
       this.onFrame(frame);
       job.resolve(frame);

@@ -176,6 +176,25 @@ test('the default refresh interval keeps the view responsive without busy-loopin
   assert.equal(fast.session.intervalMS, 100, 'the floor keeps the device from being hammered');
 });
 
+test('arriving frames are counted into a reported frame rate', async t => {
+  const {session, states} = fixture(t);
+  await ready(session);
+  assert.equal(Number(session.state.fps) || 0, 0, 'no rate is claimed before frames arrive');
+  // 真实到达间隔：用假时钟拉开帧间距，否则同毫秒到达算不出速率。
+  let now = 1_000_000;
+  const realNow = Date.now;
+  Date.now = () => now;
+  t.after(() => {Date.now = realNow;});
+  await session.capture();
+  now += 200;
+  await session.capture();
+  now += 200;
+  await session.capture();
+  const fps = Number(session.state.fps) || 0;
+  assert.ok(fps > 4 && fps < 6, `the rate reflects the 200ms frame gap, got ${fps}`);
+  assert.ok(states.some(state => Number(state.fps) > 0), 'the view receives the rate');
+});
+
 test('a JPEG preview frame without capture_id binds coordinates through a fresh capture', async t => {
   const {session, calls, frames} = fixture(t, (call, fallback) => {
     if (call.name !== 'get_window_state') return fallback(call);

@@ -1,6 +1,6 @@
 ---
 name: 3d_maker
-version: 1.0.1
+version: 1.0.2
 nickname: 3D Maker
 description: 浏览器内专业 3D 模型设计：参数化 CAD 建模、多部件装配、打印就绪检测与 STL/OBJ/GLB/3MF 导出（内置 JS 内核 / OCCT 高性能内核）
 keywords: [3d, cad, 建模, 打印, stl, obj, glb, 3mf, occt, 布尔, 圆角, 车削, 齿轮, 装配]
@@ -19,62 +19,65 @@ icon: fa-solid fa-cubes
 页面工具栏的「打开 / 保存」走平台原生文件对话框（`$fs.pickFiles` / `$fs.pickSavePath`），可读写 cloud/page/host 上的模型；「导出」选择格式后直接浏览器下载成品。新建时先选择目标路径，保存时才写入代码。
 页面注册指令的完整清单见 §0.3。
 
-建模代码通过 `exec` 工具（`_host=page`）推送到 3D Maker Studio 执行。先 `page open` 打开工作台（`open --url /skills/cloud/{skill_id}/studio`，skill_id 取自 skill 列表，记录返回的 win_id），之后按 `{win_id}.{指令}` 调用：
+建模代码通过 `exec` 工具（`_host=page`）推送到 3D Maker Studio 执行。`script` 是 async JavaScript 函数体：用 `open({url})` 打开工作台，用 `return await commands()` 发现业务函数，再用 `win(id).command(data)` 顺序调用。skill_id 取自 skill 列表。
 
 ### 0.1 run_code —— 直接执行代码字符串
 
 适合短代码、即时修改：
 
-```
-exec {"_host":"page", "action":"{win_id}.run_code", "argv":["--code", "return box(20, 15, 10);"]}
+```js
+const opened = await open({url: '/skills/cloud/{skill_id}/studio'})
+return await win(opened.win_id).run_code({code: 'return box(20, 15, 10);'})
 ```
 
 ### 0.2 open / run_file —— 打开任意 $fs 位置的模型
 
-先用 `fs` 工具把代码写到用户指定的位置，再让 Studio 打开。对外统一使用 `/fs/...` 完整路径：
+先用 `fs` 工具把代码写到用户指定的位置，例如 `/u/{uid}/models/bracket.3d.js`，再让 Studio 打开。对外统一使用 `/fs/...` 完整路径：
 
+```js
+// OS opener 入口消费 {url, paths}；url 为首个文件
+return await win(opened.win_id).open({
+  url: '/fs/cloud/u/{uid}/models/bracket.3d.js',
+  paths: ['/fs/cloud/u/{uid}/models/bracket.3d.js'],
+})
+// 业务重跑当前文件也可：await win(opened.win_id).run_file({path: '/fs/cloud/u/{uid}/models/bracket.3d.js'})
 ```
-# 1. 写入单个模型存档（示例为 cloud；也可写 page 或授权 host）
-fs {"_host":"cloud", "action":"write", "path":"/u/{uid}/models/bracket.3d.js", "content":"..."}
 
-# 2. 通知 Studio 打开执行
-exec {"_host":"page", "action":"{win_id}.open", "argv":["--path", "/fs/cloud/u/{uid}/models/bracket.3d.js"]}
-```
-
-`open` 与 `run_file` 共用同一实现；路径必须是合法的 `*.3d.js`，禁止相对路径、私有默认目录与 `..`。树路径 `/cloud/...`、`/page/...`、`/{host_id}/...` 会在协议边界归一为 `/fs/...`。
-打开成功后，该文件成为当前关联文件，「保存」写回原路径；只有打开或保存成功才更新最近记录。错误码：`INVALID_PATH`（路径或扩展名非法）、`RUN_FILE_ERROR`（读取或执行失败）。
+`open` 与 `run_file` 都调用 `runFileByPath`；路径必须是合法的 `*.3d.js`，禁止相对路径、私有默认目录与 `..`。树路径 `/cloud/...`、`/page/...`、`/{host_id}/...` 会在协议边界归一为 `/fs/...`。
+打开成功后，该文件成为当前关联文件，「保存」写回原路径；只有打开或保存成功才更新最近记录。路径、读取或执行失败会抛出带原因的 `Error`。
 
 ### 0.3 指令表
 
-页面注册指令（经 `exec _host=page {win_id}.{cmd}` 调用，argv 为字符串数组 `["--key","val"]`）：
+页面 handler 接收 `(data, ctx)` 并直接返回业务数据；下表参数均为 `data` 的有名字段：
 
-| 指令 | 说明 | 参数 | 返回要点 |
+| 指令 | 说明 | 调用参数 | 返回要点 |
 | --- | --- | --- | --- |
-| `run_code` | 执行一段建模代码字符串 | `--code <源码>`（或 argv[0]） | `{success, stats, parts, warnings, executionTime}`；失败 `{success:false, code, message}` |
-| `open` / `run_file` | 打开并执行任意端 `.3d.js` 模型；成功后设为当前关联文件 | `--path /fs/.../model.3d.js` | 同 run_code；特有 code：`INVALID_PATH`/`RUN_FILE_ERROR` |
-| `save_code` | 保存当前模型代码（最近一次运行的代码，含 @param 调整值）到指定路径 | `--path /fs/.../model.3d.js`（省略则只返回代码文本） | `{ok, path, bytes}`；省略 --path → `{ok, code}` |
+| `run_code` | 执行一段建模代码字符串 | `{code}` | `{success, stats, parts, warnings, executionTime}`；失败抛错 |
+| `open` | OS opener：打开并执行任意端 `.3d.js` 模型 | `{url, paths?}` | 同 run_code |
+| `run_file` | 业务重跑指定模型并设为当前关联文件 | `{path}` | 同 run_code |
+| `save_code` | 保存当前模型代码（最近一次运行的代码，含 @param 调整值）到指定路径 | `{path?}` | `{ok, path, bytes}`；省略 path → `{ok, code}` |
 | `save` | 保存当前模型；无关联文件时弹另存为 | 无 | `{ok, path, bytes}` |
 | `status` | 查询页面状态 | 无 | `{ok, ready, busy, kernel, kernelLoading, stats, file, isNew}` |
-| `shot` | 截取当前 3D 视图保存到指定 `$fs` 路径 | `--path /fs/.../shot.png`（必填） | `{ok, path, width, height, bytes}`；**只落盘不返回图片**，看图需再 `fs.read` 读回 |
-| `parts_audit` | 逐部件打印问题清单（水密/非流形/悬空/薄壁/干涉） | `--min-wall <最小壁厚 mm>`（默认 1.2） | `{summary, parts:[…]}`；不修改模型，只做分析 |
-| `set_kernel` | 切换几何内核（builtin=内置 JS / occt=高性能） | `--kernel builtin|occt` | `{success, kernel, message?}`；**尽力切换**：当前模型超 OCCT 重建限额（>2 万三角面/开放网格）时自动回退内置渲染并返回 `kernelFallback` 提示，重跑小模型后 OCCT 自动生效 |
-| `set_theme` | 切换观感主题（dark=深影棚背景，展示模型观感更佳） | `--theme dark|light|auto` | `{success, theme}` |
+| `shot` | 截取当前 3D 视图保存到指定 `$fs` 路径 | `{path}` | `{ok, path, width, height, bytes}`；**只落盘不返回图片**，看图需再 `fs.read` 读回 |
+| `parts_audit` | 逐部件打印问题清单（水密/非流形/悬空/薄壁/干涉） | `{minWall?}`（默认 1.2） | `{summary, parts:[…]}`；不修改模型，只做分析 |
+| `set_kernel` | 切换几何内核（builtin=内置 JS / occt=高性能） | `{kernel: 'builtin' \| 'occt'}` | `{success, kernel, loading?}`；**尽力切换**：当前模型超 OCCT 重建限额时自动回退内置渲染并返回 `kernelFallback` 提示 |
+| `set_theme` | 切换观感主题（dark=深影棚背景，展示模型观感更佳） | `{theme: 'dark' \| 'light' \| 'auto'}` | `{success, theme}` |
 
 - `kernel` = `builtin`（内置 JS 内核）或 `occt`（高性能内核）；`kernelLoading:true` 表示 OCCT 正在后台加载，可继续用内置内核
 - `stats` 非空表示当前场景已加载（含 printability/interference 摘要）
 
 ### 0.4 事件契约
 
-- 页面未打开时指令无响应：先 `page open`（`open --url /skills/cloud/{skill_id}/studio`，记下返回的 win_id），`page exec action=commands` 确认指令列表后再调用。
-- argv 风格 `--key val`（或位置参数）；指令**不要并行调用**，一轮一个（建模是 CPU 密集计算）。
+- 页面未打开时先 `await open({url: '/skills/cloud/{skill_id}/studio'})`，记下返回的 `win_id`；需要重新发现时 `return await commands()`。
+- 指令**不要并行调用**，一轮一个（建模是 CPU 密集计算）。
 - 直接打开空 Studio 时加载乐高案例；带 `?url=` 时打开对应模型，带 `&new=1` 时以案例作为新模型起点但不提前写盘。页面不自动恢复 localStorage 中的代码。
-- 结果以 `content` 中的 JSON 为准（`success: false` 时看 `code`/`message`），不要凭猜测复述统计。
-- **看图闭环（阶段 0）**：`shot --path /fs/.../shot.png` 只负责把截图写到指定位置，**不直接返回图片**；随后对同一路径执行 `fs.read`，把图片带进消息。
+- 结果直接是对象、数组或字符串，没有 `{content: JSON.stringify(...)}` 信封；失败按抛出的错误处理，不要凭猜测复述统计。
+- **看图闭环（阶段 0）**：`await win(id).shot({path: '/fs/.../shot.png'})` 只负责把截图写到指定位置，**不直接返回图片**；随后对同一路径执行 `fs.read`，把图片带进消息。
 
 ### 0.5 如何选择：小模型用 run_code，大模型用 run_file
 
-- **小模型 / 简单验证**（几个图元、一两次布尔）：直接用 `run_code`，一步到位
-- **大模型 / 复杂设计**（多部件、参数化、反复调整）：**先用 `fs write` 把代码写成用户指定位置的 `.3d.js` 文件，再通过 `run_file` 执行渲染看结果**。之后每次修改都用 `fs edit` 改文件、再 `run_file` 重跑，形成「编辑 → 渲染 → 看结果 → 再编辑」的迭代闭环
+- **小模型 / 简单验证**（几个图元、一两次布尔）：直接用 `run_code({code})`，一步到位
+- **大模型 / 复杂设计**（多部件、参数化、反复调整）：**先用 `fs write` 把代码写成用户指定位置的 `.3d.js` 文件，再通过 `run_file({path})` 执行渲染看结果**。之后每次修改都用 `fs edit` 改文件、再 `run_file({path})` 重跑，形成「编辑 → 渲染 → 看结果 → 再编辑」的迭代闭环
 
 ## 1. 快速开始
 
@@ -368,7 +371,7 @@ return filletR > 0 ? shape.fillet(filletR) : shape;
 }
 ```
 
-- **分级**：`critical` = 非水密 / 非流形 / 薄壁（minWall < 阈值，默认 1.2mm，`--min-wall` 可调）；`warning` = 悬空（面积 > 50mm² 且占比 > 1%）/ 干涉；`summary.ready = critical 数为 0`
+- **分级**：`critical` = 非水密 / 非流形 / 薄壁（minWall < 阈值，默认 1.2mm，`parts_audit({minWall})` 可调）；`warning` = 悬空（面积 > 50mm² 且占比 > 1%）/ 干涉；`summary.ready = critical 数为 0`
 - **minWall 是网格级近似**（表面重心沿 -法线向实体内部发射线取最近命中）：薄壁/薄板件准确（误差 < 0.2mm），带内腔/孔洞的件可能偏低（命中孔壁）——只用于定位薄壁嫌疑，精确值以 OCCT 体积/几何语义为准
 - 部件多于 1 个时自动做干涉检测（`conflicts` 列出与其位置冲突的部件名，表面贴合不算）
 - 用法：`run_file` 重跑后调 `parts_audit` 看问题清单 → 按 `issues` 逐条修（补刀/加厚/移开部件）→ 重跑 → 再审计，形成闭环
@@ -406,7 +409,7 @@ return filletR > 0 ? shape.fillet(filletR) : shape;
 5. **部件 DOM 上限（重要）**：页面「部件树」最多渲染 200 行（可搜索）、「设计步骤」默认折叠且只显示前 200 组——
    **不要生成几百上千个独立部件**（数字量级直接拖死 DOM）。大量同类元素（叶片/零件/装饰）必须合并成少数 mesh：
    用 `meshFromVerts` 自己生成顶点/面（每色一桶一部件），或 generate 后不逐件 addPart。
-6. **展示观感**：模型生成后调 `set_theme --theme dark`（深影棚背景）截图更出片；主光已是暖金色调，
+6. **展示观感**：模型生成后调 `win(id).set_theme({theme: 'dark'})`（深影棚背景）截图更出片；主光已是暖金色调，
    金色/橙色系模型在 dark 主题下对比最强。
 
 ## 12. 完整示例
@@ -667,7 +670,7 @@ return parts;
 1. **直接用截图看图迭代**：`shot` 截取当前视图到指定 `/fs` 路径 → 在对应端用 `fs.read` 读回即图，平台自动落盘进消息可直接识图。每轮只做小改动（`fs edit` 改几处 → `run_file` 重跑 → `shot` + `fs.read` 自检），不再依赖用户截图中转；关键视觉确认（颜色/比例等主观项）仍可请用户过目。
 1.5. **修模先定位再动手**：`parts_audit` 给出逐部件问题清单（水密/非流形/悬空/薄壁/干涉）——先看 `issues` 定位坏件/薄壁位置，再有针对性地改代码，不要全模型重写。
 2. **打印质量你可直接判断**：`stats.printability` 的 watertight/openEdges/悬空面是你的打印反馈——交付打印模型前确认 `watertight: true`，否则按 §10 打印设计规范调整或提醒用户启用 OCCT 内核。
-3. **复杂模型必须走文件流**：先与用户确认保存位置，写入 `name.3d.js` → `run_file --path /fs/.../name.3d.js` 执行；迭代用 `fs edit` 增量修改。用户可从首页或 Studio 的「打开」重新载入。
+3. **复杂模型必须走文件流**：先与用户确认保存位置，写入 `name.3d.js` → `win(id).run_file({path: '/fs/.../name.3d.js'})` 执行；迭代用 `fs edit` 增量修改。用户可从首页或 Studio 的「打开」重新载入。
 4. **部件命名规范**：中文名 + 左右标注（如 `前左轮胎`、`后视镜壳(右)`），用户在属性面板可按部件隔离/隐藏，命名清晰是可用性的一部分。
 5. **run_code/run_file 结果可疑时**（如返回的统计与修改不符）：可能是页面断连后回放了上一帧缓存——先请用户刷新页面再重跑。
 6. **规模参考**：精致展示模型 60~120 个部件为宜；布尔运算集中的部件（如 10 辐条 fuse）建议封进函数复用；整体三角面超过 100 万会触发警告，切 OCCT 内核通常可降 96%。
@@ -701,7 +704,7 @@ return parts;
 - 蘑菇（柄圆柱+伞压扁球）+ 地面落叶（呼应树冠），全部合并成少量 mesh 部件
 
 ### 17.4 观感三件套（无需改代码的“出片”调优）
-1. **深色影棚**：`set_theme --theme dark`（背景 0x10131a、地面/网格变暗，模型从背景“跳”出来）
+1. **深色影棚**：`win(id).set_theme({theme: 'dark'})`（背景 0x10131a、地面/网格变暗，模型从背景“跳”出来）
 2. **暖金主光**：页面主光已调为暖白 0xffe2b8（金色/橙色模型最搭；冷色模型在 dark 下也成立）
 3. **色板按目标作品取色**：参考图的颜色值（leafm 琥珀系/earth 深棕/moss 橄榄）直接抄，不要自己“调亮”
 

@@ -315,7 +315,7 @@ export function createSession({ game, store, ai, now = () => Date.now() }) {
       if (!ex || ex.kind !== 'ai') continue
       const delivered = await ai.push(ex, {
         content: `轮到你了（${seatName(seatId)}）——请行动。`,
-        reminders: [text() + `\n用 play <走法> 行动（如 ${game.moveExample}）。`],
+        reminders: [text() + `\n用 win(id).play({text: '<走法>'}) 行动（如 {text: "${game.moveExample}"}）。`],
       })
       if (!delivered) ok = false
     }
@@ -346,7 +346,7 @@ export function createSession({ game, store, ai, now = () => Date.now() }) {
     if (!c) {
       return (
         `[${game.name}] 尚未开局。席位：${game.seats.map((s) => s.name).join(' / ')}。` +
-        `用 start --seat <席位> 绑定阵营开始。`
+        `用 win(id).start({seat: '<席位>'}) 绑定阵营开始。`
       )
     }
     const head =

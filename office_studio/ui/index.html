@@ -138,7 +138,7 @@
   pageDesc = {
     desc: 'Office Studio 首页：统一打开/新建 xlsx、docx，展示共享最近打开历史',
     commands: [
-      {name: 'status', desc: '首页状态（最近打开列表）', handler: async () => ({content: JSON.stringify({ok: true, recent: loadRecent().map(r => ({path: r.path, name: r.name, kind: r.kind}))})})},
+      {name: 'status', desc: '首页状态（最近打开列表）', handler: async () => ({ok: true, recent: loadRecent().map(r => ({path: r.path, name: r.name, kind: r.kind}))})},
     ],
   }
 </script>

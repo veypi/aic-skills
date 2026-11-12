@@ -969,7 +969,7 @@
     document.addEventListener('mouseup', onUp)
   }
 
-  // ---- AI 操控面（pageDesc，平台自动采集为 {win_id}.{cmd}）----
+  // ---- AI 操控面（pageDesc，page exec 中经 win(id).command(data) 调用）----
   // 存档读写只依赖统一 $fs；curPath 是唯一寻址状态
   let saveTimer = 0
   let saveQueue = Promise.resolve()
@@ -1086,98 +1086,87 @@
     commands: [
       {
         name: 'list_video', desc: '列出最近打开记录，不扫描文件系统',
-        handler: async () => reply({
+        handler: async () => ({
           ok: true, current: curPath ? toRef(curPath) : '', current_title: curTitle,
           files: loadRecent().map(item => ({...item, path: toRef(item.path)})),
         })
       },
 
       {
-        name: 'new_video', desc: '新建视频存档（--path 可选 /fs 路径，省略时用 /fs/page/.video；--title/--width/--height 可选）',
-        handler: async (argv) => {
-          try {
-            const path = arg(argv, 'path') || defaultArchivePath(arg(argv, 'name') || arg(argv, 'title'))
-            const d = await newArchive(path, {title: arg(argv, 'title'), width: arg(argv, 'width'), height: arg(argv, 'height')})
-            return reply({ok: true, path: toRef(curPath), scenes: d.scenes.length, duration: Math.round(d.scenes.reduce((a, s) => a + s.duration, 0))})
-          } catch (e) {return reply(errReply(e))}
+        name: 'new_video', desc: '新建视频存档（path 可选 /fs 路径，省略时用 /fs/page/.video；title/width/height 可选）',
+        help: 'win(id).new_video({path?, name?, title?, width?, height?})',
+        handler: async (data) => {
+          const path = data?.path || defaultArchivePath(data?.name || data?.title)
+          const d = await newArchive(path, {title: data?.title, width: data?.width, height: data?.height})
+          return {ok: true, path: toRef(curPath), scenes: d.scenes.length, duration: Math.round(d.scenes.reduce((a, s) => a + s.duration, 0))}
         }
       },
 
       {
         name: 'open', desc: '打开 /fs 路径的 .video_studio 存档（平台 opener 使用）',
-        help: '--path /fs/.../demo.video_studio',
-        handler: async (argv) => {
-          try {
-            await openArchive(arg(argv, 'path'))
-            return reply({ok: true, path: toRef(curPath), title: curTitle})
-          } catch (e) {return reply(errReply(e))}
+        help: 'win(id).open({url, paths?})',
+        handler: async (data) => {
+          const path = data?.paths?.[0] || data?.url
+          if (!path) throw new Error('open: url required')
+          await openArchive(path)
+          return {ok: true, path: toRef(curPath), title: curTitle}
         }
       },
       {
         name: 'save_video', desc: '保存当前存档',
         handler: async () => {
-          try {
-            if (!curPath) throw new Error('样例或无路径文档请使用 save_as_video --path')
-            await doSave()
-            return reply({ok: true, path: toRef(curPath)})
-          } catch (e) {return reply(errReply(e))}
+          if (!curPath) throw new Error('样例或无路径文档请使用 win(id).save_as_video({path})')
+          await doSave()
+          return {ok: true, path: toRef(curPath)}
         }
       },
       {
         name: 'save_as_video', desc: '另存为并复制素材依赖',
-        help: '--path /fs/.../copy.video_studio',
-        handler: async (argv) => {
-          try {
-            const path = arg(argv, 'path')
-            if (!path) throw new Error('--path 必填')
-            await saveAsArchive(path)
-            return reply({ok: true, path: toRef(curPath)})
-          } catch (e) {return reply(errReply(e))}
+        help: 'win(id).save_as_video({path: "/fs/.../copy.video_studio"})',
+        handler: async (data) => {
+          if (!data?.path) throw new Error('save_as_video: path required')
+          await saveAsArchive(data.path)
+          return {ok: true, path: toRef(curPath)}
         }
       },
 
       {
-        name: 'run_video', desc: '预览播放当前存档（--path 可选，指定则先打开）',
-        handler: async (argv) => {
-          try {
-            const path = arg(argv, 'path')
-            if (path && toTree(path) !== curPath) await openArchive(path)
-            if (!doc) throw new Error('没有已打开的项目')
-            $refs.stage.$data.togglePlay()
-            return reply({ok: true, playing: $refs.stage.$data.playing, title: curTitle})
-          } catch (e) {return reply(errReply(e))}
+        name: 'run_video', desc: '预览播放当前存档（path 可选，指定则先打开）',
+        help: 'win(id).run_video({path?})',
+        handler: async (data) => {
+          const path = data?.path
+          if (path && toTree(path) !== curPath) await openArchive(path)
+          if (!doc) throw new Error('没有已打开的项目')
+          $refs.stage.$data.togglePlay()
+          return {ok: true, playing: $refs.stage.$data.playing, title: curTitle}
         }
       },
 
       {
         name: 'stop_video', desc: '停止预览播放',
         handler: async () => {
-          try {
-            const st = $refs.stage.$data
-            if (st.playing) st.togglePlay()
-            return reply({ok: true, playing: false})
-          } catch (e) {return reply(errReply(e))}
+          const st = $refs.stage.$data
+          if (st.playing) st.togglePlay()
+          return {ok: true, playing: false}
         }
       },
 
       {
         name: 'reload_video', desc: '重新加载当前 .video_studio 与相对资源（AI 写完文件后调用）',
         handler: async () => {
-          try {
-            if (!curPath) throw new Error('没有已打开的存档')
-            await reloadProject()
-            return reply({ok: true, path: toRef(curPath), title: curTitle})
-          } catch (e) {return reply(errReply(e))}
+          if (!curPath) throw new Error('没有已打开的存档')
+          await reloadProject()
+          return {ok: true, path: toRef(curPath), title: curTitle}
         }
       },
 
       {
-        name: 'gen_voice', desc: '逐场景生成配音素材（--text 必填；--name 可选文件名；--set voice|music 可选：voice 配置到当前场景，music 配置为全片音乐）。TTS 限流约 3s/个',
-        handler: async (argv) => {
-          try {
+        name: 'gen_voice', desc: '逐场景生成配音素材（text 必填；name 可选文件名；set voice|music 可选：voice 配置到当前场景，music 配置为全片音乐）。TTS 限流约 3s/个',
+        help: 'win(id).gen_voice({text, name?, set?})',
+        handler: async (data) => {
             if (!curPath) throw new Error('请先打开存档（new_video 或 open）')
-            const text = String(arg(argv, 'text', '') || '').trim()
-            if (!text) throw new Error('--text 必填')
+            const text = String(data?.text || '').trim()
+            if (!text) throw new Error('gen_voice: text required')
             if (text.length > 5000) throw new Error('文本超长（最多 5000 字）')
             // 平台包级 TTS（skills 面保留端点 POST {scoped}/api/speech，与 ppt_studio 同款）：POST {text} → 音频 blob（按文本 hash 缓存）
             const resp = await fetch('@' + $mod.scoped + '/api/speech', {
@@ -1188,11 +1177,10 @@
             if (!resp.ok) throw new Error('TTS 合成失败 HTTP ' + resp.status)
             const blob = await resp.blob()
             if (!blob.size) throw new Error('TTS 返回空音频')
-            // 文件名：--name 或自动（voice-时间戳）；可选参数显式取值（不 fallback 位置参数）；
-            // 截断防长文本；扩展名按响应 mime（mpeg→mp3）；assets/ 内重名自动加 -N
+            // 文件名：name 或自动（voice-时间戳）；截断防长文本；扩展名按响应 mime（mpeg→mp3）；assets/ 内重名自动加 -N
             let mimeExt = String((blob.type || '').split('/')[1] || 'mp3').toLowerCase()
             if (mimeExt === 'mpeg') mimeExt = 'mp3'
-            const rawName = cleanName(optArg(argv, 'name'), 60)
+            const rawName = cleanName(data?.name, 60)
             const dot = rawName.lastIndexOf('.')
             const base = dot > 0 ? rawName.slice(0, dot) : (rawName || 'voice-' + Date.now().toString(36))
             const l = await fsLs(projDir() + '/assets/')
@@ -1208,7 +1196,7 @@
             const st = $refs.stage && $refs.stage.$data
             if (st) {if (st.engine) st.engine.assets = assets; if (st.refreshFrame) st.refreshFrame()}
             // voice 属于当前场景（scene-local offset）；music 仍是全片轨
-            const track = String(arg(argv, 'set', '') || '')
+            const track = String(data?.set || '')
             let voiceScene = -1
             if (track === 'voice') {
               voiceScene = activeSceneIdx()
@@ -1220,23 +1208,22 @@
             if (track === 'voice' || track === 'music') onDocChange()
             const duration = await audioDuration(blob)
             await refreshAssets()
-            return reply({ok: true, ref, name, size: blob.size, duration, track, scene: voiceScene >= 0 ? voiceScene + 1 : null, hint: '素材引用：' + ref + '（时长 ' + duration + 's）'})
-          } catch (e) {return reply(errReply(e))}
+            return {ok: true, ref, name, size: blob.size, duration, track, scene: voiceScene >= 0 ? voiceScene + 1 : null, hint: '素材引用：' + ref + '（时长 ' + duration + 's）'}
         }
       },
 
       {
-        name: 'shot_video', desc: '截图当前画面为 PNG（--frame/--name/--scale 可选），写入当前存档目录 screenshots/ 并返回 /fs 路径',
-        handler: async (argv) => {
-          try {
+        name: 'shot_video', desc: '截图当前画面为 PNG（frame/name/scale 可选），写入当前存档目录 screenshots/ 并返回 /fs 路径',
+        help: 'win(id).shot_video({frame?, name?, scale?})',
+        handler: async (data) => {
             if (!doc || !curPath) throw new Error('请先打开存档')
             const st = $refs.stage && $refs.stage.$data
             const engine = st && st.engine
             if (!engine) throw new Error('引擎未就绪')
             // 关键：totalFrames 只在引擎规范化后的 doc 上（页面 proxy doc 是原始 JSON，没有该字段）——
-            // 用 doc.totalFrames 会得到 undefined → total=1 → 任何 --frame 都被钳到第 0 帧
+            // 用 doc.totalFrames 会得到 undefined → total=1 → 任何 frame 都被钳到第 0 帧
             const total = (engine.doc && engine.doc.totalFrames) || st.totalFrames || 1
-            const fr = parseInt(optArg(argv, 'frame'), 10)
+            const fr = parseInt(data?.frame, 10)
             const f = isNaN(fr) ? engine.frame : Math.max(0, Math.min(fr, total - 1))
             // 复用导出管线：确定性 DOM → SVG foreignObject → canvas（不动播放头）
             if (engine.prepare) await engine.prepare()   // three 元素懒加载就绪
@@ -1247,7 +1234,7 @@
             // forExport：与导出画面一致（audio 元素不画 chip；media 合成真帧）
             const node = engine.buildFrame(f, {forExport: true})
             await waitMediaSeek(node)
-            const scale = Math.max(0.25, Math.min(2, parseFloat(optArg(argv, 'scale') || '1') || 1))
+            const scale = Math.max(0.25, Math.min(2, parseFloat(data?.scale || '1') || 1))
             const W = Math.round(doc.size.width * scale)
             const H = Math.round(doc.size.height * scale)
             const canvas = document.createElement('canvas')
@@ -1258,34 +1245,32 @@
             ctx.fillRect(0, 0, W, H)
             await drawFrameToCanvas(node, canvas, ctx, W, H)
             const blob = await new Promise((res, rej) => canvas.toBlob((b) => (b ? res(b) : rej(new Error('toBlob failed'))), 'image/png'))
-            const rawName = cleanName(optArg(argv, 'name'), 60)
+            const rawName = cleanName(data?.name, 60)
             const name = (rawName || safeTitle() + '-f' + f) + '.png'
             const outPath = resolveRef(projDir(), 'screenshots/' + name)
             await fsPut(outPath, blob)
-            return reply({ok: true, path: toRef(outPath), frame: f, total, width: W, height: H, size: blob.size})
-          } catch (e) {return reply(errReply(e))}
+            return {ok: true, path: toRef(outPath), frame: f, total, width: W, height: H, size: blob.size}
         }
       },
 
       {
-        name: 'run_js', desc: '纯数值/曲线/3D 建模计算 JS（软沙箱：仅 Math + M 数学包 + T three.js 核心数学几何 + console/copy，无 DOM/网络/存储/定时器/构造器）。--code 必填（表达式/IIFE，或语句体自己 return）。M 包：TAU, lerp, clamp, smoothstep, map, deg, rad, round(v,n), range(n,a,b), rand(seed)→fn, easing, easingOf, bezier(x1..)→fn, spring(d,s,m)→fn, interpolate。T 包（three r170 纯计算类，无渲染器）：Vector2/3/4, Matrix3/4, Quaternion, Euler, Color, Spherical, CatmullRomCurve3, SplineCurve, CurvePath, Path, Shape, BufferGeometry 及 Box/Sphere/TorusKnot/Tube/Lathe/Extrude/Shape 等 Geometry 类, MathUtils。console.log 收进 logs；copy(v) 写剪贴板。返回 {ok, result, result_type, logs, copied}。适合先算好路径/顶点/曲线参数再 fs.write 写入文档或素材',
-        handler: async (argv) => {
-          try {
-            const code = optArg(argv, 'code') || String((argv || [])[0] || '')
-            if (!code.trim()) throw new Error('--code 必填')
-            const T = await runJsThreeKit()
-            return reply(runJsSandbox(code, T))
-          } catch (e) {return reply({ok: false, error: String((e && e.message) || e)})}
+        name: 'run_js', desc: '纯数值/曲线/3D 建模计算 JS（软沙箱：仅 Math + M 数学包 + T three.js 核心数学几何 + console/copy，无 DOM/网络/存储/定时器/构造器）。code 必填（表达式/IIFE，或语句体自己 return）。M 包：TAU, lerp, clamp, smoothstep, map, deg, rad, round(v,n), range(n,a,b), rand(seed)→fn, easing, easingOf, bezier(x1..)→fn, spring(d,s,m)→fn, interpolate。T 包（three r170 纯计算类，无渲染器）：Vector2/3/4, Matrix3/4, Quaternion, Euler, Color, Spherical, CatmullRomCurve3, SplineCurve, CurvePath, Path, Shape, BufferGeometry 及 Box/Sphere/TorusKnot/Tube/Lathe/Extrude/Shape 等 Geometry 类, MathUtils。console.log 收进 logs；copy(v) 写剪贴板。返回 {ok, result, result_type, logs, copied}。适合先算好路径/顶点/曲线参数再 fs.write 写入文档或素材',
+        help: 'win(id).run_js({code})',
+        handler: async (data) => {
+          const code = String(data?.code || '')
+          if (!code.trim()) throw new Error('run_js: code required')
+          const T = await runJsThreeKit()
+          return runJsSandbox(code, T)
         }
       },
 
       {
-        name: 'analyze_music', desc: '节拍分析（--src 必填：项目内音频素材相对路径如 assets/bgm.mp3；--name 可选输出文件名，默认 beats.json）。WebAudio 解码 → 能量流自相关求 BPM/拍点网格 + 真实瞬态 onsets，写入项目文件并返回摘要。卡拍片分镜前先调此指令，时间线按 beats/onsets 写 t（稀疏重音钉 onsets 而非网格插值点）',
-        handler: async (argv) => {
-          try {
+        name: 'analyze_music', desc: '节拍分析（src 必填：项目内音频素材相对路径如 assets/bgm.mp3；name 可选输出文件名，默认 beats.json）。WebAudio 解码 → 能量流自相关求 BPM/拍点网格 + 真实瞬态 onsets，写入项目文件并返回摘要。卡拍片分镜前先调此指令，时间线按 beats/onsets 写 t（稀疏重音钉 onsets 而非网格插值点）',
+        help: 'win(id).analyze_music({src, name?})',
+        handler: async (data) => {
             if (!curPath) throw new Error('请先打开存档')
-            const src = optArg(argv, 'src')
-            if (!src) throw new Error('--src 必填（项目内音频素材相对路径）')
+            const src = data?.src
+            if (!src) throw new Error('analyze_music: src required（项目内音频素材相对路径）')
             const r = await fsGet(resolveRef(projDir(), src))
             const blob = r.content instanceof Blob ? r.content : new Blob([r.content])
             const AC = window.AudioContext || window.webkitAudioContext
@@ -1302,52 +1287,35 @@
             const {analyzeBeats} = await import('./video/beats.js')
             const res = analyzeBeats(mono, audio.sampleRate)
             res.src = src
-            const rawName = cleanName(optArg(argv, 'name'), 60) || 'beats.json'
+            const rawName = cleanName(data?.name, 60) || 'beats.json'
             const outRef = rawName.endsWith('.json') ? rawName : rawName + '.json'
             const outPath = resolveRef(projDir(), outRef)
             await fsPut(outPath, JSON.stringify(res, null, 2))
-            return reply({
+            return {
               ok: true, path: toRef(outPath),
               bpm: res.bpm, beatOffset: res.beatOffset, beatPeriod: res.beatPeriod,
               beats: res.beats.length, onsets: res.onsets.length, confidence: res.confidence,
               duration: res.duration, firstBeats: res.beats.slice(0, 8),
               hint: res.confidence < 0.3 ? '置信度低：建议人工核对拍点网格后再分镜' : '分镜时按 beats/onsets 写 t；全画面级节拍冲击全片 ≤3 处',
-            })
-          } catch (e) {return reply(errReply(e))}
+            }
         }
       },
 
       {
         name: 'get_video', desc: '当前打开存档的信息',
         handler: async () => {
-          try {
-            if (!doc) return reply({ok: true, open: false})
-            const st = $refs.stage.$data.engine ? $refs.stage.$data.engine.getState() : null
-            return reply({
-              ok: true, open: true, path: curPath ? toRef(curPath) : '', readonly: !curPath, title: curTitle,
-              duration: st ? Math.round(st.duration) : 0, fps: st ? st.fps : 0,
-              size: st ? st.size : null, scenes: st ? st.scenes.length : 0
-            })
-          } catch (e) {return reply(errReply(e))}
+          if (!doc) return {ok: true, open: false}
+          const st = $refs.stage.$data.engine ? $refs.stage.$data.engine.getState() : null
+          return {
+            ok: true, open: true, path: curPath ? toRef(curPath) : '', readonly: !curPath, title: curTitle,
+            duration: st ? Math.round(st.duration) : 0, fps: st ? st.fps : 0,
+            size: st ? st.size : null, scenes: st ? st.scenes.length : 0
+          }
         }
       },
     ]
   }
 
-  const errReply = (e) => ({ok: false, error: String((e && e.message) || e)})
-  const reply = (obj) => ({content: JSON.stringify(obj)})
-  const arg = (argv, key, dft) => {
-    const i = (argv || []).indexOf('--' + key)
-    if (i >= 0 && argv[i + 1] !== undefined) return String(argv[i + 1])
-    const pos = (argv || []).find((a) => typeof a === 'string' && !String(a).startsWith('--'))
-    return pos !== undefined ? pos : dft
-  }
-  // 可选参数显式取值：不带位置参数 fallback（否则多 flag 场景会误取其它 flag 的值，如 --text 长文本被当成 --name）
-  const optArg = (argv, key) => {
-    const a = argv || []
-    const i = a.indexOf('--' + key)
-    return i >= 0 && a[i + 1] !== undefined ? String(a[i + 1]) : ''
-  }
   // 文件名清洗 + 截断（防长文本/超长文件名）
   const cleanName = (s, max) => {
     s = String(s || '').replace(/[\\/:*?"<>|#%\s]+/g, '-').replace(/^-+|-+$/g, '')

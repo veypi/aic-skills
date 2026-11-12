@@ -184,6 +184,26 @@ test('page and document visibility disable control, discard displayed observatio
   assert.equal(f.state.hasFrame, true);
 });
 
+test('the toolbar shows the observed frame rate next to the refresh control', async t => {
+  const f = fixture(t);
+  await f.ready();
+  await tick();
+  assert.equal(f.state.fpsText(), '— fps', 'no rate is claimed before frames arrive');
+  // 真实到达间隔：用假时钟拉开帧间距，否则同毫秒到达算不出速率。
+  let now = 1_000_000;
+  const realNow = Date.now;
+  Date.now = () => now;
+  t.after(() => {Date.now = realNow;});
+  await f.state.refreshFrame();
+  now += 250;
+  await f.state.refreshFrame();
+  await tick();
+  const text = f.state.fpsText();
+  assert.match(text, /^[\d.]+ fps$/, `the rate is rendered, got ${text}`);
+  assert.ok(page.includes('fps-meter'), 'the rate has its own slot in the toolbar');
+  assert.ok(page.includes('class="fps-meter" v-if="hasFrame"'), 'the rate appears next to the refresh control');
+});
+
 test('capture errors retry the selected window on its existing connection and preserve permissions', async t => {
   let failCapture = false;
   const f = fixture(t, {onCall: ({tool}) => failCapture && tool === 'get_window_state'

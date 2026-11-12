@@ -31,11 +31,7 @@
     inc = (by) => { count += Number(by) || 0 }
     reset = () => { count = 0 }
 
-    // 指令返回助手：{content} 是外部 AI 看到的工具结果
-    reply = (obj) => ({ content: JSON.stringify(obj) })
-    errReply = (msg) => ({ content: JSON.stringify({ ok: false, error: String(msg) }) })
-
-    // ===== pageDesc：平台采集为窗口指令 {win_id}.{cmd} =====
+    // ===== pageDesc：AI 在 page exec JS 中经 win(id).command(data) 调用 =====
     // 形状硬校验：desc 必须 string、commands 数组、每条 {name 非空, handler 函数}——不满足会被平台整体忽略
     pageDesc = {
       desc: 'Hello 计数器示例页面',
@@ -43,26 +39,25 @@
         {
           name: 'hello_status',
           desc: '读取计数状态',
-          help: '无参数。返回 {"ok":true,"count":<数字>}',
-          handler: () => reply({ ok: true, count: count }),
+          help: 'win(id).hello_status()；返回 {ok, count}',
+          handler: () => ({ ok: true, count: count }),
         },
         {
           name: 'hello_inc',
           desc: '增加计数',
-          help: '--by <数字>（缺省 1）',
-          handler: (argv) => {
-            const i = argv.indexOf('--by')
-            const by = i >= 0 ? Number(argv[i + 1]) : 1
-            if (!Number.isFinite(by)) return errReply('--by must be a number')
+          help: 'win(id).hello_inc({by})；by 缺省 1',
+          handler: (data) => {
+            const by = data?.by == null ? 1 : Number(data.by)
+            if (!Number.isFinite(by)) throw new Error('hello_inc: by must be a number')
             inc(by)
-            return reply({ ok: true, count: count })
+            return { ok: true, count: count }
           },
         },
         {
           name: 'hello_reset',
           desc: '计数归零',
-          help: '无参数。返回 {"ok":true,"count":0}',
-          handler: () => { reset(); return reply({ ok: true, count: count }) },
+          help: 'win(id).hello_reset()；返回 {ok, count}',
+          handler: () => { reset(); return { ok: true, count: count } },
         },
       ],
     }

@@ -79,25 +79,24 @@
       } catch (e) { error = e.message }
     }
 
-    // ===== pageDesc：页面指令（外部 AI 经 {窗口ID}.{cmd} 调用）=====
+    // ===== pageDesc：AI 在 page exec JS 中经 win(id).command(data) 调用 =====
     pageDesc = {
       desc: 'example 页面（模板）',
       commands: [
         {
-          name: 'list', desc: '列出全部条目', help: '无参数。返回 {"ok","rows"}',
+          name: 'list', desc: '列出全部条目', help: 'win(id).list()；返回 {ok, rows}',
           handler: async () => {
             await load()
-            return { content: JSON.stringify({ ok: true, rows: items.length }) }
+            return { ok: true, rows: items.length }
           },
         },
         {
-          name: 'add', desc: '新增一条', help: '--title <标题>（必填）',
-          handler: async (argv) => {
-            const i = argv.indexOf('--title')
-            const t = i >= 0 ? argv[i + 1] : ''
-            if (!t) return { content: '缺少 --title' }
-            await add2(t)
-            return { content: '已添加 ' + t }
+          name: 'add', desc: '新增一条', help: 'win(id).add({title})',
+          handler: async (data) => {
+            const title = String(data?.title || '').trim()
+            if (!title) throw new Error('add: title required')
+            await add2(title)
+            return '已添加 ' + title
           },
         },
       ],

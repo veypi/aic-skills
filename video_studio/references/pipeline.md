@@ -19,7 +19,7 @@
 
 - 全片 8–60s，每场景 3–6s；先排**能量曲线**再填镜头：开场（中，单主角 Q5）→ 铺垫爬升 → 高潮段 → 收尾峰值（Q8）或品牌静收
 - 功能清单 → 镜头映射表：每个功能配一个镜头 + 选用的镜头卡（`shots/`）；一种手法全片只当一次主角（P4）
-- 有 BGM 且强节奏：先 `analyze_music --src assets/bgm.mp3`，读 beats.json，切点/重音钉真实拍点；confidence <0.3 先人工核对
+- 有 BGM 且强节奏：先 `win(id).analyze_music({src: 'assets/bgm.mp3'})`，读 beats.json，切点/重音钉真实拍点；confidence <0.3 先人工核对
 - 产出分镜表写进 `brief.md`：每场景 = 时长 / 画面内容 / 镜头卡 / 运镜 / 字幕 / 旁白句 / SFX 预留 / hold 预算（R1/R3）
 
 **共同创作在此暂停**：给用户看分镜表确认后再实现。
@@ -30,11 +30,11 @@
 - 真实页面截图（Q1）：用 browser/cua 技能截图，或把链接给用户请其截图上传「素材」tab
 - 外部素材：把下载链接发给用户，请其下载后上传素材面板（page curl 不能下载外部素材）
 - 素材命名语义化（assets/hero-card.png），分辨率按显示尺寸 2x（Q2，运镜镜头按推近后算）
-- TTS 配音：画面主体完成后逐场景生成一段话。把播放头置于该场景，`gen_voice --text "本幕讲解" --name voice-s1 --set voice` 自动写入 scene.voice；每幕单独试听，产品名/数字/单位必须核对
+- TTS 配音：画面主体完成后逐场景生成一段话。把播放头置于该场景，`win(id).gen_voice({text: '本幕讲解', name: 'voice-s1', set: 'voice'})` 自动写入 scene.voice；每幕单独试听，产品名/数字/单位必须核对
 
 ## 阶段 3 · 逐场景实现
 
-- `new_video --path /fs/.../demo.video_studio` 建存档 → 写主 `.video_studio`（场景多时拆分 scenes/scene_N.json）→ `reload_video`
+- `win(id).new_video({path: '/fs/.../demo.video_studio'})` 建存档 → 写主 `.video_studio`（场景多时拆分 scenes/scene_N.json）→ `win(id).reload_video()`
 - 每场景按镜头卡 recipe 写元素/关键帧/运镜；先读 `shots/` 对应卡全文再写，不凭卡名瞎编
 - 写完一个场景就截入场/动作/hold 三个关键帧并 fs.read 自检（P1），再写下一个；可疑处看全尺寸单帧，不只看缩略拼图
 - 坐标基于 size 布局不越界；文字框给足高度；有效字高按 Q11 验收；中心线、复合图标和轨道标签按 Q12/Q13 验收

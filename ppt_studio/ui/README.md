@@ -244,7 +244,7 @@ ui/
 - **双语**：面板与工具栏文案在 `langs.json`（zh-CN / en-US），经 `$t()` 引用，语言跟随全局 header。
 
 双向交互：AI 直接用 fs 工具（`_host=page`）读写 `/ppt/...` 下的 json 完成内容编辑；页面操作经
-`$pageExec` 指令（`ppt_status / ppt_list / ppt_open / ppt_case / ppt_run [--start] /
-ppt_stop / ppt_new / ppt_save / ppt_get [--full] / ppt_mode / ppt_delete`），由 AI 用
-`exec _host=page {win_id}.<cmd>` 调用，路径为页面本地 OPFS（`/ppt/<名称>/index.json`）。
+pageDesc 声明（`ppt_status / ppt_list / ppt_open / ppt_case / ppt_run / ppt_stop / ppt_new /
+ppt_save / ppt_get / ppt_mode / ppt_delete`），由 AI 在 `exec _host=page` 的 async JS 函数体里用
+`win(id).command(data)` 调用，例如 `await win(id).ppt_open({path: '/ppt/<名称>/index.json'})`。
 指令声明见 `index.html` 的 `pageDesc`。

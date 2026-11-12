@@ -188,39 +188,61 @@ JS 参数用 camelCase；后端 DTO 与工具协议字段保留 snake_case。
 
 ## 7. 页面指令（让 AI 操作你的界面）
 
-在 `<script setup>` 里声明 `pageDesc`，AI 通过窗口指令调用：
+在 `<script setup>` 里声明 `pageDesc`。handler 接收 `(data, ctx)`，业务数据直接返回；AI 在 `exec _host=page` 的 async JavaScript 函数体里通过 `win(id).command(data)` 调用：
 
 ```js
 pageDesc = {
   desc: '待办清单页面',
   commands: [
     {
-      name: 'todo_status', desc: '待办统计', help: '无参数。返回 {"ok","total"}',
+      name: 'todo_status', desc: '待办统计', help: 'win(id).todo_status()；返回 {ok, total}',
       handler: async () => {
         await load()
-        return { content: JSON.stringify({ ok: true, total: items.length }) }
+        return { ok: true, total: items.length }
       },
     },
     {
-      name: 'todo_add', desc: '新增待办', help: '--title <标题>（必填）',
-      handler: async (argv) => {
-        const i = argv.indexOf('--title')
-        const title = i >= 0 ? argv[i + 1] : ''
-        if (!title) return { content: '缺少 --title' }
+      name: 'todo_add', desc: '新增待办', help: 'win(id).todo_add({title})',
+      handler: async (data) => {
+        const title = String(data?.title || '').trim()
+        if (!title) throw new Error('todo_add: title required')
         await add(title)
-        return { content: '已添加 ' + title }
+        return { ok: true, title }
       },
     },
   ],
 }
 ```
 
+AI 调用示例（`exec _host=page`，`script` 是 async JavaScript 函数体）：
+
+```js
+const available = await commands()       // 发现页面与窗口业务函数
+const opened = await open({url: '/skills/cloud/{skill_id}'})
+const before = await win(opened.win_id).todo_status()
+const added = await win(opened.win_id).todo_add({title: '写周报'})
+const after = await win(opened.win_id).todo_status()
+return {available, before, added, after}
+```
+
 约定：
 
-- 返回 `{ content: '...' }`；出错也返回可读文本（不要抛裸异常）。
-- 参数从 `argv` 取；复杂数据用 stdin（`ctx.stdin`）走 JSON。
-- 命令在页面内注册，AI 通过页面命令通道发现与调用；窗口命令命名空间是 `{窗口ID}.{命令名}`。
+- 参数是有名字段对象，例如 `{title}`、`{path}`、`{values}`；纯文本命令可定义为 `{text}`；无参命令忽略 `data`。
+- 返回原生对象、数组或字符串，不包 `{content: JSON.stringify(...)}`；失败抛出带明确原因的 `Error`。
+- `ctx` 是第二个参数，只在需要执行方身份、取消信号等上下文时接收；不经命令行参数数组或标准输入传参。
+- 用 `return await commands()` 可单独发现函数；多步操作用 `win(id).command(data)` 顺序 `await`。
 - 同页重复注册由后注册者覆盖；跨标签通过 session queue 单次投递。
+
+### 通用高亮标注（无需技能声明）
+
+AI 要给人类讲解页面重点时，直接调用平台 `highlight` 指令，不要在技能里自造高亮层：
+
+```js
+await highlight({win_id: 'w1', selector: '.row', desc: '说明'})
+await highlight({win_id: 'w1', clear: true})
+```
+
+默认标注活动窗口中首个匹配元素，显示边框和 desc 标签；同一窗口再次调用替换旧标注，目标随导航移除时自动清理。该指令只负责视觉标注，不承担业务动作或数据修改。
 
 ## 8. 组件复用与插槽
 
@@ -259,7 +281,7 @@ pageDesc = {
 - 缓存页面重新激活后读取当前路由参数，首次挂载不会重复装载。
 - 资源无 404；相对路径在包内与用户空间两种落位都成立。
 - 亮色/暗色主题下都可读（只用 token 就自动成立）。
-- 声明了 pageDesc 的命令能被 AI 调通，返回可读文本。
+- 声明了 pageDesc 的命令能被 AI 经 `win(id).command(data)` 调通，直接返回结构化业务数据或文本，错误明确抛出。
 - 交互元素可用键盘聚焦，悬停/聚焦有可见反馈。
 - 涉及存储时，用户产物可从任意 `$fs` 位置打开并写回；最近记录不冒充文件清单，移除记录不删除文件。
 - 涉及设备时用 `<widgets-host-connector>` 或 `$hosts.openTools`，没有自造设备下拉框与在线判断；页面销毁或切换设备时旧连接已关闭。

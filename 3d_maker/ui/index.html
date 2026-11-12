@@ -131,7 +131,7 @@
   pageDesc = {
     desc: '3D Maker 模型架：打开、新建 .3d.js 单文件模型，展示最近记录与内置案例',
     commands: [
-      {name: 'status', desc: '首页状态与最近记录', handler: async () => ({content: JSON.stringify({ok: true, recent: loadRecent(), cases})})},
+      {name: 'status', desc: '首页状态与最近记录', handler: async () => ({ok: true, recent: loadRecent(), cases})},
     ],
   }
   loadCases()

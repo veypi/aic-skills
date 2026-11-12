@@ -1,6 +1,6 @@
 ---
 name: cua
-version: 1.1.14
+version: 1.1.16
 description: 通过设备上的官方 CuaDriver MCP 操作应用、原生窗口和浏览器。
 ---
 
@@ -58,7 +58,7 @@ cua get_window_state --help      # 按 inputSchema 渲染参数表
 
 `--input -` 从 stdin 读取 JSON。命令输出标准 MCP 结果，包含上游 `content`、可选 `structuredContent` 和 `isError`。图片保留为 MCP image 内容，不转换为自定义观察对象。
 
-UI `/skills/cloud/cua` 经 `$hosts.openTools(hostId)` 的 `execCall` 调用同一命令面（`cua <tool> --json`），支持选择设备、主显示器桌面或应用窗口。截图调用添加 `--image-preview 1280x720`，Pod 在输出前等比缩入 1280×720，转为不超过 600 KiB 的 JPEG，小图不放大；普通 MCP 调用默认保留原图。工具调用使用正式 `cua <tool>`；仅 schema/能力探测使用 `commands info cua --schema`。空闲时每次完成后间隔 150 毫秒刷新，窗口截图关闭辅助功能树遍历；这不是连续视频流。查看端使用独立随机 `session`，不会覆盖 AI 工作会话中的观察引用。
+UI `/skills/cloud/cua` 经 `$hosts.openTools(hostId)` 的 `execCall` 调用同一命令面（`cua <tool> --json`），支持选择设备、主显示器桌面或应用窗口。截图调用添加 `--image-preview 1280x720`，Pod 在输出前等比缩入 1280×720，转为不超过 600 KiB 的 JPEG，小图不放大；普通 MCP 调用默认保留原图。工具调用使用正式 `cua <tool>`；仅 schema/能力探测使用 `commands info cua --schema`。空闲时每次完成后间隔 150 毫秒刷新，窗口截图关闭辅助功能树遍历；这不是连续视频流。查看端使用独立随机 `session`，不会覆盖 AI 工作会话中的观察引用。工具栏刷新按钮左侧显示实际到达帧率（近窗口帧间隔中位数换算，反映设备真实吞吐而非配置间隔），没有帧时显示占位符。
 
 窗口预览帧走上游 0.47.19 的 `screenshot_format:"jpeg"`（载荷约为 PNG 的十分之一，仍注册 action capture）；JPEG 帧不带 `capture_id`，因此坐标动作（click/drag/scroll）前会补抓一张同尺寸的绑定帧并带上它的 `capture_id`。绑定帧与预览帧尺寸不一致时拒绝动作（窗口已变，宁可不出手也不误点）。老驱动没有 `screenshot_format` 时按实际 schema 回退到 PNG 预览。
 

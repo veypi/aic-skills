@@ -200,7 +200,7 @@
 
 ## 节拍分析产物 beats.json（1.1.0）
 
-`analyze_music --src assets/bgm.mp3` 写入项目根（可用 fs 工具读）：
+`win(id).analyze_music({src: 'assets/bgm.mp3'})` 写入项目根（可用 fs 工具读）：
 
 ```jsonc
 { "src": "assets/bgm.mp3", "bpm": 124.0, "beatOffset": 0.08, "beatPeriod": 0.4839,

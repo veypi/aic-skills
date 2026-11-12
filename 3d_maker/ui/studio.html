@@ -252,12 +252,6 @@
     return fs
   }
   const startDir = () => parentOf(curFile)
-  const reply = value => ({content: JSON.stringify(value)})
-  const argOf = (argv, key, fallback = '') => {
-    const args = argv || []
-    const index = args.indexOf('--' + key)
-    return index >= 0 ? args[index + 1] : fallback
-  }
   const resultOrThrow = result => {
     if (!result) throw new Error('Viewer unavailable')
     if (result.success === false) throw new Error(result.message || 'Model failed')
@@ -454,64 +448,61 @@
     }
   }
 
-  const openCommand = async argv => {
-    try { return reply(await runFileByPath(argOf(argv, 'path', argv?.[0]))) }
-    catch (error) { return reply({ok: false, code: error?.code || 'RUN_FILE_ERROR', message: errMsg(error)}) }
+  const openCommand = async data => {
+    const path = data?.paths?.[0] || data?.url
+    if (!path) throw new Error('open: url required')
+    return await runFileByPath(path)
   }
   pageDesc = {
     desc: '3D Maker Studio：单文件 .3d.js 参数化模型，任意 /fs 位置打开与保存；CAD/OCCT、打印检查、拾取、切片和导出',
     commands: [
-      {name: 'open', desc: '打开任意 /fs 位置的 .3d.js 模型', help: '--path /fs/.../model.3d.js', handler: openCommand},
-      {name: 'run_file', desc: '运行任意 /fs 位置的 .3d.js 模型并设为当前文件', help: '--path /fs/.../model.3d.js', handler: openCommand},
-      {name: 'run_code', desc: '执行一段建模代码', help: '--code <源码>', handler: async argv => {
-        const code = argOf(argv, 'code', argv?.[0])
-        if (!code) return reply({success: false, code: 'NO_CODE', message: 'run_code requires --code'})
-        try { return reply(resultOrThrow(await bv?.run(code))) } catch (error) { return reply({success: false, message: errMsg(error)}) }
+      {name: 'open', desc: '打开任意 /fs 位置的 .3d.js 模型（平台 opener 使用）', help: 'win(id).open({url, paths?})', handler: openCommand},
+      {name: 'run_file', desc: '运行任意 /fs 位置的 .3d.js 模型并设为当前文件', help: 'win(id).run_file({path})', handler: async data => {
+        if (!data?.path) throw new Error('run_file: path required')
+        return await runFileByPath(data.path)
       }},
-      {name: 'save_code', desc: '保存当前模型代码；省略路径时仅返回代码', help: '--path /fs/.../model.3d.js', handler: async argv => {
-        const path = argOf(argv, 'path', argv?.[0])
+      {name: 'run_code', desc: '执行一段建模代码', help: 'win(id).run_code({code})', handler: async data => {
+        const code = String(data?.code || '')
+        if (!code.trim()) throw new Error('run_code: code required')
+        return resultOrThrow(await bv?.run(code))
+      }},
+      {name: 'save_code', desc: '保存当前模型代码；省略路径时仅返回代码', help: 'win(id).save_code({path?})', handler: async data => {
         const code = bv?.getCode()
-        if (!code) return reply({ok: false, message: 'No model code'})
-        if (!path) return reply({ok: true, code})
-        try { return reply(await saveModel(path)) } catch (error) { return reply({ok: false, code: 'SAVE_CODE_ERROR', message: errMsg(error)}) }
+        if (!code) throw new Error('save_code: no model code')
+        if (!data?.path) return {ok: true, code}
+        return await saveModel(data.path)
       }},
-      {name: 'save', desc: '保存当前模型；无关联文件时打开另存为选择器', handler: async () => {
-        try { return reply(await saveModel()) } catch (error) { return reply({ok: false, message: errMsg(error)}) }
+      {name: 'save', desc: '保存当前模型；无关联文件时打开另存为选择器', handler: async () => await saveModel()},
+      {name: 'status', desc: '查询页面、内核和模型状态', handler: async () => ({ok: true, ready: !!bv, busy: bv?.running || false, kernel: kernelName, kernelLoading, stats: stats || null, file: curFile || null, isNew})},
+      {name: 'shot', desc: '截图保存到指定的 /fs 图片路径', help: 'win(id).shot({path})', handler: async data => {
+        const raw = String(data?.path || '')
+        if (!raw || raw.includes('..')) throw new Error('shot: a full /fs path is required')
+        const path = toRef(raw)
+        const tree = toTree(path)
+        if (!/^\/(cloud|page)\//.test(tree) && !/^\/[0-9a-f]{32}\//i.test(tree)) throw new Error('shot: a full /fs path is required')
+        const image = await bv?.shot()
+        if (!image) throw new Error('Viewer unavailable')
+        const response = await pickFs().writeFile(tree, image.blob)
+        return {ok: true, path, width: image.width, height: image.height, bytes: response?.bytes || 0}
       }},
-      {name: 'status', desc: '查询页面、内核和模型状态', handler: async () => reply({ok: true, ready: !!bv, busy: bv?.running || false, kernel: kernelName, kernelLoading, stats: stats || null, file: curFile || null, isNew})},
-      {name: 'shot', desc: '截图保存到指定的 /fs 图片路径', help: '--path /fs/.../shot.png（必填）', handler: async argv => {
-        try {
-          const raw = argOf(argv, 'path', argv?.[0])
-          if (!raw || raw.includes('..')) return reply({ok: false, code: 'INVALID_PATH', message: 'shot requires a full /fs path'})
-          const path = toRef(raw)
-          const tree = toTree(path)
-          if (!/^\/(cloud|page)\//.test(tree) && !/^\/[0-9a-f]{32}\//i.test(tree)) return reply({ok: false, code: 'INVALID_PATH', message: 'shot requires a full /fs path'})
-          const image = await bv?.shot()
-          if (!image) throw new Error('Viewer unavailable')
-          const response = await pickFs().writeFile(tree, image.blob)
-          return reply({ok: true, path, width: image.width, height: image.height, bytes: response?.bytes || 0})
-        } catch (error) { return reply({ok: false, code: 'SHOT_ERROR', message: errMsg(error)}) }
+      {name: 'parts_audit', desc: '逐部件打印问题清单', help: 'win(id).parts_audit({minWall?})', handler: async data => {
+        const minWall = Number(data?.minWall ?? 1.2)
+        if (!bv) throw new Error('Viewer unavailable')
+        return bv.audit({minWall: Number.isFinite(minWall) ? minWall : 1.2})
       }},
-      {name: 'parts_audit', desc: '逐部件打印问题清单', help: '--min-wall <mm>', handler: async argv => {
-        try {
-          const minWall = Number(argOf(argv, 'min-wall', '1.2'))
-          if (!bv) throw new Error('Viewer unavailable')
-          return reply(bv.audit({minWall: Number.isFinite(minWall) ? minWall : 1.2}))
-        } catch (error) { return reply({success: false, code: 'AUDIT_ERROR', message: errMsg(error)}) }
-      }},
-      {name: 'set_theme', desc: '切换画布主题', help: '--theme dark|light|auto', handler: async argv => {
-        const theme = String(argOf(argv, 'theme', argv?.[0] || 'light')).toLowerCase()
-        if (!['dark', 'light', 'auto'].includes(theme)) return reply({success: false, message: 'Invalid theme'})
+      {name: 'set_theme', desc: '切换画布主题', help: 'win(id).set_theme({theme: "dark" | "light" | "auto"})', handler: async data => {
+        const theme = String(data?.theme || 'light').toLowerCase()
+        if (!['dark', 'light', 'auto'].includes(theme)) throw new Error('set_theme: invalid theme')
         bv?.setTheme(theme)
-        return reply({success: true, theme})
+        return {success: true, theme}
       }},
-      {name: 'set_kernel', desc: '切换几何内核', help: '--kernel builtin|occt', handler: async argv => {
-        const kernel = String(argOf(argv, 'kernel', argv?.[0])).toLowerCase()
-        if (!['builtin', 'occt'].includes(kernel)) return reply({success: false, message: 'Invalid kernel'})
-        if (kernelLoading) return reply({success: false, kernel: kernelName, message: 'Kernel is loading'})
-        if (kernel === 'occt' && kernelName !== 'occt') { loadOCCT(); return reply({success: true, kernel, loading: true}) }
+      {name: 'set_kernel', desc: '切换几何内核', help: 'win(id).set_kernel({kernel: "builtin" | "occt"})', handler: async data => {
+        const kernel = String(data?.kernel || '').toLowerCase()
+        if (!['builtin', 'occt'].includes(kernel)) throw new Error('set_kernel: invalid kernel')
+        if (kernelLoading) throw new Error('set_kernel: kernel is loading')
+        if (kernel === 'occt' && kernelName !== 'occt') { loadOCCT(); return {success: true, kernel, loading: true} }
         if (kernel === 'builtin' && kernelName !== 'builtin') bv?.setKernel(null, {name: 'builtin'})
-        return reply({success: true, kernel})
+        return {success: true, kernel}
       }},
     ],
   }

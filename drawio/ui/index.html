@@ -572,16 +572,6 @@
   resizeOb = null
 
   // ---- 工具 ----
-  reply = (obj) => ({ content: JSON.stringify(obj) })
-  errReply = (msg) => ({ content: JSON.stringify({ ok: false, error: String(msg) }) })
-
-  argsGet = (argv, flag) => {
-    const a = Array.isArray(argv) ? argv : []
-    const i = a.indexOf(flag)
-    if (i >= 0 && i + 1 < a.length) return String(a[i + 1])
-    return ''
-  }
-
   toastMsg = (text, kind) => {
     const ts = ++toastTs
     toast = { text: String(text), kind: kind || 'info' }
@@ -956,7 +946,7 @@
         desc: '页面与当前文档状态（页面未就绪时也可调用）',
         help: '无参数。返回 {ok, ready, viewport:{w,h}, path, name, dirty, vertices, edges, scale, selection}',
         handler: async () => {
-          if (!editor) return reply({ ok: true, ready: false })
+          if (!editor) return { ok: true, ready: false }
           // 窗口（组件宿主）尺寸：响应式布局与自动化诊断
           let vw = 0
           let vh = 0
@@ -970,44 +960,36 @@
               vh = Math.round(r.height)
             }
           } catch (e) {}
-          return reply({ ok: true, ready: true, viewport: { w: vw, h: vh }, ...editor.state() })
+          return { ok: true, ready: true, viewport: { w: vw, h: vh }, ...editor.state() }
         },
       },
       {
         name: 'drawio_list',
         desc: '列出目录下的 .drawio 文件',
-        help: '--dir <目录路径>（可选；默认当前文档目录或云端默认目录）',
-        handler: async (argv) => {
-          try {
-            const dir = argsGet(argv, '--dir') || (st.path ? parentOf(st.path) : defaultDir())
-            const r = await $mod.$fs.list(dir)
-            const items = (r.items || []).filter((it) => it.dir || /\.(drawio|xml)$/i.test(it.name))
-            return reply({ ok: true, dir, items })
-          } catch (e) {
-            return errReply(String((e && e.message) || e))
-          }
+        help: 'win(id).drawio_list({dir?})；默认当前文档目录或云端默认目录',
+        handler: async (data) => {
+          const dir = data?.dir || (st.path ? parentOf(st.path) : defaultDir())
+          const r = await $mod.$fs.list(dir)
+          const items = (r.items || []).filter((it) => it.dir || /\.(drawio|xml)$/i.test(it.name))
+          return { ok: true, dir, items }
         },
       },
       {
         name: 'drawio_open',
         desc: '打开 .drawio 文件（有未保存改动时先自动保存到原路径）',
-        help: '--path <文件路径>（必填，统一 $fs 树路径，如 /cloud/u/{uid}/drawio/x.drawio）',
-        handler: async (argv) => {
-          if (!editor) return errReply($t('err.notReady'))
-          const p = argsGet(argv, '--path')
-          if (!p) return errReply($t('err.needPath'))
-          try {
-            const s = editor.state()
-            if (s.dirty && s.path && s.path !== p) {
-              await $mod.$fs.writeFile(s.path, editor.getXml())
-              editor.markSaved(s.path)
-            }
-            await openPathQuiet(p)
-            lastDirVal = parentOf(p)
-            return reply({ ok: true, path: p, name: editor.state().name })
-          } catch (e) {
-            return errReply(String((e && e.message) || e))
+        help: 'win(id).drawio_open({path})；path 是统一 $fs 树路径，如 /cloud/u/{uid}/drawio/x.drawio',
+        handler: async (data) => {
+          if (!editor) throw new Error($t('err.notReady'))
+          const p = data?.path
+          if (!p) throw new Error($t('err.needPath'))
+          const s = editor.state()
+          if (s.dirty && s.path && s.path !== p) {
+            await $mod.$fs.writeFile(s.path, editor.getXml())
+            editor.markSaved(s.path)
           }
+          await openPathQuiet(p)
+          lastDirVal = parentOf(p)
+          return { ok: true, path: p, name: editor.state().name }
         },
       },
       {
@@ -1015,72 +997,64 @@
         desc: '新建空白图（丢弃当前内容）',
         help: '无参数',
         handler: async () => {
-          if (!editor) return errReply($t('err.notReady'))
+          if (!editor) throw new Error($t('err.notReady'))
           editor.newDoc()
           refresh()
-          return reply({ ok: true })
+          return { ok: true }
         },
       },
       {
         name: 'drawio_save',
         desc: '保存当前图到 .drawio 文件',
-        help: '--path <目标路径>（可选；未保存过的新文档必填）',
-        handler: async (argv) => {
-          if (!editor) return errReply($t('err.notReady'))
-          const p = argsGet(argv, '--path') || editor.state().path
-          if (!p) return errReply($t('err.needPath'))
-          try {
-            const text = editor.getXml()
-            await $mod.$fs.writeFile(p, text)
-            editor.markSaved(p)
-            refresh()
-            return reply({ ok: true, path: p, bytes: text.length })
-          } catch (e) {
-            return errReply(String((e && e.message) || e))
-          }
+        help: 'win(id).drawio_save({path?})；未保存过的新文档必填 path',
+        handler: async (data) => {
+          if (!editor) throw new Error($t('err.notReady'))
+          const p = data?.path || editor.state().path
+          if (!p) throw new Error($t('err.needPath'))
+          const text = editor.getXml()
+          await $mod.$fs.writeFile(p, text)
+          editor.markSaved(p)
+          refresh()
+          return { ok: true, path: p, bytes: text.length }
         },
       },
       {
         name: 'drawio_export',
         desc: '导出当前图为 PNG 或 SVG 文件',
-        help: '--format png|svg（必填），--path <输出路径>（必填）',
-        handler: async (argv) => {
-          if (!editor) return errReply($t('err.notReady'))
-          const fmt = (argsGet(argv, '--format') || '').toLowerCase()
-          const p = argsGet(argv, '--path')
-          if (fmt !== 'png' && fmt !== 'svg') return errReply('--format 需为 png 或 svg')
-          if (!p) return errReply($t('err.needPath'))
-          try {
-            if (fmt === 'png') {
-              const blob = await editor.exportPngBlob({ scale: 2 })
-              if (!blob) throw new Error('PNG blob is null')
-              await $mod.$fs.writeFile(p, blob)
-            } else {
-              await $mod.$fs.writeFile(p, editor.exportSvgString())
-            }
-            return reply({ ok: true, format: fmt, path: p })
-          } catch (e) {
-            return errReply(String((e && e.message) || e))
+        help: 'win(id).drawio_export({format: "png" | "svg", path})',
+        handler: async (data) => {
+          if (!editor) throw new Error($t('err.notReady'))
+          const fmt = String(data?.format || '').toLowerCase()
+          const p = data?.path
+          if (fmt !== 'png' && fmt !== 'svg') throw new Error('drawio_export: format must be png or svg')
+          if (!p) throw new Error($t('err.needPath'))
+          if (fmt === 'png') {
+            const blob = await editor.exportPngBlob({ scale: 2 })
+            if (!blob) throw new Error('PNG blob is null')
+            await $mod.$fs.writeFile(p, blob)
+          } else {
+            await $mod.$fs.writeFile(p, editor.exportSvgString())
           }
+          return { ok: true, format: fmt, path: p }
         },
       },
       {
         name: 'drawio_get_xml',
         desc: '返回当前图的 .drawio XML 全文',
-        help: '无参数。返回内容即 mxfile XML 文本',
+        help: 'win(id).drawio_get_xml()；返回 mxfile XML 字符串',
         handler: async () => {
-          if (!editor) return errReply($t('err.notReady'))
-          return { content: editor.getXml() }
+          if (!editor) throw new Error($t('err.notReady'))
+          return editor.getXml()
         },
       },
       {
         name: 'drawio_fit',
         desc: '视图适应窗口',
-        help: '无参数',
+        help: 'win(id).drawio_fit()',
         handler: async () => {
-          if (!editor) return errReply($t('err.notReady'))
+          if (!editor) throw new Error($t('err.notReady'))
           editor.fit()
-          return reply({ ok: true })
+          return { ok: true }
         },
       },
     ],

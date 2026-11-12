@@ -85,10 +85,10 @@ URL 参数：缺省读取 `default`；`?profile=none` 不读档；`?profile=<nam
 
 ## 4. AI 编辑并生效
 
-1. 先执行 `profile inspect`，确认当前 saved、effective 和 rejected。
+1. 先在 page exec JS 中执行 `await profile({action: 'inspect'})`，确认当前 saved、effective 和 rejected。
 2. 用 fs 写面编辑 `/u/{uid}/.profile/<name>.json`。
-3. 执行 `profile apply <name>`。该命令显式切档并 reload，aliases/slots 随后生效。
-4. 再执行 `profile inspect` 验收。
+3. 执行 `await profile({action: 'apply', name})`。该命令显式切档并 reload，aliases/slots 随后生效。
+4. 再执行 `await profile({action: 'inspect'})` 验收。
 
 `generation` 每次成功装载递增；并发读取时只有最新一次 load 可以提交，旧异步结果不得覆盖新状态。保存到档案不等于 Skill 贡献已生效，必须区分 `registry` 与 `effectiveRegistry`。
 
@@ -96,11 +96,11 @@ URL 参数：缺省读取 `default`；`?profile=none` 不读档；`?profile=<nam
 
 | 命令 | 作用 |
 | --- | --- |
-| `profile list` | 列出正式档 |
-| `profile save <name>` | 保存当前 saved registry 与 layout，写 `.bak` 并清理临时档 |
-| `profile apply <name>` | 切换到具名档并 reload |
-| `profile revert` | 弃临时档，回到底档并 reload |
-| `profile inspect` | 输出来源、saved registry、effectiveRegistry、generation 和 rejected |
+| `profile({action: 'list'})` | 列出正式档 |
+| `profile({action: 'save', name})` | 保存当前 saved registry 与 layout，写 `.bak` 并清理临时档 |
+| `profile({action: 'apply', name})` | 切换到具名档并 reload |
+| `profile({action: 'revert'})` | 弃临时档，回到底档并 reload |
+| `profile({action: 'inspect'})` | 输出来源、saved registry、effectiveRegistry、generation 和 rejected |
 
 ## 6. 验收
 

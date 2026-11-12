@@ -9,18 +9,21 @@ keywords: [示例, ui, pageDesc, vhtml, 计数器]
 # hello（最小界面示例）
 
 最小可用形态：`SKILL.md` + `manifest.json`（`ui.pages`）+ `ui/index.html`，无数据面。
-演示两件事：vhtml 页面骨架（含 `@container` 窗口响应式）+ pageDesc 指令（AI 经 `{win_id}.{cmd}` 操控页面）。
+演示两件事：vhtml 页面骨架（含 `@container` 窗口响应式）+ pageDesc 指令（AI 在 page exec JS 中经 `win(id).command(data)` 操控页面）。
 
-> **复制改造**：`exec _host=page` → `curl /api/skills -X POST -H 'Content-Type: application/json' -d '{"name":"{你的名字}"}'` 建行，再 `grant fs /skills/{id}` 后把本目录内容写进 `/skills/{id}/`（fs 工具路径）；同步修改 frontmatter 的 `name`、`nickname`/`description`。
+> **复制改造**：按 `create/references/cloud-package.md` §4 在 page exec 中用同源 `fetch` 建行，再 `grant fs /skills/{id}` 后把本目录内容写进 `/skills/{id}/`（fs 工具路径）；同步修改 frontmatter 的 `name`、`nickname`/`description`。
 
-## 使用（AI 操作序，均为 exec _host=page 通道）
+## 使用（AI 操作序）
 
-```
-open /skills/cloud/{skill_id}  # 打开页面；skill_id 取自 skills 工具的 search/load
-list                          # 拿 win_id；events 列应含 hello_status / hello_inc / hello_reset
-{win_id}.hello_status         # → {"ok":true,"count":0}
-{win_id}.hello_inc --by 3     # 计数 +3 → {"ok":true,"count":3}
-{win_id}.hello_reset          # 归零
+`exec _host=page` 的 `script` 是 async JavaScript 函数体；skill_id 取自 skills 工具的 search/load：
+
+```js
+const opened = await open({url: '/skills/cloud/{skill_id}'})
+const available = await commands() // 应含 hello_status / hello_inc / hello_reset
+const before = await win(opened.win_id).hello_status()
+const increased = await win(opened.win_id).hello_inc({by: 3})
+const reset = await win(opened.win_id).hello_reset()
+return {available, before, increased, reset}
 ```
 
 ## 文件说明

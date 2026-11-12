@@ -14,11 +14,13 @@
 
 写好后让 AI 执行（页面上下文）：
 
-```sh
-exec _host=page
-profile inspect          # 先看 saved / effective / rejected / slot hit
-profile apply <name>     # 切档并 reload
-profile save <name>      # 把当前桌面固化成正式档
+`exec _host=page` 的 `script` 是 async JavaScript 函数体：
+
+```js
+const before = await profile({action: 'inspect'}) // saved / effective / rejected / slot hit
+await profile({action: 'apply', name: '<name>'})   // 切档并 reload
+return before
+// 需要固化当前桌面时另调：await profile({action: 'save', name: '<name>'})
 ```
 
 约束（越界必被拒，详见 [../../references/ui-profile.md](../../references/ui-profile.md)）：alias 目标只指向 `/ai/` `/os/` `/page/` `/layout/` `/shared/` `/widgets/` `/assets/`；

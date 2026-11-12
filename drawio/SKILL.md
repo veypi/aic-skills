@@ -1,6 +1,6 @@
 ---
 name: drawio
-version: 1.0.4
+version: 1.0.5
 nickname: DrawIO 绘图台
 description: 浏览器内 drawio 图表绘制与编辑工作台：形状/连线/样式编辑、.drawio 文件读写（统一文件视图）、PNG/SVG 导出；AI 可直接编写 .drawio XML 并用页面指令打开编辑
 keywords: [drawio, 绘图, 画图, 图表, 流程图, 架构图, 思维导图, uml, erd, diagram]
@@ -31,36 +31,35 @@ maxgraph——drawio 上游 mxGraph 的官方现代版）。文件经**统一 $f
 
 ## 操作方式（AI 标准流程）
 
-1. 打开页面：`open /skills/cloud/{skill_id}`（`skill_id` 取自 skill 列表；`url_prefix` 同前缀，用于资源与 API）
-2. 探测指令：使用 `open` 返回的 `events` 查看 `drawio_*`；需要重新查看时执行不带窗口前缀的 `list`
+1. 打开页面：page exec 中 `const opened = await open({url: '/skills/cloud/{skill_id}'})`（`skill_id` 取自 skill 列表；`url_prefix` 同前缀，用于资源与 API）
+2. 探测指令：使用 `open` 返回的 `events` 查看 `drawio_*`；需要重新查看时 `return await commands()`
 3. 出图：fs 工具直接写 `.drawio` 文件（默认目录 `/u/{uid}/drawio/`；**先读
    `references/xml-authoring.md`**，本文末尾有快速骨架）
-4. 展示/刷新：`drawio_open --path <页面 $fs 路径>`——写完文件页面**不会自动感知**，必须调它
+4. 展示/刷新：`await win(opened.win_id).drawio_open({path: '<页面 $fs 路径>'})`——写完文件页面**不会自动感知**，必须调它
    （用户手动改过文件的场景同理）。云端文件在 fs 工具里是 `/u/{uid}/...`，传给页面指令时改成 `/cloud/u/{uid}/...`
-5. 导出成图：`drawio_export --format png|svg --path <输出路径>`
+5. 导出成图：`await win(opened.win_id).drawio_export({format: 'png', path: '<输出路径>'})`（format 也可为 svg）
 6. 页面是用户的编辑舞台：用户可随时改图并保存；你 fs 读文件即拿到最新内容
 
 典型流程（用户说「画一个 XX 架构图」）：
 
 1. 读 `references/diagram-types.md` 选图形套路 + 本文速记规则
 2. fs 写 `/u/{uid}/drawio/xx-架构图.drawio`（JSON 无关；就是 XML 文本，2 空格缩进）
-3. `drawio_open --path /cloud/u/{uid}/drawio/xx-架构图.drawio` 打开给用户看
+3. `await win(opened.win_id).drawio_open({path: '/cloud/u/{uid}/drawio/xx-架构图.drawio'})` 打开给用户看
 4. 一两句话总结；后续用户说「改成 YY」→ fs 读 → 改 → 写回 → `drawio_open` 刷新
 
 ## 指令表
 
-返回统一为 `{content: "<JSON 字符串>"}`：成功 `{ok: true, ...}`，失败 `{ok: false, error}`。
-argv 形如 `["--path", "/cloud/u/admin/drawio/x.drawio"]`（`--key val` 成对）。指令的 `--path` / `--dir` 都使用页面 `$fs` 完整树路径，不要直接照抄 fs 工具的云端物理路径。
+handler 接收 `(data, ctx)`，直接返回对象或字符串；失败抛出带原因的 `Error`。AI 经 `win(id).command(data)` 调用，参数是有名字段对象。`path` / `dir` 使用页面 `$fs` 完整树路径，不要直接照抄 fs 工具的云端物理路径。
 
 | 指令 | 说明 | 参数 | 返回 |
 | --- | --- | --- | --- |
 | `drawio_status` | 页面与文档状态（**唯一未就绪也可调用**） | 无 | `{ok, ready, viewport:{w,h}, path, name, dirty, vertices, edges, scale, selection}` |
-| `drawio_list` | 列出目录下 `.drawio`/`.xml` 文件 | `--dir`（可选，默认当前文档目录/云端默认目录） | `{ok, dir, items:[{name, path, dir, size, mod_time}]}` |
-| `drawio_open` | 打开文件到画布（有未保存改动且已有路径时先自动保存） | `--path`（必填） | `{ok, path, name}` |
+| `drawio_list` | 列出目录下 `.drawio`/`.xml` 文件 | `{dir?}`（默认当前文档目录/云端默认目录） | `{ok, dir, items:[{name, path, dir, size, mod_time}]}` |
+| `drawio_open` | 打开文件到画布（有未保存改动且已有路径时先自动保存） | `{path}` | `{ok, path, name}` |
 | `drawio_new` | 新建空白图（丢弃当前内容） | 无 | `{ok}` |
-| `drawio_save` | 保存当前图 | `--path`（可选；新文档未保存过必填） | `{ok, path, bytes}` |
-| `drawio_export` | 导出 PNG/SVG **文件**（AI/自动化专用；页面按钮的导出为浏览器下载） | `--format png\|svg`、`--path`（均必填） | `{ok, format, path}` |
-| `drawio_get_xml` | 当前图 XML 全文 | 无 | 内容即 mxfile XML 文本（非 JSON） |
+| `drawio_save` | 保存当前图 | `{path?}`（新文档未保存过必填） | `{ok, path, bytes}` |
+| `drawio_export` | 导出 PNG/SVG **文件**（AI/自动化专用；页面按钮的导出为浏览器下载） | `{format: 'png' \| 'svg', path}` | `{ok, format, path}` |
+| `drawio_get_xml` | 当前图 XML 全文 | 无 | 直接返回 mxfile XML 字符串 |
 | `drawio_fit` | 视图适应窗口 | 无 | `{ok}` |
 
 ### 页面交互（人类操作，了解即可）
@@ -119,3 +118,42 @@ argv 形如 `["--path", "/cloud/u/admin/drawio/x.drawio"]`（`--key val` 成对�
 - 写完/改完文件后必须 `drawio_open` 让画布刷新
 - 用户正在画布上编辑时（未保存），`drawio_new` 会丢弃其改动（UI 侧有确认，指令侧直接执行）——
   尊重用户的未保存改动，避免在用户编辑时强行重载
+
+## 给用户演示（引导脚本）
+
+用户问「这个怎么用」时，在 page exec 里跑下面这段：**同一个窗口**逐步聚光讲解，讲完自动清场。
+窗口 id 必须从 `open()` 返回值取（`win_id`），不要假设窗口已存在。
+
+```js
+const sleep = ms => new Promise(r => setTimeout(r, ms))
+const demo = (await open({url: '/skills/cloud/drawio'})).win_id   // 已开则复用，必须取 win_id
+// 窄窗口下形状库 / 属性面板是抽屉，默认关闭；宽窗口下抽屉按钮不可见（click 报错，忽略）
+const toggle = async (index) => {
+  try { await click({win_id: demo, selector: '.panel-toggles button', index}); await sleep(250) } catch (_) {}
+}
+const steps = [
+  {sel: '.bar',         title: '工具栏',    desc: '新建 / 打开 / 保存，撤销重做，导出 PNG·SVG'},
+  {sel: '.palette',     title: '形状库',    desc: '拖形状或连线进画布', before: () => toggle(0), after: () => toggle(0)},
+  {sel: '.canvas-host', title: '画布',      desc: '拖拽绘制、框选多选，右键出上下文菜单'},
+  {sel: '.inspector',   title: '属性面板',  desc: '选中的形状/连线在这里改颜色、边框、字体', before: () => toggle(1), after: () => toggle(1)},
+  {sel: '.doc-label',   title: 'AI 协作点', desc: '说一句「画一个登录流程图」，AI 直接写 .drawio XML 并在这里打开'},
+]
+for (const s of steps) {
+  if (s.before) await s.before()
+  await highlight({win_id: demo, selector: s.sel, title: s.title, desc: s.desc, wait: 2500})
+  await sleep(1800)
+  await highlight({win_id: demo, clear: true})
+  if (s.after) await s.after()   // 标注完立即收起，别挡住画布
+}
+return {win_id: demo, steps: steps.length}
+```
+
+- **讲完必须复原**：每个抽屉标注完就点回去（见上面 `after`）；如需兜底，可再点一次 `.drawer-mask` 一次收掉所有抽屉（没有打开抽屉时 `click` 会报错，忽略即可）：
+
+```js
+try { await click({win_id: demo, selector: '.drawer-mask'}) } catch (_) {}
+```
+
+- **`.palette` / `.inspector` 默认是关着的抽屉**（`palOpen` / `inspOpen` 均 `false`）：直接 `highlight` 会报 `is not visible`，先用 `click` 点 `.panel-toggles button`（index 0 = 形状，1 = 属性）展开
+- `.panel-toggles` 只在窄容器（≤390px）显示；宽窗口里面板常驻，`click` 会报 not visible，忽略即可
+- `highlight` 对零尺寸元素会报 `is not visible`（不再静默不画）——没命中一定有错误

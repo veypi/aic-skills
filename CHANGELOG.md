@@ -6,6 +6,13 @@
 
 ## 未发布
 
+- **全部带 UI 的包**：迁移到 page 通道新契约——脚本在 page 内按 async 函数体执行，`pageDesc` 处理函数统一为 `handler(data, ctx)`，业务函数经 `win(id).command(data)` 调用，原生函数（`list/open/close/reload/cp/mv/rm/pull/push/screenshot/highlight/click/profile`）作为直接全局；删除 `eval`/`curl`，`fetch` 保留为同源受控通道并返回标准 `Response`。
+- `drawio`（1.0.4 → 1.0.5）：手册新增「给用户演示（引导脚本）」：单窗口逐步聚光（工具栏 → 形状库 → 画布 → 属性 → AI 协作点），抽屉用新增原生 `click` 展开、标注完立即收起。
+- `video_studio`（1.1.10 → 1.1.11）：手册新增引导脚本：片架 → 工作台；场景/属性/时间轴三面板开→标→关；末尾点 `.vd-btn.primary` 播放 5 秒并回读 `.vd-time` 验证。同时写清裸路由 `/studio` 会弹回首页，需带 `?case=`/`?url=`。
+- `ppt_studio`（1.0.7 → 1.0.8）：默认样例改为 `agents`（12 页）并列为样例列表首项；手册新增引导脚本（四个面板开关逐个开→标→关），明确引导脚本不自动进全屏演示。
+- `office_studio`（1.0.7 → 1.0.8）：手册新增引导脚本：首页 → 共享历史 → 新建表格 → 新建文档 → 审阅栏；首页「新建/打开」会弹文件面板，脚本改用 `?url=<fs 路径>&new=1` 直接进新建态。
+- `create`（1.0.15 → 1.0.16）：手册与模板同步新 page 脚本契约与引导脚本写法。
+- `cua`（1.1.15 → 1.1.16）、`play_with_ai`（1.0.6 → 1.0.7）、`3d_maker`（1.0.1 → 1.0.2）：页面与指令迁移到新契约，测试同步更新。
 - `cua`（1.1.13 → 1.1.14）：刷新间隔 400 → 150 毫秒。实测（mbp / win 热进程）：截图本身 macOS 约 120ms、Windows 桌面态约 290ms（Windows 走 GDI 全屏 BitBlt，UIA/DirectComposition 表面还会因 PrintWindow 全黑而回退再截一遍，窗口态 103ms / UWP 442ms），**耗时与分辨率几乎无关**（1280→640 仅省 20ms），因此帧率的主项是等待间隔而非画质：Windows 桌面态帧周期由 694ms（1.4fps）降到约 440ms（2.3fps），画质与分辨率不变。
 - `cua`（1.1.12 → 1.1.13）：查看端画面提速。窗口预览帧改走上游 0.47.19 的 `screenshot_format:"jpeg"`（载荷约为 PNG 的十分之一，且仍注册 action capture），空闲刷新间隔 1000 → 400 毫秒；因 JPEG 帧不带 `capture_id`，坐标动作（click/drag/scroll）前补抓一张同尺寸绑定帧并带上其 `capture_id`，绑定帧与预览帧尺寸不一致时拒绝动作。老驱动无 `screenshot_format` 时按实际 schema 回退 PNG。实测窗口态设备端单帧 207 → 166 毫秒。
 - `cua`（1.1.11 → 1.1.12）：手册同步 Desktop 随包 cua-driver 版本 0.33.2 → 0.47.19。上游本次改了感知协议（`get_window_state` 默认只返紧凑 Markdown 树，结构化 `elements` 需显式请求；`element_token` 变为 `<snapshot_id>:N`；新增 `since` 差分读、`display_only`、`screenshot_format:"jpeg"`；新增 `run_steps`/`run_script`/`browser_select`/`get_guide` 四个工具，无删除），工具面与参数由上游提供、本包手册只描述安装与调用方式，故仅更新版本号并保留参数以当前 `cua <tool> --help` 为准的约定。

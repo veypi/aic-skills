@@ -82,14 +82,6 @@
   const toTree = (p) => String(p || '').replace(/^\/fs(?=\/)/, '')
   const nameOf = (p) => String(p || '').split('/').filter(Boolean).pop() || 'workbook.xlsx'
   fileName = () => nameOf(file_path)
-  const reply = (o) => ({ content: JSON.stringify(o) })
-  const errReply = (e) => ({ content: JSON.stringify({ ok: false, error: String((e && e.message) || e) }) })
-  const argOf = (argv, key, def) => {
-    const a = argv || []
-    for (let i = 0; i < a.length; i++) if (a[i] === '--' + key) return a[i + 1]
-    return def
-  }
-  const firstPos = (argv) => (argv || []).find((x) => !String(x).startsWith('--'))
 
   // ===== 引擎资源：统一走 jsDelivr 加速源（不引本地，平台只服务页面本体）=====
   // 大文件（univer 引擎）走独立资产分支 office_assets；css 等在 ui/vendor/ 随技能目录。
@@ -242,28 +234,65 @@
   pageDesc = {
     desc: 'Office Studio Excel 工作台（xlsx）：打开、读写、保存工作簿；AI 与用户共用同一编辑器',
     commands: [
-      { name: 'open', desc: '打开一个 /fs 路径的 xlsx 文件',
-        help: 'open /fs/cloud/u/<uid>/xxx.xlsx（平台打开协议派发同此指令）',
-        handler: async (argv) => { try { const p = firstPos(argv) || argOf(argv, 'path'); if (!p) throw new Error('需要 /fs 文件路径'); return reply(await openPath(p)) } catch (e) { return errReply(e) } } },
+      { name: 'open', desc: '打开一个 /fs 路径的 xlsx 文件（平台 opener 使用）',
+        help: 'win(id).open({url, paths?})',
+        handler: async (data) => {
+          const path = data?.paths?.[0] || data?.url
+          if (!path) throw new Error('open: url required')
+          return await openPath(path)
+        } },
       { name: 'status', desc: '页面与文档状态（未就绪时也可调用）',
-        handler: async () => reply({ ok: true, ready, boot_err, path: file_path, is_new, status: status_text }) },
+        handler: async () => ({ ok: true, ready, boot_err, path: file_path, is_new, status: status_text }) },
       { name: 'diag', desc: '调试：页面关键诊断信息（上次选择器返回/上次读取形态）',
-        handler: async () => reply({ ok: true, ready, boot_err, path: file_path, is_new, status: status_text, last_pick, last_diag }) },
+        handler: async () => ({ ok: true, ready, boot_err, path: file_path, is_new, status: status_text, last_pick, last_diag }) },
       { name: 'read_range', desc: '读取活动工作表范围的值与公式',
-        help: '--range A1:D5（缺省 A1:Z60）',
-        handler: async (argv) => { try { const range = argOf(argv, 'range', 'A1:Z60'); const r = getSheet().getRange(range); const values = r.getValues(); let formulas = null; try { formulas = r.getFormulas() } catch (e) { formulas = null } return reply({ ok: true, range, values, formulas }) } catch (e) { return errReply(e) } } },
+        help: 'win(id).read_range({range?})；range 缺省 A1:Z60',
+        handler: async (data) => {
+          const range = data?.range || 'A1:Z60'
+          const r = getSheet().getRange(range)
+          const values = r.getValues()
+          let formulas = null
+          try { formulas = r.getFormulas() } catch (e) { formulas = null }
+          return { ok: true, range, values, formulas }
+        } },
       { name: 'cell_info', desc: '查看单个单元格的内部结构（值/公式/显示）',
-        help: '--cell D2',
-        handler: async (argv) => { try { const cell = argOf(argv, 'cell'); if (!cell) throw new Error('需要 --cell'); const r = getSheet().getRange(cell); const out = {}; try { out.value = r.getValue() } catch (e) { out.valueErr = String((e && e.message) || e) } try { out.formula = r.getFormula() } catch (e) { out.formulaErr = String((e && e.message) || e) } try { out.display = r.getDisplayValue() } catch (e) { out.displayErr = String((e && e.message) || e) } return reply({ ok: true, cell, ...out }) } catch (e) { return errReply(e) } } },
-      { name: 'set_range', desc: '写入一个范围的值（二维数组 JSON）',
-        help: "--range A1:B2 --values '[[1,2],[3,4]]'",
-        handler: async (argv) => { try { const range = argOf(argv, 'range'); const raw = argOf(argv, 'values'); if (!range || raw == null) throw new Error('需要 --range 与 --values'); const values = JSON.parse(raw); await getSheet().getRange(range).setValues(values); return reply({ ok: true, range, rows: values.length }) } catch (e) { return errReply(e) } } },
+        help: 'win(id).cell_info({cell: "D2"})',
+        handler: async (data) => {
+          const cell = data?.cell
+          if (!cell) throw new Error('cell_info: cell required')
+          const r = getSheet().getRange(cell)
+          const out = {}
+          try { out.value = r.getValue() } catch (e) { out.valueErr = String((e && e.message) || e) }
+          try { out.formula = r.getFormula() } catch (e) { out.formulaErr = String((e && e.message) || e) }
+          try { out.display = r.getDisplayValue() } catch (e) { out.displayErr = String((e && e.message) || e) }
+          return { ok: true, cell, ...out }
+        } },
+      { name: 'set_range', desc: '写入一个范围的值（二维数组）',
+        help: 'win(id).set_range({range: "A1:B2", values: [[1, 2], [3, 4]]})',
+        handler: async (data) => {
+          const range = data?.range
+          const values = data?.values
+          if (!range || !Array.isArray(values)) throw new Error('set_range: range and values array required')
+          await getSheet().getRange(range).setValues(values)
+          return { ok: true, range, rows: values.length }
+        } },
       { name: 'set_cell', desc: '写单个单元格（值或公式）',
-        help: '--cell A1 --value 123 / --cell D2 --formula "=B2*C2"',
-        handler: async (argv) => { try { const cell = argOf(argv, 'cell'); const f = argOf(argv, 'formula'); const v = argOf(argv, 'value'); if (!cell) throw new Error('需要 --cell'); const r = getSheet().getRange(cell); if (f != null) await r.setFormula(f); else if (v != null) { const n = Number(v); await r.setValue(v !== '' && !Number.isNaN(n) ? n : v) } else throw new Error('需要 --value 或 --formula'); return reply({ ok: true, cell }) } catch (e) { return errReply(e) } } },
+        help: 'win(id).set_cell({cell: "A1", value: 123}) 或 win(id).set_cell({cell: "D2", formula: "=B2*C2"})',
+        handler: async (data) => {
+          const cell = data?.cell
+          if (!cell) throw new Error('set_cell: cell required')
+          const r = getSheet().getRange(cell)
+          if (data?.formula != null) await r.setFormula(data.formula)
+          else if (data?.value != null) await r.setValue(data.value)
+          else throw new Error('set_cell: value or formula required')
+          return { ok: true, cell }
+        } },
       { name: 'save', desc: '把当前工作簿写回打开时的 /fs 路径（xlsx）',
-        help: '无参数；可选 --path <fs 路径> 另存',
-        handler: async (argv) => { try { const p = argOf(argv, 'path'); if (p) file_path = p; return reply(await saveNow()) } catch (e) { return errReply(e) } } },
+        help: 'win(id).save({path?})；path 可选，用于另存',
+        handler: async (data) => {
+          if (data?.path) file_path = data.path
+          return await saveNow()
+        } },
     ],
   }
 

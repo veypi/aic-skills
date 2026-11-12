@@ -53,10 +53,18 @@ await $fetch('api/add', { method: 'POST', body: { title, qty } })
 
 **AI 的 page 通道**（同源 + cookie 身份自动携带）：
 
-```sh
-exec _host=page
-curl {url_prefix}/api/list
-curl {url_prefix}/api/add -X POST -H 'Content-Type: application/json' -d '{"title":"x","qty":1}'
+`exec _host=page` 的 `script`（async JavaScript 函数体；`fetch` 仅允许同源并自动携带 cookie）：
+
+```js
+const listRes = await fetch('{url_prefix}/api/list')
+if (!listRes.ok) throw new Error('list failed: HTTP ' + listRes.status)
+const addRes = await fetch('{url_prefix}/api/add', {
+  method: 'POST',
+  headers: {'Content-Type': 'application/json'},
+  body: JSON.stringify({title: 'x', qty: 1}),
+})
+if (!addRes.ok) throw new Error('add failed: HTTP ' + addRes.status)
+return {list: await listRes.json(), added: await addRes.json()}
 ```
 
 `url_prefix` 就是建行时返回的 `/skills/cloud/{id}`——不要手拼 id。
@@ -114,10 +122,16 @@ curl "$base/api/todos"       # 完成后一次读回校验
 
 ### 4.1 原始 SQL（逃生舱）
 
-```sh
-exec _host=page
-curl /api/skills/{skill_id}/tables_sqlx -X POST -H 'Content-Type: application/json' \
-  -d '{"sql":"select rowid as id, title, qty from items order by rowid desc limit 20"}'
+`exec _host=page` 的 `script`：
+
+```js
+const res = await fetch('/api/skills/{skill_id}/tables_sqlx', {
+  method: 'POST',
+  headers: {'Content-Type': 'application/json'},
+  body: JSON.stringify({sql: 'select rowid as id, title, qty from items order by rowid desc limit 20'}),
+})
+if (!res.ok) throw new Error('query failed: HTTP ' + res.status)
+return await res.json()
 ```
 
 - body：`sql`（必填）+ `args`（`?` 位置绑定数组）**或** `params`（`:name` 命名绑定对象），二选一，混传 400。

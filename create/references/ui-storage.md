@@ -134,7 +134,7 @@ if (target) await $fs.writeFile(target.path, serializeDocument())
 
 编辑页必须：
 
-1. 声明 `pageDesc.commands` 中的 `open`，接收 `/fs/...` 文件路径；
+1. 声明 `pageDesc.commands` 中的 `open`，handler 接收 `{url, paths}`：`paths` 是 `/fs` URL 数组，`url` 是首个；例如 `win(id).open({url: '/fs/.../doc.ext', paths: ['/fs/.../doc.ext']})`；
 2. 在 `<script active>` 中读取当前 `$router.query.url`，调用与 `open` 相同的打开函数；不能只在 `setup` 或 mounted 中初始化，因为它们只运行一次；
 3. 同时保留 `$router.onChange`：缓存页重新进入由 `active` 负责，active 状态下的 query-only 切换由 `onChange` 负责。两者共用 `initPage`，再以 `url|new` 防重；完整模板见 `ui-component.md` §3；
 4. 首页、平台 opener 和 AI 指令共用同一个打开实现，不各写一套；不同 URL 必须重新读取 `$fs` 内容，不能只更新标题或路径。
@@ -144,8 +144,8 @@ if (target) await $fs.writeFile(target.path, serializeDocument())
 - 已有路径时保存写回原路径；没有路径时进入另存为选择器；
 - 自动保存串行执行，异步写入不能覆盖更新后的文档状态；
 - 另存为失败时保留原路径和原存档，不先切换再补复制；
-- 页面指令使用 `open --path /fs/...`、`save`、`save_as --path /fs/...`、`reload` 等文件语义，不使用私有项目名寻址；
-- AI 写完文件后调用 `reload` 或重新 `open`，页面不假设能感知外部写入。
+- OS opener 入口使用 `win(id).open({url, paths})`；业务另存等自定义指令使用 `win(id).save_as({path: '/fs/...'})` 等文件语义，不使用私有项目名寻址；
+- AI 写完文件后调用 `win(id).reload()` 或重新 `win(id).open({url, paths})`，页面不假设能感知外部写入。
 
 ## 8. 验收
 

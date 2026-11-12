@@ -1,6 +1,6 @@
 ---
 name: video_studio
-version: 1.1.10
+version: 1.1.11
 nickname: 视频工坊
 description: 浏览器内一站式视频制作：.video_studio 可迁移存档 + AI 文件驱动编辑 + 可视化舞台/时间轴，场景运镜、24 张实战镜头卡、判例式审美准则、声明式 SFX、节拍分析、真实 3D、AI 配音，WebCodecs 硬编导出 MP4
 keywords: [video, 视频, 剪辑, 动画, 运镜, 镜头卡, 卡拍, 音效, 3D, MP4, 配音, TTS, 时间轴, WebCodecs]
@@ -31,9 +31,9 @@ icon: fa-solid fa-clapperboard
 
 片架首页提供：**打开存档、新建视频、最近打开、内置实样**。没有打开文档时不进入空白工作台；工作台不重复提供样例和项目弹窗。片架与 Studio 外壳使用大编号、衬线标题、克制分隔和文字动作，场景、舞台、时间轴与导出行为保持不变；窄容器收起次级文件与编辑动作，不把顶栏挤成多行。
 
-1. 打开首页：`open /skills/cloud/{skill_id}`（HTTP API 与资源用返回的 `url_prefix`）。
-2. 打开已有文件：首页选择器，或在平台文件管理器点击 `.video_studio`；AI 用平台 `open /fs/.../demo.video_studio`，由 manifest opener 进入 Studio。opener 复用已打开的 Studio 窗口时调用其 pageDesc `open` 指令。
-3. 新建：通过 `$fs.pickSavePath` 选择任意 `/fs` 位置；AI 直接调用 `new_video --path ...`，不要先对尚不存在的目标调用 `open`。
+1. 打开首页：page exec 中 `await open({url: '/skills/cloud/{skill_id}'})`（HTTP API 与资源用 `url_prefix`）。
+2. 打开已有文件：首页选择器，或在平台文件管理器点击 `.video_studio`；AI 用平台 `open({url: '/fs/.../demo.video_studio'})`，由 manifest opener 进入 Studio。opener 复用已打开的 Studio 窗口时调用其 pageDesc `open`，传入 `{url, paths}`。
+3. 新建：通过 `$fs.pickSavePath` 选择任意 `/fs` 位置；AI 直接调用 `win(id).new_video({path})`，不要先对尚不存在的目标调用 `open`。
 4. 最近记录只是路径历史；移除/清空不会删除文件。文件移动后用「打开存档」选择新位置。
 5. 样例只读，可「另存为」正式 `.video_studio` 后编辑。
 
@@ -62,7 +62,7 @@ icon: fa-solid fa-clapperboard
 ## 打开与操控
 
 1. 打开页面后，从 `events` 查看 `*_video`、`open`、`save_video`、`save_as_video`、`gen_voice`、`analyze_music`、`run_js`。
-2. 页面指令走 `exec _host=page {win_id}.<cmd>`，路径参数使用 `/fs/...`。
+2. 页面指令在 `exec _host=page` 的 async JS 函数体里走 `win(id).command(data)`，路径字段使用 `/fs/...`；需要发现时 `return await commands()`。
 3. AI 可用对应端的 fs 工具直接修改主存档、场景和素材；写完调用 `reload_video`。
 4. `shot_video` 返回截图的 `/fs` 路径，再按该路径所属端读取。
 
@@ -72,7 +72,7 @@ icon: fa-solid fa-clapperboard
 
 1. **简报**：功能清单、素材盘点、视觉 tokens、数据口径 → 写 `brief.md`；共同创作模式在此与用户确认方向。
 2. **分镜**：能量曲线 + 功能→镜头映射；有强节奏 BGM 先 `analyze_music`；分镜表给用户确认。
-3. **实现**：直接 `new_video --path /fs/.../demo.video_studio` → 写主存档/场景 → `reload_video` → 每场景 `shot_video` 自检；新建前不要尝试 `open` 不存在的目标。
+3. **实现**：直接 `win(id).new_video({path: '/fs/.../demo.video_studio'})` → 写主存档/场景 → `reload_video()` → 每场景 `shot_video({frame})` 自检；新建前不要尝试 `open` 不存在的目标。
 4. **声音**：逐场景生成旁白并写入对应 `scene.voice`；画面锁定后钉 SFX 表，人声优先混音。
 5. **终检**：aesthetic-rules 逐条自检 + delegate 独立 subagent 终检。
 6. **交付**：总结时长/场景/亮点，提醒用户点「导出」直接下载成品。
@@ -81,22 +81,22 @@ icon: fa-solid fa-clapperboard
 
 ## pageDesc 指令
 
-指令仅在对应页面打开时响应。成功 `{ok:true,...}`，失败 `{ok:false,error}`。
+指令仅在对应页面打开时响应。handler 接收 `(data, ctx)` 并直接返回 `{ok:true,...}` 等业务对象；失败抛出带原因的 `Error`。
 
 | 指令 | 参数 | 说明 |
 |---|---|---|
-| `open` | `--path /fs/.../demo.video_studio` | 在 Studio 中打开存档并等待加载完成；平台 opener 复用 Studio 窗口时也走此指令。首页不提供打开指令 |
-| `new_video` | `--path` 可选；`--title`/`--width`/`--height` 可选 | 新建并打开；省略路径时使用 `/fs/page/.video/{名称}/{名称}.video_studio` |
-| `save_video` | — | 保存当前存档 |
-| `save_as_video` | `--path /fs/.../copy.video_studio` | 另存为并复制素材与附属文件 |
-| `reload_video` | — | 重新读取当前主存档、场景与素材 |
-| `run_video` / `stop_video` | `run_video --path` 可选 | 预览播放 / 停止 |
-| `shot_video` | `--frame`/`--name`/`--scale 0.25~2` | 截帧到当前存档 `screenshots/`，返回 `/fs` 路径；截关键帧而非未显现的入场起点 |
-| `gen_voice` | `--text` 必填，`--name`/`--set voice\|music` 可选 | TTS 写入当前 `assets/`；voice 配置到当前场景，music 配置为全片音乐 |
-| `analyze_music` | `--src assets/bgm.mp3` 必填，`--name` 可选 | 相对当前存档读取音频，输出 BPM/拍点/onsets 到 `beats.json` |
-| `run_js` | `--code` | 软沙箱数值计算：M 数学包 + T three 数学几何 |
-| `get_video` | — | 当前存档路径、只读状态、时长、场景等信息 |
-| 首页 `list_video` | — | 最近记录 + 样例清单，不扫描文件系统 |
+| `open` | `{url, paths?}` | 在 Studio 中打开存档并等待加载完成；平台 opener 复用 Studio 窗口时也走此指令。首页不提供打开指令 |
+| `new_video` | `{path?, name?, title?, width?, height?}` | 新建并打开；省略路径时使用 `/fs/page/.video/{名称}/{名称}.video_studio` |
+| `save_video` | 无 | 保存当前存档 |
+| `save_as_video` | `{path}` | 另存为并复制素材与附属文件 |
+| `reload_video` | 无 | 重新读取当前主存档、场景与素材 |
+| `run_video` / `stop_video` | `run_video({path?})` / 无 | 预览播放 / 停止 |
+| `shot_video` | `{frame?, name?, scale?}`；scale 0.25~2 | 截帧到当前存档 `screenshots/`，返回 `/fs` 路径；截关键帧而非未显现的入场起点 |
+| `gen_voice` | `{text, name?, set?}`；set 为 voice/music | TTS 写入当前 `assets/`；voice 配置到当前场景，music 配置为全片音乐 |
+| `analyze_music` | `{src, name?}`；src 如 assets/bgm.mp3 | 相对当前存档读取音频，输出 BPM/拍点/onsets 到 `beats.json` |
+| `run_js` | `{code}` | 软沙箱数值计算：M 数学包 + T three 数学几何 |
+| `get_video` | 无 | 当前存档路径、只读状态、时长、场景等信息 |
+| 首页 `list_video` | 无 | 最近记录 + 样例清单，不扫描文件系统 |
 
 ## 制作纪律（摘要，全文见 aesthetic-rules.md）
 
@@ -120,3 +120,54 @@ icon: fa-solid fa-clapperboard
 - 浏览器预览配乐优先使用 MP3；若只有音乐配置却听不到声音，先检查素材是否实际加载，再转成 MP3 复验。
 - 视频剪辑：时间轴绿色块左缘切入/右缘切出/块体拖开始；media 的 trimStart/trimEnd 是源裁剪。
 - 运镜编辑：inspector 场景页「运镜 Camera」；SFX 在 inspector 项目页与时间轴黄色条编辑。
+
+## 给用户演示（引导脚本）
+
+用户问「这个怎么用」时，在 page exec 里跑下面这段：**同一个窗口**先讲片架，再进工作台，需要讲的面板先 `click` 展开、讲完再点回去。
+窗口 id 必须从 `open()` 返回值取（`win_id`）。
+
+```js
+const sleep = ms => new Promise(r => setTimeout(r, ms))
+const demo = (await open({url: '/skills/cloud/video_studio'})).win_id
+// 窗口可能停在工作台，强制回片架再开始讲
+await open({url: '/skills/cloud/video_studio/index', win: demo})
+// 工作台的面板默认全收起（showLeft/showRight/showTimeline = false），index: 0=场景 1=属性 2=时间轴
+const panel = async (index) => {
+  try { await click({win_id: demo, selector: '.panel-switches button', index}); await sleep(350) } catch (_) {}
+}
+const steps = [
+  {sel: '.homebar', title: '片架',     desc: '「打开存档」读 .video_studio，「新建视频」开空白存档'},
+  {sel: '.shelf',   title: '历史与实样', desc: '最近项目 + 内置实样，点开直接看完整片子'},
+  // 裸路由 /studio 会 goHome() 弹回首页，必须带 ?case= 或 ?url=
+  {goto: '/skills/cloud/video_studio/studio?case=lumen-1.1', sel: '.topbar', title: '工作台顶栏', desc: '面板开关与导出设置（MP4 / WAV）'},
+  {sel: '.center',  title: '舞台',     desc: '当前场景实时预览，选中元素后右侧调属性'},
+  {before: () => panel(0), after: () => panel(0), sel: '.left',   title: '场景 / 素材', desc: '切场景、拖素材、复制/删除场景'},
+  {before: () => panel(1), after: () => panel(1), sel: '.right',  title: '属性面板',   desc: '选中元素的尺寸、颜色、入场出场与运镜'},
+  {before: () => panel(2), after: () => panel(2), sel: '.bottom', title: '时间轴',     desc: '元素起止、转场与 SFX 条'},
+]
+for (const s of steps) {
+  if (s.goto) { await open({url: s.goto, win: demo}); await sleep(600) }
+  if (s.before) await s.before()
+  await highlight({win_id: demo, selector: s.sel, title: s.title, desc: s.desc, wait: 4000})
+  await sleep(1800)
+  await highlight({win_id: demo, clear: true})
+  if (s.after) await s.after()   // 标注完立即收起，别挡住舞台
+}
+
+// 演示播放：所有面板已收起，舞台全宽；点 ▶ 播 5 秒（按钮变 ❚❚，.vd-time 在跳）再暂停
+await click({win_id: demo, selector: '.vd-btn.primary'})
+await sleep(300)
+await highlight({win_id: demo, selector: '.vd-time', title: '播放中', desc: '进度 = 当前时间 / 总时长，后半是帧号（30fps）', wait: 2000})
+await sleep(3500)
+await highlight({win_id: demo, clear: true})
+await click({win_id: demo, selector: '.vd-btn.primary'})   // 再点一次暂停
+
+// 收尾不需要再关面板：每个侧栏标注完就收起了
+return {win_id: demo, steps: steps.length}
+```
+
+- **裸路由 `/studio` 会直接弹回首页**（`initPage()` 没有 `?url=`/`?case=` 时 `goHome()`），所以只能带 `?case=<内置样例 id>` 或 `?url=<.video_studio 路径>` 进工作台；内置样例 id：`lumen-1.1` / `showreel`
+- `.left` / `.right` / `.bottom` 默认隐藏：直接 `highlight` 会报 `is not visible`，必须先 `click` 顶栏 `.panel-switches button`（0 场景 / 1 属性 / 2 时间轴）
+- **每个侧栏点开 → 标注 → 立即点回去**，否则三块侧栏会一直盖住中间的舞台；播放前必须全部收起
+- 播放按钮不在顶栏，在舞台底部控制条：`.vd-btn.primary`（文字在 `▶` 与 `❚❚` 之间切换）；进度读 `.vd-time`（如 `0:04.9 / 0:39.5 · 149/1185f`），**不要用截图判断是否在播**
+- 讲完把三个面板开关再点回去，窗口恢复原状

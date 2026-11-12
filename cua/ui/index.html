@@ -64,6 +64,7 @@
   .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; min-width: 0; padding: 8px; border-bottom: 1px solid var(--border-color); }
   .target-name { flex: 1; min-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
   .toolbar-actions { display: flex; align-items: center; gap: 5px; }
+  .fps-meter { min-width: 46px; text-align: right; color: var(--text-color-secondary); font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .mode-switch { display: flex; padding: 2px; border-radius: 7px; background: color-mix(in srgb, var(--text-color) 5%, transparent); }
   .mode-switch button { border: 0; border-radius: 5px; padding: 5px 9px; background: transparent; color: var(--text-color-secondary); font-size: 12px; }
   .mode-switch button.active { background: var(--bg-color); color: var(--text-color); box-shadow: var(--shadow-sm); }
@@ -147,6 +148,8 @@
     <div class="toolbar">
       <span class="target-name" :title="targetTitle()">{{targetTitle()}}</span>
       <div class="toolbar-actions">
+        <span class="fps-meter" v-if="hasFrame" :title="$t('cua.frame_rate')"
+          :aria-label="$t('cua.frame_rate')">{{fpsText()}}</span>
         <button class="icon-button" @click="refreshFrame" :disabled="!connected() || sessionState.acting"
           :title="$t('cua.refresh_frame')" :aria-label="$t('cua.refresh_frame')"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i></button>
         <div class="mode-switch" :aria-label="$t('cua.mode')">
@@ -198,7 +201,7 @@
   selectedHost = null
   sidebarOpen = false
   windowSearch = ''
-  sessionState = {connected: false, hostId: '', phase: 'idle', windows: [], target: null, targetWindow: null, unavailableReason: '', control: false, busy: false, capturing: false, acting: false, error: '', permissions: null, epoch: 0}
+  sessionState = {connected: false, hostId: '', phase: 'idle', windows: [], target: null, targetWindow: null, unavailableReason: '', control: false, busy: false, capturing: false, acting: false, error: '', permissions: null, epoch: 0, fps: 0}
   hasFrame = false
   scale = 'fit'
   fullscreen = false
@@ -231,6 +234,12 @@
   const platform = () => selectedHost?.device_info?.os || ''
   connected = () => !!sessionState.connected
   errorText = () => uiError || errorMessage(sessionState.error)
+  // 帧率读数：近窗口内的实际到达帧率，反映设备真实吞吐而非配置间隔。
+  fpsText = () => {
+    const fps = Number(sessionState.fps) || 0
+    if (!fps) return '— fps'
+    return `${fps < 10 ? fps.toFixed(1) : Math.round(fps)} fps`
+  }
   phaseText = () => ({idle: $t('cua.disconnected'), connecting: $t('cua.connecting'), ready: $t('cua.connected'), target_closed: $t('cua.target_closed'), target_unavailable: $t('cua.target_unavailable'), capturing: $t('cua.refreshing'), paused: $t('cua.paused'), error: $t('cua.error'), offline: $t('cua.device_offline'), closed: $t('cua.disconnected')})[sessionState.phase] || sessionState.phase
   windowTitle = item => [item.app_name, item.title].filter(Boolean).join(' · ') || $t('cua.untitled_window')
   filteredWindows = () => {

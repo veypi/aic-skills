@@ -10,7 +10,7 @@ keywords: [示例, 待办, tables, sqlx, 数据面, pageDesc, Host, Pod, 批处�
 
 四件套完整链路：`ui/`（界面）+ `tables/todos.json`（存储声明）+ `api/*.sqlx`（5 条接口）+ pageDesc 指令。
 
-> **复制改造**：`exec _host=page` → `curl /api/skills -X POST -H 'Content-Type: application/json' -d '{"name":"{你的名字}"}'` 建行，再 `grant fs /skills/{id}` 后把本目录内容写进 `/skills/{id}/`（fs 工具路径）；同步修改 frontmatter 的 `name`、`nickname`/`description`。
+> **复制改造**：按 `create/references/cloud-package.md` §4 在 page exec 中用同源 `fetch` 建行，再 `grant fs /skills/{id}` 后把本目录内容写进 `/skills/{id}/`（fs 工具路径）；同步修改 frontmatter 的 `name`、`nickname`/`description`。
 
 ## 数据面（页面与 AI 共用，行级隔离）
 
@@ -24,11 +24,18 @@ keywords: [示例, 待办, tables, sqlx, 数据面, pageDesc, Host, Pod, 批处�
 
 所有接口强制 `user_id = :user_id`（服务端注入，不可伪造）——每个用户只看/只改自己的数据。
 
-AI 调用示例（page、Host 或 Cloud/Pod 的 exec/vsh 内建 curl）：
+AI 的 page exec 调用示例（Host 或 Cloud/Pod 仍可用 exec/vsh 内建 curl）：
 
-```
-curl {url_prefix}/api/todos
-curl {url_prefix}/api/todo_add -X POST -H 'Content-Type: application/json' -d '{"id":"m1","title":"买牛奶","priority":"2","note":"","created_at":"2026-01-01T00:00:00Z"}'
+```js
+const res = await fetch('{url_prefix}/api/todo_add', {
+  method: 'POST',
+  headers: {'Content-Type': 'application/json'},
+  body: JSON.stringify({id: 'm1', title: '买牛奶', priority: '2', note: '', created_at: '2026-01-01T00:00:00Z'}),
+})
+if (!res.ok) throw new Error('todo_add failed: HTTP ' + res.status)
+const listRes = await fetch('{url_prefix}/api/todos')
+if (!listRes.ok) throw new Error('todos failed: HTTP ' + listRes.status)
+return {added: await res.json(), list: await listRes.json()}
 ```
 
 Host/Pod 批量写入：脚本读取 JSONL，一次运行提交整批，不要由 AI 逐条发调用。`todos.jsonl` 每行是完整的
@@ -51,21 +58,26 @@ curl "$base/api/todos"
 
 ## 页面与指令
 
-打开：`open /skills/cloud/{skill_id}`，skill_id 取自 `skills` 工具的 `search/load`；HTTP 数据面仍使用返回的 `url_prefix`（同前缀）。
+打开：page exec 中 `await open({url: '/skills/cloud/{skill_id}'})`，skill_id 取自 `skills` 工具的 `search/load`；HTTP 数据面仍使用返回的 `url_prefix`（同前缀）。
 
 | 指令 | 说明 |
 | --- | --- |
-| `todo_status` | 返回 `{"ok","total","done"}` |
-| `todo_add --title <标题> [--priority <0-2>]` | 新增并返回 `{"ok","id"}` |
-| `todo_toggle --id <id> [--done <0/1>]` | 设完成状态（缺省翻转） |
-| `todo_remove --id <id>` | 删除 |
-| `todo_clear_done` | 清除全部已完成 |
+| `todo_status()` | 返回 `{ok, total, done}` |
+| `todo_add({title, priority?})` | 新增并返回 `{ok, id}` |
+| `todo_toggle({id, done?})` | 设完成状态（缺省翻转） |
+| `todo_remove({id})` | 删除 |
+| `todo_clear_done()` | 清除全部已完成 |
 
 ## 自测闭环（AI）
 
-```
-open /skills/cloud/{skill_id} → {win_id}.todo_status → {win_id}.todo_add --title "测试"
-→ {win_id}.todo_status（total 应 +1）→ curl {url_prefix}/api/todos（读回持久化结果）
+```js
+const opened = await open({url: '/skills/cloud/{skill_id}'})
+const before = await win(opened.win_id).todo_status()
+const added = await win(opened.win_id).todo_add({title: '测试'})
+const after = await win(opened.win_id).todo_status() // total 应 +1
+const res = await fetch('{url_prefix}/api/todos')    // 读回持久化结果
+if (!res.ok) throw new Error('todos failed: HTTP ' + res.status)
+return {before, added, after, stored: await res.json()}
 ```
 
 批处理另测：一个 Host/Pod 脚本写入多条 → 一次 GET 读回；故意提交重复 id → 脚本在错误行停止，后续行不写入。

@@ -59,7 +59,7 @@ UI 页面清单放在包根 `manifest.json`，不再写 frontmatter `ui`：
 `host` 中声明，详见 [device-cli.md](device-cli.md)。`launcher` 段已删除——pages 自动成为 launcher 中该技能的子页面，无需单独声明；
 多页 UI 在设计阶段就把全部计划路由登记进来，并给未设计页放完整 HTML 占位（页面名 + 返回首页），不要等正式实现才登记，否则导航可能落到技能详情页。
 components 第一阶段仅声明不装配；openers 经统一有序表生效（Profile 用户规则优先，包声明为默认表）。
-注册文件 opener 时，目标页必须实现 `pageDesc` 的 `open` 并消费初始 `$router.query.url`；文档与项目存取统一走 `$fs`，完整契约见 [ui-storage.md](ui-storage.md)。
+注册文件 opener 时，目标页必须实现 `pageDesc` 的 `open`：handler 接收 `{url, paths}`（`url` 为首个 `/fs` URL），并消费初始 `$router.query.url`；文档与项目存取统一走 `$fs`，完整契约见 [ui-storage.md](ui-storage.md)。
 迁移旧包已有的 handles 等能力时必须写成对应 opener，不能在格式迁移中丢能力。
 
 内建定版与普通发布不是一套流程：`skills.builtin` 的指纹变化触发自动定版，强制重跑也可手动触发；
@@ -73,9 +73,16 @@ components 第一阶段仅声明不装配；openers 经统一有序表生效（P
 
 **建行**（`/api/skills` 是平台管理接口，只在页面上下文里调；不要与三端可调的技能数据 API 混淆）：
 
-```sh
-exec _host=page
-curl /api/skills -X POST -H 'Content-Type: application/json' -d '{"name":"example"}'
+`exec _host=page` 的 `script`（async JavaScript 函数体）：
+
+```js
+const res = await fetch('/api/skills', {
+  method: 'POST',
+  headers: {'Content-Type': 'application/json'},
+  body: JSON.stringify({name: 'example'}),
+})
+if (!res.ok) throw new Error('create skill failed: HTTP ' + res.status)
+return await res.json()
 ```
 
 返回含 `skill_id`、`url_prefix`，并落一份 SKILL.md 骨架。名字规则：

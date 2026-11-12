@@ -66,10 +66,6 @@
     }
     basename = (p) => String(p || '').split('/').pop()
 
-    reply = (obj) => ({ content: JSON.stringify(obj) })
-    errReply = (msg) => ({ content: JSON.stringify({ ok: false, error: String(msg) }) })
-    argsGet = (argv, flag) => { const i = argv.indexOf(flag); return i >= 0 ? argv[i + 1] : null }
-
     // ===== 文件操作（$mod.$fs） =====
     ensureDir = async () => {
       try { await $mod.$fs.list(dir) } catch (e) { await $mod.$fs.mkdir(dir) }
@@ -147,50 +143,46 @@
       desc: '笔记（文件驱动示例）：浏览/编辑 .md 文件',
       commands: [
         {
-          name: 'notes_status', desc: '页面状态', help: '无参数。返回 {ok, ready, dir, current, files}',
-          handler: () => reply({ ok: true, ready: ready, dir: dir, current: current, files: files.length }),
+          name: 'notes_status', desc: '页面状态', help: 'win(id).notes_status()；返回 {ok, ready, dir, current, files}',
+          handler: () => ({ ok: true, ready: ready, dir: dir, current: current, files: files.length }),
         },
         {
-          name: 'notes_list', desc: '列出目录文件', help: '[--dir <路径>]（传了先切换目录）',
-          handler: async (argv) => {
-            const d = argsGet(argv, '--dir')
-            if (d) await setDir(d)
+          name: 'notes_list', desc: '列出目录文件', help: 'win(id).notes_list({dir?})；传 dir 时先切换目录',
+          handler: async (data) => {
+            if (data?.dir) await setDir(data.dir)
             await refresh()
-            return reply({ ok: true, dir: dir, files: files.map((f) => f.name) })
+            return { ok: true, dir: dir, files: files.map((f) => f.name) }
           },
         },
         {
-          name: 'notes_open', desc: '打开文件到编辑区', help: '--path <路径>（/cloud/u/...、/u/... 或目录内文件名）',
-          handler: async (argv) => {
-            const p = argsGet(argv, '--path')
-            if (!p) return errReply('--path is required')
-            await openFile(p)
-            return reply({ ok: true, path: current })
+          name: 'notes_open', desc: '打开文件到编辑区', help: 'win(id).notes_open({path})；path 可为 /cloud/u/...、/u/... 或目录内文件名',
+          handler: async (data) => {
+            if (!data?.path) throw new Error('notes_open: path required')
+            await openFile(data.path)
+            return { ok: true, path: current }
           },
         },
         {
-          name: 'notes_save', desc: '保存编辑区内容', help: '[--path <路径>]（缺省保存到当前文件）',
-          handler: async (argv) => {
-            const p = argsGet(argv, '--path')
-            if (!current && !p) return errReply('no current file: pass --path')
-            await save(p)
-            return reply({ ok: true, path: current })
+          name: 'notes_save', desc: '保存编辑区内容', help: 'win(id).notes_save({path?})；缺省保存到当前文件',
+          handler: async (data) => {
+            if (!current && !data?.path) throw new Error('notes_save: no current file; path required')
+            await save(data?.path)
+            return { ok: true, path: current }
           },
         },
         {
-          name: 'notes_new', desc: '新建空笔记并打开', help: '[--name <文件名>]（自动补 .md）',
-          handler: async (argv) => {
-            await newNote(argsGet(argv, '--name'))
-            return reply({ ok: true, path: current })
+          name: 'notes_new', desc: '新建空笔记并打开', help: 'win(id).notes_new({name?})；自动补 .md',
+          handler: async (data) => {
+            await newNote(data?.name)
+            return { ok: true, path: current }
           },
         },
         {
-          name: 'notes_set_dir', desc: '切换工作目录', help: '--dir <路径>',
-          handler: async (argv) => {
-            const d = argsGet(argv, '--dir')
-            if (!d) return errReply('--dir is required')
-            await setDir(d)
-            return reply({ ok: true, dir: dir })
+          name: 'notes_set_dir', desc: '切换工作目录', help: 'win(id).notes_set_dir({dir})',
+          handler: async (data) => {
+            if (!data?.dir) throw new Error('notes_set_dir: dir required')
+            await setDir(data.dir)
+            return { ok: true, dir: dir }
           },
         },
       ],

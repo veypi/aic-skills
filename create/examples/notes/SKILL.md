@@ -11,27 +11,28 @@ keywords: [示例, 文件, $fs, markdown, 指令]
 内容以文件为准（不是数据库）：默认目录 `/cloud/u/{uid}/notes/`（`/u/{uid}/notes/` 的 $fs 树路径写法），页面可切换其它目录。
 这是 ppt / drawio 一类「文件即数据」模式的最小版：**AI 用 fs 工具写文件 → 页面指令刷新展示；用户页面编辑 → 保存落盘**。
 
-> **复制改造**：`exec _host=page` → `curl /api/skills -X POST -H 'Content-Type: application/json' -d '{"name":"{你的名字}"}'` 建行，再 `grant fs /skills/{id}` 后把本目录内容写进 `/skills/{id}/`（fs 工具路径）；同步修改 frontmatter 的 `name`、`nickname`/`description`。
+> **复制改造**：按 `create/references/cloud-package.md` §4 在 page exec 中用同源 `fetch` 建行，再 `grant fs /skills/{id}` 后把本目录内容写进 `/skills/{id}/`（fs 工具路径）；同步修改 frontmatter 的 `name`、`nickname`/`description`。
 
 ## 页面与指令
 
-打开：`open /skills/cloud/{skill_id}`，skill_id 取自 `skills` 工具的 `search/load`；HTTP 数据面仍使用返回的 `url_prefix`（同前缀）。
+打开：page exec 中 `await open({url: '/skills/cloud/{skill_id}'})`，skill_id 取自 `skills` 工具的 `search/load`；页面指令用 `win(opened.win_id).command(data)` 调用。
 
 | 指令 | 说明 |
 | --- | --- |
-| `notes_status` | `{ok, ready, dir, current, files}` |
-| `notes_list [--dir <路径>]` | 列当前目录文件（传 --dir 先切目录） |
-| `notes_open --path <路径>` | 打开文件到编辑区（接受 `/cloud/u/...`、`/u/...` 或目录内文件名） |
-| `notes_save [--path <路径>]` | 保存编辑区到当前文件（传 --path 另存） |
-| `notes_new [--name <文件名>]` | 新建空笔记并打开（自动补 `.md`） |
-| `notes_set_dir --dir <路径>` | 切换工作目录 |
+| `notes_status()` | `{ok, ready, dir, current, files}` |
+| `notes_list({dir?})` | 列当前目录文件（传 dir 先切目录） |
+| `notes_open({path})` | 打开文件到编辑区（接受 `/cloud/u/...`、`/u/...` 或目录内文件名） |
+| `notes_save({path?})` | 保存编辑区到当前文件（传 path 另存） |
+| `notes_new({name?})` | 新建空笔记并打开（自动补 `.md`） |
+| `notes_set_dir({dir})` | 切换工作目录 |
 
 ## AI 协作范式
 
-```
-fs 工具写文件：/u/{uid}/notes/会议记录.md
-notes_open --path /u/{uid}/notes/会议记录.md     # 让用户在页面上看到
-（用户在页面上编辑，点保存 / notes_save 落盘）
+```js
+// 先用 fs 工具写 /u/{uid}/notes/会议记录.md，再在 page exec 中执行：
+const opened = await open({url: '/skills/cloud/{skill_id}'})
+return await win(opened.win_id).notes_open({path: '/u/{uid}/notes/会议记录.md'})
+// 用户在页面上编辑后点保存，或调用 win(opened.win_id).notes_save()
 ```
 
 ## 文件说明
