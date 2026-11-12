@@ -4,6 +4,10 @@
 
 两个版本面：**模块版本**（本文件 / tag `vX.Y.Z`，Go 依赖面）与**技能版本**（各 `SKILL.md` frontmatter 的 `version:`，进入 `skills.builtin` 指纹）。内容更新 bump 技能版本以触发自动定版；事件执行时无条件整包覆盖，不做版本大小比较。契约或结构变化 bump 模块版本。
 
+## 未发布
+
+- `cua`（1.1.11 → 1.1.12）：手册同步 Desktop 随包 cua-driver 版本 0.33.2 → 0.47.19。上游本次改了感知协议（`get_window_state` 默认只返紧凑 Markdown 树，结构化 `elements` 需显式请求；`element_token` 变为 `<snapshot_id>:N`；新增 `since` 差分读、`display_only`、`screenshot_format:"jpeg"`；新增 `run_steps`/`run_script`/`browser_select`/`get_guide` 四个工具，无删除），工具面与参数由上游提供、本包手册只描述安装与调用方式，故仅更新版本号并保留参数以当前 `cua <tool> --help` 为准的约定。
+
 ## 0.4.4 — 2026-11-12
 
 - `browser`（1.2.14 → 1.2.15）：画面链路里长时间不确认的订阅者不再被摘除——停止喂帧但保留连接（每 10s 探活帧），页面补一次确认就恢复喂帧；`cast_stats` 的「僵尸订阅者」口径改为「停止喂帧的订阅者数」。UI 侧设备选择改用平台公共组件 `<widgets-host-connector>`，移除自造下拉与在线判断；手册补坐标钳制、错误分作用域、页面确认与窗口不可见放流四条画面协议约束。

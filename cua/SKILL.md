@@ -1,6 +1,6 @@
 ---
 name: cua
-version: 1.1.11
+version: 1.1.12
 description: 通过设备上的官方 CuaDriver MCP 操作应用、原生窗口和浏览器。
 ---
 
@@ -39,7 +39,7 @@ go build -o ../bin/cua .
 commands config cua --no-sandbox
 ```
 
-Desktop 随包提供 CuaDriver 0.33.2 运行资源；预装定版后即注册 `cua`，第一次调用时启动。CLI 可安装官方 CuaDriver，或通过 `AIC_CUA_DRIVER_PATH` 指定可执行文件。macOS 按上游安装布局把官方 CuaDriver.app 安装到 `/Applications/CuaDriver.app`（可复制 Desktop 的 resources/cua/darwin/CuaDriver.app）；仅把 app 放在资源目录不会完成系统安装。官方 MCP 会按应用名启动 daemon，客户端与安装的驱动版本应一致。升级后先用 `cua-driver stop` 停止旧 daemon。macOS 使用 CuaDriver.app 的辅助功能和屏幕录制授权身份；使用 `cua-driver permissions grant` 引导授权，`cua-driver doctor` 诊断。
+Desktop 随包提供 CuaDriver 0.47.19 运行资源；预装定版后即注册 `cua`，第一次调用时启动。CLI 可安装官方 CuaDriver，或通过 `AIC_CUA_DRIVER_PATH` 指定可执行文件。macOS 按上游安装布局把官方 CuaDriver.app 安装到 `/Applications/CuaDriver.app`（可复制 Desktop 的 resources/cua/darwin/CuaDriver.app）；仅把 app 放在资源目录不会完成系统安装。官方 MCP 会按应用名启动 daemon，客户端与安装的驱动版本应一致。升级后先用 `cua-driver stop` 停止旧 daemon。macOS 使用 CuaDriver.app 的辅助功能和屏幕录制授权身份；使用 `cua-driver permissions grant` 引导授权，`cua-driver doctor` 诊断。
 
 调用设备在 exec 外层通过 `_host` 选择。命令别名 `cua` 的授权（`grant cmd cua`）允许使用该设备服务；工具内部的权限与路径限制由 CuaDriver 执行。原生 fs 的路径规则不等同于对桌面自动化的隔离。
 
