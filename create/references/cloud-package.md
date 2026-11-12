@@ -57,6 +57,7 @@ UI 页面清单放在包根 `manifest.json`，不再写 frontmatter `ui`：
 
 `ui.pages` 的 key 是不带 `.html` 的包内页面路径，值当前只有 `desc`。设备服务在同一文件的
 `host` 中声明，详见 [device-cli.md](device-cli.md)。`launcher` 段已删除——pages 自动成为 launcher 中该技能的子页面，无需单独声明；
+多页 UI 在设计阶段就把全部计划路由登记进来，并给未设计页放完整 HTML 占位（页面名 + 返回首页），不要等正式实现才登记，否则导航可能落到技能详情页。
 components 第一阶段仅声明不装配；openers 经统一有序表生效（Profile 用户规则优先，包声明为默认表）。
 注册文件 opener 时，目标页必须实现 `pageDesc` 的 `open` 并消费初始 `$router.query.url`；文档与项目存取统一走 `$fs`，完整契约见 [ui-storage.md](ui-storage.md)。
 迁移旧包已有的 handles 等能力时必须写成对应 opener，不能在格式迁移中丢能力。
@@ -135,6 +136,7 @@ grant fs /skills/{skill_id}
 6. 把设备二进制塞进 `bin` → 包体超限且违反契约（只入库源码）。
 7. 页面自带 `env.js` → 平台有固定出口，不生效。
 8. 发布时把私有行里的运行库/临时文件一起打包 → 审核拒绝。
+9. 只做 index、其它导航目标没进 `ui.pages` → 点击可能跳到技能详情；所有计划路由先登记并放可返回的占位页。
 
 ## 9. 验收
 
