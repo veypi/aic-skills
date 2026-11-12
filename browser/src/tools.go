@@ -40,7 +40,7 @@ type service struct {
 	castStatAcks          int                         // 自检：页面确认的帧数
 	castStatAckFailed     int                         // 自检：ack Chrome 失败次数
 	castStatDropped       int                         // 自检：订阅者不消费而丢弃的帧数
-	castStatEvicted       int                         // 自检：摘掉的僵尸订阅者数
+	castStatStarved       int                         // 自检：停止喂帧的订阅者数（不确认）
 	castStatAckRTT        int64                       // 自检：页面确认往返的总耗时（纳秒）
 	castStatAckRTTSamples int                         // 自检：往返耗时样本数
 
@@ -126,7 +126,7 @@ func (s *service) server() *mcp.Server {
 	}, s.toolScreenshot)
 	mcp.AddTool(srv, &mcp.Tool{
 		Name:        "cast_stats",
-		Description: "Report current screen-stream state: bound session, screencast session, subscriber count, frames received from Chrome and frames written to subscribers.",
+		Description: "Report current screen-stream state: bound session, screencast session, subscriber count, frames received from Chrome, frames written to subscribers, and subscribers that stopped being fed frames because they never confirmed.",
 	}, s.toolCastStats)
 	mcp.AddTool(srv, &mcp.Tool{
 		Name:        "dialog_status",

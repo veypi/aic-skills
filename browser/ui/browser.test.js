@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { BrowserSession, BrowserViewer } from './browser.js';
+import { ACK_WATCHDOG_MS, BrowserSession, BrowserViewer } from './browser.js';
 
 function makeWorld(hostIds = ['mbp']) {
   const devices = new Map();
@@ -77,8 +77,9 @@ function makeWorld(hostIds = ['mbp']) {
   return { hosts, devices };
 }
 
-async function ready(session) {
-  await session.refresh();
+async function ready(session, hostId = 'mbp') {
+  const connection = await session.hosts.openTools(hostId);
+  await session.connectDevice({ id: hostId, name: hostId }, connection);
   await session.queue;
 }
 
@@ -161,19 +162,39 @@ test('closePage waits for the closing target to disappear before attaching next'
   session.dispose();
 });
 
-test('non-selected cross-device close keeps the current host and target', async () => {
+test('switching devices replaces the sidebar with only the selected device tabs', async () => {
   const { hosts, devices } = makeWorld(['mbp', 'linux']);
   const session = new BrowserSession(hosts);
+  let opens = 0;
+  const openTools = hosts.openTools;
+  hosts.openTools = async id => { opens++; return openTools(id); };
   await ready(session);
-  const selected = session.state.selectedPageId;
-  await session.createPage('linux');
-  const linuxTarget = session.state.selectedPageId;
-  await session.selectWindow('mbp', selected);
-  await session.closePage('linux', linuxTarget);
-  assert.equal(session.state.selectedHostId, 'mbp', JSON.stringify(session.state));
-  assert.equal(session.state.selectedPageId, selected);
-  assert.equal(devices.get('mbp').current, selected);
-  assert.equal(devices.get('linux').pages.some(p => p.id === linuxTarget), false);
+  const mbpConnection = devices.get('mbp').connection;
+  await session.connectDevice({ id: 'linux', name: 'linux' }, devices.get('linux').connection);
+  await session.queue;
+  assert.equal(opens, 1, 'the session reuses the connector connection instead of opening another');
+  assert.equal(session.state.selectedHostId, 'linux');
+  assert.equal(session.state.devices.length, 1);
+  assert.equal(session.state.devices[0].id, 'linux');
+  assert.ok(session.state.devices[0].pages.every(page => page.title.startsWith('linux-')));
+  assert.equal(mbpConnection.closed, true);
+  assert.ok(session.page()?.url.includes('linux-'));
+  session.dispose();
+});
+
+test('navigating with no window creates a tab directly at the requested URL', async () => {
+  const { hosts, devices } = makeWorld();
+  const session = new BrowserSession(hosts);
+  await ready(session);
+  const first = session.state.selectedPageId;
+  await session.closePage('mbp', first);
+  assert.equal(session.state.selectedPageId, '');
+  assert.equal(session.device().pages.length, 0);
+  await session.navigate('example.test');
+  assert.equal(session.device().pages.length, 1);
+  assert.equal(session.page()?.url, 'https://example.test');
+  assert.equal(session.state.pageUrl, 'https://example.test');
+  assert.equal(devices.get('mbp').current, session.state.selectedPageId);
   session.dispose();
 });
 
@@ -206,5 +227,140 @@ test('viewer counts drawn frames for fps', async () => {
   } finally {
     globalThis.document = oldDocument;
     globalThis.createImageBitmap = oldBitmap;
+  }
+});
+
+// 坐标必须钳在 [0,1]：按下鼠标后指针被捕获，拖出画布时事件仍然发到画布上，
+// 越界坐标会被设备端拒绝（并打断整条画面链路）。
+test('mouse coordinates are clamped to the viewport', () => {
+  const oldDocument = globalThis.document;
+  globalThis.document = { hidden: false, addEventListener() {}, removeEventListener() {} };
+  try {
+    const canvas = {
+      width: 0, height: 0,
+      getContext: () => ({ drawImage() {} }),
+      getBoundingClientRect: () => ({ left: 100, top: 50, width: 400, height: 200 }),
+      addEventListener() {}, removeEventListener() {},
+    };
+    const keyboard = { value: '', addEventListener() {}, removeEventListener() {}, focus() {} };
+    const connection = { openStream: () => ({ ready: Promise.resolve(), send: () => true, close: () => {} }) };
+    const viewer = new BrowserViewer(canvas, keyboard, { connection, changed: () => {} });
+    const inside = viewer.mouse({ clientX: 300, clientY: 150, button: 0, buttons: 1, detail: 1 }, 'mousePressed');
+    assert.equal(inside.x, 0.5);
+    assert.equal(inside.y, 0.5);
+    const outside = viewer.mouse({ clientX: -50, clientY: 999, button: 0, buttons: 1, detail: 1 }, 'mouseMoved');
+    assert.equal(outside.x, 0);
+    assert.equal(outside.y, 1);
+    viewer.close();
+  } finally {
+    globalThis.document = oldDocument;
+  }
+});
+
+// 确认看门狗：帧画不完（窗口不可见、解码卡住）也必须在窗口期内确认，
+// 否则设备端 30 秒后把订阅者当僵尸断流（Byte stream disconnected）。
+test('frame is confirmed even when the draw stalls', async () => {
+  const oldDocument = globalThis.document;
+  const oldBitmap = globalThis.createImageBitmap;
+  globalThis.document = { hidden: false, addEventListener() {}, removeEventListener() {} };
+  globalThis.createImageBitmap = () => new Promise(() => {}); // 永远不 resolve
+  const sent = [];
+  const canvas = {
+    width: 0, height: 0,
+    getContext: () => ({ drawImage() {} }),
+    addEventListener() {}, removeEventListener() {},
+  };
+  const keyboard = { value: '', addEventListener() {}, removeEventListener() {}, focus() {} };
+  const connection = {
+    openStream: () => ({ ready: Promise.resolve(), send: bytes => { sent.push(bytes); return true; }, close: () => {} }),
+  };
+  try {
+    const viewer = new BrowserViewer(canvas, keyboard, { connection, changed: () => {} });
+    viewer.receive(viewer.packet(1, 7, new Uint8Array([1, 2, 3])));
+    await new Promise(resolve => setTimeout(resolve, ACK_WATCHDOG_MS + 100));
+    const acks = sent.filter(bytes => bytes[0] === 4);
+    assert.equal(acks.length, 1, '画不完的帧也必须确认');
+    viewer.close();
+  } finally {
+    globalThis.document = oldDocument;
+    globalThis.createImageBitmap = oldBitmap;
+  }
+});
+
+// 会话级故障处理：输入类错误只提示，拆流的是流本身且自己接回来。
+test('input errors keep the stream, a dropped stream reconnects quietly', async () => {
+  const { hosts, devices } = makeWorld();
+  const device = devices.get('mbp');
+  const streams = [];
+  device.connection.openStream = () => {
+    const stream = { ready: Promise.resolve(), send: () => true, close: () => {} };
+    streams.push(stream);
+    return stream;
+  };
+  const oldDocument = globalThis.document;
+  globalThis.document = { hidden: false, addEventListener() {}, removeEventListener() {} };
+  try {
+    const canvas = {
+      width: 0, height: 0,
+      getContext: () => ({ drawImage() {} }),
+      addEventListener() {}, removeEventListener() {},
+    };
+    const keyboard = { value: '', addEventListener() {}, removeEventListener() {}, focus() {} };
+    const session = new BrowserSession(hosts);
+    await ready(session);
+    session.attachViewer(canvas, keyboard);
+    assert.ok(session.viewer, '画面流应当已建立');
+
+    session.onStream({ hint: 'mouse coordinates must be normalized to [0,1]' });
+    assert.ok(session.viewer, '输入类错误不得拆掉画面流');
+    assert.equal(session.state.status, '', '输入类错误不得当致命错误');
+    assert.equal(session.state.hint, 'mouse coordinates must be normalized to [0,1]');
+
+    session.onStream({ closed: true, reason: 'Byte stream disconnected' });
+    assert.equal(session.state.status, '', '断流不是错误：自己接回来就行');
+    assert.equal(session.viewer, null);
+    await new Promise(resolve => setTimeout(resolve, 1200));
+    assert.ok(session.viewer, '断流后应当自己接回来');
+    assert.ok(streams.length >= 2, '应当重新开过一条流');
+    session.dispose();
+  } finally {
+    globalThis.document = oldDocument;
+  }
+});
+
+// 看不见平台窗口时不占着设备的画面流：恢复可见后自己接回来。
+test('hidden view releases the device stream and takes it back', async () => {
+  const { hosts, devices } = makeWorld();
+  const device = devices.get('mbp');
+  device.connection.openStream = () => ({ ready: Promise.resolve(), send: () => true, close: () => {} });
+  const oldDocument = globalThis.document;
+  const listeners = {};
+  globalThis.document = {
+    hidden: false,
+    addEventListener(name, fn) { (listeners[name] ||= []).push(fn); },
+    removeEventListener() {},
+  };
+  try {
+    const canvas = {
+      width: 0, height: 0,
+      getContext: () => ({ drawImage() {} }),
+      addEventListener() {}, removeEventListener() {},
+    };
+    const keyboard = { value: '', addEventListener() {}, removeEventListener() {}, focus() {} };
+    const session = new BrowserSession(hosts);
+    await ready(session);
+    session.attachViewer(canvas, keyboard);
+    assert.ok(session.viewer, '画面流应当已建立');
+
+    globalThis.document.hidden = true;
+    (listeners.visibilitychange || []).forEach(fn => fn());
+    assert.equal(session.viewer, null, '看不见时不得占着设备的流');
+
+    globalThis.document.hidden = false;
+    (listeners.visibilitychange || []).forEach(fn => fn());
+    assert.ok(session.viewer, '恢复可见后应当自己接回来');
+    session.dispose();
+  } finally {
+    globalThis.document = oldDocument;
   }
 });

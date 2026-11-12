@@ -27,8 +27,11 @@ const (
 	// 不能让画面彻底停住。正常情况下 ack 只需一个来回。
 	castAckTimeout = 3 * time.Second
 	// castPeerIdleTimeout 是僵尸订阅者的判定时长：一直给它帧、它却从不确认，
-	// 就当它已经死了，摘掉，别让它拖住整条链路。
+	// 就不再喂它（只留探活帧），连接保留。
 	castPeerIdleTimeout = 30 * time.Second
+	// castProbeInterval 是探活帧的间隔：饥饿的订阅者每这么久收到一张帧，
+	// 页面缓过来（补一个确认）就恢复喂帧。
+	castProbeInterval = 10 * time.Second
 )
 
 // castPending 是一帧在途的确认状态。
@@ -83,12 +86,18 @@ func (s *service) removePeer(p *browserStreamPeer) {
 //
 // 任一订阅者确认就 ack Chrome 推下一帧：不等所有订阅者——否则一个不确认的
 // 订阅者（比如页面没打开）会把整条画面链路饿死。
-func (s *service) peerAcked(p *browserStreamPeer, seq uint64) {
+//
+// live 表示这是页面真的确认了（而不是设备侧替它记账）：页面补了确认就把
+// 饥饿状态解除，恢复喂帧。
+func (s *service) peerAcked(p *browserStreamPeer, seq uint64, live bool) {
 	// 任何确认都算这个订阅者活着：哪怕这一帧已经被别的订阅者确认过、pending
 	// 已经被删掉，也要更新它的活跃时间。否则多订阅者（多开 tab）时先确认的那个
 	// 把 pending 删了，后确认的永远不更新活跃时间 → 被误判成僵尸，每帧被摘
 	// 一次（2026-10-30 实测：5 秒摘了 251 次，页面反复断流、滚不动）。
 	p.markAcked()
+	if live && p.starved.Swap(false) {
+		log.Printf("browser: stream peer acked again, resume frames")
+	}
 	s.castMu.Lock()
 	pending, ok := s.castPending[seq]
 	if !ok {
@@ -223,46 +232,51 @@ func (s *service) onCastFrame(frameSessionID string, params json.RawMessage) {
 		return
 	}
 	for _, p := range peers {
+		// 饥饿的订阅者不再喂帧（只留探活帧）：连接留着，页面缓过来自己回来。
+		if p.starved.Load() && !p.probeDue() {
+			continue
+		}
 		if !p.offerFrame(castFrame{seq: seq, image: image}) {
 			// 订阅者不消费：算它看过了（否则 Chrome 停推），并记账。
 			s.castMu.Lock()
 			s.castStatDropped++
 			s.castMu.Unlock()
-			s.peerAcked(p, seq)
+			s.peerAcked(p, seq, false)
 			continue
 		}
 		s.castMu.Lock()
 		s.castStatSent++
 		s.castMu.Unlock()
 	}
-	// 僵尸订阅者：有帧在推却一直不确认——摘掉它，别让它拖住所有人。
-	s.evictIdlePeers()
+	// 饥饿订阅者：有帧在推却一直不确认的，停止喂帧（不断连）。
+	s.starveIdlePeers()
 	// 安全阀：页面迟迟不确认也要放行下一帧。
 	time.AfterFunc(castAckTimeout, func() { s.expireCast(seq) })
 }
 
-// evictIdlePeers 摘掉「有帧在推却不确认」的僵尸订阅者。
+// starveIdlePeers 把「有帧在推却一直不确认」的订阅者标记为饥饿：不再喂帧，
+// 但不断连。
 //
-// 僵尸订阅者（页面已经关了但连接还在、或对端不再读）会让每帧都走「帧没排上」
-// 那条分支；那条分支会顺手 ack Chrome，链路看似还在转，实际每帧都在等超时。
-// 宁可丢掉这个订阅者，也不能让它拖住所有人。
-func (s *service) evictIdlePeers() {
+// 断连是重手段：页面只是暂时画不出来（窗口不可见、解码卡住、标签页被冻结）
+// 时断流，用户看到的是画面闪断 + 报错（Byte stream disconnected）。饥饿只
+// 降速（探活帧 10 秒一张），页面补一个确认就恢复；真的走了（页面关闭）连接
+// 自己会断。
+func (s *service) starveIdlePeers() {
 	s.castMu.Lock()
 	stale := make([]*browserStreamPeer, 0, len(s.castPeers))
 	for p := range s.castPeers {
-		if p.evicted.Load() {
-			continue // 已摘过：等它自己从表里退出去，不重复计数
+		if p.starved.Load() {
+			continue // 已经饥饿：等它自己确认回来，不重复计数
 		}
-		if p.idleTooLong(castPeerIdleTimeout) {
-			p.evicted.Store(true)
+		if p.notAckingFor(castPeerIdleTimeout) {
+			p.starved.Store(true)
 			stale = append(stale, p)
 		}
 	}
-	s.castStatEvicted += len(stale)
+	s.castStatStarved += len(stale)
 	s.castMu.Unlock()
-	for _, p := range stale {
-		log.Printf("browser: evict idle stream peer")
-		p.close()
+	for range stale {
+		log.Printf("browser: stream peer not acking, stop feeding frames")
 	}
 }
 

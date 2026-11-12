@@ -29,7 +29,7 @@ func (s *service) toolCastStats(ctx context.Context, _ *mcp.CallToolRequest, _ s
 	acks := s.castStatAcks
 	ackFailed := s.castStatAckFailed
 	dropped := s.castStatDropped
-	evicted := s.castStatEvicted
+	starved := s.castStatStarved
 	ackRTT := s.castStatAckRTT
 	ackRTTSamples := s.castStatAckRTTSamples
 	s.castMu.Unlock()
@@ -43,7 +43,7 @@ func (s *service) toolCastStats(ctx context.Context, _ *mcp.CallToolRequest, _ s
 		"framesSent": sent, "framesWritten": written,
 		"writtenBytes": writtenBytes, "bytes": bytes,
 		"pageAcks": acks, "ackFailed": ackFailed,
-		"dropped": dropped, "evicted": evicted,
+		"dropped": dropped, "starved": starved,
 		"ackRttMs": avgAckRTT, "ackRttSamples": ackRTTSamples,
 	})
 	return textResult(json.RawMessage(payload)), nil, nil

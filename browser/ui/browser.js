@@ -19,8 +19,20 @@ const KIND_INPUT = 3;
 const KIND_ACK = 4;
 const HEADER_BYTES = 13;
 
+// ACK 看门狗：帧画不完也要在窗口期内确认。页面在窗口不可见时可能画不完
+// （画布不绘制、解码卡住），不确认的话设备端 30 秒后把这个订阅者当僵尸
+// 摘掉 → 流断 → 页面报 Byte stream disconnected（画面闪断 + 报错）。
+export const ACK_WATCHDOG_MS = 1500;
+
+// 断流后自己接回来的退避：1s / 2s / 4s，不等下一轮轮询。
+const RECONNECT_MIN_MS = 1000;
+const RECONNECT_MAX_MS = 4000;
+
 const modifiers = event => (event.altKey ? 1 : 0) | (event.ctrlKey ? 2 : 0)
   | (event.metaKey ? 4 : 0) | (event.shiftKey ? 8 : 0);
+
+// 坐标钳到 [0,1]：设备端严格校验归一化坐标，越界直接报错。
+const clamp01 = value => (value < 0 ? 0 : value > 1 ? 1 : value);
 
 // 设备可连：启用 + 心跳新鲜 + RTC 可用（与 browser/cua 包同口径）。
 export const deviceReady = host => host.status === 'enabled'
@@ -49,92 +61,88 @@ export const browserCall = async (connection, tool, args = {}) => {
   return text ? JSON.parse(text) : null;
 };
 
-// BrowserDirectory 管设备目录与工具连接：每台设备一行，附带它的页面清单。
+// BrowserDirectory 只持有公共设备连接器交来的当前连接与页面清单。
 export class BrowserDirectory {
   constructor(hosts, changed = () => {}) {
     this.hosts = hosts;
     this.changed = changed;
     this.connections = new Map();
     this.rows = [];
+    this.hostId = '';
+    this.generation = 0;
     this.closed = false;
   }
 
-  async refresh({ retryFailed = false } = {}) {
+  clear() {
+    this.generation++;
+    this.hostId = '';
+    const connections = [...this.connections.values()];
+    this.connections.clear();
+    this.rows = [];
+    for (const connection of connections) connection.close().catch(() => {});
+    this.changed(this.rows);
+  }
+
+  async connect(host, connection) {
+    const generation = ++this.generation;
+    const previous = [...this.connections.values()];
+    this.connections.clear();
+    for (const item of previous) {
+      if (item !== connection) item.close().catch(() => {});
+    }
+    if (this.closed || generation !== this.generation) return;
+    this.hostId = host.id;
+    this.connections.set(host.id, connection);
+    const row = {
+      id: host.id,
+      name: host.name || host.hostname || host.id,
+      status: 'connecting',
+      error: '',
+      pages: [],
+    };
+    this.rows = [row];
+    this.changed(this.rows);
+    try {
+      row.pages = await this.listPages(host.id);
+      if (this.closed || generation !== this.generation) return;
+      row.status = 'ready';
+      row.error = '';
+    } catch (error) {
+      if (this.closed || generation !== this.generation) return;
+      row.status = 'error';
+      row.error = error.message;
+    }
+    this.changed(this.rows);
+  }
+
+  async refresh() {
     if (this.pending) return this.pending;
-    this.pending = this.load({ retryFailed }).finally(() => { this.pending = null; });
+    this.pending = this.load().finally(() => { this.pending = null; });
     return this.pending;
   }
 
-  async load({ retryFailed = false } = {}) {
-    const query = this.hosts.query({});
-    let hosts;
-    try { hosts = [...await query.load()]; } finally { query.dispose(); }
-    if (this.closed) return this.rows;
-    const wanted = new Set(hosts.filter(h => h.status === 'enabled').map(h => h.id));
-    for (const [id, connection] of this.connections) {
-      if (!wanted.has(id) || connection.closed) {
-        this.connections.delete(id);
-        await connection.close().catch(() => {});
-      }
+  async load() {
+    const generation = this.generation;
+    const row = this.rows[0];
+    const connection = this.connections.get(this.hostId);
+    if (!row || !connection) return this.rows;
+    try {
+      if (connection.closed) throw new Error('device is not connected');
+      const pages = await this.listPages(this.hostId);
+      if (this.closed || generation !== this.generation) return this.rows;
+      row.pages = pages;
+      row.status = 'ready';
+      row.error = '';
+    } catch (error) {
+      if (this.closed || generation !== this.generation) return this.rows;
+      row.status = 'error';
+      row.error = error.message;
     }
-    const rows = hosts.map(host => {
-      const previous = this.rows.find(r => r.id === host.id);
-      if (previous) {
-        previous.name = host.name || previous.name;
-        return previous;
-      }
-      return {
-        id: host.id,
-        name: host.name || host.hostname || host.id,
-        status: 'connecting',
-        error: '',
-        pages: [],
-      };
-    });
-    this.rows = rows;
-    this.changed(rows);
-    let next = 0;
-    // 慢设备不能拖住其它设备的发现。
-    const worker = async () => {
-      while (!this.closed && next < hosts.length) {
-        const index = next++;
-        const host = hosts[index];
-        const row = rows[index];
-        if (host.status !== 'enabled') { row.status = 'disabled'; this.changed(rows); continue; }
-        if (host.last_seen && Date.now() - Date.parse(host.last_seen) > 40000) {
-          row.status = 'offline'; this.changed(rows); continue;
-        }
-        if (!host.caps?.transports?.rtc?.enabled) {
-          row.status = 'unavailable'; this.changed(rows); continue;
-        }
-        if (row.status === 'error' && !retryFailed) continue;
-        row.status = 'connecting';
-        this.changed(rows);
-        try {
-          let connection = this.connections.get(host.id);
-          if (!connection) {
-            connection = await this.hosts.openTools(host.id);
-            this.connections.set(host.id, connection);
-          }
-          row.pages = await this.listPages(host.id);
-          row.status = 'ready';
-          row.error = '';
-        } catch (error) {
-          row.status = 'error';
-          row.error = error.message;
-          const connection = this.connections.get(host.id);
-          this.connections.delete(host.id);
-          await connection?.close().catch(() => {});
-        }
-        this.changed(rows);
-      }
-    };
-    await Promise.all(Array.from({ length: Math.min(4, hosts.length) }, worker));
-    if (!this.closed) this.changed(rows);
-    return rows;
+    this.changed(this.rows);
+    return this.rows;
   }
 
-  // listPages 读设备当前的页面标签（CDP 的 Target 域）。
+  // listPages 读当前设备页面标签（CDP 的 Target 域）。
   async listPages(hostId) {
     const connection = this.connections.get(hostId);
     if (!connection) throw new Error('device is not connected');
@@ -149,6 +157,7 @@ export class BrowserDirectory {
 
   async close() {
     this.closed = true;
+    this.generation++;
     const connections = [...this.connections.values()];
     this.connections.clear();
     await Promise.all(connections.map(c => c.close().catch(() => {})));
@@ -169,6 +178,9 @@ export class BrowserViewer {
     this.listeners = [];
     this.move = null;
     this.moveTimer = null;
+    // 确认看门狗：这一帧还没画完时的兜底确认。
+    this.ackTimer = null;
+    this.ackSeq = null;
     // 帧率与输入延迟的自测：帧率是端到端收到的帧率，输入延迟是
     // 「发出输入→设备回执」的往返毫秒数（滚动卡不卡就看它）。
     this.frameCount = 0
@@ -183,7 +195,8 @@ export class BrowserViewer {
       onClose: error => {
         if (this.closed) return;
         this.close();
-        this.changed({ error: error?.message || 'disconnected' });
+        // 流断了不是错误：会话层自己重连（退避），这里只报事实。
+        this.changed({ closed: true, reason: error?.message || 'disconnected' });
       },
     });
     // 页面不活跃就放掉流：隐藏的 tab 不用让设备给它推帧（多开 tab 时这是
@@ -248,7 +261,27 @@ export class BrowserViewer {
   // 这是整条链路的背压：一帧在途，页面慢就掉帧，不会堆积。
   ack(seq) {
     if (this.closed) return;
+    if (this.ackTimer && this.ackSeq === seq) {
+      clearTimeout(this.ackTimer);
+      this.ackTimer = null;
+      this.ackSeq = null;
+    }
     this.stream.send(this.packet(KIND_ACK, seq, new Uint8Array(0)));
+  }
+
+  // armAck 给这一帧上确认看门狗：画完照旧确认，画不完到点也确认。
+  //
+  // 页面在窗口不可见时可能画不完（画布不绘制、解码卡住）；不确认的话设备端
+  // 30 秒后把这个订阅者当僵尸摘掉 → 流断 → 画面闪断 + 报错。
+  armAck(seq) {
+    if (this.ackTimer) { clearTimeout(this.ackTimer); this.ackTimer = null; }
+    this.ackSeq = seq;
+    this.ackTimer = setTimeout(() => {
+      this.ackTimer = null;
+      const pending = this.ackSeq;
+      this.ackSeq = null;
+      if (pending !== null && pending !== undefined) this.ack(pending);
+    }, ACK_WATCHDOG_MS);
   }
 
   // 设备→页面：拆包头，按 kind 分发。
@@ -278,6 +311,8 @@ export class BrowserViewer {
   onFrame(seq, jpeg) {
     // 帧可能比绘制快：只保留最新的一帧，旧的直接丢，画面不滞后。
     this.latest = { seq, jpeg };
+    // 先上确认看门狗：这一帧就算画不完，也会在窗口期内确认。
+    this.armAck(seq);
     this.pump();
   }
 
@@ -302,6 +337,13 @@ export class BrowserViewer {
       }
       this.changed({ ack: message, inputMs });
     } else if (message.type === 'error') {
+      // 输入类错误只是这一次输入没派发出去（坐标越界、输入类型不认识），
+      // 画面链路本身还活着：提示一句就放过，不能拆流——拆流就是画面闪一下
+      // 加一个报错，用户看到的是「浏览器坏了」。
+      if (message.scope === 'input') {
+        this.changed({ hint: message.error || 'input_failed' });
+        return;
+      }
       this.changed({ error: message.error || 'device_error' });
     }
   }
@@ -329,7 +371,8 @@ export class BrowserViewer {
     } catch (error) {
       // 解码失败也要确认：否则这一帧一直挂着，设备侧要等超时才放行下一帧，
       // 整条画面链路会卡成 0.2fps（2026-10-30 实测）。
-      this.changed({ error: `decode_failed: ${error?.message || error}` });
+      // 这一帧是坏的，不是链路坏了：只提示，不拆流。
+      this.changed({ hint: `decode_failed: ${error?.message || error}` });
       this.ack(frame.seq);
       return;
     }
@@ -361,8 +404,10 @@ export class BrowserViewer {
     return {
       type: 'input_mouse',
       eventType,
-      x: (event.clientX - rect.left) / rect.width,
-      y: (event.clientY - rect.top) / rect.height,
+      // 坐标钳到 [0,1]：按下了鼠标（指针被捕获）再拖出画布时，事件仍然发到
+      // 画布上，坐标会越界；设备端严格校验，越界就报错并打断画面。
+      x: clamp01((event.clientX - rect.left) / rect.width),
+      y: clamp01((event.clientY - rect.top) / rect.height),
       button,
       buttons: event.buttons || 0,
       clickCount: eventType === 'mouseMoved' ? 0 : (event.detail || 1),
@@ -444,6 +489,7 @@ export class BrowserViewer {
     if (this.closed) return;
     this.closed = true;
     if (this.moveTimer) clearTimeout(this.moveTimer);
+    if (this.ackTimer) { clearTimeout(this.ackTimer); this.ackTimer = null; }
     if (this.fpsTimer) { clearInterval(this.fpsTimer); this.fpsTimer = null; }
     if (this.onVisibility) {
       document.removeEventListener('visibilitychange', this.onVisibility);
@@ -465,7 +511,7 @@ export class BrowserSession {
     this.state = {
       devices: [], selectedHostId: '', selectedPageId: '', pageUrl: '',
       live: false, dialog: null, dialogText: '', busy: false, refreshing: false, status: '',
-      fps: 0, inputMs: 0,
+      hint: '', fps: 0, inputMs: 0,
     };
     this.directory = new BrowserDirectory(hosts, rows => this.onRows(rows));
     this.pageByHost = new Map();
@@ -474,6 +520,11 @@ export class BrowserSession {
     this.viewerConnection = null;
     this.closed = false;
     this.timer = null;
+    // 可见性：null = 还没探过（不拦流），true/false = 平台窗口当前可见。
+    this.visible = null;
+    this.viewObserver = null;
+    this.reconnectTimer = null;
+    this.reconnectAttempt = 0;
   }
 
   device(hostId = this.state.selectedHostId) {
@@ -491,8 +542,8 @@ export class BrowserSession {
   onRows(rows) {
     this.state.devices = rows.map(row => ({ ...row, pages: [...row.pages] }));
     if (!this.device()) {
-      this.state.selectedHostId = this.state.devices.find(row => row.status === 'ready')?.id || '';
       this.state.selectedPageId = '';
+      this.state.pageUrl = '';
     }
     this.ensureSelection();
     this.syncViewer();
@@ -547,6 +598,32 @@ export class BrowserSession {
     });
   }
 
+  selectHost(hostId) {
+    if (this.closed || hostId === this.state.selectedHostId) return;
+    this.state.selectedHostId = hostId || '';
+    this.state.selectedPageId = '';
+    this.state.pageUrl = '';
+    this.state.dialog = null;
+    this.state.status = '';
+    this.stopViewer();
+    this.directory.clear();
+    this.changed(this.state);
+  }
+
+  async connectDevice(host, connection) {
+    if (this.closed || !host || !connection) return;
+    this.state.selectedHostId = host.id;
+    this.state.selectedPageId = '';
+    this.state.pageUrl = '';
+    this.state.dialog = null;
+    this.state.status = '';
+    this.stopViewer();
+    await this.directory.connect(host, connection);
+    if (this.closed || this.state.selectedHostId !== host.id) return;
+    await this.queue;
+    await this.updateDialog();
+  }
+
   async refresh({ retryFailed = false } = {}) {
     if (this.state.refreshing || this.closed) return;
     this.state.refreshing = true;
@@ -583,17 +660,38 @@ export class BrowserSession {
   attachViewer(canvas, keyboard) {
     this.canvas = canvas;
     this.keyboard = keyboard;
+    this.observeVisibility();
     this.syncViewer();
-    // 页面回到前台：自己建新的流（隐藏时那条已经放掉了）。
-    this.onVisibility = () => {
-      if (!document.hidden) this.syncViewer();
+  }
+
+  // 可见性：标签页隐藏（document.hidden）或平台窗口被隐藏/最小化
+  // （窗口盒子上的 data-view-visible=false）时，都不该占着设备的画面流。
+  //
+  // 看不见还占着流有两个坏处：设备一直合成帧（费 CPU）；页面也可能因为画布
+  // 不绘制而不确认，30 秒后被设备判成僵尸断流（画面闪断 + 报错）。
+  observeVisibility() {
+    const win = this.canvas?.closest?.('[data-view-visible]');
+    const update = () => {
+      const visible = !document.hidden && (!win || win.dataset.viewVisible !== 'false');
+      if (visible === this.visible) return;
+      this.visible = visible;
+      if (visible) this.syncViewer();
+      else this.stopViewer();
     };
-    document.addEventListener('visibilitychange', this.onVisibility);
+    if (win && typeof MutationObserver !== 'undefined') {
+      this.viewObserver = new MutationObserver(update);
+      this.viewObserver.observe(win, { attributes: true, attributeFilter: ['data-view-visible'] });
+    }
+    document.addEventListener('visibilitychange', update);
+    this.onVisibility = update;
+    update();
   }
 
   syncViewer() {
     const connection = this.connection();
     if (!this.canvas || !keyboardReady(this) || !connection) { this.stopViewer(); return; }
+    // 看不见就不占着设备的画面流（可见性恢复时自己接回来）。
+    if (this.visible === false) { this.stopViewer(); return; }
     // 没有选中页（全部标签已关）不开流：设备不该对着死页面推帧。
     if (!this.state.selectedPageId) { this.stopViewer(); return; }
     if (this.viewer && !this.viewer.closed && this.viewerConnection === connection) return;
@@ -604,6 +702,17 @@ export class BrowserSession {
     this.viewer = new BrowserViewer(this.canvas, this.keyboard, {
       connection, changed: event => this.onStream(event),
     });
+  }
+
+  // scheduleReconnect 流断了自己接回来：退避 1s / 2s / 4s，不等下一轮轮询。
+  scheduleReconnect() {
+    if (this.closed || this.reconnectTimer) return;
+    const delay = Math.min(RECONNECT_MAX_MS, RECONNECT_MIN_MS * Math.pow(2, this.reconnectAttempt));
+    this.reconnectAttempt++;
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      this.syncViewer();
+    }, delay);
   }
 
   stopViewer() {
@@ -625,7 +734,24 @@ export class BrowserSession {
       this.state.inputMs = event.inputMs;
       dirty = true;
     }
-    if (event.live) { this.state.live = true; this.changed(this.state); return; }
+    if (event.live) { this.state.live = true; this.reconnectAttempt = 0; this.changed(this.state); return; }
+    // 输入类错误只提示：画面链路还活着，拆流就是画面闪一下加一个报错。
+    if (event.hint) {
+      this.state.hint = String(event.hint);
+      this.changed(this.state);
+      return;
+    }
+    // 流断了：自己接回来（退避重连），不当错误报。
+    if (event.closed) {
+      // 断流的原因不弹窗（会自己恢复），但要留痕：控制台可查。
+      console.warn('browser: stream closed, reconnecting:', event.reason || 'disconnected');
+      this.state.live = false;
+      this.state.status = '';
+      this.stopViewer();
+      this.scheduleReconnect();
+      this.changed(this.state);
+      return;
+    }
     if (event.error) {
       this.state.live = false;
       this.state.status = String(event.error);
@@ -754,6 +880,7 @@ export class BrowserSession {
     const target = /^[a-z][a-z\d+.-]*:/i.test(raw) ? raw : 'https://' + raw;
     const hostId = this.state.selectedHostId;
     const pageId = this.state.selectedPageId;
+    if (!pageId) return this.createPage(hostId, target);
     return this.act(async () => {
       await this.call('navigate', { url: target, target_id: pageId }, hostId);
       await this.refreshPages(hostId);
@@ -829,6 +956,8 @@ export class BrowserSession {
   dispose() {
     this.closed = true;
     if (this.timer) { clearTimeout(this.timer); this.timer = null; }
+    if (this.reconnectTimer) { clearTimeout(this.reconnectTimer); this.reconnectTimer = null; }
+    if (this.viewObserver) { this.viewObserver.disconnect(); this.viewObserver = null; }
     if (this.onVisibility) {
       document.removeEventListener('visibilitychange', this.onVisibility);
       this.onVisibility = null;

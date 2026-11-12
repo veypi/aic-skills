@@ -91,17 +91,6 @@
     color: var(--color-danger, #df6464);
   }
 
-  .sidebar-toggle {
-    display: block;
-    width: auto;
-    max-width: clamp(80px, 22vw, 180px);
-    padding: 0 8px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    color: var(--text-color);
-  }
-
   .navigation {
     display: flex;
     gap: 2px;
@@ -501,12 +490,11 @@
 
 <body :class="{collapsed: !sidebarOpen}">
   <header>
-    <button class="icon-button sidebar-toggle" @click="sidebarOpen = !sidebarOpen"
-      :title="selectedDeviceName() || $t('browser.choose_device')"
-      :aria-label="(selectedDeviceName() || $t('browser.choose_device')) + ' · ' + $t('browser.window_list')"
-      :aria-expanded="sidebarOpen">
-      {{selectedDeviceName() || $t('browser.choose_device')}}
+    <button class="icon-button" @click="sidebarOpen = !sidebarOpen" :title="$t('browser.window_list')"
+      :aria-label="$t('browser.window_list')" :aria-expanded="sidebarOpen">
+      <i class="fa-solid fa-bars" aria-hidden="true"></i>
     </button>
+    <widgets-host-connector ref="hostConnector" v:value="selectedHostId" remember="browser" @v-connect="connectDevice"></widgets-host-connector>
     <div class="navigation">
       <button class="icon-button" @click="goBack" :disabled="!selected() || busy" :title="$t('browser.back')"
         :aria-label="$t('browser.back')"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i></button>
@@ -594,8 +582,8 @@
               <button class="tab-shortcut" @click="selectWindow(entry.host.id, entry.page.id)" :title="entry.page.url">
                 <i class="fa-regular fa-window-maximize" aria-hidden="true"></i>
                 <span class="tab-label">
-                  <strong>{{entry.page.title || (entry.page.url === 'about:blank' ? $t('browser.new_tab') : entry.page.url) || entry.page.id}}</strong>
-                  <small>{{entry.host.name}}<span v-if="entry.page.url"> · {{entry.page.url}}</span></small>
+                  <strong>{{entry.page.url === 'about:blank' ? $t('browser.new_tab') : entry.page.title || entry.page.url || entry.page.id}}</strong>
+                  <small>{{entry.host.name}}<span v-if="displayAddress(entry.page.url)"> · {{displayAddress(entry.page.url)}}</span></small>
                 </span>
                 <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
               </button>
@@ -631,13 +619,14 @@
   dialogText = ''
   busy = false
   refreshing = false
-  sidebarOpen = true
+  sidebarOpen = false
   status = ''
   fps = 0
   inputMs = 0
 
   addressFocused = false
   let lastStatus = ''
+  let lastHint = ''
 
   const applyState = state => {
     devices = state.devices
@@ -645,11 +634,16 @@
     selectedPageId = state.selectedPageId
     // 未编辑时地址完全由当前 target 派生：切页、回退、重定向都能更新；
     // 编辑中轮询不覆盖用户输入。
-    if (!addressFocused) address = state.pageUrl
+    if (!addressFocused) address = displayAddress(state.pageUrl)
     if (state.status && state.status !== lastStatus) {
       lastStatus = state.status
       $message.error(state.status)
     } else if (!state.status) lastStatus = ''
+    // 输入类错误只提示一句（黄色）：画面链路还活着，不该用报错的口吻。
+    if (state.hint && state.hint !== lastHint) {
+      lastHint = state.hint
+      $message.warning(state.hint)
+    } else if (!state.hint) lastHint = ''
     live = state.live
     dialog = state.dialog
     dialogText = state.dialogText
@@ -666,13 +660,11 @@
 
   selectedDevice = () => devices.find(row => row.id === selectedHostId)
   selected = () => selectedDevice()?.pages.find(page => page.id === selectedPageId)
-  isBlankPage = () => selected()?.url === 'about:blank'
+  isBlankPage = () => selectedDevice()?.status === 'ready' && (!selected() || selected()?.url === 'about:blank')
+  displayAddress = url => url === 'about:blank' ? '' : url || ''
   otherTabs = () => devices.flatMap(host => host.pages
     .filter(page => host.id !== selectedHostId || page.id !== selectedPageId)
     .map(page => ({ host, page })))
-  selectedDeviceName = () => selectedDevice()?.name
-    || devices.find(row => row.status === 'ready')?.name
-    || ''
   statusText = value => ({
     connecting: $t('browser.status_connecting'),
     starting: $t('browser.status_starting'),
@@ -690,20 +682,27 @@
   goBack = () => session.goBack()
   goForward = () => session.goForward()
   selectDevice = id => session.selectDevice(id)
+  connectDevice = detail => session.connectDevice(detail.host, detail.connection)
   selectWindow = (hostId, pageId) => session.selectWindow(hostId, pageId)
   createWindow = hostId => session.createPage(hostId || selectedHostId)
   closeWindow = (hostId, pageId) => session.closePage(hostId, pageId)
   answerDialog = accept => session.answerDialog(accept)
-  retryDevices = () => session.refresh({ retryFailed: true })
+  retryDevices = () => {
+    if (selectedHostId && !session.connection()) return $refs.hostConnector?.$data.connect(selectedHostId)
+    return session.refresh({ retryFailed: true })
+  }
   resetAddress = () => {
     addressFocused = false
-    address = selected()?.url || ''
+    address = displayAddress(selected()?.url)
   }
+
+  $watch(() => selectedHostId, (id, previous) => {
+    if (id !== previous) session.selectHost(id)
+  })
 </script>
 
 <script>
   session.attachViewer($refs.canvas, $refs.keyboard)
-  session.refresh().catch(error => $message.error(String(error?.message || error)))
   session.startPolling()
 </script>
 

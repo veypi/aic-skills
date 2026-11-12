@@ -108,9 +108,12 @@ type browserStreamInput struct {
 
 // browserStreamControl 是设备发给页面的控制消息（JSON 正文）。
 type browserStreamControl struct {
-	Type  string  `json:"type"`
-	ID    uint64  `json:"id,omitempty"` // 被派发输入的事件号（合并后回执不再一一对应）
-	Error string  `json:"error,omitempty"`
+	Type  string `json:"type"`
+	ID    uint64 `json:"id,omitempty"` // 被派发输入的事件号（合并后回执不再一一对应）
+	Error string `json:"error,omitempty"`
+	// Scope 是错误的作用域：input = 只有这一次输入没派发出去（页面继续用）；
+	// session = 画面会话本身出了问题（页面该重开流）。
+	Scope string  `json:"scope,omitempty"`
 	Event string  `json:"event,omitempty"`
 	X     float64 `json:"x,omitempty"`
 	Y     float64 `json:"y,omitempty"`
@@ -207,15 +210,16 @@ func (q *browserInputQueue) pop(ctx context.Context) (browserStreamInput, bool) 
 }
 
 type browserStreamPeer struct {
-	service *service
-	conn    net.Conn
-	reader  *bufio.Reader
-	writeMu sync.Mutex
-	inputs  *browserInputQueue // 待派发的人工输入（连续事件已合并）
-	frames  chan castFrame     // 待发的画面帧（只保最新一帧）
-	lastAck atomic.Int64       // 最近一次页面确认（Unix 纳秒）
-	lastFit atomic.Int64       // 最近一次给过它帧（Unix 纳秒）
-	evicted atomic.Bool        // 已被判定为僵尸并关掉
+	service   *service
+	conn      net.Conn
+	reader    *bufio.Reader
+	writeMu   sync.Mutex
+	inputs    *browserInputQueue // 待派发的人工输入（连续事件已合并）
+	frames    chan castFrame     // 待发的画面帧（只保最新一帧）
+	lastAck   atomic.Int64       // 最近一次页面确认（Unix 纳秒）
+	lastFit   atomic.Int64       // 最近一次给过它帧（Unix 纳秒）
+	starved   atomic.Bool        // 饥饿：不再喂帧（连接保留，等页面缓过来）
+	lastProbe atomic.Int64       // 最近一次探活喂帧的时刻（Unix 纳秒）
 }
 
 // markAcked 记一次页面确认：用来判断订阅者是不是还活着。
@@ -228,11 +232,11 @@ func (p *browserStreamPeer) markFitted() {
 	p.lastFit.Store(time.Now().UnixNano())
 }
 
-// idleTooLong 判断订阅者是不是已经不再确认（有帧在推却一直不 ack）。
+// notAckingFor 判断订阅者是不是「有帧在推却一直不确认」。
 //
-// 只有「刚给过它帧、它却一直不确认」才算僵尸：静态页面没有帧、没有确认，
-// 不能因为没确认就把它摘了。
-func (p *browserStreamPeer) idleTooLong(timeout time.Duration) bool {
+// 只有「刚给过它帧、它却一直不确认」才算数：静态页面没有帧、没有确认，
+// 不能因为没确认就停止喂它。
+func (p *browserStreamPeer) notAckingFor(timeout time.Duration) bool {
 	fitted := p.lastFit.Load()
 	if fitted == 0 || time.Since(time.Unix(0, fitted)) > 5*time.Second {
 		return false // 最近没给它帧：没有帧自然没有确认
@@ -244,7 +248,21 @@ func (p *browserStreamPeer) idleTooLong(timeout time.Duration) bool {
 	return time.Since(time.Unix(0, acked)) > timeout
 }
 
-// close 关掉这条连接：写失败或被判定为僵尸时用。关掉后读循环收到 EOF，
+// probeDue 该不该给饥饿的订阅者喂一张探活帧：每 castProbeInterval 一张。
+//
+// 饥饿只是「不确认」，不是「死了」：页面可能只是暂时画不出来（窗口不可见、
+// 解码卡住、标签页被冻结）。探活帧让页面有机会补一个确认，链路自己就恢复。
+func (p *browserStreamPeer) probeDue() bool {
+	last := p.lastProbe.Load()
+	now := time.Now().UnixNano()
+	if last != 0 && time.Since(time.Unix(0, last)) < castProbeInterval {
+		return false
+	}
+	p.lastProbe.Store(now)
+	return true
+}
+
+// close 关掉这条连接：写失败时用。关掉后读循环收到 EOF，
 // 订阅者会被摘除（removePeer）。
 func (p *browserStreamPeer) close() {
 	_ = p.conn.Close()
@@ -347,7 +365,8 @@ func (p *browserStreamPeer) run(parent context.Context) {
 	select {
 	case err := <-errCh:
 		if err != nil && err != io.EOF {
-			_ = p.sendControl(browserStreamControl{Type: "error", Error: err.Error()})
+			// 会话级错误：流本身出了问题，页面该重开流。
+			_ = p.sendControl(browserStreamControl{Type: "error", Scope: "session", Error: err.Error()})
 		}
 	case <-ctx.Done():
 	}
@@ -381,7 +400,8 @@ func (p *browserStreamPeer) readInputs(ctx context.Context) error {
 		switch kind {
 		case msgAck:
 			// 页面画完了：设备据此 ack Chrome，Chrome 才会推下一帧。
-			p.service.peerAcked(p, seq)
+			// 页面真的确认了：它活着（也解除了饥饿状态）。
+			p.service.peerAcked(p, seq, true)
 		case msgInput:
 			var input browserStreamInput
 			if err := json.Unmarshal(payload, &input); err != nil {
@@ -405,7 +425,9 @@ func (p *browserStreamPeer) dispatchLoop(ctx context.Context) {
 			return
 		}
 		if err := p.dispatchInput(ctx, input); err != nil {
-			_ = p.sendControl(browserStreamControl{Type: "error", Error: err.Error()})
+			// 输入类错误：这一次输入没派发出去，画面链路本身还活着。
+			// 作用域标成 input，页面据此只提示一句、不拆流。
+			_ = p.sendControl(browserStreamControl{Type: "error", Scope: "input", Error: err.Error()})
 			continue
 		}
 		// 回执带上输入的事件号：合并后回执与发送不再一一对应，页面按 id
