@@ -792,7 +792,7 @@
           }}</button>
       </div>
     </details>
-    <button class="tbtn primary" @click="showExport = !showExport" :disabled="exporting || !doc">{{ $t('common.export')
+    <button class="tbtn primary" @click="showExport = !showExport" :disabled="exporting || loading || !doc">{{ $t('common.export')
       }}</button>
   </div>
 
@@ -813,6 +813,7 @@
         <select class="exf-sel" :value="exRes" @change="exRes = $event.target.value">
           <option value="orig" :selected="exRes === 'orig'">{{ $t('studio.original_size', {width: doc ? doc.size.width :
             0, height: doc ? doc.size.height : 0}) }}</option>
+          <option value="2160" :selected="exRes === '2160'">4K UHD</option>
           <option value="1080" :selected="exRes === '1080'">1080p {{ $t('studio.full_hd') }}</option>
           <option value="720" :selected="exRes === '720'">720p {{ $t('studio.hd') }}</option>
           <option value="480" :selected="exRes === '480'">480p {{ $t('studio.sd') }}</option>
@@ -868,7 +869,7 @@
     <div class="pd v" v-if="showLeft" :class="{ dragging: resizing === 'left' }"
       @mousedown="startResize('left', $event)" :title="$t('studio.resize_left')"></div>
     <div class="center">
-      <video-stage ref="stage" :editable="!!curPath && !exporting" :selid="sel.kind === 'element' ? sel.elId : ''"
+      <video-stage ref="stage" :editable="!!curPath && !exporting" :loading="loading" :selid="sel.kind === 'element' ? sel.elId : ''"
         @select="onStageSelect" @mutate="onStageChange" @ctxdel="delElements" @dropasset="onDropAsset"
         @framechange="onFrameChange"></video-stage>
     </div>
@@ -916,8 +917,9 @@
   showTimeline = false
   // ---- 导出配置（对话框）----
   showExport = false
+  loading = false     // 正在读取主存档与预载素材；舞台显示加载态而非“未打开”
   exFormat = 'mp4'    // mp4 | webm | webm-vp8 | wav
-  exRes = 'orig'      // orig | 1080 | 720 | 480 | custom
+  exRes = 'orig'      // orig | 2160 | 1080 | 720 | 480 | custom
   exW = 1280
   exH = 720
   exFps = 'orig'      // orig | 24 | 25 | 30 | 60
@@ -1049,6 +1051,7 @@
     const key = url + '|' + caseId + '|' + String($router.query.new || '')
     if (key === lastRoute) return
     lastRoute = key
+    loading = true
     try {
       if (url) {
         if (String($router.query.new || '') === '1') await newArchive(url)
@@ -1056,21 +1059,22 @@
       } else if (caseId) await openCase(caseId)
       else goHome()
     } catch (e) {$message.error($t('home.open_failed') + String((e && e.message) || e))}
+    finally {loading = false}
   }
   goHome = async () => {
-    if (curPath) {clearTimeout(saveTimer); await doSave()}
+    if (curPath) await flushSave()
     $router.push('index')
   }
   chooseOpen = async () => {
     try {
-      if (curPath) {clearTimeout(saveTimer); await doSave()}
+      if (curPath) await flushSave()
       const picked = await $mod.$fs.pickFiles({accept: [ARCHIVE_EXT], start: await pickerStart($mod.$fs, curDir)})
       if (picked) $router.push('studio?url=' + encodeURIComponent(toRef(picked.path)))
     } catch (e) {$message.error($t('home.open_failed') + String((e && e.message) || e))}
   }
   chooseNew = async () => {
     try {
-      if (curPath) {clearTimeout(saveTimer); await doSave()}
+      if (curPath) await flushSave()
       const picked = await $mod.$fs.pickSavePath({name: $t('home.untitled') + ARCHIVE_EXT, ext: ARCHIVE_EXT, accept: [ARCHIVE_EXT], start: await pickerStart($mod.$fs, curDir)})
       if (picked) $router.push('studio?url=' + encodeURIComponent(toRef(picked.path)) + '&new=1')
     } catch (e) {$message.error($t('home.new_failed') + String((e && e.message) || e))}
@@ -1506,47 +1510,52 @@
 
   openArchive = async (path) => {
     const target = assertArchivePath(path)
-    if (curPath && curPath !== target) {clearTimeout(saveTimer); await doSave()}
-    const dir = parentOf(target)
-    // 先解析场景引用（scenes 字符串 → 对象），再设 doc：拆分结构由此还原为内存对象数组
-    const raw = JSON.parse(await fsText(target))
-    if (raw.format !== ARCHIVE_FORMAT) throw new Error('不支持的存档格式：' + String(raw.format || '缺失 format'))
-    const sr = await resolveSceneRefs(raw, (s) => fsText(resolveRef(dir, s)))
-    assertDocumentRefs(raw)
-    const d = ensureTheme(raw)
-    curPath = target
-    curDir = dir
-    curName = archiveName(target)
-    curTitle = d.title || curName
-    doc = d
-    cur_split = sr.split
-    cur_refs = sr.refs
-    sel = {kind: 'none', sceneIndex: 0, elId: ''}
-    sceneVer++        // 换文档必须递增：时间轴/场景列表 keyed 行全部重建
-    saveState = '_studio.saved'
-    pushRecent(curPath, curTitle)
-    // 完整文档与素材就绪后只装载一次，避免舞台把相对 ref 当页面 URL 请求。
-    // 关键：传 sandbox 读出的 doc 代理（而非裸 d）——vhtml copyBind 保证同一
-    // 代理对象贯穿后续赋值，stage 与父组件由此共享同一响应式图，
-    // 舞台拖拽写入才能被 inspector 感知、被 doSave 持久化。
-    await loadAssets(d, readArchiveAsset)
-    const stage = await waitStage()
-    stage.$data.setDoc(doc, assets)
-    snapProjectOpen()
-    setBaseline()
-    undoStack = []
-    redoStack = []
-    await refreshAssets()
-    const ref = toRef(curPath)
-    if ($router.query.url !== ref || $router.query.new || $router.query.case) {
-      lastRoute = ref + '||'
-      $router.replace('studio?url=' + encodeURIComponent(ref))
-    }
-    return d
+    loading = true
+    try {
+      if (curPath && curPath !== target) await flushSave()
+      const dir = parentOf(target)
+      // 先解析场景引用（scenes 字符串 → 对象），再设 doc：拆分结构由此还原为内存对象数组
+      const raw = JSON.parse(await fsText(target))
+      if (raw.format !== ARCHIVE_FORMAT) throw new Error('不支持的存档格式：' + String(raw.format || '缺失 format'))
+      const sr = await resolveSceneRefs(raw, (s) => fsText(resolveRef(dir, s)))
+      assertDocumentRefs(raw)
+      const d = ensureTheme(raw)
+      curPath = target
+      curDir = dir
+      curName = archiveName(target)
+      curTitle = d.title || curName
+      doc = d
+      cur_split = sr.split
+      cur_refs = sr.refs
+      sel = {kind: 'none', sceneIndex: 0, elId: ''}
+      sceneVer++        // 换文档必须递增：时间轴/场景列表 keyed 行全部重建
+      saveState = '_studio.saved'
+      pushRecent(curPath, curTitle)
+      // 完整文档与素材就绪后只装载一次，避免舞台把相对 ref 当页面 URL 请求。
+      // 关键：传 sandbox 读出的 doc 代理（而非裸 d）——vhtml copyBind 保证同一
+      // 代理对象贯穿后续赋值，stage 与父组件由此共享同一响应式图，
+      // 舞台拖拽写入才能被 inspector 感知、被 doSave 持久化。
+      await loadAssets(d, readArchiveAsset)
+      const stage = await waitStage()
+      stage.$data.setDoc(doc, assets)
+      snapProjectOpen()
+      setBaseline()
+      undoStack = []
+      redoStack = []
+      await refreshAssets()
+      const ref = toRef(curPath)
+      if ($router.query.url !== ref || $router.query.new || $router.query.case) {
+        lastRoute = ref + '||'
+        $router.replace('studio?url=' + encodeURIComponent(ref))
+      }
+      return d
+    } finally {loading = false}
   }
 
   reloadProject = async () => {
     if (!curPath) return
+    clearTimeout(saveTimer)
+    await saveQueue
     const raw = JSON.parse(await fsText(projIndex()))
     if (raw.format !== ARCHIVE_FORMAT) throw new Error('不支持的存档格式：' + String(raw.format || '缺失 format'))
     const sr = await resolveSceneRefs(raw, (s) => fsText(resolveRef(projDir(), s)))
@@ -1570,6 +1579,7 @@
     stage.$data.setDoc(doc, assets)
     snapProjectOpen()
     setBaseline()
+    saveState = '_studio.saved'
     await refreshAssets()
   }
 
@@ -1631,7 +1641,7 @@
       target = assertArchivePath(picked.path)
     }
     if (target === curPath) {await doSave(); return }
-    if (curPath) await doSave()
+    if (curPath) await flushSave()
     const targetDir = parentOf(target)
     // 先复制全部素材，再写主存档；任何一步失败都不切换当前路径。
     if (curPath) {
@@ -1898,6 +1908,15 @@
       throw e
     })
     return saveQueue
+  }
+
+  // 切换文档前只冲刷真正的未保存修改；干净文档打开/返回时不得写盘。
+  // 若上一轮仍在写入，只等待既有队列，避免用旧快照重复覆盖。
+  flushSave = async () => {
+    if (!curPath) return
+    clearTimeout(saveTimer)
+    if (saveState === '_studio.unsaved' || saveState === '_studio.failed') await doSave()
+    else await saveQueue
   }
 
   // ---- 编辑数据流（§2.3）----
@@ -2278,7 +2297,7 @@
 
   // ---- 导出 ----
   const even2 = (v) => Math.max(16, Math.round((+v || 16) / 2) * 2)
-  // 目标分辨率：orig=文档原始；1080/720/480=按文档宽高比缩放（偶数对齐 H.264）；custom=自定义
+  // 目标分辨率：orig=文档原始；2160/1080/720/480=按文档宽高比缩放（偶数对齐 H.264）；custom=自定义
   exSize = () => {
     const dw = doc ? doc.size.width : 1280, dh = doc ? doc.size.height : 720
     if (exRes === 'custom') return {w: even2(exW || dw), h: even2(exH || dh)}

@@ -42,7 +42,8 @@ function videoCodecFor(format, width, height) {
   const px = width * height;
   if (format === "webm") return px > 1280 * 720 ? "vp09.00.40.08" : "vp09.00.10.08";
   if (format === "webm-vp8") return "vp8";
-  // mp4 H.264
+  // mp4 H.264：4K 至少需要 High 5.1；Main 4.0 只覆盖到 1080p。
+  if (px > 1920 * 1080) return "avc1.640033"; // 4K30 high 5.1
   if (px > 1280 * 720) return "avc1.4d0028"; // 1080p main 4.0
   return "avc1.42001f"; // 720p baseline 3.1
 }

@@ -72,6 +72,53 @@ test('archive, reload and case preload all assets before mounting the stage once
   }
 })
 
+test('clean archive navigation does not write and reload cancels pending saves', () => {
+  const studio = read('ui/studio.html')
+  const flushStart = studio.indexOf('  flushSave = async')
+  const flushEnd = studio.indexOf('\n  }\n', flushStart)
+  const flush = studio.slice(flushStart, flushEnd)
+  assert.ok(flushStart >= 0 && flushEnd > flushStart)
+  assert.match(flush, /clearTimeout\(saveTimer\)/)
+  assert.match(flush, /saveState === '_studio.unsaved'/)
+  assert.match(flush, /saveState === '_studio.failed'/)
+  assert.match(flush, /else await saveQueue/)
+  for (const name of ['goHome', 'chooseOpen', 'chooseNew', 'openArchive']) {
+    const start = studio.indexOf('  ' + name + ' = async')
+    const end = studio.indexOf('\n  }\n', start)
+    const body = studio.slice(start, end)
+    assert.ok(start >= 0 && end > start, name)
+    assert.match(body, /await flushSave\(\)/, name + ' must flush only dirty state')
+    assert.doesNotMatch(body, /await doSave\(\)/, name + ' must not save a clean document')
+  }
+  const start = studio.indexOf('  reloadProject = async')
+  const end = studio.indexOf('\n  }\n', start)
+  const body = studio.slice(start, end)
+  assert.match(body, /clearTimeout\(saveTimer\)/)
+  assert.match(body, /await saveQueue/)
+  assert.match(body, /saveState = '_studio.saved'/)
+})
+
+test('archive loading shows a real loading state instead of the empty archive', () => {
+  const studio = read('ui/studio.html')
+  const stage = read('ui/video/stage.html')
+  const langs = JSON.parse(read('ui/langs.json'))
+  assert.match(studio, /:loading="loading"/)
+  assert.match(studio, /lastRoute = key\n\s*loading = true/)
+  assert.match(studio, /finally \{loading = false\}/)
+  assert.match(stage, /v-if="loading"[^>]*role="status"/)
+  assert.match(stage, /v-else-if="!doc"/)
+  assert.match(stage, /\$t\('stage\.loading'\)/)
+  assert.ok(langs['zh-CN']?.['stage.loading'] && langs['en-US']?.['stage.loading'])
+})
+
+test('4K export has a UI preset and a 4K-capable H.264 codec level', () => {
+  const studio = read('ui/studio.html')
+  const render = read('ui/video/render.js')
+  assert.match(studio, /<option value="2160"[^>]*>4K UHD<\/option>/)
+  assert.match(studio, /orig \| 2160 \| 1080 \| 720 \| 480 \| custom/)
+  assert.match(render, /px > 1920 \* 1080\) return "avc1\.640033"/)
+})
+
 test('all visible templates are localized and every static key has both translations', () => {
   const langs = JSON.parse(read('ui/langs.json'))
   const files = ['index.html', 'studio.html', 'video/scenes.html', 'video/assets.html', 'video/stage.html', 'video/timeline.html', 'video/inspector.html']

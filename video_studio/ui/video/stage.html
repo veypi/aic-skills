@@ -143,7 +143,10 @@
   <body>
     <div class="vd-wrap">
       <div class="vd-host" ref="host">
-        <div v-if="!doc" class="vd-empty">
+        <div v-if="loading" class="vd-empty" role="status" aria-live="polite">
+          <b>{{ $t('stage.loading') }}</b>
+        </div>
+        <div v-else-if="!doc" class="vd-empty">
           <b>{{ $t('stage.no_archive') }}</b>
           <span>{{ $t('stage.empty_hint') }}</span>
         </div>
@@ -217,6 +220,7 @@
     import { PreviewFrame } from './preview.js'
 
     doc = null          // video_studio/1 文档对象（父页面传入，proxy 引用，可编辑）
+    loading = false     // 父页面正在打开存档/预载素材
     assets = {}         // assetMap（父页面传入）
     editable = false    // prop：是否可编辑（样例只读时为 false）
     selid = ''          // prop：当前选中元素 id

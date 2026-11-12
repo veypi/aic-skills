@@ -1,6 +1,6 @@
 ---
 name: video_studio
-version: 1.1.9
+version: 1.1.10
 nickname: 视频工坊
 description: 浏览器内一站式视频制作：.video_studio 可迁移存档 + AI 文件驱动编辑 + 可视化舞台/时间轴，场景运镜、24 张实战镜头卡、判例式审美准则、声明式 SFX、节拍分析、真实 3D、AI 配音，WebCodecs 硬编导出 MP4
 keywords: [video, 视频, 剪辑, 动画, 运镜, 镜头卡, 卡拍, 音效, 3D, MP4, 配音, TTS, 时间轴, WebCodecs]
@@ -20,6 +20,7 @@ icon: fa-solid fa-clapperboard
 | 时机 | 读 |
 |---|---|
 | 接到"做视频"需求 | `references/pipeline.md`（六阶段流水线 + 两种创作模式） |
+| 处理长录屏、操作实录、选择性加速 | `references/screen-recording.md`（连续 PTS 变速、完整操作保留、4K 分段编码与实长校准） |
 | 分镜选镜头 | `references/shots/README.md` 索引 → 选中卡全文（24 张配方卡） |
 | 写/改 JSON | `references/format.md`（字段契约：元素/动画/运镜/SFX/three/拆分） |
 | 实现与自检全程 | `references/aesthetic-rules.md`（R/Q/S/C/P 判例式准则，逐条对照） |
@@ -115,6 +116,7 @@ icon: fa-solid fa-clapperboard
 - 指令超时/无响应：确认首页或工作台已打开，再重试。
 - 最近记录路径失效：文件可能已移动；用「打开存档」选择新位置，旧记录可安全移除。
 - 缺素材：工作台会列出缺失的相对路径；迁移时应复制整个项目目录。
-- 导出需最新版 Chrome/Edge（WebCodecs）；建议分辨率 ≤1280×720、单片 ≤60s。
+- 导出需最新版 Chrome/Edge（WebCodecs）；支持 4K UHD，4K 导出耗时与内存占用较高，建议单片 ≤60s。
+- 浏览器预览配乐优先使用 MP3；若只有音乐配置却听不到声音，先检查素材是否实际加载，再转成 MP3 复验。
 - 视频剪辑：时间轴绿色块左缘切入/右缘切出/块体拖开始；media 的 trimStart/trimEnd 是源裁剪。
 - 运镜编辑：inspector 场景页「运镜 Camera」；SFX 在 inspector 项目页与时间轴黄色条编辑。
