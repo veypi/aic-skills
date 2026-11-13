@@ -4,8 +4,9 @@
 
 两个版本面：**模块版本**（本文件 / tag `vX.Y.Z`，Go 依赖面）与**技能版本**（各 `SKILL.md` frontmatter 的 `version:`，进入 `skills.builtin` 指纹）。内容更新 bump 技能版本以触发自动定版；事件执行时无条件整包覆盖，不做版本大小比较。契约或结构变化 bump 模块版本。
 
-## 未发布
+## 0.4.5 — 2026-11-13
 
+- `cua`（1.1.16 → 1.3.5）：主桌面观察改为独立 `cua_cast` H.264 实时流，UI 只保留 WebCodecs 硬解画面与前台输入；应用窗口列表、截图轮询、`capture_id` 补截图绑定和全部 fallback 删除。Windows 采集由 `gdigrab` 改为 DXGI `ddagrab`，macOS 使用 `avfoundation`；默认 30fps，支持 NVIDIA `h264_nvenc` 超低延迟参数，Media Foundation 使用 display-remoting 低延迟码控。解码输出同步绘制，发送端不做 ACK 排队，单击与滚轮取消 250/100ms 人为等待。实机 PBZ 游戏验证延迟基本不可感知、风扇负载明显下降。发行包同步附带 `bin/cua` 与 `bin/cua_cast`。
 - **全部带 UI 的包**：迁移到 page 通道新契约——脚本在 page 内按 async 函数体执行，`pageDesc` 处理函数统一为 `handler(data, ctx)`，业务函数经 `win(id).command(data)` 调用，原生函数（`list/open/close/reload/cp/mv/rm/pull/push/screenshot/highlight/click/profile`）作为直接全局；删除 `eval`/`curl`，`fetch` 保留为同源受控通道并返回标准 `Response`。
 - `drawio`（1.0.4 → 1.0.5）：手册新增「给用户演示（引导脚本）」：单窗口逐步聚光（工具栏 → 形状库 → 画布 → 属性 → AI 协作点），抽屉用新增原生 `click` 展开、标注完立即收起。
 - `video_studio`（1.1.10 → 1.1.11）：手册新增引导脚本：片架 → 工作台；场景/属性/时间轴三面板开→标→关；末尾点 `.vd-btn.primary` 播放 5 秒并回读 `.vd-time` 验证。同时写清裸路由 `/studio` 会弹回首页，需带 `?case=`/`?url=`。

@@ -1,3 +1,5 @@
+import {CuaCast} from './cast.js';
+
 const ACTIONS = new Set(['click', 'drag', 'scroll', 'type_text', 'press_key', 'hotkey']);
 const COORDINATE_ACTIONS = new Set(['click', 'drag', 'scroll']);
 const MAX_ACTIONS = 16;
@@ -118,69 +120,46 @@ async function cuaToolSchema(connection, name, options) {
 
 export async function cuaCall(connection, name, args = {}, options = {}) {
   if (!/^[a-zA-Z0-9_]+$/.test(name)) throw new Error('Invalid CUA command');
-  const {imagePreview = false, ...execOptions} = options;
-  const preview = imagePreview === true ? ' --image-preview 1280x720' : '';
-  return cuaCommand(connection, `cua ${name} --input - --json${preview}`, {
-    ...execOptions, stdin: JSON.stringify(args),
+  return cuaCommand(connection, `cua ${name} --input - --json`, {
+    ...options, stdin: JSON.stringify(args),
   });
 }
 
-function validTarget(target) {
-  if (target?.kind === 'desktop' && (!target.display_id || target.display_id === 'primary')) return desktop();
-  if (target?.kind === 'window' && Number.isInteger(target.pid) && target.pid > 0
-      && Number.isInteger(target.window_id) && target.window_id >= 0) {
-    return {kind: 'window', pid: target.pid, window_id: target.window_id};
-  }
-  throw new Error('Invalid CUA target');
-}
-
-function unavailableWindow(window) {
-  if (window.minimized === true) return 'minimized';
-  if (window.is_on_screen === false) return 'not_visible';
-  if (['width', 'height'].some(key => Number.isFinite(window.bounds?.[key]) && window.bounds[key] <= 0)) return 'no_image';
-  return '';
-}
-
-function unavailableCapture(error) {
-  if (error.code === 'target_unavailable') return error.reason;
-  if (error.code === 'window_minimized' || /(?:cannot capture minimized window|window[^\n]*is minimized|iconic window)/i.test(error.message)) return 'minimized';
-  if (/no rendered content|no drawable content/i.test(error.message)) return 'no_image';
-  return '';
-}
-
-// A controller owns a labelled CUA session and one persistent device connection.
-// Mutations are never replayed. Observation IDs bind queued input to a shown frame.
+// A controller owns one independent CUA session, one persistent device connection
+// and the primary desktop H264 stream. There is no state-screenshot fallback.
 export class CuaSession {
-  // 刷新间隔。截图本身在 macOS 约 120ms、Windows 桌面态约 290ms（Windows 走
-  // GDI 全屏 BitBlt，UIA/DirectComposition 还会多截一遍），因此间隔是帧率
-  // 的主项：400ms 时约 1.4fps，150ms 时约 2.3fps（Windows 桌面态）。
   constructor({hosts, changed = () => {}, frame = () => {}, error = () => {},
-    intervalMS = 150, maxDimension = 1280,
+    createCast = options => new CuaCast(options), castSupported = () => CuaCast.supported(),
     createSessionId = () => `ui-${globalThis.crypto.randomUUID()}`} = {}) {
     this.hosts = hosts;
     this.changed = changed;
     this.onFrame = frame;
     this.onError = error;
-    this.intervalMS = Math.max(100, intervalMS);
-    this.maxDimension = maxDimension;
     this.createSessionId = createSessionId;
-    this.state = {hostId: '', phase: 'idle', connected: false, windows: [], target: desktop(), targetWindow: null, unavailableReason: '', control: false,
-      busy: false, capturing: false, acting: false, error: '', permissions: null, epoch: 0};
+    this.createCast = createCast;
+    this.castSupported = castSupported;
+    this.state = {hostId: '', phase: 'idle', connected: false, target: desktop(), control: false,
+      busy: false, capturing: false, acting: false, error: '', permissions: null, epoch: 0,
+      streamState: 'idle', streamError: '', fps: 0};
     this.active = false;
     this.interacting = false;
     this.paused = false;
     this.closed = false;
     this.hostEpoch = 0;
     this.frameSequence = 0;
-    this.failureRevision = 0;
     this.actions = [];
-    this.completed = [];
     this.requests = new Set();
     this.frameTimes = [];
+    this.cast = null;
+    this.castGeneration = 0;
+    this.castStartTimer = null;
+    this.lastCastError = null;
+    this.lastCastPublish = 0;
+    this.lastFrame = null;
+    this.coordinateFrameConsumed = false;
   }
 
   // frameRate 返回近窗口内的实际到达帧率（每帧到达时的时间戳滑窗）。
-  // 反映设备真实吞吐（截图耗时 + 传输），而不是配置的间隔。
   // 用相邻帧间隔的中位数而不是首尾跨度：连着两帧落在同一毫秒时跨度会算成 0。
   frameRate() {
     const times = this.frameTimes;
@@ -206,37 +185,118 @@ export class CuaSession {
     Object.assign(this.state, patch);
     this.state.connected = !!this.connection && !this.connection.closed;
     this.state.busy = this.state.capturing || this.state.acting || this.state.phase === 'connecting'
-      || this.actions.length > 0 || this.completed.length > 0;
+      || this.actions.length > 0;
     this.state.fps = this.frameRate();
     this.changed({...this.state});
   }
 
   _current(epoch) { return !this.closed && epoch === this.state.epoch; }
-  _clearTimer() { clearTimeout(this.timer); this.timer = null; }
+
+  _stopCast() {
+    this.castGeneration++;
+    clearTimeout(this.castStartTimer);
+    this.castStartTimer = null;
+    const cast = this.cast;
+    this.cast = null;
+    cast?.close();
+    this.state.streamState = 'idle';
+  }
+
+  _rejectCaptureJob(error) {
+    if (!this.captureJob) return;
+    this.captureJob.reject(error);
+    this.captureJob = null;
+  }
+
+  _castFailure(error, epoch, generation) {
+    if (!this._current(epoch) || generation !== this.castGeneration) return;
+    this._stopCast();
+    this._rejectCaptureJob(error);
+    this.state.streamState = 'error';
+    this._fail(error);
+  }
+
+  _castClosed(error, epoch, generation) {
+    this._castFailure(error || new Error('CUA video stream closed'), epoch, generation);
+  }
+
+  async _startCast(job) {
+    const epoch = job.epoch;
+    const capabilityError = typeof this.connection?.openStream !== 'function'
+      ? new Error('CUA video streams require a current Pod')
+      : !this.castSupported() ? new Error('CUA video requires browser WebCodecs H264 support') : null;
+    if (capabilityError) {
+      this._castFailure(capabilityError, epoch, this.castGeneration);
+      throw capabilityError;
+    }
+    this._stopCast();
+    const generation = this.castGeneration;
+    this._publish({capturing: true, streamState: 'connecting', streamError: ''});
+    try {
+      this.cast = this.createCast({
+        connection: this.connection,
+        frame: frame => this._castFrame(frame, epoch, generation),
+        closed: error => this._castClosed(error, epoch, generation),
+        error: error => {
+          this.lastCastError = error;
+          if (error.code === 'cua_cast_session') this._castFailure(error, epoch, generation);
+          else if (this._current(epoch) && generation === this.castGeneration) this._publish({streamError: error.message});
+        },
+      });
+      await this.cast.ready();
+      if (!this._current(epoch) || generation !== this.castGeneration || !this.active) return null;
+      this.castStartTimer = setTimeout(() => {
+        if (this.state.streamState !== 'live') {
+          const stats = this.cast?.stats?.() || {};
+          const detail = `received=${stats.received || 0}, decoded=${stats.decoded || 0}, skipped=${stats.skipped || 0}`;
+          const last = this.lastCastError ? `; last error: ${this.lastCastError.message}` : '';
+          this._castFailure(new Error(`CUA video stream produced no frames within 8 seconds (${detail})${last}`), epoch, generation);
+        }
+      }, 8000);
+      this._publish({capturing: false, error: ''});
+      return this.lastFrame;
+    } catch (error) {
+      if (this._current(epoch) && generation === this.castGeneration) this._castFailure(error, epoch, generation);
+      throw error;
+    } finally {
+      if (this._current(epoch)) this._publish({capturing: false});
+    }
+  }
+
+  _castFrame(data, epoch, generation) {
+    if (!this._current(epoch) || generation !== this.castGeneration || !this.active) return null;
+    const sourceWidth = data.sourceWidth || data.width;
+    const sourceHeight = data.sourceHeight || data.height;
+    const frame = {video: true, videoFrame: data.videoFrame,
+      sourceWidth, sourceHeight, previewWidth: data.width, previewHeight: data.height,
+      frameId: ++this.frameSequence, width: sourceWidth, height: sourceHeight,
+      target: desktop(), epoch};
+    this.lastFrame = frame;
+    clearTimeout(this.castStartTimer);
+    this.castStartTimer = null;
+    this.coordinateFrameConsumed = false;
+    this._recordFrame();
+    const now = Date.now();
+    if (this.state.streamState !== 'live' || now - this.lastCastPublish >= 500) {
+      const starting = this.state.streamState !== 'live';
+      this.lastCastPublish = now;
+      this._publish({...(starting ? {phase: 'ready', error: ''} : {}),
+        streamState: 'live', streamError: '', capturing: false});
+    }
+    return this.onFrame(frame);
+  }
 
   _invalidate() {
-    this._clearTimer();
+    this._stopCast();
     this.state.epoch++;
     this.lastFrame = null;
     this.coordinateFrameConsumed = false;
     this.interacting = false;
     this.frameTimes = [];
-    this.captureController?.abort();
     if (this.captureJob) this.captureJob.resolve(null);
     this.captureJob = null;
-    for (const job of this.actions.splice(0)) job.reject(failure('stale_context', 'CUA target or observation changed'));
-    for (const item of this.completed.splice(0)) item.job.resolve(null);
+    for (const job of this.actions.splice(0)) job.reject(failure('stale_context', 'CUA device or observation changed'));
     this._publish({control: false, capturing: false, acting: false});
-  }
-
-  _schedule() {
-    this._clearTimer();
-    if (!this.active || this.closed || this.paused || this.interacting || !this.connection
-        || this.running || this.captureJob || this.actions.length) return;
-    this.timer = setTimeout(() => {
-      this.timer = null;
-      this._requestCapture().catch(() => {});
-    }, this.intervalMS);
   }
 
   async _call(name, args = {}, {signal, describe = false, ...options} = {}) {
@@ -257,58 +317,6 @@ export class CuaSession {
     finally { this.requests.delete(controller); signal?.removeEventListener('abort', abort); }
   }
 
-  async _desktopArguments(signal) {
-    const generation = this.hostEpoch;
-    if (this.desktopSchema?.generation !== generation) {
-      const tool = await this._call('get_desktop_state', {}, {describe: true, signal});
-      if (this.closed || generation !== this.hostEpoch || signal.aborted) {
-        throw failure('stale_context', 'CUA device or target changed');
-      }
-      const properties = tool.inputSchema?.properties;
-      if (!properties || typeof properties !== 'object' || Array.isArray(properties)) {
-        throw new Error('CUA returned an invalid desktop capture schema');
-      }
-      this.desktopSchema = {generation, properties};
-    }
-    return Object.hasOwn(this.desktopSchema.properties, 'max_image_dimension')
-      ? {max_image_dimension: this.maxDimension} : {};
-  }
-
-  // 窗口预览参数。上游 0.47.19 起支持 screenshot_format:"jpeg"（载荷比 PNG 小
-  // 一个数量级，且仍注册 action capture，坐标动作照常受理）。老驱动没有这个
-  // 参数，按实际 schema 决定，不硬塞。
-  //
-  // 尺寸参数（max_image_dimension / 老驱动的 max_dimension）与预览帧、绑定帧
-  // 必须一致：坐标是窗口内像素，两帧尺寸不同则坐标指向另一个画面。
-  async _windowArguments(target, signal) {
-    const generation = this.hostEpoch;
-    if (this.windowSchema?.generation !== generation) {
-      const tool = await this._call('get_window_state', {}, {describe: true, signal});
-      if (this.closed || generation !== this.hostEpoch || signal.aborted) {
-        throw failure('stale_context', 'CUA device or target changed');
-      }
-      const properties = tool.inputSchema?.properties;
-      if (!properties || typeof properties !== 'object' || Array.isArray(properties)) {
-        throw new Error('CUA returned an invalid window capture schema');
-      }
-      this.windowSchema = {generation, properties};
-    }
-    const properties = this.windowSchema.properties;
-    const args = {pid: target.pid, window_id: target.window_id,
-      include_accessibility_tree: false, include_screenshot: true};
-    if (Object.hasOwn(properties, 'screenshot_format')) args.screenshot_format = 'jpeg';
-    Object.assign(args, this._windowSizeArguments());
-    return args;
-  }
-
-  // _windowSizeArguments 返回当前驱动支持的窗口截图尺寸参数。
-  _windowSizeArguments() {
-    const properties = this.windowSchema?.properties || {};
-    if (Object.hasOwn(properties, 'max_image_dimension')) return {max_image_dimension: this.maxDimension};
-    if (Object.hasOwn(properties, 'max_dimension')) return {max_dimension: this.maxDimension};
-    return {};
-  }
-
   async _permissionArguments() {
     const generation = this.hostEpoch;
     if (this.permissionSchema?.generation !== generation) {
@@ -326,10 +334,10 @@ export class CuaSession {
   }
 
   async _disconnect() {
+    this._stopCast();
     const connection = this.connection, session = this.sessionId;
     this.connection = null;
     this.sessionId = null;
-    this.desktopSchema = null;
     this.permissionSchema = null;
     this._publish();
     for (const request of this.requests) request.abort();
@@ -347,10 +355,11 @@ export class CuaSession {
     if (this.closed) throw failure('closed', 'CUA view is closed');
     const hostEpoch = ++this.hostEpoch;
     this._invalidate();
+    this.lastCastError = null;
     this.paused = false;
     this.lastFailure = null;
-    this._publish({hostId, phase: hostId ? 'connecting' : 'idle', windows: [],
-      target: desktop(), targetWindow: null, unavailableReason: '', error: '', permissions: null});
+    this._publish({hostId, phase: hostId ? 'connecting' : 'idle', target: desktop(),
+      error: '', permissions: null, streamError: ''});
     await this._disconnect();
     if (this.closed || hostEpoch !== this.hostEpoch || !hostId) return;
     try {
@@ -359,8 +368,6 @@ export class CuaSession {
       this.connection = connection;
       this.sessionId = this.createSessionId();
       await this.checkPermissions();
-      if (this.closed || hostEpoch !== this.hostEpoch) return;
-      await this.listWindows();
       if (this.closed || hostEpoch !== this.hostEpoch) return;
       this._publish({phase: 'ready', error: ''});
       if (this.active) await this.capture();
@@ -393,55 +400,12 @@ export class CuaSession {
     return job.promise;
   }
 
-  listWindows() {
-    const generation = this.hostEpoch, epoch = this.state.epoch, failureRevision = this.failureRevision;
-    if (this.windowJob?.generation === generation) return this.windowJob.promise;
-    const job = {generation};
-    this.windowJob = job;
-    job.promise = (async () => {
-      try {
-        const data = resultData(await this._call('list_windows', {on_screen_only: true}));
-        const rows = Array.isArray(data) ? data : data.windows;
-        if (!Array.isArray(rows)) throw new Error('CUA returned an invalid window list');
-        const windows = rows.filter(window => !unavailableWindow(window));
-        if (!this.closed && generation === this.hostEpoch && failureRevision === this.failureRevision) {
-          this._publish({windows});
-          const target = this.state.target;
-          if (epoch === this.state.epoch && target.kind === 'window') {
-            const current = rows.find(window => window.pid === target.pid && window.window_id === target.window_id);
-            if (current) this._publish({targetWindow: current});
-            const reason = current ? unavailableWindow(current) : 'not_visible';
-            if (reason) this._fail(Object.assign(failure('target_unavailable', 'The selected window has no visible content'), {reason}));
-          }
-        }
-        return windows;
-      } catch (error) {
-        if (!this.closed && generation === this.hostEpoch) this._fail(error);
-        throw error;
-      } finally {
-        if (this.windowJob === job) this.windowJob = null;
-      }
-    })();
-    return job.promise;
-  }
-
-  selectTarget(target) {
-    target = validTarget(target);
-    this._invalidate();
-    this.paused = false;
-    this.lastFailure = null;
-    this._publish({target, targetWindow: target.kind === 'window'
-      ? this.state.windows.find(window => window.pid === target.pid && window.window_id === target.window_id) || null : null,
-      unavailableReason: '', error: '', phase: this.connection ? 'ready' : 'idle'});
-    if (this.active && this.connection) this.capture().catch(() => {});
-  }
-
   setActive(active) {
     active = !!active;
     if (this.active === active || this.closed) return;
     this.active = active;
     if (!active) this._invalidate();
-    else if (this.connection && !this.paused) this._requestCapture().catch(() => {});
+    else if (this.connection && !this.paused) this.capture().catch(() => {});
   }
 
   setControl(control) {
@@ -454,195 +418,83 @@ export class CuaSession {
 
   setInteracting(interacting) {
     this.interacting = !!interacting;
-    if (this.interacting) this._clearTimer();
-    else this._schedule();
   }
 
+  // capture 是手动重试视频的唯一入口；不会请求任何 CUA 状态或图像。
   capture() {
     if (this.closed) return Promise.reject(failure('closed', 'CUA view is closed'));
     this.paused = false;
     this.lastFailure = null;
-    this._publish({error: '', phase: this.connection ? 'ready' : 'idle'});
-    return this._requestCapture(true);
+    this.lastCastError = null;
+    this._publish({error: '', phase: this.connection ? 'ready' : 'idle', streamError: ''});
+    if (!this.active || !this.connection) return Promise.resolve(null);
+    if (this.captureJob) return this.captureJob.promise;
+    if (this.cast) return Promise.resolve(this.lastFrame);
+    const job = {...deferred(), epoch: this.state.epoch};
+    this.captureJob = job;
+    this._startCast(job).then(job.resolve, job.reject).finally(() => {
+      if (this.captureJob === job) this.captureJob = null;
+    });
+    return job.promise;
   }
 
-  _requestCapture(explicit = false) {
-    if (!this.active || this.closed || !this.connection || (!explicit && (this.paused || this.interacting))) return Promise.resolve(null);
-    if (!this.captureJob) this.captureJob = {...deferred(), epoch: this.state.epoch};
-    const promise = this.captureJob.promise;
-    this._clearTimer();
-    this._pump();
-    return promise;
-  }
-
-  _fail(error, sourceCapture = null) {
-    const reason = this.state.target.kind === 'window' ? unavailableCapture(error) : '';
-    if (reason) Object.assign(error, {code: 'target_unavailable', reason});
-    if (this.lastFailure === error) return !!reason;
+  _fail(error) {
+    if (this.lastFailure === error) return;
     this.lastFailure = error;
-    this.failureRevision++;
     this.paused = true;
-    this.captureController?.abort();
-    // Metadata failures can happen while a screenshot is in flight. Detach that
-    // observation so a manual retry gets a new job, even if transport ignores abort.
-    if (this.captureJob && this.captureJob !== sourceCapture) {
-      this.captureJob.resolve(null);
-      this.captureJob = null;
-    }
     this.lastFrame = null;
     this.coordinateFrameConsumed = true;
-    this._clearTimer();
-    const missing = ['target_closed', 'window_not_found', 'window_id_not_found', 'window_owner_pid_mismatch'].includes(error.code)
-      || /window[^\n]*(?:not found|no longer|does not exist|closed|belongs to pid)/i.test(error.message)
-      || /no window with window_id[^\n]*exists/i.test(error.message);
-    const target = this.state.target;
-    this._publish({phase: reason ? 'target_unavailable' : missing ? 'target_closed' : 'error',
-      error: reason ? '' : error.message, unavailableReason: reason, control: false,
-      ...(reason ? {windows: this.state.windows.filter(window => window.pid !== target.pid || window.window_id !== target.window_id)} : {})});
+    this._publish({phase: 'error', error: error.message, control: false, capturing: false, acting: false});
     for (const job of this.actions.splice(0)) job.reject(error);
-    if (!reason) this.onError(error);
-    return !!reason;
+    this.onError(error);
   }
 
-  _checkAction(job) {
-    if (!this._current(job.epoch) || !this.active) throw failure('stale_context', 'CUA target changed');
+  _checkAction(job, dispatch = false) {
+    if (!this._current(job.epoch) || !this.active) throw failure('stale_context', 'CUA device or observation changed');
     if (!this.state.control || this.paused) throw failure('control_disabled', 'CUA control is disabled');
-    // Text and named keys are bound to the target epoch, not screenshot geometry.
-    // They have not been dispatched yet and may survive a newer observation.
     const coordinates = COORDINATE_ACTIONS.has(job.name);
+    // 已排队的坐标输入不被后续视频帧作废；新输入必须基于当前展示帧。
+    const staleCoordinates = (!dispatch && job.frameId !== this.lastFrame?.frameId)
+      || this.coordinateFrameConsumed;
     if (!this.lastFrame || !Number.isInteger(job.frameId) || job.frameId <= 0 || job.frameId > this.lastFrame.frameId
-        || (coordinates && (job.frameId !== this.lastFrame.frameId || job.captureId !== this.lastFrame.captureId
-          || this.coordinateFrameConsumed))) {
-      throw failure('stale_capture', 'CUA observation changed; use the latest screenshot');
+        || (coordinates && staleCoordinates)) {
+      throw failure('stale_capture', 'CUA observation changed; use the latest video frame');
     }
   }
 
-  action(name, args = {}, {captureId = this.lastFrame?.captureId, frameId, epoch = this.state.epoch} = {}) {
+  action(name, args = {}, {frameId, epoch = this.state.epoch} = {}) {
     try {
       if (!ACTIONS.has(name)) throw new Error('Unsupported CUA action');
-      if (['target', 'session', 'pid', 'window_id', 'scope', 'capture_id'].some(key => key in args)) {
+      if (['target', 'session', 'scope', 'capture_id'].some(key => key in args)) {
         throw new Error('CUA target and session are owned by the view');
       }
-      const job = {...deferred(), name, args: {...args}, captureId, frameId, epoch};
+      const job = {...deferred(), name, args: {...args}, frameId, epoch};
       this._checkAction(job);
       if (this.actions.length >= MAX_ACTIONS) throw failure('input_queue_full', 'CUA input queue is full');
       this.actions.push(job);
-      this._clearTimer();
       this._pump();
       return job.promise;
     } catch (error) {
-      if (error.code === 'stale_capture') this._requestCapture(true).catch(() => {});
       return Promise.reject(error);
-    }
-  }
-
-  async _capture(job) {
-    const epoch = job.epoch, target = {...this.state.target}, failureRevision = this.failureRevision;
-    const controller = new AbortController();
-    this.captureController = controller;
-    this._publish({capturing: true});
-    try {
-      const args = target.kind === 'desktop' ? await this._desktopArguments(controller.signal)
-        : await this._windowArguments(target, controller.signal);
-      if (!this._current(epoch) || !this.active || controller.signal.aborted) {job.resolve(null); return;}
-      const result = await this._call(target.kind === 'desktop' ? 'get_desktop_state' : 'get_window_state', args, {signal: controller.signal, imagePreview: true});
-      if (!this._current(epoch) || !this.active || failureRevision !== this.failureRevision) {
-        job.resolve(null); return;
-      }
-      const data = resultData(result);
-      const image = result.content?.find(item => item.type === 'image' && item.data && item.mimeType?.startsWith('image/'));
-      if (!image) {
-        if (target.kind === 'window' && !data.screenshot_error) {
-          throw Object.assign(failure('target_unavailable', 'CUA returned no screenshot image'), {reason: 'no_image'});
-        }
-        throw new Error(data.screenshot_error || 'CUA returned no screenshot image');
-      }
-      const preview = image._meta?.['aic.dev/image-preview'];
-      if (preview && !['source_width', 'source_height', 'width', 'height']
-        .every(key => Number.isSafeInteger(preview[key]) && preview[key] > 0)) {
-        throw failure('invalid_response', 'CUA image preview has invalid coordinate dimensions');
-      }
-      const captureId = data.capture_id;
-      const frame = {image: {data: image.data, mimeType: image.mimeType}, captureId,
-        sourceWidth: preview?.source_width, sourceHeight: preview?.source_height,
-        previewWidth: preview?.width, previewHeight: preview?.height,
-        frameId: ++this.frameSequence, width: data.screenshot_width, height: data.screenshot_height,
-        target, epoch};
-      this.lastFrame = frame;
-      this.coordinateFrameConsumed = false;
-      this._recordFrame();
-      this._publish({phase: 'ready', error: '', unavailableReason: ''});
-      this.onFrame(frame);
-      job.resolve(frame);
-    } catch (error) {
-      if (!this._current(epoch) || !this.active || failureRevision !== this.failureRevision) job.resolve(null);
-      else if (this._fail(error, job)) job.resolve(null);
-      else job.reject(error);
-    } finally {
-      if (this.captureController === controller) this.captureController = null;
-      if (this.captureJob === job) this.captureJob = null;
-      if (this._current(epoch)) this._publish({capturing: false});
-    }
-  }
-
-  // _bindCapture 补抓一张可绑定坐标的帧（带 capture_id）。
-  //
-  // 预览帧走 JPEG 时上游不返回 capture_id，而驱动要求坐标动作绑定一个 capture
-  // （否则 screenshot_context_missing）。这里现抓一张 PNG 绑定帧：它的尺寸必须
-  // 与用户看到的那一帧一致，否则坐标指向另一个画面，直接拒绝而不是误点。
-  async _bindCapture(target, job) {
-    const controller = new AbortController();
-    this.requests.add(controller);
-    try {
-      // 绑定帧必须与预览帧同尺寸：坐标是窗口内像素，尺寸不同则坐标指向另一个画面。
-      // 预览帧用 max_image_dimension 缩放过，绑定帧沿用同一参数。
-      const args = {pid: target.pid, window_id: target.window_id,
-        include_accessibility_tree: false, include_screenshot: true,
-        ...this._windowSizeArguments()};
-      const result = await this._call('get_window_state', args, {signal: controller.signal});
-      if (!this._current(job.epoch) || !this.active) throw failure('stale_context', 'CUA target changed');
-      const data = resultData(result);
-      const captureId = data.capture_id;
-      if (!captureId) throw failure('invalid_response', 'CUA returned no capture binding for the coordinates');
-      const frame = this.lastFrame;
-      if (frame && Number.isInteger(frame.width) && Number.isInteger(frame.height)
-          && (data.screenshot_width !== frame.width || data.screenshot_height !== frame.height)) {
-        throw failure('stale_capture', 'CUA window changed; use the latest screenshot');
-      }
-      return {captureId};
-    } finally {
-      this.requests.delete(controller);
     }
   }
 
   async _act(job) {
     let started = false;
     try {
-      this._checkAction(job);
-      const target = {...this.state.target};
-      const args = {...job.args, target};
-      if (target.kind === 'window' && !args.delivery_mode) args.delivery_mode = 'background';
-      // 坐标动作必须绑定一个 capture：预览帧走 JPEG（载荷小一个数量级）时不带
-      // capture_id，先补抓一张绑定帧再发动作。绑定帧尺寸必须与预览帧一致，
-      // 否则坐标属于另一个画面，寧可拒绝也不误点。
-      if (COORDINATE_ACTIONS.has(job.name) && !job.captureId && target.kind === 'window') {
-        const bound = await this._bindCapture(target, job);
-        args.capture_id = bound.captureId;
-      } else if (job.name === 'click' && job.captureId) {
-        args.capture_id = job.captureId;
-      }
-      // Text and keys may also change layout. They may continue in order, but
-      // pointer actions need a screenshot captured after any preceding mutation.
+      this._checkAction(job, true);
+      const args = {...job.args, target: desktop()};
+      // 用户在实时桌面中主动控制即同意交出真实指针；CuaDriver 对落在非前台
+      // 窗口上的后台桌面点击会拒绝执行，因此坐标输入显式走 foreground。
+      if (COORDINATE_ACTIONS.has(job.name) && !args.delivery_mode) args.delivery_mode = 'foreground';
       this.coordinateFrameConsumed = true;
       this._publish({acting: true});
       started = true;
       const result = await this._call(job.name, args);
       if (!this._current(job.epoch) || !this.active) { job.resolve(null); return; }
-      this._publish({acting: false});
-      this.completed.push({job, result});
+      job.resolve(result);
     } catch (error) {
       if (this._current(job.epoch) && this.active && started) this._fail(error);
-      if (error.code === 'stale_capture') this._requestCapture(true).catch(() => {});
       job.reject(error);
     } finally {
       if (this._current(job.epoch)) this._publish({acting: false});
@@ -655,22 +507,13 @@ export class CuaSession {
     try {
       while (!this.closed) {
         const action = this.actions.shift();
-        if (action) await this._act(action);
-        else if (this.captureJob) {
-          await this._capture(this.captureJob);
-          for (const item of this.completed.splice(0)) item.job.resolve(this._current(item.job.epoch) ? item.result : null);
-        }
-        else if (this.completed.length) {
-          if (this.active && !this.paused) {
-            this.captureJob = {...deferred(), epoch: this.state.epoch};
-            this.captureJob.promise.catch(() => {});
-          } else {
-            for (const item of this.completed.splice(0)) item.job.resolve(this._current(item.job.epoch) ? item.result : null);
-          }
-        }
-        else break;
+        if (!action) break;
+        await this._act(action);
       }
-    } finally { this.running = false; if (!this.closed) this._publish(); this._schedule(); }
+    } finally {
+      this.running = false;
+      if (!this.closed) this._publish();
+    }
   }
 
   async close() {

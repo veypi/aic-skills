@@ -3,66 +3,26 @@
 
 <head>
   <meta name="description" content="Remote Desktop"
-    details="View and control device desktops and application windows through CuaDriver.">
+    details="View and control the primary device desktop through the H.264 cua_cast stream.">
   <title>{{$t('cua.title')}}</title>
 </head>
 <style>
-  body {
-    height: 100%; min-width: 0; margin: 0; padding: 0;
-    overflow: hidden;
-    container-type: inline-size; /* 窗口 ≠ 视口：用 @container，不要用 @media；页面底色/文字色由平台提供 */
-  }
-  .app {
-    height: 100%; min-width: 0;
-    display: grid;
-    grid-template: "header header" auto "aside main" minmax(0, 1fr) / clamp(180px, 23%, 240px) minmax(0, 1fr);
-  }
-  .app.collapsed { grid-template: "header" auto "main" minmax(0, 1fr) / minmax(0, 1fr); }
+  body { height: 100%; min-width: 0; margin: 0; padding: 0; overflow: hidden; container-type: inline-size; }
+  .app { height: 100%; min-width: 0; display: grid; grid-template: "header" auto "main" minmax(0, 1fr) / minmax(0, 1fr); }
   button, input, select, textarea { font: inherit; color: inherit; }
   button { cursor: pointer; }
-  button:disabled, select:disabled { opacity: .4; cursor: default; }
-  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
-    outline: 2px solid var(--color-primary); outline-offset: 2px;
-  }
-  header {
-    grid-area: header; display: flex; align-items: center; gap: 8px; min-width: 0;
-    padding: 8px; border-bottom: 1px solid var(--border-color);
-  }
-  .icon-button {
-    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
-    width: 30px; height: 30px; padding: 0; border: 0; border-radius: 6px;
-    background: transparent; color: var(--text-color-secondary); font-size: 13px;
-  }
-  .icon-button:hover:not(:disabled), .text-button:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--text-color) 7%, transparent); color: var(--text-color);
-  }
+  button:disabled { opacity: .4; cursor: default; }
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+  header { grid-area: header; display: flex; align-items: center; gap: 8px; min-width: 0; padding: 8px; border-bottom: 1px solid var(--border-color); }
+  .icon-button { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--text-color-secondary); font-size: 13px; }
+  .icon-button:hover:not(:disabled), .text-button:hover:not(:disabled) { background: color-mix(in srgb, var(--text-color) 7%, transparent); color: var(--text-color); }
   .icon-button.active { color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 10%, transparent); }
-  aside { grid-area: aside; min-width: 0; min-height: 0; overflow: auto; padding: 8px; border-right: 1px solid var(--border-color); }
-  .aside-heading { display: flex; align-items: center; gap: 6px; padding: 0 4px 8px; font-size: 12px; color: var(--text-color-secondary); }
-  .aside-heading span:first-child { flex: 1; }
-  .aside-heading .icon-button { width: 26px; height: 26px; font-size: 12px; }
-  .window-search {
-    box-sizing: border-box; width: 100%; height: 32px; padding: 0 9px; margin: 0 0 10px;
-    border: 1px solid var(--border-color); border-radius: 7px; background: transparent; font-size: 12px;
-  }
-  .window {
-    display: flex; align-items: center; gap: 10px; width: 100%; min-width: 0; box-sizing: border-box;
-    margin: 2px 0; padding: 10px; border: 0; border-radius: 7px; background: transparent; text-align: left;
-  }
-  .window:hover:not(:disabled) { background: color-mix(in srgb, var(--text-color) 5%, transparent); }
-  .window.active { background: color-mix(in srgb, var(--color-primary) 10%, transparent); color: var(--color-primary); }
-  .window > i { flex-shrink: 0; width: 16px; text-align: center; color: var(--text-color-secondary); font-size: 13px; }
-  .window.active > i { color: inherit; }
-  .window-label { flex: 1; min-width: 0; }
-  .window strong, .window small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: normal; }
-  .window strong { font-size: 13px; }
-  .window small { margin-top: 4px; font-size: 11px; opacity: .65; }
-  .window-separator { margin: 10px 4px 6px; color: var(--text-color-secondary); font-size: 11px; }
-  .aside-note { margin: 10px 4px; color: var(--text-color-secondary); font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
   main { grid-area: main; display: flex; flex-direction: column; position: relative; min-width: 0; min-height: 0; overflow: hidden; background: var(--bg-color); }
   main:fullscreen { width: 100%; height: 100%; }
-  .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; min-width: 0; padding: 8px; border-bottom: 1px solid var(--border-color); }
-  .target-name { flex: 1; min-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+  .header-status { flex: 1; display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .stream-error { display: flex; align-items: center; gap: 6px; min-width: 0; color: var(--color-danger, #df6464); font-size: 12px; }
+  .stream-error > i { flex-shrink: 0; }
+  .stream-error > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .toolbar-actions { display: flex; align-items: center; gap: 5px; }
   .fps-meter { min-width: 46px; text-align: right; color: var(--text-color-secondary); font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .mode-switch { display: flex; padding: 2px; border-radius: 7px; background: color-mix(in srgb, var(--text-color) 5%, transparent); }
@@ -70,8 +30,6 @@
   .mode-switch button.active { background: var(--bg-color); color: var(--text-color); box-shadow: var(--shadow-sm); }
   .mode-switch button.control.active { color: var(--color-primary); }
   .scale-select { max-width: 112px; height: 28px; padding: 0 4px; border: 0; border-radius: 5px; background: var(--bg-color); font-size: 12px; }
-  .error-banner { display: flex; align-items: flex-start; gap: 8px; padding: 9px 12px; border-bottom: 1px solid var(--border-color); color: var(--color-danger, #df6464); background: color-mix(in srgb, var(--color-danger, #df6464) 5%, var(--bg-color)); font-size: 12px; line-height: 1.6; }
-  .error-banner span { flex: 1; min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
   .text-button { flex-shrink: 0; padding: 3px 7px; border: 1px solid var(--border-color); border-radius: 5px; background: transparent; font-size: 12px; }
   .screen-scroll { position: relative; flex: 1; min-height: 0; min-width: 0; overflow: hidden; background: color-mix(in srgb, var(--text-color) 4%, var(--bg-color)); }
   .screen-scroll.fit canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
@@ -85,11 +43,9 @@
   .empty p { max-width: 420px; margin: 0; }
   .input-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; padding: 8px; border-top: 1px solid var(--border-color); }
   .input-tools input { flex: 1; box-sizing: border-box; min-width: 120px; height: 32px; padding: 0 9px; border: 1px solid var(--border-color); border-radius: 6px; background: transparent; font-size: 12px; }
-  .input-tools select { max-width: 132px; height: 32px; padding: 0 5px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-color); font-size: 12px; }
+  .input-tools select { max-width: 132px; height: 32px; padding: 0 5px; border: 1px solid var(--border-color); border-radius: 5px; background: var(--bg-color); font-size: 12px; }
   .send-button { height: 32px; padding: 0 11px; border: 0; border-radius: 6px; background: var(--color-primary); color: var(--color-primary-text); font-size: 12px; }
   .control-note { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-top: 1px solid var(--border-color); color: var(--text-color-secondary); font-size: 11px; line-height: 1.5; }
-  .control-note > span { flex: 1; }
-  .delivery-select { max-width: 180px; min-width: 0; padding: 3px 4px; border: 1px solid var(--border-color); border-radius: 5px; background: var(--bg-color); font-size: 11px; }
   .permissions { position: absolute; z-index: 4; top: 8px; right: 8px; width: min(510px, calc(100% - 16px)); box-sizing: border-box; max-height: calc(100% - 16px); overflow: auto; padding: 16px; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-color); box-shadow: var(--shadow-lg); font-size: 12px; }
   .permissions-heading { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
   .permissions-heading strong { flex: 1; font-size: 13px; }
@@ -99,70 +55,39 @@
   .guide li { margin: 7px 0; }
   .guide code { padding: 1px 4px; border-radius: 3px; background: color-mix(in srgb, var(--text-color) 7%, transparent); font-family: var(--font-mono, monospace); }
   .subtle { color: var(--text-color-secondary); line-height: 1.6; }
-  @container (max-width: 680px) {
-    .app { grid-template-columns: 180px minmax(0, 1fr); }
-    aside { padding: 6px; }
-    .toolbar { gap: 5px; }
+  @container (max-width: 420px) {
+    header { flex-wrap: wrap; gap: 4px; }
+    .header-status { order: 2; flex-basis: 100%; }
     .toolbar-actions { margin-left: auto; }
-    .target-name { flex-basis: 100%; }
-    .input-tools { gap: 6px; }
     .input-tools input { flex-basis: calc(100% - 65px); }
     .input-tools select { max-width: none; flex: 1; }
-  }
-  @container (max-width: 420px) {
-    .app:not(.collapsed) { grid-template: "header" auto "aside" minmax(0, 1fr) / minmax(0, 1fr); }
-    .app:not(.collapsed) main { display: none; }
-    .app:not(.collapsed) aside { border-right: 0; }
-    .toolbar-actions { gap: 2px; }
   }
 </style>
 
 <body>
-  <div class="app" :class="{collapsed: !sidebarOpen}">
+  <div class="app">
   <header>
-    <button class="icon-button" @click="sidebarOpen = !sidebarOpen" :title="$t('cua.window_list')"
-      :aria-label="$t('cua.window_list')" :aria-expanded="sidebarOpen"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
     <widgets-host-connector ref="hostConnector" v:value="selectedHostId" remember="cua" @v-connect="connectDevice"></widgets-host-connector>
     <button class="icon-button" :class="{active: permissionsOpen}" @click="togglePermissions"
       :title="$t('cua.permissions')" :aria-label="$t('cua.permissions')" :aria-expanded="permissionsOpen"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i></button>
-  </header>
-  <aside v-show="sidebarOpen" :aria-label="$t('cua.window_list')">
-    <div class="aside-heading"><span>{{$t('cua.window_list')}}</span><span>{{sessionState.windows.length}}</span>
-      <button class="icon-button" @click="refreshWindows" :disabled="!connected() || listing" :title="$t('cua.refresh_windows')"
-        :aria-label="$t('cua.refresh_windows')"><i class="fa-solid fa-arrows-rotate" :class="{'fa-spin': listing}" aria-hidden="true"></i></button>
+    <div class="header-status">
+      <span class="stream-error" v-if="errorText()" role="alert" :title="errorText()"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i><span>{{errorText()}}</span></span>
     </div>
-    <input class="window-search" v:value="windowSearch" :placeholder="$t('cua.search_windows')" :aria-label="$t('cua.search_windows')" autocomplete="off" spellcheck="false">
-    <button class="window" :class="{active: sessionState.target?.kind === 'desktop'}" @click="selectDesktop"
-      :disabled="!connected()" :aria-pressed="sessionState.target?.kind === 'desktop'">
-      <i class="fa-solid fa-desktop" aria-hidden="true"></i><span class="window-label"><strong>{{$t('cua.desktop')}}</strong><small>{{$t('cua.primary_display')}}</small></span>
-    </button>
-    <div class="window-separator">{{$t('cua.app_windows')}}</div>
-    <button class="window" v-for="item in filteredWindows()" :class="{active: isSelectedWindow(item)}" @click="selectWindow(item)"
-      :disabled="!connected()" :aria-pressed="isSelectedWindow(item)" :title="windowTitle(item)">
-      <i class="fa-regular fa-window-maximize" aria-hidden="true"></i><span class="window-label"><strong>{{item.app_name || $t('cua.application')}}</strong><small>{{item.title || $t('cua.untitled_window')}}</small></span>
-    </button>
-    <p class="aside-note" v-if="connected() && !filteredWindows().length">{{windowSearch ? $t('cua.no_matches') : $t('cua.no_windows')}}</p>
-    <p class="aside-note" v-if="!selectedHostId">{{$t('cua.no_available_devices')}}</p>
-  </aside>
-  <main ref="screenPanel">
-    <div class="toolbar">
-      <span class="target-name" :title="targetTitle()">{{targetTitle()}}</span>
-      <div class="toolbar-actions">
-        <span class="fps-meter" v-if="hasFrame" :title="$t('cua.frame_rate')"
-          :aria-label="$t('cua.frame_rate')">{{fpsText()}}</span>
+    <div class="toolbar-actions">
+        <span class="fps-meter" v-if="hasFrame" :title="$t('cua.frame_rate')" :aria-label="$t('cua.frame_rate')">{{fpsText()}}</span>
         <button class="icon-button" @click="refreshFrame" :disabled="!connected() || sessionState.acting"
           :title="$t('cua.refresh_frame')" :aria-label="$t('cua.refresh_frame')"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i></button>
         <div class="mode-switch" :aria-label="$t('cua.mode')">
           <button :class="{active: !sessionState.control}" @click="setControl(false)" :aria-pressed="!sessionState.control">{{$t('cua.view')}}</button>
-          <button class="control" :class="{active: sessionState.control}" @click="setControl(true)" :disabled="!connected() || !hasFrame || ['error', 'target_closed', 'target_unavailable'].includes(sessionState.phase)"
+          <button class="control" :class="{active: sessionState.control}" @click="setControl(true)" :disabled="!connected() || !hasFrame || sessionState.phase === 'error'"
             :aria-pressed="sessionState.control">{{$t('cua.control')}}</button>
         </div>
         <select class="scale-select" v:value="scale" :aria-label="$t('cua.scale')"><option value="fit">{{$t('cua.fit')}}</option><option value="native">100%</option></select>
         <button class="icon-button" @click="toggleFullscreen" :title="fullscreen ? $t('cua.exit_fullscreen') : $t('cua.fullscreen')"
           :aria-label="fullscreen ? $t('cua.exit_fullscreen') : $t('cua.fullscreen')"><i :class="fullscreen ? 'fa-solid fa-compress' : 'fa-solid fa-expand'" aria-hidden="true"></i></button>
-      </div>
     </div>
-    <div class="error-banner" v-if="errorText()" role="alert"><span>{{errorText()}}</span><button class="text-button" @click="retry" :disabled="sessionState.busy">{{$t('cua.retry')}}</button></div>
+  </header>
+  <main ref="screenPanel">
     <div class="screen-scroll" :class="{fit: scale === 'fit', native: scale === 'native'}">
       <canvas ref="canvas" v-show="hasFrame" :class="{controllable: sessionState.control}" :aria-label="$t('cua.screen')" tabindex="-1"></canvas>
       <textarea ref="keyboard" class="keyboard" :aria-label="$t('cua.keyboard')" autocapitalize="off" autocomplete="off" spellcheck="false" tabindex="-1"></textarea>
@@ -178,13 +103,7 @@
         <option value="" disabled>{{$t('cua.common_keys')}}</option><option value="Enter">Enter</option><option value="Escape">Escape</option><option value="Tab">Tab</option><option value="Backspace">Backspace</option><option value="Delete">Delete</option><option value="ArrowUp">↑</option><option value="ArrowDown">↓</option><option value="ArrowLeft">←</option><option value="ArrowRight">→</option><option value="selectAll">{{$t('cua.select_all')}}</option><option value="copy">{{$t('cua.copy')}}</option><option value="paste">{{$t('cua.paste')}}</option><option value="undo">{{$t('cua.undo')}}</option>
       </select>
     </form>
-    <div class="control-note">
-      <span v-if="!sessionState.control">{{$t('cua.view_hint')}}</span>
-      <span v-else>{{sessionState.target?.kind === 'window' ? (deliveryMode === 'foreground' ? $t('cua.foreground_hint') : $t('cua.background_hint')) : $t('cua.control_hint')}}</span>
-      <select class="delivery-select" v-if="sessionState.control && sessionState.target?.kind === 'window'" v:value="deliveryMode" @change="changeDeliveryMode" :disabled="sessionState.acting" :aria-label="$t('cua.delivery_mode')">
-        <option value="background">{{$t('cua.background')}}</option><option value="foreground">{{$t('cua.foreground')}}</option>
-      </select>
-    </div>
+    <div class="control-note"><span>{{sessionState.control ? $t('cua.control_hint') : $t('cua.view_hint')}}</span></div>
     <section class="permissions" v-if="permissionsOpen" role="dialog" :aria-label="$t('cua.permissions')">
       <div class="permissions-heading"><strong>{{$t('cua.permissions')}}</strong><button class="icon-button" @click="refreshPermissions" :disabled="!connected() || checkingPermissions" :title="$t('cua.refresh')" :aria-label="$t('cua.refresh')"><i class="fa-solid fa-arrows-rotate" :class="{'fa-spin': checkingPermissions}" aria-hidden="true"></i></button><button class="icon-button" @click="permissionsOpen = false" :title="$t('cua.close')" :aria-label="$t('cua.close')"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></div>
       <strong>{{$t('cua.state')}}</strong><pre v-if="sessionState.permissions">{{permissionReport()}}</pre><p class="subtle" v-else>{{checkingPermissions ? $t('cua.checking_permissions') : $t('cua.no_permission_report')}}</p>
@@ -199,25 +118,21 @@
 
   selectedHostId = ''
   selectedHost = null
-  sidebarOpen = false
-  windowSearch = ''
-  sessionState = {connected: false, hostId: '', phase: 'idle', windows: [], target: null, targetWindow: null, unavailableReason: '', control: false, busy: false, capturing: false, acting: false, error: '', permissions: null, epoch: 0, fps: 0}
+  sessionState = {connected: false, hostId: '', phase: 'idle', target: null, control: false, busy: false, capturing: false, acting: false, error: '', permissions: null, epoch: 0, fps: 0, streamState: 'idle', streamError: ''}
   hasFrame = false
   scale = 'fit'
   fullscreen = false
   permissionsOpen = false
   checkingPermissions = false
-  listing = false
   inputText = ''
   selectedKey = ''
-  deliveryMode = 'background'
   uiError = ''
 
   let session, viewer, pendingConnection = null, disposed = false, visible = false, mounted = false, deviceRevision = 0
+  let viewVisible = true, viewBox = null, visibilityObserver = null
   const errorMessage = error => error?.message || (typeof error === 'string' ? error : '')
   const reportError = error => {
     if (disposed) return
-    if (error?.code === 'target_unavailable') return
     uiError = errorMessage(error) || $t('cua.unknown_error')
   }
   const run = async operation => {
@@ -233,25 +148,13 @@
   }
   const platform = () => selectedHost?.device_info?.os || ''
   connected = () => !!sessionState.connected
-  errorText = () => uiError || errorMessage(sessionState.error)
-  // 帧率读数：近窗口内的实际到达帧率，反映设备真实吞吐而非配置间隔。
+  errorText = () => uiError || errorMessage(sessionState.error) || errorMessage(sessionState.streamError)
   fpsText = () => {
     const fps = Number(sessionState.fps) || 0
     if (!fps) return '— fps'
     return `${fps < 10 ? fps.toFixed(1) : Math.round(fps)} fps`
   }
-  phaseText = () => ({idle: $t('cua.disconnected'), connecting: $t('cua.connecting'), ready: $t('cua.connected'), target_closed: $t('cua.target_closed'), target_unavailable: $t('cua.target_unavailable'), capturing: $t('cua.refreshing'), paused: $t('cua.paused'), error: $t('cua.error'), offline: $t('cua.device_offline'), closed: $t('cua.disconnected')})[sessionState.phase] || sessionState.phase
-  windowTitle = item => [item.app_name, item.title].filter(Boolean).join(' · ') || $t('cua.untitled_window')
-  filteredWindows = () => {
-    const search = windowSearch.trim().toLocaleLowerCase()
-    return sessionState.windows.filter(item => !search || windowTitle(item).toLocaleLowerCase().includes(search))
-  }
-  isSelectedWindow = item => sessionState.target?.kind === 'window' && String(sessionState.target.pid) === String(item.pid) && String(sessionState.target.window_id) === String(item.window_id)
-  targetTitle = () => !sessionState.target ? $t('cua.title') : sessionState.target.kind === 'desktop' ? $t('cua.desktop') : windowTitle(sessionState.targetWindow || sessionState.windows.find(isSelectedWindow) || {})
   emptyText = () => {
-    if (sessionState.phase === 'target_unavailable') {
-      return ({minimized: $t('cua.window_minimized_hint'), not_visible: $t('cua.window_not_visible_hint'), no_image: $t('cua.window_no_image_hint')})[sessionState.unavailableReason] || $t('cua.window_no_image_hint')
-    }
     if (errorText()) return $t('cua.screen_unavailable')
     if (!selectedHostId) return $t('cua.no_available_devices')
     if (sessionState.phase === 'connecting') return $t('cua.connecting')
@@ -269,12 +172,9 @@
     pendingConnection = null
     uiError = ''
     deviceRevision++
-    windowSearch = ''
     selectedHost = null
     clearView()
     viewer?.setControl(false)
-    deliveryMode = 'background'
-    viewer?.setDeliveryMode(deliveryMode)
     if (session) Promise.resolve(session.connect('')).catch(reportError)
   }
   connectDevice = detail => {
@@ -287,12 +187,9 @@
       pendingConnection = null
       selectedHost = detail.host
       deviceRevision++
-      windowSearch = ''
       clearView()
       viewer.setPlatform(platform())
       viewer.setControl(false)
-      deliveryMode = 'background'
-      viewer.setDeliveryMode(deliveryMode)
       await session.connect(detail.hostId, {connection: detail.connection})
       if (permissionsOpen) await refreshPermissions()
     })
@@ -301,37 +198,13 @@
   $watch(() => selectedHostId, (id, previous) => {
     if (id !== previous) resetDevice()
   })
-  refreshWindows = async () => {
-    if (!connected() || listing) return
-    listing = true
-    await run(() => session.listWindows())
-    listing = false
-  }
   refreshFrame = () => run(() => session?.capture())
-  const selectTarget = target => run(async () => {
-    if (!connected()) return
-    deviceRevision++
-    clearView()
-    viewer.setControl(false)
-    session.setControl(false)
-    deliveryMode = 'background'
-    viewer.setDeliveryMode(deliveryMode)
-    await session.selectTarget(target)
-    if (typeof matchMedia === 'function' && matchMedia('(max-width: 420px)').matches) sidebarOpen = false
-  })
-  selectDesktop = () => selectTarget({kind: 'desktop', display_id: 'primary'})
-  selectWindow = item => selectTarget({kind: 'window', pid: item.pid, window_id: item.window_id})
   setControl = enabled => {
-    if (!session || (enabled && (!connected() || !hasFrame || ['error', 'target_closed', 'target_unavailable'].includes(sessionState.phase)))) return
+    if (!session || (enabled && (!connected() || !hasFrame || sessionState.phase === 'error'))) return
     inputText = ''
     selectedKey = ''
     viewer.setControl(enabled)
     session.setControl(enabled)
-  }
-  changeDeliveryMode = () => {
-    inputText = ''
-    selectedKey = ''
-    viewer?.setDeliveryMode(deliveryMode)
   }
   sendText = () => run(async () => {
     if (!canInput() || !inputText.length) return
@@ -356,10 +229,7 @@
   }
   togglePermissions = () => {
     permissionsOpen = !permissionsOpen
-    if (permissionsOpen) {
-      if (typeof matchMedia === 'function' && matchMedia('(max-width: 420px)').matches) sidebarOpen = false
-      if (connected()) refreshPermissions()
-    }
+    if (permissionsOpen && connected()) refreshPermissions()
   }
   retry = () => {
     if (!selectedHostId) return
@@ -376,34 +246,40 @@
     if (mounted || disposed) return
     mounted = true
     viewer = new CuaViewer($refs.canvas, $refs.keyboard, {
-      action: (name, args, frame) => session.action(name, args, {captureId: frame.captureId, frameId: frame.frameId, epoch: frame.epoch}),
-      gesture: active => session?.setInteracting(active), error: reportError,
+      action: (name, args, frame) => session.action(name, args, {frameId: frame.frameId, epoch: frame.epoch}),
+      gesture: () => {}, error: reportError,
     })
     session = new CuaSession({hosts: $hosts,
       changed: state => {
         if (disposed) return
-        const targetUnavailable = ['target_unavailable', 'target_closed'].includes(state.phase)
-        if (state.epoch !== sessionState.epoch || targetUnavailable) clearView()
-        if (targetUnavailable && state.phase !== sessionState.phase) deviceRevision++
-        if (state.phase === 'target_unavailable') uiError = ''
-        sessionState = {...state, windows: state.windows || []}
+        if (state.epoch !== sessionState.epoch) clearView()
+        sessionState = {...state}
         viewer.setControl(state.control)
       },
-      frame: async frame => {
+      frame: frame => {
         const currentViewer = viewer
         try {
-          const shown = await currentViewer.showFrame(frame)
-          if (!disposed && visible && !document.hidden && currentViewer === viewer && shown && frame.epoch === sessionState.epoch && !['target_unavailable', 'target_closed'].includes(sessionState.phase)) hasFrame = true
+          const shown = currentViewer.showVideoFrame(frame)
+          if (!disposed && visible && viewVisible && !document.hidden && currentViewer === viewer && shown && frame.epoch === sessionState.epoch && sessionState.phase !== 'error') hasFrame = true
         } catch (error) { reportError(error) }
       }, error: reportError,
     })
     session.setActive(visible && !document.hidden)
     document.addEventListener('fullscreenchange', updateFullscreen)
     document.addEventListener('visibilitychange', syncVisibility)
+    viewBox = $node.closest('[data-view-visible]')
+    viewVisible = viewBox?.getAttribute('data-view-visible') !== 'false'
+    if (viewBox) {
+      visibilityObserver = new MutationObserver(() => {
+        viewVisible = viewBox.getAttribute('data-view-visible') !== 'false'
+        syncVisibility()
+      })
+      visibilityObserver.observe(viewBox, {attributes: true, attributeFilter: ['data-view-visible']})
+    }
     if (pendingConnection) connectDevice(pendingConnection)
   }
   const syncVisibility = () => {
-    const active = visible && !document.hidden
+    const active = visible && !document.hidden && viewVisible
     if (!active) {
       session?.setControl(false)
       viewer?.setControl(false)
@@ -427,6 +303,8 @@
     deviceRevision++
     document.removeEventListener('fullscreenchange', updateFullscreen)
     document.removeEventListener('visibilitychange', syncVisibility)
+    visibilityObserver?.disconnect()
+    visibilityObserver = null
     viewer?.close()
     Promise.resolve(session?.close()).catch(() => {})
   }

@@ -3,7 +3,7 @@
   "ui": {
     "pages": {
       "index": {
-        "desc": "远程查看和控制设备桌面、应用窗口"
+        "desc": "通过 H.264 流查看和控制设备主桌面"
       }
     }
   },
@@ -12,6 +12,15 @@
       "run": ["bin/cua"],
       "protocol": "mcp",
       "idle_timeout": "30m"
+    },
+    "cua_cast": {
+      "run": ["bin/cua_cast"],
+      "idle_timeout": "30m",
+      "streams": {
+        "view": {
+          "address_env": "CUA_STREAM_ADDR"
+        }
+      }
     }
   }
 }

@@ -1,6 +1,8 @@
-// Render one CUA snapshot and translate local gestures into complete MCP actions.
-// No remote key/button is kept down between calls, and input is never replayed.
+// Render decoded H.264 frames and translate local gestures into MCP actions.
+// The desktop has exactly one observation path: cua_cast. No screenshots.
 const TEXT_ACTIONS = new Set(['type_text', 'press_key', 'hotkey']);
+const sameVideoContext = (a, b) => a?.video === true && b?.video === true && a.epoch === b.epoch;
+
 export class CuaViewer {
   constructor(canvas, keyboard, {action, gesture = () => {}, error = () => {}}) {
     this.canvas = canvas;
@@ -9,11 +11,8 @@ export class CuaViewer {
     this.gesture = gesture;
     this.error = error;
     this.platform = '';
-    this.deliveryMode = 'background';
     this.control = false;
     this.closed = false;
-    this.generation = 0;
-    this.pendingInput = [];
     this.listeners = [];
     const on = (node, name, fn, options) => {
       node.addEventListener(name, fn, options);
@@ -39,18 +38,19 @@ export class CuaViewer {
     });
     on(canvas, 'pointerup', event => {
       const pointer = this.pointer;
-      if (!pointer || event.pointerId !== pointer.id) return;
+      if (!pointer || pointer.id !== event.pointerId) return;
       event.preventDefault();
       const point = this.point(event);
       this.pointer = null;
-      if (point && pointer.frame === this.frame) {
+      if (point && (pointer.frame === this.frame || sameVideoContext(pointer.frame, this.frame))) {
+        const frame = sameVideoContext(pointer.frame, this.frame) ? this.frame : pointer.frame;
         const button = ['left', 'middle', 'right'][pointer.button];
         if (pointer.moved) {
           this.suppressClick = true;
           this.dispatch('drag', {from_x:pointer.point.x, from_y:pointer.point.y, to_x:point.x, to_y:point.y,
-            button, duration_ms:Math.min(2000, Math.max(50, Date.now() - pointer.started)), modifier:pointer.modifier}, pointer.frame);
+            button, duration_ms:Math.min(2000, Math.max(50, Date.now() - pointer.started)), modifier:pointer.modifier}, frame);
         } else if (pointer.button !== 0) {
-          this.dispatch('click', {...point, button, count:1, modifier:pointer.modifier}, pointer.frame);
+          this.dispatch('click', {...point, button, count:1, modifier:pointer.modifier}, frame);
         }
       }
       this.gesture(false);
@@ -62,19 +62,8 @@ export class CuaViewer {
       const point = this.point(event);
       if (!this.control || !point || !this.frame) return;
       const frame = this.frame, modifier = this.modifiers(event);
-      clearTimeout(this.clickTimer);
-      if (event.detail === 2) {
-        this.dispatch('click', {...point, button:'left', count:2, modifier}, frame);
-        this.gesture(false);
-      } else {
-        // Coalesce a double click into one upstream click(count:2), not three clicks.
-        this.gesture(true);
-        this.clickTimer = setTimeout(() => {
-          this.clickTimer = null;
-          this.dispatch('click', {...point, button:'left', count:1, modifier}, frame);
-          this.gesture(false);
-        }, 250);
-      }
+      // 单击绝不为双击识别等待 250ms；两次原生单击本身就是一次双击。
+      this.dispatch('click', {...point, button:'left', count:1, modifier}, frame);
     });
     on(canvas, 'contextmenu', event => event.preventDefault());
     on(canvas, 'auxclick', event => event.preventDefault());
@@ -89,24 +78,12 @@ export class CuaViewer {
       if (!delta) return;
       const direction = horizontal ? (delta > 0 ? 'right' : 'left') : (delta > 0 ? 'down' : 'up');
       const amount = Math.min(10, Math.max(1, Math.ceil(Math.abs(delta) / (event.deltaMode === 0 ? 100 : 3))));
-      if (this.wheel?.direction === direction && this.wheel.frame === this.frame)
-        this.wheel.amount = Math.min(10, this.wheel.amount + amount);
-      else this.wheel = {direction, amount, frame:this.frame, point};
-      this.wheel.point = point;
-      if (!this.wheelTimer) {
-        this.gesture(true);
-        this.wheelTimer = setTimeout(() => {
-          const wheel = this.wheel;
-          this.wheelTimer = null; this.wheel = null;
-          if (wheel) this.dispatch('scroll', {...wheel.point, direction:wheel.direction, amount:wheel.amount, by:'line'}, wheel.frame);
-          this.gesture(false);
-        }, 100);
-      }
+      // 滚轮是实时输入，不做 100ms 批处理等待。
+      this.dispatch('scroll', {...point, direction, amount, by:'line'}, this.frame);
     }, {passive:false});
     on(keyboard, 'keydown', event => {
-      if (!this.control || !this.inputFrame() || event.isComposing || event.key === 'Process' || event.key === 'Dead') return;
+      if (!this.control || !this.frame || event.isComposing || event.key === 'Process' || event.key === 'Dead') return;
       if (['Control', 'Meta', 'Shift', 'Alt'].includes(event.key)) return;
-      // Native paste lands in this textarea, then type_text forwards the text.
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'v') return;
       const modifiers = this.modifiers(event);
       if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) return;
@@ -118,7 +95,7 @@ export class CuaViewer {
       else this.dispatch('press_key', {key});
     });
     on(keyboard, 'compositionstart', () => {
-      if (!this.control || !this.inputFrame()) return;
+      if (!this.control || !this.frame) return;
       this.composing = true;
       this.gesture(true);
     });
@@ -132,12 +109,6 @@ export class CuaViewer {
   }
 
   setPlatform(platform) {this.platform = String(platform || '').toLowerCase();}
-  setDeliveryMode(mode) {
-    if (!['background', 'foreground'].includes(mode)) throw new Error('Invalid input delivery mode');
-    if (this.deliveryMode === mode) return;
-    this.cancelInput();
-    this.deliveryMode = mode;
-  }
   setControl(value) {
     this.control = Boolean(value);
     if (!this.control) this.cancelInput();
@@ -155,77 +126,38 @@ export class CuaViewer {
     const x = (event.clientX - rect.left - (rect.width - this.canvas.width * scale) / 2) / scale;
     const y = (event.clientY - rect.top - (rect.height - this.canvas.height * scale) / 2) / scale;
     if (x < 0 || y < 0 || x >= this.canvas.width || y >= this.canvas.height) return null;
-    // Undo only the Pod preview resize. The upstream driver still owns its
-    // screenshot-to-desktop/window mapping, including native DPI and capture_id.
     const sourceWidth = this.frame.sourceWidth || this.canvas.width;
     const sourceHeight = this.frame.sourceHeight || this.canvas.height;
     return {x:Math.min(sourceWidth - 1, Math.floor(x * sourceWidth / this.canvas.width)),
       y:Math.min(sourceHeight - 1, Math.floor(y * sourceHeight / this.canvas.height))};
   }
-  async showFrame(frame) {
+
+  // Continuous frames never cancel an in-progress pointer, IME composition or wheel batch.
+  showVideoFrame(frame) {
     if (this.closed) return null;
-    const generation = ++this.generation;
-    const previous = this.inputFrame();
-    if (previous?.epoch === frame.epoch) this.cancelCoordinates();
-    else this.cancelInput();
-    this.frame = null;
-    this.pendingFrame = frame;
-    this.decoding = true;
-    let bitmap;
-    try {
-      const {data, mimeType} = frame.image;
-      if (!['image/png', 'image/jpeg', 'image/webp'].includes(mimeType)) throw new Error('Unsupported CUA screenshot format');
-      const bytes = Uint8Array.from(atob(data), char => char.charCodeAt(0));
-      bitmap = await createImageBitmap(new Blob([bytes], {type:mimeType}));
-      if (this.closed || generation !== this.generation) return null;
-      if (!bitmap.width || !bitmap.height) throw new Error('Empty CUA screenshot');
-      const sourceWidth = frame.sourceWidth ?? bitmap.width;
-      const sourceHeight = frame.sourceHeight ?? bitmap.height;
-      if (![sourceWidth, sourceHeight].every(value => Number.isSafeInteger(value) && value > 0)
-          || (frame.previewWidth != null && frame.previewWidth !== bitmap.width)
-          || (frame.previewHeight != null && frame.previewHeight !== bitmap.height)) {
-        throw new Error('Invalid CUA preview coordinate dimensions');
-      }
-      this.canvas.width = bitmap.width;
-      this.canvas.height = bitmap.height;
-      this.canvas.getContext('2d').drawImage(bitmap, 0, 0);
-      this.frame = {...frame, width:bitmap.width, height:bitmap.height, sourceWidth, sourceHeight};
-      this.pendingFrame = null;
-      this.decoding = false;
-      this.flushInput();
-      return this.frame;
-    } catch (error) {
-      if (this.closed || generation !== this.generation) return null;
-      this.pendingFrame = null;
-      this.decoding = false;
-      this.cancelInput();
-      throw error;
-    } finally {bitmap?.close();}
+    const width = frame.previewWidth || frame.videoFrame.displayWidth || frame.videoFrame.codedWidth;
+    const height = frame.previewHeight || frame.videoFrame.displayHeight || frame.videoFrame.codedHeight;
+    const sourceWidth = frame.sourceWidth || width, sourceHeight = frame.sourceHeight || height;
+    if (![width, height, sourceWidth, sourceHeight].every(value => Number.isSafeInteger(value) && value > 0)) {
+      throw new Error('Invalid CUA video coordinate dimensions');
+    }
+    if (this.canvas.width !== width) this.canvas.width = width;
+    if (this.canvas.height !== height) this.canvas.height = height;
+    this.canvas.getContext('2d').drawImage(frame.videoFrame, 0, 0);
+    this.frame = {...frame, width, height, sourceWidth, sourceHeight};
+    return this.frame;
   }
-  inputFrame() {return this.pendingFrame || this.frame;}
-  async run(name, args, frame = this.inputFrame()) {
-    const current = this.inputFrame(), text = TEXT_ACTIONS.has(name);
+
+  run(name, args, frame = this.frame) {
+    const current = this.frame, text = TEXT_ACTIONS.has(name);
+    const continuousVideo = sameVideoContext(frame, current);
     if (this.closed || !this.control || !frame || !current
-        || (text ? frame.epoch !== current.epoch : this.decoding || frame !== this.frame)) {
-      throw new Error('A current screenshot and control mode are required');
+        || (text ? frame.epoch !== current.epoch : frame !== current && !continuousVideo)) {
+      throw new Error('A current video frame and control mode are required');
     }
-    args = {...args, delivery_mode:this.deliveryMode};
-    if (text && this.decoding) {
-      return new Promise((resolve, reject) => {
-        const previous = this.pendingInput.at(-1);
-        if (name === 'type_text' && previous?.name === name && previous.epoch === current.epoch) {
-          previous.args.text += args.text;
-          previous.waiters.push({resolve, reject});
-        } else if (this.pendingInput.length >= 16) {
-          reject(new Error('CUA input queue is full'));
-        } else {
-          this.pendingInput.push({name, args, epoch:current.epoch, waiters:[{resolve, reject}]});
-        }
-      });
-    }
-    return this.action(name, args, text ? current : frame);
+    return this.action(name, {...args}, text ? current : continuousVideo ? current : frame);
   }
-  dispatch(name, args, frame = this.inputFrame()) {
+  dispatch(name, args, frame = this.frame) {
     this.run(name, args, frame).catch(error => {if (!this.closed) this.error(error);});
   }
   typeText(text) {
@@ -254,23 +186,8 @@ export class CuaViewer {
       this.gesture(!!this.composing);
     }
   }
-  flushInput() {
-    if (this.decoding || !this.frame || !this.control || this.closed) return;
-    for (const job of this.pendingInput.splice(0)) {
-      if (job.epoch !== this.frame.epoch) {
-        for (const waiter of job.waiters) waiter.resolve(null);
-        continue;
-      }
-      Promise.resolve(this.action(job.name, job.args, this.frame)).then(
-        value => {for (const waiter of job.waiters) waiter.resolve(value);},
-        error => {for (const waiter of job.waiters) waiter.reject(error);},
-      );
-    }
-  }
   cancelCoordinates() {
     this.cancelPointer();
-    clearTimeout(this.clickTimer); clearTimeout(this.wheelTimer);
-    this.clickTimer = null; this.wheelTimer = null; this.wheel = null;
     this.suppressClick = false;
     this.gesture(!!this.composing);
   }
@@ -278,16 +195,10 @@ export class CuaViewer {
     this.composing = false;
     this.cancelCoordinates();
     this.keyboard.value = '';
-    for (const job of this.pendingInput.splice(0)) {
-      for (const waiter of job.waiters) waiter.resolve(null);
-    }
     this.gesture(false);
   }
   clear() {
-    ++this.generation;
     this.frame = null;
-    this.pendingFrame = null;
-    this.decoding = false;
     this.cancelInput();
     this.canvas.getContext('2d').clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
