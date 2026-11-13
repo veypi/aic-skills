@@ -1,6 +1,6 @@
 ---
 name: create
-version: 1.0.16
+version: 1.0.17
 nickname: create 技能包
 description: AIC 扩展作者手册——把一句人话需求拆成云端/界面/设备三端的实际改动：技能包与数据、界面与页面指令、Host/Pod 脚本批量调用技能 API、桌面档案规则、设备命令与常驻服务；含判定流程、字段契约、红线与验收。
 keywords: [create, 扩展, 技能包, 界面, 档案, 规则, 设备, 命令, 服务, 模板, API, 批处理, 批量上传]
@@ -112,7 +112,7 @@ AIC 的扩展落在三个端上，每端有自己的持久化机制和交互协�
 | 操作桌面档案 | `exec _host=page` → `profile({action: 'list' | 'save' | 'apply' | 'revert' | 'inspect', name?})` |
 | 开窗口 | `exec _host=page` → `open({url})` / `list()` / `close({id})` / `reload({id?})` |
 | 调用页面指令 | `return await commands()` 发现；多步调用 `await win('w1').todo_add({title: 'x'})`，handler 为 `(data, ctx)` 并直接返回业务数据 |
-| 调设备命令 | `exec _host=<设备ID>` → `<alias>` 列工具 / `<alias> <tool> --help` 看参数 / `<alias> <tool> --input '{...}' --json` 调用（`mcp ...` 仅调试直通） |
+| 调设备命令 | `exec _host=<设备ID>` → `<alias>` 列工具（附 flag 摘要）/ `<alias> <tool> --help` 看参数 / `<alias> <tool> --flag 值` 调用（标量自动映射成同名 flag；对象/数组走 `--input`；长文本用 `--<flag> -` 读 stdin） |
 | 页面调设备 | `$hosts.openTools(hostId)` → `execCall(script, {stdin})` → 用完 `close()` |
 
 ## 4. 验收清单

@@ -16,7 +16,7 @@ binaries shipped with the release.
 | `browser` | 1.2.15 | Prose + UI + device service: a Go service inside the package driving its own Chrome over CDP (AI tools + live view + human input) |
 | `cua` | 1.3.5 | Prose + UI + device services: official `cua-driver` (0.47.19) MCP control plus `cua_cast` primary-desktop H.264 streaming |
 | `blender` | 0.3.7 | Prose + device launcher: runs the off-the-shelf `blender-mcp` service (inspect / render / run Python) |
-| `create` | 1.0.16 | Guide + templates + intro page: the ivec extension authoring manual (cloud / page / host) and a human-facing capability page |
+| `create` | 1.0.17 | Guide + templates + intro page: the ivec extension authoring manual (cloud / page / host) and a human-facing capability page |
 | `design` | 0.1.2 | Guide + live examples + tools: conversational UI/UX design, original prompts, theme tokens and evidence-based review |
 | `office_studio` | 1.0.8 | Prose + UI: office document workspace |
 | `drawio` | 1.0.5 | Prose + UI: DrawIO diagram workspace |

@@ -13,7 +13,7 @@ ivec.ai 官方**技能内容仓**。技能 = `SKILL.md` + 可选包根 `manifest
 | `browser` | 1.2.15 | 说明 + UI + 设备服务：包内 Go 服务，自带 Chrome 的 CDP 通道（AI 工具 + 实时画面 + 人工交互） |
 | `cua` | 1.3.5 | 说明 + UI + 设备服务：官方 `cua-driver`（0.47.19）MCP 控制 + `cua_cast` 主桌面 H.264 实时流 |
 | `blender` | 0.3.7 | 说明 + 设备启动：直接运行现成 `blender-mcp`（看场景 / 渲染 / 执行 Python） |
-| `create` | 1.0.16 | 手册 + 模板 + 介绍页：ivec 扩展作者手册（云端/界面/设备三端）与给人看的扩展能力介绍页 |
+| `create` | 1.0.17 | 手册 + 模板 + 介绍页：ivec 扩展作者手册（云端/界面/设备三端）与给人看的扩展能力介绍页 |
 | `design` | 0.1.2 | 说明 + 实样 + 工具：对话式 UI/UX 设计、原始 Prompt、主题 Token 与证据化评审 |
 | `office_studio` | 1.0.8 | 说明 + UI：Office 文档工作台 |
 | `drawio` | 1.0.5 | 说明 + UI：DrawIO 绘图工作台 |

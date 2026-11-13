@@ -41,9 +41,11 @@ mkdir -p ../bin && go build -o ../bin/mytool .
 mytool
 mytool ping --help
 mytool ping --json
+mytool other_tool --name 值 --count 3   # 标量参数自动映射为同名 flag
 ```
 
-`mytool` 无参列出工具，`ping` 返回 `content` 中的 `pong`。复杂参数用 `--input -` 并经 stdin 传 JSON；
+`mytool` 无参列出工具（附每个工具的 flag 摘要），`ping` 返回 `content` 中的 `pong`。
+标量参数用同名 flag；对象/数组用 `--input -` 经 stdin 传 JSON；长文本用 `--<flag> -` 从 stdin 读该参数的值。
 页面调用使用 `$hosts.openTools(hostId)` 后的 `execCall`，不要拼接业务字符串。
 
 ## 依赖与权限

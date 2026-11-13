@@ -134,24 +134,36 @@ commands add mytool -- /absolute/path/to/mytool
 
 ```sh
 exec _host=<设备ID>
-mytool                         # 工具目录
-mytool ping --help             # 参数表
-mytool ping --json             # 无参调用
-mytool other_tool --input - --json   # 复杂 JSON 经 stdin
+mytool                                # 工具目录（附每个工具的 flag 摘要）
+mytool ping --help                    # 参数表
+mytool ping --json                    # 无参调用
+mytool other_tool --name 值 --count 3 # 标量参数自动映射为同名 flag
+mytool other_tool --input - --json    # 对象/数组参数经 stdin
+mytool other_tool --note - --json     # 长文本：--note - 从 stdin 读该参数的值
 ```
 
-调试直通已随统一命令面下线；工具目录用 `<alias>`（无参），参数表用 `<alias> <tool> --help`，原始 inputSchema 用 `commands info <alias> --schema`。
+**参数规则**（工具的 `inputSchema` 是唯一事实源）：
+
+- 标量属性（string/number/integer/boolean）自动映射为同名 flag；对象与数组不能映射，走 `--input`（JSON 对象，flag 覆盖同名键）。
+- `--flag value` 与 `--flag=value` 等价；布尔可裸写（`--flag` 即 true）；空串写 `--flag=`；值以 `-` 开头写 `--flag=value`。
+- `--<flag> -` 从 stdin 读该参数的值：长文本（代码、配置、prompt）不必手拼 JSON，也不必嵌套 shell 转义；等号形式 `--flag=-` 是字面量 `-`。stdin 只能被消费一次，`--input -` 与 `--flag -` 不能同时用。
+- 命令面保留名 `json`/`input`/`image-preview`/`help`/`h` 遮蔽同名工具参数，这些参数只能走 `--input`。
+- 参数面错误（类型错、枚举越界、缺必填）退出码 2，报错自带该工具可映射的 flag 清单与候选值；工具级失败退出码 1。
+
+调试直通已随统一命令面下线；工具目录用 `<alias>`（无参，附 flag 摘要），参数表用 `<alias> <tool> --help`，原始 inputSchema 用 `commands info <alias> --schema`。
 
 **页面**：
 
 ```js
 const conn = await $hosts.openTools(hostId)
-const out = await conn.execCall('mytool ping --input - --json', { stdin: '{}' })
+const out = await conn.execCall('mytool ping --json', {})
+const out2 = await conn.execCall('mytool other_tool --note - --json', { stdin: '长文本' })
 // 检查 out.attrs.exit_code，再解析 JSON.parse(out.content)
 await conn.close()
 ```
 
-- 参数经 stdin 传 JSON，**不要把业务字符串拼进脚本**。
+- 页面侧同一套规则：标量用 flag，长文本用 `--<flag> -` 配 stdin，只有对象/数组才拼 JSON 走 `--input`。
+- **不要把业务字符串拼进脚本**。
 - 服务命令的 JSON stdout 保留 `content` / `structuredContent` / `isError`；工具报错时退出码非零。
 - 大输出会被截断——不要把截断预览当完整 JSON。
 

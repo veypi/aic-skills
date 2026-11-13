@@ -4,6 +4,10 @@
 
 两个版本面：**模块版本**（本文件 / tag `vX.Y.Z`，Go 依赖面）与**技能版本**（各 `SKILL.md` frontmatter 的 `version:`，进入 `skills.builtin` 指纹）。内容更新 bump 技能版本以触发自动定版；事件执行时无条件整包覆盖，不做版本大小比较。契约或结构变化 bump 模块版本。
 
+## 未发布
+
+- `create`（1.0.16 → 1.0.17）：设备命令调用面改为完整契约——工具 `inputSchema` 的标量属性（string/number/integer/boolean）自动映射为同名 flag，对象/数组走 `--input`（flag 覆盖同名键），`--<flag> -` 从 stdin 读该参数的值（长文本不必手拼 JSON，也不必嵌套 shell 转义；`--flag=-` 是字面量），stdin 只能被消费一次；工具目录附每个工具的 flag 摘要，参数面错误（类型错/枚举越界/缺必填）退 2 且自带可映射 flag 清单与候选值。页面侧同步同一套规则。与 aic-pod vtools 新契约一致（aic-pod commit b5ea876）。
+
 ## 0.4.5 — 2026-11-13
 
 - `cua`（1.1.16 → 1.3.5）：主桌面观察改为独立 `cua_cast` H.264 实时流，UI 只保留 WebCodecs 硬解画面与前台输入；应用窗口列表、截图轮询、`capture_id` 补截图绑定和全部 fallback 删除。Windows 采集由 `gdigrab` 改为 DXGI `ddagrab`，macOS 使用 `avfoundation`；默认 30fps，支持 NVIDIA `h264_nvenc` 超低延迟参数，Media Foundation 使用 display-remoting 低延迟码控。解码输出同步绘制，发送端不做 ACK 排队，单击与滚轮取消 250/100ms 人为等待。实机 PBZ 游戏验证延迟基本不可感知、风扇负载明显下降。发行包同步附带 `bin/cua` 与 `bin/cua_cast`。
