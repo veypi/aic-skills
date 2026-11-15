@@ -25,6 +25,7 @@ binaries shipped with the release.
 | `play_with_ai` | 1.0.7 | Prose + UI: multi-game table for playing against AI (gomoku / xiangqi) |
 | `3d_maker` | 1.0.2 | Prose + UI: in-browser parametric CAD modeling, assemblies, print-readiness checks and STL/OBJ/GLB/3MF export |
 | `vhtml` | 0.5.2 | Prose: the vhtml frontend framework guide |
+| `aic_guide` | 1.1.0 | Prose: manual for walking users through the AIC platform (full page map + OS windows & launcher + chat UI + spotlight tour script + usage cheat sheet) |
 | `hello` | 1.0.1 | Example: a plain native CLI |
 
 The `//go:embed` list in [`builtin_embed.go`](builtin_embed.go) is the **only publication

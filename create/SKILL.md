@@ -1,6 +1,6 @@
 ---
 name: create
-version: 1.0.17
+version: 1.0.18
 nickname: create 技能包
 description: AIC 扩展作者手册——把一句人话需求拆成云端/界面/设备三端的实际改动：技能包与数据、界面与页面指令、Host/Pod 脚本批量调用技能 API、桌面档案规则、设备命令与常驻服务；含判定流程、字段契约、红线与验收。
 keywords: [create, 扩展, 技能包, 界面, 档案, 规则, 设备, 命令, 服务, 模板, API, 批处理, 批量上传]

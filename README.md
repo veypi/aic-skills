@@ -22,6 +22,7 @@ ivec.ai 官方**技能内容仓**。技能 = `SKILL.md` + 可选包根 `manifest
 | `play_with_ai` | 1.0.7 | 说明 + UI：与 AI 对弈的多游戏台（五子棋 / 象棋） |
 | `3d_maker` | 1.0.2 | 说明 + UI：浏览器内参数化 CAD 建模、装配、打印就绪检测与 STL/OBJ/GLB/3MF 导出 |
 | `vhtml` | 0.5.2 | 说明：vhtml 前端框架指南 |
+| `aic_guide` | 1.1.0 | 说明：给用户讲 AIC 平台的手册（完整页面地图 + OS 窗口与启动器 + 对话界面 + 聚光导览脚本 + 用法速查） |
 | `hello` | 1.0.1 | 示例：普通原生 CLI |
 
 [`builtin_embed.go`](builtin_embed.go) 的 embed 列表是**唯一的发布面**——目录存在但不在列表里
