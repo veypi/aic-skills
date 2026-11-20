@@ -4,7 +4,9 @@
 
 两个版本面：**模块版本**（本文件 / tag `vX.Y.Z`，Go 依赖面）与**技能版本**（各 `SKILL.md` frontmatter 的 `version:`，进入 `skills.builtin` 指纹）。内容更新 bump 技能版本以触发自动定版；事件执行时无条件整包覆盖，不做版本大小比较。契约或结构变化 bump 模块版本。
 
-## 未发布
+## 0.4.7 — 2026-11-20
+
+- `office_studio`（1.0.8 → 1.0.10）：①**打开文件修复**——`looksLikeFsPath` 原写死 `[a-f0-9]{32}` 校验设备 host 段，平台 host id 演进为 36 位后打开 docx/xlsx 路径被判非法，页面顶栏显示「未打开文件」、文件不加载；改为「fs 路径首段只有 page/cloud 是保留词，其余都是设备 host id」（不校验长度与形态），平台以后换 host id 形态也不用再动包。②**顶栏与「更多」菜单高度统一**——`.tbtn` 与 `summary` 补 `min-height:30px` + `inline-flex` 对齐（此前「更多」比「保存/面板」矮 1–2px），`.more-menu` 分隔线由 `border-bottom` 改为 `inset box-shadow`（边框参与盒高会让末项看起来高一截）。
 
 - `create`（1.0.17 → 1.0.18）：`references/ui-component.md` 的通用高亮标注段同步平台新作用域——**省略 `win_id` 时 `highlight` / `click` 在整个页面里搜**（所有窗口 + 左侧栏 + 顶栏在同一个 document 里），给了 `win_id` 只在该窗口渲染面内找；标注只做视觉标注，不改业务数据。
 - 新增 `aic_guide`（1.0.0）：给用户讲 AIC 平台的手册——纯说明包（无 UI / 无接口 / 无设备命令）。正文含讲解步骤与 page 通道脚本模板（`open` / `click` / `highlight` / `close`）、普通用户可见的完整页面地图与已实测的聚光选择器、平台用法速查卡（建 Agent、装技能、连设备、查余额与调用、记忆与文件）；`references/demo-playbook.md` 收原生指令清单、`click` 用法、探针脚本、可见性选择器、节奏话术、错误兜底与四页导览完整示例。不含管理后台内容。
