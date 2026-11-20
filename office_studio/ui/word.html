@@ -20,16 +20,16 @@
   .err { color: var(--color-danger); }
   .rev-label { flex: none; display: inline-flex; align-items: center; gap: 5px; color: var(--text-color-tertiary); font-size: 10px; white-space: nowrap; }
   .rev-label input { accent-color: var(--color-primary); }
-  .tbtn { flex: none; min-height: 30px; padding: 3px 5px; border: 0; border-bottom: 1px solid transparent; border-radius: 0; background: transparent; color: var(--text-color-tertiary); cursor: pointer; font-size: 11px; white-space: nowrap; }
+  .tbtn { flex: none; min-height: 30px; display: inline-flex; align-items: center; padding: 3px 5px; border: 0; border-bottom: 1px solid transparent; border-radius: 0; background: transparent; color: var(--text-color-tertiary); cursor: pointer; font-size: 11px; white-space: nowrap; }
   .tbtn:hover { color: var(--color-primary); border-bottom-color: currentColor; }
   .tbtn.primary { color: var(--color-primary); border-bottom-color: var(--color-primary); }
   .more-actions { display: none; position: relative; }
-  .more-actions summary { padding: 4px 5px; border-bottom: 1px solid transparent; color: var(--text-color-tertiary); cursor: pointer; list-style: none; font-size: 11px; }
+  .more-actions summary { min-height: 30px; display: inline-flex; align-items: center; padding: 3px 5px; border-bottom: 1px solid transparent; color: var(--text-color-tertiary); cursor: pointer; list-style: none; font-size: 11px; }
   .more-actions summary::-webkit-details-marker { display: none; }
   .more-actions summary:hover, .more-actions[open] summary { color: var(--color-primary); border-bottom-color: currentColor; }
   .more-menu { position: absolute; top: 36px; right: 0; width: 150px; box-sizing: border-box; padding: 6px; border: 1px solid var(--border-color); background: var(--bg-color); box-shadow: var(--shadow-lg); }
-  .more-menu button { width: 100%; min-height: 32px; padding: 4px 7px; border: 0; border-bottom: 1px solid var(--border-color); background: transparent; color: var(--text-color-secondary); cursor: pointer; text-align: left; font-size: 12px; }
-  .more-menu button:last-child { border-bottom: 0; }
+  .more-menu button { width: 100%; min-height: 32px; padding: 4px 7px; border: 0; background: transparent; color: var(--text-color-secondary); cursor: pointer; text-align: left; font-size: 12px; box-shadow: inset 0 -1px 0 var(--border-color); }
+  .more-menu button:last-child { box-shadow: none; }
   .more-menu button:hover { color: var(--color-primary); }
   .main { flex: 1; min-height: 0; display: flex; position: relative; }
   .empty-hint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; color: var(--text-color-tertiary); font-size: var(--font-size-sm); text-align: center; pointer-events: none; z-index: 2; }
@@ -753,7 +753,11 @@
   }
 
   // ===== 路由参数（单值 query.url；new=1 = 新建模式）=====
-  const looksLikeFsPath = (p) => /^\/(fs\/)?(cloud|page)\//.test(p) || /^\/(fs\/)?[a-f0-9]{32}\//.test(p)
+  // fs 路径第二段只有 page/cloud 两个保留词，其余都是设备 host id（不校验形态与长度）。
+  const looksLikeFsPath = (p) => {
+    const m = /^\/(?:fs\/)?([^/]+)\//.exec(String(p || ''))
+    return !!m && m[1] !== 'cloud' && m[1] !== 'page'
+  }
   const routeTask = () => {
     const p = String(($router.query && $router.query.url) || '')
     if (!p || !looksLikeFsPath(p)) return null

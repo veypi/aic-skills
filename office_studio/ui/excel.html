@@ -299,7 +299,11 @@
   // ===== 路由参数（单值 query.url；new=1 = 新建模式）=====
   // 注意：本页路由 /skills/cloud/{skill_id}/excel 的通配段会把 "excel" 落到
   // $router.params.path，那不是文件参数——只认 query.url，且做 fs 形态校验。
-  const looksLikeFsPath = (p) => /^\/(fs\/)?(cloud|page)\//.test(p) || /^\/(fs\/)?[a-f0-9]{32}\//.test(p)
+  // fs 路径第二段只有 page/cloud 两个保留词，其余都是设备 host id（不校验形态与长度）。
+  const looksLikeFsPath = (p) => {
+    const m = /^\/(?:fs\/)?([^/]+)\//.exec(String(p || ''))
+    return !!m && m[1] !== 'cloud' && m[1] !== 'page'
+  }
   const routeTask = () => {
     const p = String(($router.query && $router.query.url) || '')
     if (!p || !looksLikeFsPath(p)) return null
