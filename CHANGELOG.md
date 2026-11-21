@@ -4,6 +4,14 @@
 
 两个版本面：**模块版本**（本文件 / tag `vX.Y.Z`，Go 依赖面）与**技能版本**（各 `SKILL.md` frontmatter 的 `version:`，进入 `skills.builtin` 指纹）。内容更新 bump 技能版本以触发自动定版；事件执行时无条件整包覆盖，不做版本大小比较。契约或结构变化 bump 模块版本。
 
+## 0.4.8 — 2026-11-21
+
+- `video_studio`（1.1.11 → 1.1.12）：
+  - **导出 MP4 修复**：`VideoFrame` 与两处 `AudioData` 只给了 `timestamp` 没给 `duration`，mp4-muxer 校验「duration 必须是非负实数」直接抛错（`finalize` 的 `colorSpace` 空指针是无有效视频轨的连锁反应）；三处补齐微秒时长——视频每帧 `1e6 / fps`，音频每块 `帧数 / 采样率`。
+  - **新增页面指令**：`seek_video({frame})` 移动播放头到全片指定帧（0 基，逐场景配音前选场景）；`validate_video()` 对全片每一帧执行 `buildFrame` 技术回归，返回帧数与构建错误（不代替视觉审查）；`gen_voice` 新增 `overwrite`，仅显式 `true` 时同名覆盖，否则照旧自动加序号。
+  - **存档路径 host 段 32 → 36 位**：`assertArchivePath` 原写死 `[0-9a-f]{32}`，平台 host id 演进为 36 位后设备上的 `.video_studio` 路径被判非法；与 office_studio 1.0.10 同口径。
+  - **新内置样例 `ivec-ai`**（58 秒 8 场景品牌宣传片）；`pipeline.md` 配音流程改用 `seek_video` 定位，`final-review.md` 技术回归改用 `validate_video`。
+
 ## 0.4.7 — 2026-11-20
 
 - `office_studio`（1.0.8 → 1.0.10）：①**打开文件修复**——`looksLikeFsPath` 原写死 `[a-f0-9]{32}` 校验设备 host 段，平台 host id 演进为 36 位后打开 docx/xlsx 路径被判非法，页面顶栏显示「未打开文件」、文件不加载；改为「fs 路径首段只有 page/cloud 是保留词，其余都是设备 host id」（不校验长度与形态），平台以后换 host id 形态也不用再动包。②**顶栏与「更多」菜单高度统一**——`.tbtn` 与 `summary` 补 `min-height:30px` + `inline-flex` 对齐（此前「更多」比「保存/面板」矮 1–2px），`.more-menu` 分隔线由 `border-bottom` 改为 `inset box-shadow`（边框参与盒高会让末项看起来高一截）。
