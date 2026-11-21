@@ -1,0 +1,408 @@
+{
+  "id": "s8",
+  "duration": 6,
+  "transition": "fade",
+  "transitionIn": 0.5,
+  "background": "radial-gradient(1050px 720px at 50% 50%, #1a2642 0%, #0b0e14 70%)",
+  "camera": {
+    "keyframes": [
+      {
+        "t": 0,
+        "zoom": 1.1
+      },
+      {
+        "t": 2.2,
+        "zoom": 1,
+        "easing": "easeInOut"
+      },
+      {
+        "t": 6,
+        "zoom": 1
+      }
+    ]
+  },
+  "elements": [
+    {
+      "id": "stage",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 460,
+      "y": 570,
+      "w": 1000,
+      "h": 390,
+      "fill": "rgba(67,97,238,0.16)",
+      "blur": 70,
+      "keyframes": [
+        {
+          "t": 0,
+          "opacity": 0,
+          "scale": 0.8
+        },
+        {
+          "t": 2.2,
+          "opacity": 1,
+          "scale": 1,
+          "easing": "easeOut"
+        },
+        {
+          "t": 6,
+          "opacity": 1,
+          "scale": 1
+        }
+      ]
+    },
+    {
+      "id": "connections",
+      "type": "svg",
+      "x": 0,
+      "y": 0,
+      "w": 1920,
+      "h": 1080,
+      "opacity": 0.42,
+      "draw": {
+        "delay": 1.05,
+        "dur": 0.9,
+        "easing": "easeOut"
+      },
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080'><g fill='none' stroke-width='2'><path d='M400 270L730 440M1520 270L1190 440M330 580L710 540M1590 580L1210 540M460 840L770 690M1460 840L1150 690' stroke='#60a5fa'/></g></svg>"
+    },
+    {
+      "id": "rep-file",
+      "type": "svg",
+      "x": 140,
+      "y": 156,
+      "w": 320,
+      "h": 172,
+      "keyframes": [
+        {
+          "t": 0.15,
+          "x": -360,
+          "y": 80,
+          "rotation": -8,
+          "opacity": 0
+        },
+        {
+          "t": 0.95,
+          "x": 140,
+          "y": 156,
+          "rotation": 0,
+          "opacity": 1,
+          "easing": "bezier(0.16,1,0.3,1)"
+        },
+        {
+          "t": 6,
+          "x": 140,
+          "y": 156,
+          "rotation": 0,
+          "opacity": 1
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 172'><rect x='2' y='2' width='316' height='168' rx='22' fill='#151d2c' stroke='#60a5fa' stroke-opacity='.45' stroke-width='2'/><path d='M34 38H76L92 54V118H34Z' fill='#60a5fa' fill-opacity='.12' stroke='#93c5fd' stroke-width='2'/><text x='116' y='68' font-family='monospace' font-size='22' fill='#f1f5f9'>FILES</text><text x='116' y='102' font-family='system-ui' font-size='20' fill='#94a3b8'>静态数据</text><text x='34' y='148' font-family='monospace' font-size='16' fill='#60a5fa'>/fs/cloud · page · host</text></svg>"
+    },
+    {
+      "id": "rep-exec",
+      "type": "svg",
+      "x": 1460,
+      "y": 156,
+      "w": 320,
+      "h": 172,
+      "keyframes": [
+        {
+          "t": 0.34,
+          "x": 1960,
+          "y": 80,
+          "rotation": 8,
+          "opacity": 0
+        },
+        {
+          "t": 1.06,
+          "x": 1460,
+          "y": 156,
+          "rotation": 0,
+          "opacity": 1,
+          "easing": "bezier(0.16,1,0.3,1)"
+        },
+        {
+          "t": 6,
+          "x": 1460,
+          "y": 156,
+          "rotation": 0,
+          "opacity": 1
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 172'><rect x='2' y='2' width='316' height='168' rx='22' fill='#142724' stroke='#6ee7d8' stroke-opacity='.4' stroke-width='2'/><rect x='28' y='30' width='264' height='72' rx='12' fill='#0b0e14'/><path d='M48 50L62 64L48 78M72 78H100' fill='none' stroke='#6ee7d8' stroke-width='3' stroke-linecap='round'/><text x='28' y='140' font-family='monospace' font-size='20' fill='#f1f5f9'>EXECUTION · 动态行为</text></svg>"
+    },
+    {
+      "id": "rep-editor",
+      "type": "svg",
+      "x": 82,
+      "y": 466,
+      "w": 340,
+      "h": 184,
+      "keyframes": [
+        {
+          "t": 0.5,
+          "x": -380,
+          "y": 560,
+          "rotation": 6,
+          "opacity": 0
+        },
+        {
+          "t": 1.15,
+          "x": 82,
+          "y": 466,
+          "rotation": 0,
+          "opacity": 1,
+          "easing": "bezier(0.16,1,0.3,1)"
+        },
+        {
+          "t": 6,
+          "x": 82,
+          "y": 466,
+          "rotation": 0,
+          "opacity": 1
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 340 184'><rect x='2' y='2' width='336' height='180' rx='22' fill='#f7fcff' stroke='#d8e4ec' stroke-width='2'/><path d='M2 42H338' stroke='#d8e4ec'/><rect x='18' y='58' width='64' height='104' rx='8' fill='#eaf3fb'/><rect x='94' y='58' width='224' height='72' rx='8' fill='#111827'/><text x='206' y='102' text-anchor='middle' font-family='system-ui' font-size='20' font-weight='650' fill='#f1f5f9'>ivec.ai</text><path d='M100 150H304' stroke='#4361ee' stroke-width='10' stroke-linecap='round'/></svg>"
+    },
+    {
+      "id": "rep-custom",
+      "type": "svg",
+      "x": 1498,
+      "y": 466,
+      "w": 340,
+      "h": 184,
+      "keyframes": [
+        {
+          "t": 0.63,
+          "x": 1980,
+          "y": 560,
+          "rotation": -6,
+          "opacity": 0
+        },
+        {
+          "t": 1.22,
+          "x": 1498,
+          "y": 466,
+          "rotation": 0,
+          "opacity": 1,
+          "easing": "bezier(0.16,1,0.3,1)"
+        },
+        {
+          "t": 6,
+          "x": 1498,
+          "y": 466,
+          "rotation": 0,
+          "opacity": 1
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 340 184'><rect x='2' y='2' width='336' height='180' rx='22' fill='#fff' stroke='#d8e4ec' stroke-width='2'/><text x='24' y='40' font-family='monospace' font-size='20' font-weight='650' fill='#4361ee'>vhtml</text><rect x='22' y='58' width='130' height='102' rx='12' fill='#f1f8ff'/><path d='M40 82H132M40 106H110M40 130H124' stroke='#94a3b8' stroke-width='7' stroke-linecap='round'/><rect x='170' y='58' width='148' height='44' rx='10' fill='#4361ee' fill-opacity='.14'/><rect x='170' y='116' width='148' height='44' rx='10' fill='#20a996' fill-opacity='.14'/></svg>"
+    },
+    {
+      "id": "rep-backend",
+      "type": "svg",
+      "x": 218,
+      "y": 772,
+      "w": 340,
+      "h": 160,
+      "keyframes": [
+        {
+          "t": 0.73,
+          "x": 120,
+          "y": 1120,
+          "rotation": -5,
+          "opacity": 0
+        },
+        {
+          "t": 1.27,
+          "x": 218,
+          "y": 772,
+          "rotation": 0,
+          "opacity": 1,
+          "easing": "bezier(0.16,1,0.3,1)"
+        },
+        {
+          "t": 6,
+          "x": 218,
+          "y": 772,
+          "rotation": 0,
+          "opacity": 1
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 340 160'><rect x='2' y='2' width='336' height='156' rx='22' fill='#151d2c' stroke='#60a5fa' stroke-opacity='.38' stroke-width='2'/><text x='26' y='54' font-family='monospace' font-size='28' font-weight='650' fill='#93c5fd'>vigo</text><text x='26' y='96' font-family='monospace' font-size='17' fill='#f1f5f9'>GET /api/overview</text><text x='26' y='132' font-family='system-ui' font-size='18' fill='#94a3b8'>你的业务后端</text></svg>"
+    },
+    {
+      "id": "rep-sandbox",
+      "type": "svg",
+      "x": 1362,
+      "y": 772,
+      "w": 340,
+      "h": 160,
+      "keyframes": [
+        {
+          "t": 0.8,
+          "x": 1510,
+          "y": 1120,
+          "rotation": 5,
+          "opacity": 0
+        },
+        {
+          "t": 1.3,
+          "x": 1362,
+          "y": 772,
+          "rotation": 0,
+          "opacity": 1,
+          "easing": "bezier(0.16,1,0.3,1)"
+        },
+        {
+          "t": 6,
+          "x": 1362,
+          "y": 772,
+          "rotation": 0,
+          "opacity": 1
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 340 160'><rect x='2' y='2' width='336' height='156' rx='22' fill='#151d2c' stroke='#f3c969' stroke-opacity='.4' stroke-width='2'/><text x='26' y='52' font-family='monospace' font-size='25' font-weight='650' fill='#f3c969'>vsh + vbox</text><rect x='26' y='72' width='288' height='58' rx='12' fill='#0b0e14' stroke='#f3c969' stroke-opacity='.45' stroke-dasharray='6 5'/><text x='170' y='109' text-anchor='middle' font-family='monospace' font-size='17' fill='#f1f5f9'>controlled exec</text></svg>"
+    },
+    {
+      "id": "logo",
+      "type": "image",
+      "src": "assets/logo.svg",
+      "x": 902,
+      "y": 208,
+      "w": 116,
+      "h": 116,
+      "radius": 26,
+      "keyframes": [
+        {
+          "t": 0.85,
+          "scale": 0.7,
+          "opacity": 0
+        },
+        {
+          "t": 1.75,
+          "scale": 1,
+          "opacity": 1,
+          "easing": "spring(16,150,1)"
+        },
+        {
+          "t": 6,
+          "scale": 1,
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "id": "wordmark",
+      "type": "text",
+      "x": 510,
+      "y": 348,
+      "w": 900,
+      "h": 138,
+      "html": "ivec.ai",
+      "fontSize": 116,
+      "fontWeight": 720,
+      "letterSpacing": -4,
+      "color": "#f1f5f9",
+      "align": "center",
+      "valign": "middle",
+      "reveal": {
+        "dur": 0.7,
+        "delay": 1.55,
+        "dir": "up"
+      }
+    },
+    {
+      "id": "information",
+      "type": "text",
+      "x": 610,
+      "y": 500,
+      "w": 700,
+      "h": 40,
+      "html": "I N F O R M A T I O N   V E C T O R",
+      "fontSize": 24,
+      "fontWeight": 600,
+      "letterSpacing": 4,
+      "color": "#60a5fa",
+      "align": "center",
+      "fx": {
+        "enter": "fade",
+        "enterDur": 0.6,
+        "delay": 2.1
+      }
+    },
+    {
+      "id": "rule",
+      "type": "shape",
+      "shape": "rect",
+      "x": 790,
+      "y": 574,
+      "w": 340,
+      "h": 3,
+      "fill": "#6ee7d8",
+      "origin": "50% 50%",
+      "keyframes": [
+        {
+          "t": 2.1,
+          "scale": 0,
+          "opacity": 0
+        },
+        {
+          "t": 2.65,
+          "scale": 1,
+          "opacity": 0.8,
+          "easing": "easeOut"
+        },
+        {
+          "t": 6,
+          "scale": 1,
+          "opacity": 0.8
+        }
+      ]
+    },
+    {
+      "id": "tagline",
+      "type": "text",
+      "x": 460,
+      "y": 616,
+      "w": 1000,
+      "h": 70,
+      "html": "你的 Agent 空间，由你定义",
+      "fontSize": 46,
+      "fontWeight": 560,
+      "letterSpacing": 2,
+      "color": "#f1f5f9",
+      "align": "center",
+      "valign": "middle",
+      "reveal": {
+        "dur": 0.6,
+        "delay": 2.45,
+        "dir": "up"
+      }
+    },
+    {
+      "id": "made",
+      "type": "text",
+      "x": 510,
+      "y": 980,
+      "w": 900,
+      "h": 48,
+      "html": "MADE WITH IVEC.AI VIDEO STUDIO",
+      "fontSize": 36,
+      "fontWeight": 550,
+      "letterSpacing": 3,
+      "color": "rgba(148,163,184,0.82)",
+      "align": "center",
+      "fx": {
+        "enter": "fade",
+        "enterDur": 0.6,
+        "delay": 3.1
+      }
+    }
+  ],
+  "voice": {
+    "src": "assets/voice-s8.mp3",
+    "volume": 1,
+    "offset": 0.2
+  }
+}

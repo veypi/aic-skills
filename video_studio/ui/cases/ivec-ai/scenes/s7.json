@@ -1,0 +1,207 @@
+{
+  "id": "s7",
+  "duration": 6,
+  "transition": "fade",
+  "transitionIn": 0.45,
+  "background": "linear-gradient(180deg, #f7fcff 0%, #eaf3fb 100%)",
+  "elements": [
+    {
+      "id": "chapter",
+      "type": "text",
+      "x": 90,
+      "y": 48,
+      "w": 700,
+      "h": 30,
+      "html": "07 / YOUR ORGANIZATION",
+      "fontSize": 20,
+      "fontWeight": 650,
+      "letterSpacing": 4,
+      "color": "#4361ee"
+    },
+    {
+      "id": "title",
+      "type": "text",
+      "x": 210,
+      "y": 94,
+      "w": 1500,
+      "h": 82,
+      "html": "把企业现有系统，变成 AI 可达空间",
+      "fontSize": 62,
+      "fontWeight": 740,
+      "letterSpacing": -2,
+      "color": "#111827",
+      "align": "center",
+      "reveal": {
+        "dur": 0.65,
+        "delay": 0.1,
+        "dir": "up"
+      }
+    },
+    {
+      "id": "space",
+      "type": "svg",
+      "x": 230,
+      "y": 218,
+      "w": 1460,
+      "h": 650,
+      "keyframes": [
+        {
+          "t": 0.35,
+          "scale": 0.94,
+          "opacity": 0
+        },
+        {
+          "t": 1.35,
+          "scale": 1,
+          "opacity": 1,
+          "easing": "bezier(0.16,1,0.3,1)"
+        },
+        {
+          "t": 6,
+          "scale": 1,
+          "opacity": 1
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1460 650'><defs><filter id='orgshadow' x='-10%' y='-10%' width='120%' height='130%'><feDropShadow dx='0' dy='22' stdDeviation='26' flood-color='#1e3a5f' flood-opacity='.13'/></filter></defs><rect x='2' y='2' width='1456' height='646' rx='38' fill='#fff' stroke='#cfdee8' stroke-width='2' filter='url(#orgshadow)'/><rect x='30' y='30' width='1400' height='590' rx='28' fill='#f7fcff' stroke='#4361ee' stroke-opacity='.25' stroke-dasharray='10 10'/><g fill='none' stroke-width='3' stroke-linecap='round'><path d='M368 174C500 174 544 238 642 282' stroke='#4361ee'/><path d='M1092 174C960 174 916 238 818 282' stroke='#20a996'/><path d='M730 496V380' stroke='#7c8ef8'/></g><g><rect x='94' y='90' width='310' height='164' rx='22' fill='#fff' stroke='#d8e4ec'/><circle cx='140' cy='136' r='22' fill='#4361ee' fill-opacity='.13'/><path d='M128 126H152V148H128Z' fill='none' stroke='#4361ee' stroke-width='3'/><text x='180' y='146' font-family='system-ui' font-size='28' font-weight='650' fill='#111827'>业务页面</text><text x='124' y='210' font-family='monospace' font-size='17' fill='#6b7280'>vhtml · commands</text></g><g><rect x='1056' y='90' width='310' height='164' rx='22' fill='#fff' stroke='#d8e4ec'/><circle cx='1102' cy='136' r='22' fill='#20a996' fill-opacity='.13'/><path d='M1090 126H1114V148H1090Z' fill='none' stroke='#20a996' stroke-width='3'/><path d='M1094 134H1110M1094 141H1110' stroke='#20a996' stroke-width='2'/><text x='1142' y='146' font-family='system-ui' font-size='28' font-weight='650' fill='#111827'>数据与文件</text><text x='1086' y='210' font-family='monospace' font-size='17' fill='#6b7280'>vigo · /fs</text></g><g><rect x='574' y='470' width='312' height='128' rx='22' fill='#111827'/><circle cx='620' cy='512' r='20' fill='#6ee7d8' fill-opacity='.14'/><path d='M611 502L624 512L611 522M630 522H642' fill='none' stroke='#6ee7d8' stroke-width='2.5' stroke-linecap='round'/><text x='660' y='522' font-family='system-ui' font-size='27' font-weight='650' fill='#f1f5f9'>授权设备</text><text x='614' y='568' font-family='monospace' font-size='17' fill='#94a3b8'>vsh · vbox · exec</text></g><circle cx='730' cy='302' r='124' fill='#4361ee' fill-opacity='.08'/><circle cx='730' cy='302' r='94' fill='#fff' stroke='#4361ee' stroke-opacity='.35' stroke-width='2'/><text x='730' y='312' text-anchor='middle' font-family='system-ui' font-size='44' font-weight='730' fill='#111827'>ivec.ai</text><text x='730' y='350' text-anchor='middle' font-family='monospace' font-size='15' letter-spacing='2' fill='#4361ee'>SHARED SPACE</text><circle cx='730' cy='302' r='142' fill='none' stroke='#4361ee' stroke-opacity='.13'/><g font-family='system-ui' font-size='18' fill='#374151'><text x='100' y='350'>统一交互</text><text x='100' y='390'>持续执行</text><text x='1220' y='350'>真实成果</text><text x='1220' y='390'>状态可查</text></g></svg>"
+    },
+    {
+      "id": "boundary-label",
+      "type": "text",
+      "x": 560,
+      "y": 882,
+      "w": 800,
+      "h": 48,
+      "html": "在权限边界内连接，而不是无边界访问",
+      "fontSize": 34,
+      "color": "#6b7280",
+      "align": "center",
+      "fx": {
+        "enter": "fade",
+        "enterDur": 0.5,
+        "delay": 2.3
+      }
+    },
+    {
+      "id": "pill-a",
+      "type": "text",
+      "x": 500,
+      "y": 950,
+      "w": 260,
+      "h": 62,
+      "html": "权限",
+      "z": 2,
+      "fontSize": 34,
+      "fontWeight": 650,
+      "color": "#111827",
+      "align": "center",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "enterDur": 0.45,
+        "delay": 2.75
+      }
+    },
+    {
+      "id": "pill-a-bg",
+      "type": "shape",
+      "shape": "rect",
+      "x": 500,
+      "y": 950,
+      "w": 260,
+      "h": 62,
+      "fill": "#fff",
+      "stroke": "#cfdee8",
+      "strokeWidth": 2,
+      "radius": 31,
+      "z": 1,
+      "fx": {
+        "enter": "fade",
+        "enterDur": 0.45,
+        "delay": 2.7
+      }
+    },
+    {
+      "id": "pill-b",
+      "type": "text",
+      "x": 830,
+      "y": 950,
+      "w": 260,
+      "h": 62,
+      "html": "审批",
+      "z": 2,
+      "fontSize": 34,
+      "fontWeight": 650,
+      "color": "#111827",
+      "align": "center",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "enterDur": 0.45,
+        "delay": 2.95
+      }
+    },
+    {
+      "id": "pill-b-bg",
+      "type": "shape",
+      "shape": "rect",
+      "x": 830,
+      "y": 950,
+      "w": 260,
+      "h": 62,
+      "fill": "#fff",
+      "stroke": "#cfdee8",
+      "strokeWidth": 2,
+      "radius": 31,
+      "z": 1,
+      "fx": {
+        "enter": "fade",
+        "enterDur": 0.45,
+        "delay": 2.9
+      }
+    },
+    {
+      "id": "pill-c",
+      "type": "text",
+      "x": 1160,
+      "y": 950,
+      "w": 260,
+      "h": 62,
+      "html": "记录",
+      "z": 2,
+      "fontSize": 34,
+      "fontWeight": 650,
+      "color": "#111827",
+      "align": "center",
+      "valign": "middle",
+      "fx": {
+        "enter": "fade-up",
+        "enterDur": 0.45,
+        "delay": 3.15
+      }
+    },
+    {
+      "id": "pill-c-bg",
+      "type": "shape",
+      "shape": "rect",
+      "x": 1160,
+      "y": 950,
+      "w": 260,
+      "h": 62,
+      "fill": "#fff",
+      "stroke": "#cfdee8",
+      "strokeWidth": 2,
+      "radius": 31,
+      "z": 1,
+      "fx": {
+        "enter": "fade",
+        "enterDur": 0.45,
+        "delay": 3.1
+      }
+    }
+  ],
+  "voice": {
+    "src": "assets/voice-s7.mp3",
+    "volume": 1,
+    "offset": 0.2
+  }
+}

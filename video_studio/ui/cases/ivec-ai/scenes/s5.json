@@ -1,0 +1,176 @@
+{
+  "id": "s5",
+  "duration": 8,
+  "transition": "fade",
+  "transitionIn": 0.45,
+  "background": "linear-gradient(180deg, #f7fcff 0%, #edf5fb 100%)",
+  "elements": [
+    {
+      "id": "chapter",
+      "type": "text",
+      "x": 90,
+      "y": 48,
+      "w": 700,
+      "h": 30,
+      "html": "05 / USER-DEFINED INTERFACE",
+      "fontSize": 20,
+      "fontWeight": 650,
+      "letterSpacing": 4,
+      "color": "#4361ee"
+    },
+    {
+      "id": "title",
+      "type": "text",
+      "x": 90,
+      "y": 92,
+      "w": 1280,
+      "h": 82,
+      "html": "你的界面，由你定义",
+      "fontSize": 66,
+      "fontWeight": 740,
+      "letterSpacing": -2,
+      "color": "#111827",
+      "reveal": {
+        "dur": 0.65,
+        "delay": 0.1,
+        "dir": "up"
+      }
+    },
+    {
+      "id": "vhtml-pill",
+      "type": "svg",
+      "x": 1580,
+      "y": 92,
+      "w": 250,
+      "h": 66,
+      "keyframes": [
+        {
+          "t": 0.5,
+          "scale": 0.85,
+          "opacity": 0
+        },
+        {
+          "t": 1,
+          "scale": 1,
+          "opacity": 1,
+          "easing": "spring(16,150,1)"
+        },
+        {
+          "t": 8,
+          "scale": 1,
+          "opacity": 1
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 250 66'><rect x='1' y='1' width='248' height='64' rx='32' fill='#4361ee'/><text x='125' y='43' text-anchor='middle' font-family='monospace' font-size='26' font-weight='650' fill='#fff'>vhtml</text></svg>"
+    },
+    {
+      "id": "code-window",
+      "type": "svg",
+      "x": 90,
+      "y": 216,
+      "w": 720,
+      "h": 706,
+      "keyframes": [
+        {
+          "t": 0.25,
+          "x": 40,
+          "opacity": 0
+        },
+        {
+          "t": 1.05,
+          "x": 90,
+          "opacity": 1,
+          "easing": "bezier(0.16,1,0.3,1)"
+        },
+        {
+          "t": 8,
+          "x": 90,
+          "opacity": 1
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 720 706'><defs><filter id='codeshadow' x='-10%' y='-10%' width='120%' height='130%'><feDropShadow dx='0' dy='22' stdDeviation='24' flood-color='#1e3a5f' flood-opacity='.18'/></filter></defs><rect x='2' y='2' width='716' height='702' rx='26' fill='#111827' stroke='#334155' stroke-width='2' filter='url(#codeshadow)'/><path d='M2 70H718' stroke='#334155'/><circle cx='36' cy='36' r='7' fill='#ff8a75'/><circle cx='60' cy='36' r='7' fill='#f3c969'/><circle cx='84' cy='36' r='7' fill='#69d5c4'/><text x='126' y='44' font-family='monospace' font-size='19' fill='#94a3b8'>dashboard.html</text><rect x='24' y='96' width='672' height='566' rx='14' fill='#0b0e14'/><g font-family='monospace' font-size='22'><text x='50' y='142' fill='#6b7280'>01</text><text x='96' y='142' fill='#93c5fd'>&lt;script setup&gt;</text><text x='50' y='190' fill='#6b7280'>02</text><text x='96' y='190' fill='#f1f5f9'>title = </text><text x='222' y='190' fill='#f3c969'>'经营工作台'</text><text x='50' y='238' fill='#6b7280'>03</text><text x='96' y='238' fill='#f1f5f9'>stats = </text><text x='222' y='238' fill='#6ee7d8'>await fetch(</text><text x='406' y='238' fill='#f3c969'>'api/stats'</text><text x='574' y='238' fill='#6ee7d8'>)</text><text x='50' y='286' fill='#6b7280'>04</text><text x='96' y='286' fill='#93c5fd'>&lt;/script&gt;</text><text x='50' y='358' fill='#6b7280'>05</text><text x='96' y='358' fill='#93c5fd'>&lt;main&gt;</text><text x='50' y='406' fill='#6b7280'>06</text><text x='120' y='406' fill='#93c5fd'>&lt;h1&gt;</text><text x='202' y='406' fill='#f1f5f9'>{{ title }}</text><text x='350' y='406' fill='#93c5fd'>&lt;/h1&gt;</text><text x='50' y='454' fill='#6b7280'>07</text><text x='120' y='454' fill='#93c5fd'>&lt;business-chart&gt;&lt;/business-chart&gt;</text><text x='50' y='502' fill='#6b7280'>08</text><text x='120' y='454' fill='#93c5fd'/><text x='120' y='502' fill='#93c5fd'>&lt;command-bar&gt;&lt;/command-bar&gt;</text><text x='50' y='550' fill='#6b7280'>09</text><text x='96' y='550' fill='#93c5fd'>&lt;/main&gt;</text></g><rect x='36' y='366' width='648' height='52' rx='8' fill='#4361ee' fill-opacity='.16'/><circle cx='52' cy='620' r='7' fill='#45b69f'/><text x='72' y='628' font-family='monospace' font-size='17' fill='#6ee7d8'>component mounted</text></svg>"
+    },
+    {
+      "id": "live-window",
+      "type": "svg",
+      "x": 870,
+      "y": 216,
+      "w": 960,
+      "h": 706,
+      "keyframes": [
+        {
+          "t": 0.8,
+          "x": 930,
+          "opacity": 0
+        },
+        {
+          "t": 1.85,
+          "x": 870,
+          "opacity": 1,
+          "easing": "bezier(0.16,1,0.3,1)"
+        },
+        {
+          "t": 8,
+          "x": 870,
+          "opacity": 1
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 960 706'><defs><filter id='liveshadow' x='-10%' y='-10%' width='120%' height='130%'><feDropShadow dx='0' dy='22' stdDeviation='24' flood-color='#1e3a5f' flood-opacity='.16'/></filter><linearGradient id='chartarea' x1='0' y1='0' x2='0' y2='1'><stop stop-color='#4361ee' stop-opacity='.25'/><stop offset='1' stop-color='#4361ee' stop-opacity='0'/></linearGradient></defs><rect x='2' y='2' width='956' height='702' rx='26' fill='#fff' stroke='#d8e4ec' stroke-width='2' filter='url(#liveshadow)'/><path d='M2 70H958' stroke='#e1eaf0'/><text x='30' y='45' font-family='system-ui' font-size='22' font-weight='700' fill='#111827'>经营工作台</text><text x='208' y='44' font-family='monospace' font-size='15' fill='#6b7280'>/u/me/dashboard.html</text><rect x='756' y='20' width='174' height='36' rx='18' fill='#eef5fa'/><circle cx='778' cy='38' r='6' fill='#45b69f'/><text x='794' y='44' font-family='system-ui' font-size='15' fill='#374151'>AI 可交互</text><rect x='24' y='94' width='184' height='580' rx='14' fill='#f1f8ff'/><g font-family='system-ui' font-size='18' fill='#374151'><text x='52' y='146'>总览</text><text x='52' y='202'>业务数据</text><text x='52' y='258'>自动任务</text><text x='52' y='314'>文件</text><text x='52' y='370'>设备</text></g><rect x='38' y='112' width='156' height='50' rx='10' fill='#4361ee' fill-opacity='.14'/><g><rect x='232' y='94' width='330' height='142' rx='16' fill='#f1f8ff'/><text x='258' y='132' font-family='system-ui' font-size='16' fill='#6b7280'>今日任务</text><text x='258' y='196' font-family='system-ui' font-size='50' font-weight='720' fill='#111827'>24</text><rect x='586' y='94' width='344' height='142' rx='16' fill='#eaf8f5'/><text x='612' y='132' font-family='system-ui' font-size='16' fill='#6b7280'>自动完成</text><text x='612' y='196' font-family='system-ui' font-size='50' font-weight='720' fill='#173b38'>18</text></g><rect x='232' y='260' width='698' height='252' rx='16' fill='#fff' stroke='#e1eaf0'/><text x='258' y='302' font-family='system-ui' font-size='19' font-weight='650' fill='#374151'>业务趋势</text><path d='M270 460L350 422L430 438L510 366L590 392L670 330L750 352L870 300V480H270Z' fill='url(#chartarea)'/><path d='M270 460L350 422L430 438L510 366L590 392L670 330L750 352L870 300' fill='none' stroke='#4361ee' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/><circle cx='870' cy='300' r='8' fill='#fff' stroke='#4361ee' stroke-width='4'/><rect x='232' y='536' width='698' height='138' rx='16' fill='#111827'/><circle cx='270' cy='578' r='14' fill='#4361ee'/><text x='302' y='586' font-family='system-ui' font-size='20' font-weight='620' fill='#f1f5f9'>Agent 已接入这个页面</text><text x='260' y='632' font-family='monospace' font-size='17' fill='#94a3b8'>page.commands · api/stats · files · exec</text></svg>"
+    },
+    {
+      "id": "compile-vector",
+      "type": "svg",
+      "x": 760,
+      "y": 410,
+      "w": 170,
+      "h": 150,
+      "draw": {
+        "delay": 1.3,
+        "dur": 1,
+        "easing": "easeInOut"
+      },
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 170 150'><path d='M10 75H150' stroke='#4361ee' stroke-width='3' stroke-linecap='round'/><path d='M136 62L152 75L136 88' fill='none' stroke='#4361ee' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/><circle cx='82' cy='75' r='10' fill='#fff' stroke='#4361ee' stroke-width='3'/></svg>"
+    },
+    {
+      "id": "custom-badge",
+      "type": "text",
+      "x": 1110,
+      "y": 940,
+      "w": 700,
+      "h": 50,
+      "html": "同一内核，不同的用户空间",
+      "fontSize": 34,
+      "fontWeight": 600,
+      "color": "#374151",
+      "align": "right",
+      "fx": {
+        "enter": "fade-up",
+        "enterDur": 0.5,
+        "delay": 4.6
+      }
+    },
+    {
+      "id": "foot",
+      "type": "text",
+      "x": 310,
+      "y": 998,
+      "w": 1300,
+      "h": 50,
+      "html": "不只使用平台预设的界面，而是让 AI 进入你定义的业务界面",
+      "fontSize": 36,
+      "fontWeight": 540,
+      "color": "#111827",
+      "align": "center",
+      "fx": {
+        "enter": "fade",
+        "enterDur": 0.6,
+        "delay": 5.25
+      }
+    }
+  ],
+  "voice": {
+    "src": "assets/voice-s5.mp3",
+    "volume": 1,
+    "offset": 0.2
+  }
+}

@@ -1,5 +1,6 @@
 {
   "zh-CN": {
+    "_case.ivec-ai": "ivec.ai · Information Vector",
     "_case.lumen-1.1": "Lumen · 从想法到成片",
     "_case.showreel": "Showreel · 引擎能力巡礼",
     "_studio.failed": "保存失败",
@@ -261,6 +262,7 @@
     "timeline.zoom_out": "缩小"
   },
   "en-US": {
+    "_case.ivec-ai": "ivec.ai · Information Vector",
     "_case.lumen-1.1": "Lumen · From idea to film",
     "_case.showreel": "Showreel · Engine capabilities",
     "_studio.failed": "Save failed",

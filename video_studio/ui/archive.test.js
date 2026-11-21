@@ -10,7 +10,7 @@ test('archive paths accept every $fs source and preserve portable references', (
   const cases = [
     '/fs/page/.video/demo/demo.video_studio',
     '/fs/cloud/u/admin/videos/demo.video_studio',
-    '/fs/ab62a0c624f2496b8e7cf8f63c735d1d/Users/test/demo.video_studio',
+    '/fs/2e0720b76a9d2696577e5f55d74ae2f40001/Users/test/demo.video_studio',
   ]
   for (const ref of cases) {
     const path = assertArchivePath(ref)

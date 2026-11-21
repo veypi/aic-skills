@@ -24,7 +24,7 @@ export function archiveName(path) {
 
 export function assertArchivePath(path) {
   const value = toTree(path)
-  if (!/^\/(cloud|page|[0-9a-f]{32})\//i.test(value)) throw new Error('需要完整的 /fs 文件路径')
+  if (!/^\/(cloud|page|[0-9a-f]{36})\//i.test(value)) throw new Error('需要完整的 /fs 文件路径')
   if (!value.toLowerCase().endsWith(ARCHIVE_EXT)) throw new Error('存档文件必须使用 .video_studio 扩展名')
   return value
 }

@@ -429,7 +429,7 @@ async function encodeAudioToMuxer(mix, muxer, codec) {
       const planar = new Float32Array(n * 2);
       planar.set(L.subarray(off, off + n), 0);
       planar.set(R.subarray(off, off + n), n);
-      const ad = new AudioData({ format: "f32-planar", sampleRate: SR, numberOfFrames: n, numberOfChannels: 2, timestamp: Math.round((off / SR) * 1e6), data: planar });
+      const ad = new AudioData({ format: "f32-planar", sampleRate: SR, numberOfFrames: n, numberOfChannels: 2, timestamp: Math.round((off / SR) * 1e6), duration: Math.round((n / SR) * 1e6), data: planar });
       enc.encode(ad);
       ad.close();
     }
@@ -437,7 +437,7 @@ async function encodeAudioToMuxer(mix, muxer, codec) {
     const planar = new Float32Array(total * 2);
     planar.set(L, 0);
     planar.set(R, total);
-    const ad = new AudioData({ format: "f32-planar", sampleRate: SR, numberOfFrames: total, numberOfChannels: 2, timestamp: 0, data: planar });
+    const ad = new AudioData({ format: "f32-planar", sampleRate: SR, numberOfFrames: total, numberOfChannels: 2, timestamp: 0, duration: Math.round((total / SR) * 1e6), data: planar });
     enc.encode(ad);
     ad.close();
   }
@@ -541,7 +541,7 @@ export async function exportVideo(engine, opts = {}) {
     const node = engine.buildFrame(docFrame, { forExport: true });
     await waitMediaSeek(node);
     await drawFrameToCanvas(node, canvas, ctx, width, height);
-    const frame = new VideoFrame(canvas, { timestamp: Math.round((f / fps) * 1e6) });
+    const frame = new VideoFrame(canvas, { timestamp: Math.round((f / fps) * 1e6), duration: Math.round(1e6 / fps) });
     encoder.encode(frame, { keyFrame: f % (fps * 2) === 0 });
     frame.close();
     if (f % BATCH === 0) {

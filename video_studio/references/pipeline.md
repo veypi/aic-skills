@@ -30,7 +30,7 @@
 - 真实页面截图（Q1）：用 browser/cua 技能截图，或把链接给用户请其截图上传「素材」tab
 - 外部素材：把下载链接发给用户，请其下载后上传素材面板（page curl 不能下载外部素材）
 - 素材命名语义化（assets/hero-card.png），分辨率按显示尺寸 2x（Q2，运镜镜头按推近后算）
-- TTS 配音：画面主体完成后逐场景生成一段话。把播放头置于该场景，`win(id).gen_voice({text: '本幕讲解', name: 'voice-s1', set: 'voice'})` 自动写入 scene.voice；每幕单独试听，产品名/数字/单位必须核对
+- TTS 配音：画面主体完成后逐场景生成一段话。用 `win(id).seek_video({frame})` 把播放头置于该场景，再 `win(id).gen_voice({text: '本幕讲解', name: 'voice-s1', set: 'voice'})` 自动写入 scene.voice；每幕单独试听，产品名/数字/单位必须核对
 
 ## 阶段 3 · 逐场景实现
 

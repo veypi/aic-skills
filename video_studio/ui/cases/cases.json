@@ -1,5 +1,12 @@
 [
   {
+    "id": "ivec-ai",
+    "title": "ivec.ai · Information Vector",
+    "desc": "源码驱动的 ivec.ai 品牌宣传片：统一寻址文件与执行，Cloud / Page / Host 超集空间，原生 Video Studio 交互，以及 vhtml / vigo / vsh / vbox 支撑的用户自定义界面与执行后端；58 秒 8 场景，中文旁白、BGM 与钉帧 SFX",
+    "scenes": 8,
+    "duration": 58
+  },
+  {
     "id": "lumen-1.1",
     "title": "Lumen · 从想法到成片",
     "desc": "一支完整作品串起全部制作方法：创意开场 / 编辑排版 / 多轨时间轴 / 数据叙事 / 三维空间 / 导出交付 / 品牌收尾；运镜、关键帧 blur、reveal、stagger、highlight、sheen、chart、table、three、中文旁白、SFX 与 120BPM BGM，39.5 秒 7 场景",

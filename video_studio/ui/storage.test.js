@@ -47,6 +47,17 @@ test('studio uses one archive path and never forces page-local storage', () => {
   assert.doesNotMatch(studio, /readFile\('\/page'|writeFile\('\/page'|projRoot/)
 })
 
+test('AI review and voice commands support seeking, safe screenshots and explicit overwrite', () => {
+  const studio = read('ui/studio.html')
+  assert.match(studio, /name: 'seek_video'/)
+  assert.match(studio, /st\.seekFrame\(frame\)/)
+  assert.match(studio, /name: 'validate_video'/)
+  assert.match(studio, /engine\.buildFrame\(frame, \{forExport: true\}\)/)
+  assert.match(studio, /\$fs\.stat\(shotDir, \{refresh: true\}\)/)
+  assert.match(studio, /const overwrite = data\?\.overwrite === true/)
+  assert.match(studio, /if \(!overwrite\) while \(names\.has\(name\)\)/)
+})
+
 test('initial archive loading waits for the mounted stage instead of reading setup refs', () => {
   const studio = read('ui/studio.html')
   const setup = studio.slice(studio.indexOf('<script setup>'), studio.indexOf('</script>', studio.indexOf('<script setup>')))
@@ -131,7 +142,7 @@ test('all visible templates are localized and every static key has both translat
       assert.ok(langs['en-US']?.[match[1]], 'en-US missing ' + match[1])
     }
   }
-  for (const key of ['_studio.saved', '_studio.unsaved', '_studio.saving', '_studio.failed', '_case.lumen-1.1', '_case.showreel']) {
+  for (const key of ['_studio.saved', '_studio.unsaved', '_studio.saving', '_studio.failed', '_case.ivec-ai', '_case.lumen-1.1', '_case.showreel']) {
     assert.ok(langs['zh-CN']?.[key] && langs['en-US']?.[key], key)
   }
 })
@@ -142,7 +153,7 @@ test('manifest and all bundled cases use the portable archive format', () => {
   assert.deepEqual(manifest.ui.openers.video.match.extensions, ['video_studio'])
   assert.ok(manifest.ui.pages.index)
   assert.ok(manifest.ui.pages.studio)
-  for (const name of ['lumen-1.1', 'card-stack', 'showreel']) {
+  for (const name of ['ivec-ai', 'lumen-1.1', 'card-stack', 'showreel']) {
     const path = 'ui/cases/' + name + '/index.video_studio'
     assert.ok(existsSync(join(root, path)), path)
     assert.equal(JSON.parse(read(path)).format, 'video_studio/1')

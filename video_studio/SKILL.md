@@ -1,6 +1,6 @@
 ---
 name: video_studio
-version: 1.1.11
+version: 1.1.12
 nickname: 视频工坊
 description: 浏览器内一站式视频制作：.video_studio 可迁移存档 + AI 文件驱动编辑 + 可视化舞台/时间轴，场景运镜、24 张实战镜头卡、判例式审美准则、声明式 SFX、节拍分析、真实 3D、AI 配音，WebCodecs 硬编导出 MP4
 keywords: [video, 视频, 剪辑, 动画, 运镜, 镜头卡, 卡拍, 音效, 3D, MP4, 配音, TTS, 时间轴, WebCodecs]
@@ -91,8 +91,10 @@ icon: fa-solid fa-clapperboard
 | `save_as_video` | `{path}` | 另存为并复制素材与附属文件 |
 | `reload_video` | 无 | 重新读取当前主存档、场景与素材 |
 | `run_video` / `stop_video` | `run_video({path?})` / 无 | 预览播放 / 停止 |
+| `seek_video` | `{frame}` | 移动播放头到全片指定帧（0 基），逐场景配音前选择当前场景 |
+| `validate_video` | 无 | 全片逐帧执行 `buildFrame` 技术回归，返回构建错误；不代替视觉审查 |
 | `shot_video` | `{frame?, name?, scale?}`；scale 0.25~2 | 截帧到当前存档 `screenshots/`，返回 `/fs` 路径；截关键帧而非未显现的入场起点 |
-| `gen_voice` | `{text, name?, set?}`；set 为 voice/music | TTS 写入当前 `assets/`；voice 配置到当前场景，music 配置为全片音乐 |
+| `gen_voice` | `{text, name?, set?, overwrite?}`；set 为 voice/music | TTS 写入当前 `assets/`；voice 配置到当前场景，music 配置为全片音乐；仅 `overwrite:true` 时同名覆盖 |
 | `analyze_music` | `{src, name?}`；src 如 assets/bgm.mp3 | 相对当前存档读取音频，输出 BPM/拍点/onsets 到 `beats.json` |
 | `run_js` | `{code}` | 软沙箱数值计算：M 数学包 + T three 数学几何 |
 | `get_video` | 无 | 当前存档路径、只读状态、时长、场景等信息 |
@@ -166,7 +168,7 @@ await click({win_id: demo, selector: '.vd-btn.primary'})   // 再点一次暂停
 return {win_id: demo, steps: steps.length}
 ```
 
-- **裸路由 `/studio` 会直接弹回首页**（`initPage()` 没有 `?url=`/`?case=` 时 `goHome()`），所以只能带 `?case=<内置样例 id>` 或 `?url=<.video_studio 路径>` 进工作台；内置样例 id：`lumen-1.1` / `showreel`
+- **裸路由 `/studio` 会直接弹回首页**（`initPage()` 没有 `?url=`/`?case=` 时 `goHome()`），所以只能带 `?case=<内置样例 id>` 或 `?url=<.video_studio 路径>` 进工作台；内置样例 id：`ivec-ai` / `lumen-1.1` / `showreel`
 - `.left` / `.right` / `.bottom` 默认隐藏：直接 `highlight` 会报 `is not visible`，必须先 `click` 顶栏 `.panel-switches button`（0 场景 / 1 属性 / 2 时间轴）
 - **每个侧栏点开 → 标注 → 立即点回去**，否则三块侧栏会一直盖住中间的舞台；播放前必须全部收起
 - 播放按钮不在顶栏，在舞台底部控制条：`.vd-btn.primary`（文字在 `▶` 与 `❚❚` 之间切换）；进度读 `.vd-time`（如 `0:04.9 / 0:39.5 · 149/1185f`），**不要用截图判断是否在播**

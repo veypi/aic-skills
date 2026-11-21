@@ -1,0 +1,337 @@
+{
+  "id": "s2",
+  "duration": 8,
+  "transition": "fade",
+  "transitionIn": 0.5,
+  "background": "radial-gradient(1100px 760px at 50% 54%, #152038 0%, #0b0e14 70%)",
+  "elements": [
+    {
+      "id": "chapter",
+      "type": "text",
+      "x": 80,
+      "y": 54,
+      "w": 600,
+      "h": 30,
+      "html": "02 / ADDRESSABLE SPACE",
+      "fontSize": 20,
+      "fontWeight": 600,
+      "letterSpacing": 4,
+      "color": "#60a5fa"
+    },
+    {
+      "id": "title",
+      "type": "text",
+      "x": 460,
+      "y": 92,
+      "w": 1000,
+      "h": 90,
+      "html": "一个超集空间",
+      "fontSize": 72,
+      "fontWeight": 720,
+      "letterSpacing": -2,
+      "color": "#f1f5f9",
+      "align": "center",
+      "reveal": {
+        "dur": 0.7,
+        "delay": 0.15,
+        "dir": "up"
+      }
+    },
+    {
+      "id": "subtitle",
+      "type": "text",
+      "x": 510,
+      "y": 184,
+      "w": 900,
+      "h": 50,
+      "html": "统一寻址静态数据与动态行为",
+      "fontSize": 36,
+      "color": "#94a3b8",
+      "align": "center",
+      "fx": {
+        "enter": "fade-up",
+        "enterDur": 0.6,
+        "delay": 0.65
+      }
+    },
+    {
+      "id": "space",
+      "type": "svg",
+      "x": 270,
+      "y": 258,
+      "w": 1380,
+      "h": 650,
+      "draw": {
+        "delay": 0.55,
+        "dur": 1.35,
+        "easing": "easeInOut"
+      },
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1380 650'><rect x='3' y='3' width='1374' height='644' rx='42' fill='#111827' fill-opacity='.36' stroke='#60a5fa' stroke-opacity='.38' stroke-width='2' stroke-dasharray='10 12'/><path d='M690 42V608M42 325H1338' stroke='#60a5fa' stroke-opacity='.08'/><circle cx='690' cy='325' r='245' fill='none' stroke='#60a5fa' stroke-opacity='.09'/><circle cx='690' cy='325' r='174' fill='none' stroke='#6ee7d8' stroke-opacity='.10'/></svg>"
+    },
+    {
+      "id": "connections",
+      "type": "svg",
+      "x": 0,
+      "y": 0,
+      "w": 1920,
+      "h": 1080,
+      "draw": {
+        "delay": 1.1,
+        "dur": 1.35,
+        "easing": "easeOut"
+      },
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080'><g fill='none' stroke-width='2.5' stroke-linecap='round'><path d='M430 372C590 372 654 442 765 492' stroke='#60a5fa'/><path d='M430 582H690L765 560' stroke='#60a5fa'/><path d='M430 792C590 792 654 682 765 628' stroke='#60a5fa'/><path d='M1490 372C1330 372 1266 442 1155 492' stroke='#6ee7d8'/><path d='M1490 582H1230L1155 560' stroke='#6ee7d8'/><path d='M1490 792C1330 792 1266 682 1155 628' stroke='#6ee7d8'/></g></svg>"
+    },
+    {
+      "id": "static-label",
+      "type": "text",
+      "x": 120,
+      "y": 260,
+      "w": 320,
+      "h": 42,
+      "html": "FILES · 静态数据",
+      "fontSize": 24,
+      "fontWeight": 650,
+      "letterSpacing": 2,
+      "color": "#93c5fd",
+      "align": "center",
+      "fx": {
+        "enter": "fade",
+        "enterDur": 0.5,
+        "delay": 0.9
+      }
+    },
+    {
+      "id": "dynamic-label",
+      "type": "text",
+      "x": 1480,
+      "y": 260,
+      "w": 320,
+      "h": 42,
+      "html": "EXECUTION · 动态行为",
+      "fontSize": 24,
+      "fontWeight": 650,
+      "letterSpacing": 1,
+      "color": "#6ee7d8",
+      "align": "center",
+      "fx": {
+        "enter": "fade",
+        "enterDur": 0.5,
+        "delay": 0.9
+      }
+    },
+    {
+      "id": "file-cloud",
+      "type": "svg",
+      "x": 120,
+      "y": 310,
+      "w": 310,
+      "h": 126,
+      "keyframes": [
+        {
+          "t": 0.35,
+          "x": -340,
+          "opacity": 0
+        },
+        {
+          "t": 1.05,
+          "x": 120,
+          "opacity": 1,
+          "easing": "bezier(0.16,1,0.3,1)"
+        },
+        {
+          "t": 8,
+          "x": 120,
+          "opacity": 1
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 310 126'><rect x='1' y='1' width='308' height='124' rx='20' fill='#172033' stroke='#60a5fa' stroke-opacity='.38'/><circle cx='42' cy='42' r='16' fill='#60a5fa' fill-opacity='.18'/><path d='M32 44C32 36 42 32 48 37C56 32 66 38 64 46C72 50 66 58 58 58H40C30 58 26 49 32 44Z' fill='#93c5fd'/><text x='76' y='48' font-family='system-ui' font-size='24' font-weight='650' fill='#f1f5f9'>Cloud</text><text x='26' y='96' font-family='monospace' font-size='19' fill='#93c5fd'>/fs/cloud/research.md</text></svg>"
+    },
+    {
+      "id": "file-page",
+      "type": "svg",
+      "x": 120,
+      "y": 520,
+      "w": 310,
+      "h": 126,
+      "keyframes": [
+        {
+          "t": 0.58,
+          "x": -340,
+          "opacity": 0
+        },
+        {
+          "t": 1.15,
+          "x": 120,
+          "opacity": 1,
+          "easing": "bezier(0.16,1,0.3,1)"
+        },
+        {
+          "t": 8,
+          "x": 120,
+          "opacity": 1
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 310 126'><rect x='1' y='1' width='308' height='124' rx='20' fill='#172033' stroke='#60a5fa' stroke-opacity='.38'/><rect x='26' y='25' width='34' height='34' rx='8' fill='#60a5fa' fill-opacity='.18'/><path d='M33 34H53V50H33Z' fill='none' stroke='#93c5fd' stroke-width='2'/><text x='76' y='48' font-family='system-ui' font-size='24' font-weight='650' fill='#f1f5f9'>Page</text><text x='26' y='96' font-family='monospace' font-size='19' fill='#93c5fd'>/fs/page/project.json</text></svg>"
+    },
+    {
+      "id": "file-host",
+      "type": "svg",
+      "x": 120,
+      "y": 730,
+      "w": 310,
+      "h": 126,
+      "keyframes": [
+        {
+          "t": 0.72,
+          "x": -340,
+          "opacity": 0
+        },
+        {
+          "t": 1.2,
+          "x": 120,
+          "opacity": 1,
+          "easing": "bezier(0.16,1,0.3,1)"
+        },
+        {
+          "t": 8,
+          "x": 120,
+          "opacity": 1
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 310 126'><rect x='1' y='1' width='308' height='124' rx='20' fill='#172033' stroke='#60a5fa' stroke-opacity='.38'/><rect x='26' y='25' width='36' height='34' rx='6' fill='#60a5fa' fill-opacity='.18'/><path d='M32 33H56M32 41H56M32 49H48' stroke='#93c5fd' stroke-width='2'/><text x='76' y='48' font-family='system-ui' font-size='24' font-weight='650' fill='#f1f5f9'>Host</text><text x='26' y='96' font-family='monospace' font-size='19' fill='#93c5fd'>/fs/{host}/assets/…</text></svg>"
+    },
+    {
+      "id": "exec-cloud",
+      "type": "svg",
+      "x": 1490,
+      "y": 310,
+      "w": 310,
+      "h": 126,
+      "keyframes": [
+        {
+          "t": 0.48,
+          "x": 1940,
+          "opacity": 0
+        },
+        {
+          "t": 1.1,
+          "x": 1490,
+          "opacity": 1,
+          "easing": "bezier(0.16,1,0.3,1)"
+        },
+        {
+          "t": 8,
+          "x": 1490,
+          "opacity": 1
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 310 126'><rect x='1' y='1' width='308' height='124' rx='20' fill='#142724' stroke='#6ee7d8' stroke-opacity='.34'/><circle cx='42' cy='42' r='16' fill='#6ee7d8' fill-opacity='.14'/><path d='M36 34L48 42L36 50Z' fill='#6ee7d8'/><text x='76' y='48' font-family='system-ui' font-size='24' font-weight='650' fill='#f1f5f9'>Task</text><text x='26' y='96' font-family='monospace' font-size='19' fill='#6ee7d8'>task.run · persistent</text></svg>"
+    },
+    {
+      "id": "exec-page",
+      "type": "svg",
+      "x": 1490,
+      "y": 520,
+      "w": 310,
+      "h": 126,
+      "keyframes": [
+        {
+          "t": 0.66,
+          "x": 1940,
+          "opacity": 0
+        },
+        {
+          "t": 1.18,
+          "x": 1490,
+          "opacity": 1,
+          "easing": "bezier(0.16,1,0.3,1)"
+        },
+        {
+          "t": 8,
+          "x": 1490,
+          "opacity": 1
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 310 126'><rect x='1' y='1' width='308' height='124' rx='20' fill='#142724' stroke='#6ee7d8' stroke-opacity='.34'/><circle cx='42' cy='42' r='16' fill='#6ee7d8' fill-opacity='.14'/><path d='M34 34L42 50L46 42L54 40Z' fill='#6ee7d8'/><text x='76' y='48' font-family='system-ui' font-size='24' font-weight='650' fill='#f1f5f9'>Page</text><text x='26' y='96' font-family='monospace' font-size='19' fill='#6ee7d8'>win(id).command(…)</text></svg>"
+    },
+    {
+      "id": "exec-host",
+      "type": "svg",
+      "x": 1490,
+      "y": 730,
+      "w": 310,
+      "h": 126,
+      "keyframes": [
+        {
+          "t": 0.76,
+          "x": 1940,
+          "opacity": 0
+        },
+        {
+          "t": 1.22,
+          "x": 1490,
+          "opacity": 1,
+          "easing": "bezier(0.16,1,0.3,1)"
+        },
+        {
+          "t": 8,
+          "x": 1490,
+          "opacity": 1
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 310 126'><rect x='1' y='1' width='308' height='124' rx='20' fill='#142724' stroke='#6ee7d8' stroke-opacity='.34'/><circle cx='42' cy='42' r='16' fill='#6ee7d8' fill-opacity='.14'/><path d='M34 34L42 42L34 50M46 50H56' fill='none' stroke='#6ee7d8' stroke-width='2.5' stroke-linecap='round'/><text x='76' y='48' font-family='system-ui' font-size='24' font-weight='650' fill='#f1f5f9'>Host</text><text x='26' y='96' font-family='monospace' font-size='19' fill='#6ee7d8'>exec · granted</text></svg>"
+    },
+    {
+      "id": "core",
+      "type": "svg",
+      "x": 710,
+      "y": 390,
+      "w": 500,
+      "h": 360,
+      "keyframes": [
+        {
+          "t": 0.8,
+          "scale": 0.82,
+          "opacity": 0
+        },
+        {
+          "t": 2.1,
+          "scale": 1,
+          "opacity": 1,
+          "easing": "spring(16,150,1)"
+        },
+        {
+          "t": 8,
+          "scale": 1,
+          "opacity": 1
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 500 360'><defs><linearGradient id='core' x1='0' y1='0' x2='1' y2='1'><stop stop-color='#1d2c4d'/><stop offset='1' stop-color='#122822'/></linearGradient></defs><rect x='2' y='2' width='496' height='356' rx='38' fill='url(#core)' stroke='#93c5fd' stroke-opacity='.42' stroke-width='2'/><text x='250' y='98' text-anchor='middle' font-family='system-ui' font-size='66' font-weight='720' fill='#f1f5f9'>ivec.ai</text><text x='250' y='140' text-anchor='middle' font-family='monospace' font-size='18' letter-spacing='4' fill='#60a5fa'>INFORMATION VECTOR</text><path d='M70 182H430' stroke='#94a3b8' stroke-opacity='.18'/><text x='250' y='232' text-anchor='middle' font-family='system-ui' font-size='40' font-weight='600' fill='#f1f5f9'>统一地址</text><text x='250' y='278' text-anchor='middle' font-family='monospace' font-size='20' fill='#94a3b8'>FILES + EXECUTION</text><circle cx='250' cy='316' r='6' fill='#6ee7d8'/></svg>"
+    },
+    {
+      "id": "result",
+      "type": "text",
+      "x": 510,
+      "y": 954,
+      "w": 900,
+      "h": 50,
+      "html": "AI 可达之处，都有统一地址",
+      "fontSize": 34,
+      "fontWeight": 560,
+      "letterSpacing": 2,
+      "color": "#f1f5f9",
+      "align": "center",
+      "reveal": {
+        "dur": 0.65,
+        "delay": 4.2,
+        "dir": "up"
+      }
+    }
+  ],
+  "voice": {
+    "src": "assets/voice-s2.mp3",
+    "volume": 1,
+    "offset": 0.2
+  }
+}

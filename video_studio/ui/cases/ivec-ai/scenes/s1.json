@@ -1,0 +1,314 @@
+{
+  "id": "s1",
+  "duration": 6,
+  "transition": "none",
+  "transitionIn": 0,
+  "background": "radial-gradient(980px 700px at 50% 44%, #17223a 0%, #0b0e14 66%)",
+  "camera": {
+    "keyframes": [
+      {
+        "t": 0,
+        "zoom": 0.98
+      },
+      {
+        "t": 3.2,
+        "zoom": 1.025,
+        "easing": "easeInOut"
+      },
+      {
+        "t": 6,
+        "zoom": 1.025
+      }
+    ]
+  },
+  "elements": [
+    {
+      "id": "aura",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 580,
+      "y": 245,
+      "w": 760,
+      "h": 520,
+      "fill": "rgba(67,97,238,0.13)",
+      "blur": 90,
+      "keyframes": [
+        {
+          "t": 0,
+          "opacity": 0,
+          "scale": 0.78
+        },
+        {
+          "t": 2.4,
+          "opacity": 1,
+          "scale": 1,
+          "easing": "bezier(0.16,1,0.3,1)"
+        },
+        {
+          "t": 6,
+          "opacity": 1,
+          "scale": 1
+        }
+      ]
+    },
+    {
+      "id": "grid",
+      "type": "svg",
+      "x": 0,
+      "y": 0,
+      "w": 1920,
+      "h": 1080,
+      "opacity": 0.25,
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080'><g stroke='#60a5fa' stroke-opacity='.13' stroke-width='1'><path d='M0 180H1920M0 540H1920M0 900H1920'/><path d='M320 0V1080M960 0V1080M1600 0V1080'/></g><g fill='#94a3b8' fill-opacity='.55' font-family='monospace' font-size='16'><text x='56' y='64'>IVEC / INFORMATION VECTOR</text><text x='1864' y='64' text-anchor='end'>01 · ORIGIN</text></g></svg>"
+    },
+    {
+      "id": "vector-left",
+      "type": "svg",
+      "x": 0,
+      "y": 0,
+      "w": 1920,
+      "h": 1080,
+      "draw": {
+        "delay": 0.25,
+        "dur": 1.55,
+        "easing": "bezier(0.65,0,0.35,1)"
+      },
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080'><path d='M340 552H705L835 472' fill='none' stroke='#60a5fa' stroke-width='3' stroke-linecap='round'/><path d='M340 552H705L835 472' fill='none' stroke='#60a5fa' stroke-opacity='.16' stroke-width='18'/></svg>"
+    },
+    {
+      "id": "vector-right",
+      "type": "svg",
+      "x": 0,
+      "y": 0,
+      "w": 1920,
+      "h": 1080,
+      "draw": {
+        "delay": 0.42,
+        "dur": 1.55,
+        "easing": "bezier(0.65,0,0.35,1)"
+      },
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080'><path d='M1580 552H1215L1085 472' fill='none' stroke='#6ee7d8' stroke-width='3' stroke-linecap='round'/><path d='M1580 552H1215L1085 472' fill='none' stroke='#6ee7d8' stroke-opacity='.13' stroke-width='18'/></svg>"
+    },
+    {
+      "id": "file-node",
+      "type": "svg",
+      "x": 168,
+      "y": 448,
+      "w": 250,
+      "h": 208,
+      "keyframes": [
+        {
+          "t": 0,
+          "x": 80,
+          "opacity": 0
+        },
+        {
+          "t": 1.25,
+          "x": 168,
+          "opacity": 1,
+          "easing": "bezier(0.16,1,0.3,1)"
+        },
+        {
+          "t": 3.4,
+          "x": 168,
+          "opacity": 1
+        },
+        {
+          "t": 4.25,
+          "x": 168,
+          "opacity": 0.28,
+          "easing": "easeInOut"
+        },
+        {
+          "t": 6,
+          "x": 168,
+          "opacity": 0.28
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 250 208'><rect x='1' y='1' width='248' height='206' rx='24' fill='#151b28' stroke='#60a5fa' stroke-opacity='.5'/><path d='M52 44H104L122 62V142H52Z' fill='#60a5fa' fill-opacity='.13' stroke='#60a5fa' stroke-width='2'/><path d='M104 44V64H122M66 88H108M66 108H108M66 128H96' fill='none' stroke='#93c5fd' stroke-width='3' stroke-linecap='round'/><text x='150' y='80' font-family='monospace' font-size='18' fill='#f1f5f9'>FILE</text><text x='150' y='110' font-family='system-ui' font-size='16' fill='#94a3b8'>静态数据</text><text x='28' y='182' font-family='monospace' font-size='14' letter-spacing='2' fill='#60a5fa'>/fs/…</text></svg>"
+    },
+    {
+      "id": "exec-node",
+      "type": "svg",
+      "x": 1502,
+      "y": 448,
+      "w": 250,
+      "h": 208,
+      "keyframes": [
+        {
+          "t": 0,
+          "x": 1590,
+          "opacity": 0
+        },
+        {
+          "t": 1.25,
+          "x": 1502,
+          "opacity": 1,
+          "easing": "bezier(0.16,1,0.3,1)"
+        },
+        {
+          "t": 3.4,
+          "x": 1502,
+          "opacity": 1
+        },
+        {
+          "t": 4.25,
+          "x": 1502,
+          "opacity": 0.28,
+          "easing": "easeInOut"
+        },
+        {
+          "t": 6,
+          "x": 1502,
+          "opacity": 0.28
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 250 208'><rect x='1' y='1' width='248' height='206' rx='24' fill='#151b28' stroke='#6ee7d8' stroke-opacity='.45'/><rect x='36' y='38' width='178' height='102' rx='14' fill='#0b0e14'/><path d='M58 66L74 82L58 98M88 100H126' fill='none' stroke='#6ee7d8' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/><circle cx='182' cy='88' r='16' fill='#6ee7d8' fill-opacity='.16'/><path d='M176 80L190 88L176 96Z' fill='#6ee7d8'/><text x='36' y='174' font-family='monospace' font-size='16' fill='#f1f5f9'>EXECUTION</text><text x='212' y='174' text-anchor='end' font-family='system-ui' font-size='15' fill='#94a3b8'>动态行为</text></svg>"
+    },
+    {
+      "id": "logo",
+      "type": "image",
+      "src": "assets/logo.svg",
+      "x": 892,
+      "y": 258,
+      "w": 136,
+      "h": 136,
+      "radius": 30,
+      "keyframes": [
+        {
+          "t": 0,
+          "scale": 0.74,
+          "opacity": 0
+        },
+        {
+          "t": 1.45,
+          "scale": 1,
+          "opacity": 1,
+          "easing": "spring(16,150,1)"
+        },
+        {
+          "t": 6,
+          "scale": 1,
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "id": "wordmark",
+      "type": "text",
+      "x": 560,
+      "y": 416,
+      "w": 800,
+      "h": 132,
+      "html": "ivec.ai",
+      "fontSize": 112,
+      "fontWeight": 350,
+      "letterSpacing": 18,
+      "color": "#f1f5f9",
+      "align": "center",
+      "valign": "middle",
+      "stagger": {
+        "by": "char",
+        "step": 0.02,
+        "delay": 1.35,
+        "dur": 1.55,
+        "dx": 42,
+        "dy": 0,
+        "scaleFrom": 0.94,
+        "easing": "bezier(0.16,1,0.3,1)"
+      }
+    },
+    {
+      "id": "information-vector",
+      "type": "text",
+      "x": 560,
+      "y": 556,
+      "w": 800,
+      "h": 42,
+      "html": "I N F O R M A T I O N   V E C T O R",
+      "fontSize": 24,
+      "fontWeight": 550,
+      "letterSpacing": 5,
+      "color": "#60a5fa",
+      "align": "center",
+      "fx": {
+        "enter": "fade",
+        "enterDur": 0.8,
+        "delay": 2.55
+      }
+    },
+    {
+      "id": "statement",
+      "type": "text",
+      "x": 410,
+      "y": 690,
+      "w": 1100,
+      "h": 76,
+      "html": "统一 AI 可达的<span style='color:#93c5fd'>信息</span>与<span style='color:#6ee7d8'>行动</span>",
+      "fontSize": 48,
+      "fontWeight": 560,
+      "letterSpacing": 1,
+      "color": "#f1f5f9",
+      "align": "center",
+      "valign": "middle",
+      "reveal": {
+        "dur": 0.75,
+        "delay": 3.1,
+        "dir": "up"
+      }
+    },
+    {
+      "id": "address-line",
+      "type": "shape",
+      "shape": "rect",
+      "x": 760,
+      "y": 800,
+      "w": 400,
+      "h": 2,
+      "fill": "#60a5fa",
+      "opacity": 0.55,
+      "origin": "50% 50%",
+      "keyframes": [
+        {
+          "t": 3.35,
+          "scale": 0,
+          "opacity": 0
+        },
+        {
+          "t": 4.05,
+          "scale": 1,
+          "opacity": 0.55,
+          "easing": "bezier(0.16,1,0.3,1)"
+        },
+        {
+          "t": 6,
+          "scale": 1,
+          "opacity": 0.55
+        }
+      ]
+    },
+    {
+      "id": "footnote",
+      "type": "text",
+      "x": 610,
+      "y": 830,
+      "w": 700,
+      "h": 32,
+      "html": "ONE ADDRESSABLE SPACE · FILES + EXECUTION",
+      "fontSize": 18,
+      "letterSpacing": 3,
+      "color": "rgba(148,163,184,0.62)",
+      "align": "center",
+      "fx": {
+        "enter": "fade",
+        "enterDur": 0.6,
+        "delay": 3.8
+      }
+    }
+  ],
+  "voice": {
+    "src": "assets/voice-s1.mp3",
+    "volume": 1,
+    "offset": 0.2
+  }
+}

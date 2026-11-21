@@ -1,0 +1,307 @@
+{
+  "id": "s3",
+  "duration": 8,
+  "transition": "fade",
+  "transitionIn": 0.45,
+  "background": "linear-gradient(180deg, #f7fcff 0%, #eaf3fb 100%)",
+  "elements": [
+    {
+      "id": "chapter",
+      "type": "text",
+      "x": 92,
+      "y": 48,
+      "w": 700,
+      "h": 30,
+      "html": "03 / CONTINUOUS EXECUTION",
+      "fontSize": 20,
+      "fontWeight": 650,
+      "letterSpacing": 4,
+      "color": "#4361ee"
+    },
+    {
+      "id": "title",
+      "type": "text",
+      "x": 90,
+      "y": 92,
+      "w": 1200,
+      "h": 82,
+      "html": "一个任务，连续执行",
+      "fontSize": 66,
+      "fontWeight": 740,
+      "letterSpacing": -2,
+      "color": "#111827",
+      "reveal": {
+        "dur": 0.65,
+        "delay": 0.1,
+        "dir": "up"
+      }
+    },
+    {
+      "id": "top-note",
+      "type": "text",
+      "x": 1350,
+      "y": 116,
+      "w": 480,
+      "h": 38,
+      "html": "CLOUD → PAGE → HOST",
+      "fontSize": 22,
+      "fontWeight": 600,
+      "letterSpacing": 3,
+      "color": "#6b7280",
+      "align": "right",
+      "fx": {
+        "enter": "fade",
+        "enterDur": 0.5,
+        "delay": 0.6
+      }
+    },
+    {
+      "id": "window",
+      "type": "svg",
+      "x": 80,
+      "y": 196,
+      "w": 1760,
+      "h": 786,
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1760 786'><defs><filter id='shadow' x='-10%' y='-10%' width='120%' height='130%'><feDropShadow dx='0' dy='24' stdDeviation='28' flood-color='#1e3a5f' flood-opacity='.16'/></filter></defs><rect x='2' y='2' width='1756' height='782' rx='30' fill='#f7fcff' stroke='#cfdee8' stroke-width='2' filter='url(#shadow)'/><path d='M2 80H1758' stroke='#d8e4ec'/><circle cx='36' cy='40' r='7' fill='#ff8a75'/><circle cx='60' cy='40' r='7' fill='#f3c969'/><circle cx='84' cy='40' r='7' fill='#69d5c4'/><text x='126' y='49' font-family='system-ui' font-size='24' font-weight='700' fill='#111827'>ivec.ai</text><text x='244' y='48' font-family='monospace' font-size='15' letter-spacing='2' fill='#6b7280'>AGENT OPERATING SYSTEM</text><rect x='1220' y='22' width='500' height='38' rx='19' fill='#eef5fa'/><circle cx='1250' cy='41' r='6' fill='#45b69f'/><text x='1270' y='48' font-family='system-ui' font-size='17' fill='#374151'>统一任务空间 · 已连接</text></svg>"
+    },
+    {
+      "id": "cloud-panel",
+      "type": "svg",
+      "x": 116,
+      "y": 304,
+      "w": 480,
+      "h": 610,
+      "keyframes": [
+        {
+          "t": 0.25,
+          "y": 340,
+          "opacity": 0
+        },
+        {
+          "t": 0.95,
+          "y": 304,
+          "opacity": 1,
+          "easing": "bezier(0.16,1,0.3,1)"
+        },
+        {
+          "t": 8,
+          "y": 304,
+          "opacity": 1
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 610'><rect x='1' y='1' width='478' height='608' rx='22' fill='#fff' stroke='#d8e4ec'/><text x='28' y='52' font-family='monospace' font-size='18' letter-spacing='2' fill='#4361ee'>CLOUD / FILES</text><text x='28' y='94' font-family='system-ui' font-size='26' font-weight='680' fill='#111827'>研究材料</text><rect x='22' y='120' width='436' height='44' rx='10' fill='#f1f8ff'/><text x='40' y='149' font-family='monospace' font-size='17' fill='#6b7280'>/fs/cloud/project/</text><g font-family='system-ui' font-size='20' fill='#374151'><text x='70' y='214'>research.md</text><text x='70' y='274'>market.csv</text><text x='70' y='334'>references/</text><text x='70' y='394'>brand.svg</text></g><g fill='#4361ee' fill-opacity='.12'><rect x='26' y='182' width='428' height='46' rx='10'/></g><g fill='none' stroke='#4361ee' stroke-width='2'><path d='M40 194H52L58 202V218H40Z'/><path d='M40 254H52L58 262V278H40Z'/><path d='M40 314H52L58 322V338H40Z'/><path d='M40 374H52L58 382V398H40Z'/></g><path d='M28 448H452' stroke='#e5edf3'/><circle cx='42' cy='492' r='7' fill='#45b69f'/><text x='62' y='500' font-family='system-ui' font-size='18' fill='#374151'>fs.read · 200 OK</text><text x='28' y='566' font-family='monospace' font-size='15' fill='#6b7280'>STATIC DATA · ADDRESSABLE</text></svg>"
+    },
+    {
+      "id": "page-panel",
+      "type": "svg",
+      "x": 656,
+      "y": 304,
+      "w": 700,
+      "h": 610,
+      "keyframes": [
+        {
+          "t": 0.45,
+          "y": 340,
+          "opacity": 0
+        },
+        {
+          "t": 1.15,
+          "y": 304,
+          "opacity": 1,
+          "easing": "bezier(0.16,1,0.3,1)"
+        },
+        {
+          "t": 8,
+          "y": 304,
+          "opacity": 1
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 700 610'><rect x='1' y='1' width='698' height='608' rx='22' fill='#fff' stroke='#d8e4ec'/><text x='28' y='52' font-family='monospace' font-size='18' letter-spacing='2' fill='#4361ee'>PAGE / PROJECT</text><rect x='492' y='22' width='176' height='42' rx='21' fill='#111827'/><text x='580' y='50' text-anchor='middle' font-family='system-ui' font-size='17' font-weight='600' fill='#fff'>保存并预览</text><rect x='24' y='86' width='152' height='392' rx='14' fill='#f1f8ff'/><text x='44' y='124' font-family='system-ui' font-size='17' font-weight='650' fill='#374151'>场景</text><g font-family='system-ui' font-size='16' fill='#6b7280'><text x='54' y='174'>01  品牌</text><text x='54' y='222'>02  数据</text><text x='54' y='270'>03  成果</text></g><rect x='38' y='144' width='122' height='44' rx='9' fill='#4361ee' fill-opacity='.12'/><rect x='196' y='86' width='476' height='300' rx='14' fill='#111827'/><circle cx='434' cy='218' r='72' fill='#4361ee' fill-opacity='.22'/><path d='M380 218H488M434 164V272' stroke='#60a5fa' stroke-width='2' stroke-opacity='.7'/><text x='434' y='230' text-anchor='middle' font-family='system-ui' font-size='28' font-weight='650' fill='#f1f5f9'>ivec.ai</text><rect x='196' y='406' width='476' height='72' rx='12' fill='#f1f8ff'/><path d='M218 432H650M218 456H650' stroke='#cfdee8' stroke-width='8' stroke-linecap='round'/><rect x='218' y='425' width='210' height='13' rx='6' fill='#4361ee'/><rect x='338' y='449' width='236' height='13' rx='6' fill='#69d5c4'/><text x='28' y='528' font-family='monospace' font-size='16' fill='#6b7280'>project.video_studio · autosaved</text><circle cx='42' cy='566' r='7' fill='#4361ee'/><text x='62' y='574' font-family='system-ui' font-size='18' fill='#374151'>页面指令与文件同步</text></svg>"
+    },
+    {
+      "id": "host-panel",
+      "type": "svg",
+      "x": 1416,
+      "y": 304,
+      "w": 388,
+      "h": 610,
+      "keyframes": [
+        {
+          "t": 0.65,
+          "y": 340,
+          "opacity": 0
+        },
+        {
+          "t": 1.35,
+          "y": 304,
+          "opacity": 1,
+          "easing": "bezier(0.16,1,0.3,1)"
+        },
+        {
+          "t": 8,
+          "y": 304,
+          "opacity": 1
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 388 610'><rect x='1' y='1' width='386' height='608' rx='22' fill='#111827' stroke='#334155'/><text x='26' y='52' font-family='monospace' font-size='18' letter-spacing='2' fill='#6ee7d8'>HOST / EXEC</text><rect x='22' y='82' width='344' height='318' rx='14' fill='#0b0e14'/><g font-family='monospace' font-size='17'><text x='42' y='126' fill='#6ee7d8'>$ exec assets.sync</text><text x='42' y='166' fill='#94a3b8'>grant: approved</text><text x='42' y='206' fill='#94a3b8'>sandbox: active</text><text x='42' y='246' fill='#f1f5f9'>4 files processed</text><text x='42' y='286' fill='#f1f5f9'>result → /fs/page</text><text x='42' y='342' fill='#45b69f'>✓ completed</text></g><path d='M26 438H362' stroke='#334155'/><text x='26' y='482' font-family='system-ui' font-size='19' font-weight='620' fill='#f1f5f9'>授权设备</text><text x='26' y='518' font-family='system-ui' font-size='17' fill='#94a3b8'>动态行为 · 可控执行</text><circle cx='42' cy='564' r='7' fill='#6ee7d8'/><text x='62' y='572' font-family='monospace' font-size='16' fill='#6ee7d8'>EXECUTION ONLINE</text></svg>"
+    },
+    {
+      "id": "flow-lines",
+      "type": "svg",
+      "x": 0,
+      "y": 0,
+      "w": 1920,
+      "h": 1080,
+      "draw": {
+        "delay": 1.25,
+        "dur": 1.1,
+        "easing": "easeInOut"
+      },
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080'><path d='M570 878C620 928 670 928 720 878' fill='none' stroke='#4361ee' stroke-width='3' stroke-linecap='round'/><path d='M1328 878C1378 928 1428 928 1478 878' fill='none' stroke='#20a996' stroke-width='3' stroke-linecap='round'/></svg>"
+    },
+    {
+      "id": "file-token",
+      "type": "svg",
+      "x": 260,
+      "y": 820,
+      "w": 240,
+      "h": 72,
+      "keyframes": [
+        {
+          "t": 1.55,
+          "x": 260,
+          "y": 820,
+          "opacity": 0
+        },
+        {
+          "t": 1.8,
+          "x": 260,
+          "y": 820,
+          "opacity": 1
+        },
+        {
+          "t": 2.8,
+          "x": 880,
+          "y": 820,
+          "opacity": 1,
+          "easing": "bezier(0.16,1,0.3,1)"
+        },
+        {
+          "t": 3.35,
+          "x": 880,
+          "y": 820,
+          "opacity": 0
+        },
+        {
+          "t": 8,
+          "x": 880,
+          "y": 820,
+          "opacity": 0
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 72'><rect x='1' y='1' width='238' height='70' rx='18' fill='#4361ee'/><path d='M24 20H42L50 28V52H24Z' fill='none' stroke='#fff' stroke-width='2'/><text x='66' y='44' font-family='monospace' font-size='20' fill='#fff'>research.md</text></svg>"
+    },
+    {
+      "id": "exec-token",
+      "type": "svg",
+      "x": 1010,
+      "y": 820,
+      "w": 220,
+      "h": 72,
+      "keyframes": [
+        {
+          "t": 3.25,
+          "x": 1010,
+          "y": 820,
+          "opacity": 0
+        },
+        {
+          "t": 3.5,
+          "x": 1010,
+          "y": 820,
+          "opacity": 1
+        },
+        {
+          "t": 4.55,
+          "x": 1500,
+          "y": 820,
+          "opacity": 1,
+          "easing": "bezier(0.16,1,0.3,1)"
+        },
+        {
+          "t": 5,
+          "x": 1500,
+          "y": 820,
+          "opacity": 0
+        },
+        {
+          "t": 8,
+          "x": 1500,
+          "y": 820,
+          "opacity": 0
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 72'><rect x='1' y='1' width='218' height='70' rx='18' fill='#142724' stroke='#6ee7d8'/><path d='M24 24L38 36L24 48M48 48H66' fill='none' stroke='#6ee7d8' stroke-width='3' stroke-linecap='round'/><text x='82' y='44' font-family='monospace' font-size='20' fill='#f1f5f9'>exec</text></svg>"
+    },
+    {
+      "id": "result-token",
+      "type": "svg",
+      "x": 1500,
+      "y": 820,
+      "w": 250,
+      "h": 72,
+      "keyframes": [
+        {
+          "t": 5.05,
+          "x": 1500,
+          "y": 820,
+          "opacity": 0
+        },
+        {
+          "t": 5.3,
+          "x": 1500,
+          "y": 820,
+          "opacity": 1
+        },
+        {
+          "t": 6.25,
+          "x": 1060,
+          "y": 820,
+          "opacity": 1,
+          "easing": "bezier(0.16,1,0.3,1)"
+        },
+        {
+          "t": 8,
+          "x": 1060,
+          "y": 820,
+          "opacity": 1
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 250 72'><rect x='1' y='1' width='248' height='70' rx='18' fill='#e3f5f1' stroke='#45b69f'/><circle cx='36' cy='36' r='14' fill='#45b69f'/><path d='M29 36L34 41L44 30' fill='none' stroke='#fff' stroke-width='3' stroke-linecap='round'/><text x='64' y='44' font-family='system-ui' font-size='34' font-weight='620' fill='#173b38'>成果已返回</text></svg>"
+    },
+    {
+      "id": "foot",
+      "type": "text",
+      "x": 610,
+      "y": 1006,
+      "w": 700,
+      "h": 38,
+      "html": "ONE TASK · THREE ENDS · ONE SPACE",
+      "fontSize": 20,
+      "fontWeight": 600,
+      "letterSpacing": 3,
+      "color": "#6b7280",
+      "align": "center",
+      "fx": {
+        "enter": "fade",
+        "enterDur": 0.5,
+        "delay": 6.35
+      }
+    }
+  ],
+  "voice": {
+    "src": "assets/voice-s3.mp3",
+    "volume": 1,
+    "offset": 0.2
+  }
+}

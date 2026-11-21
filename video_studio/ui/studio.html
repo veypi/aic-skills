@@ -1152,6 +1152,49 @@
       },
 
       {
+        name: 'seek_video', desc: '移动播放头到全片指定帧（frame 必填，0 基）；逐场景配音前用于选择当前场景',
+        help: 'win(id).seek_video({frame})',
+        handler: (data) => {
+          if (!doc) throw new Error('没有已打开的项目')
+          const st = $refs.stage && $refs.stage.$data
+          const engine = st && st.engine
+          if (!engine) throw new Error('引擎未就绪')
+          const value = Number(data?.frame)
+          if (!Number.isInteger(value)) throw new Error('seek_video: frame 必须是整数')
+          const total = (engine.doc && engine.doc.totalFrames) || st.totalFrames || 1
+          const frame = Math.max(0, Math.min(value, total - 1))
+          st.seekFrame(frame)
+          return {ok: true, frame, scene: activeSceneIdx() + 1, total}
+        }
+      },
+      {
+        name: 'validate_video', desc: '技术回归：对全片每一帧执行 buildFrame，返回帧数与构建错误；不代替视觉审查',
+        help: 'win(id).validate_video({})',
+        handler: async () => {
+          if (!doc) throw new Error('没有已打开的项目')
+          const st = $refs.stage && $refs.stage.$data
+          const engine = st && st.engine
+          if (!engine) throw new Error('引擎未就绪')
+          if (engine.prepare) await engine.prepare()
+          const total = (engine.doc && engine.doc.totalFrames) || st.totalFrames || 1
+          const errors = []
+          const started = performance.now()
+          let attempted = 0
+          for (let frame = 0; frame < total; frame++) {
+            attempted = frame + 1
+            try {
+              const node = engine.buildFrame(frame, {forExport: true})
+              if (!node) throw new Error('buildFrame returned empty node')
+            } catch (error) {
+              errors.push({frame, message: String(error?.message || error)})
+              if (errors.length >= 20) break
+            }
+            if (frame % 180 === 179) await new Promise(resolve => requestAnimationFrame(resolve))
+          }
+          return {ok: errors.length === 0, frames: attempted, total, errors, duration_ms: Math.round(performance.now() - started)}
+        }
+      },
+      {
         name: 'reload_video', desc: '重新加载当前 .video_studio 与相对资源（AI 写完文件后调用）',
         handler: async () => {
           if (!curPath) throw new Error('没有已打开的存档')
@@ -1162,7 +1205,7 @@
 
       {
         name: 'gen_voice', desc: '逐场景生成配音素材（text 必填；name 可选文件名；set voice|music 可选：voice 配置到当前场景，music 配置为全片音乐）。TTS 限流约 3s/个',
-        help: 'win(id).gen_voice({text, name?, set?})',
+        help: 'win(id).gen_voice({text, name?, set?, overwrite?})',
         handler: async (data) => {
             if (!curPath) throw new Error('请先打开存档（new_video 或 open）')
             const text = String(data?.text || '').trim()
@@ -1187,7 +1230,8 @@
             const names = new Set((l.items || []).map((i) => i.name))
             let name = base + '.' + mimeExt
             let n = 1
-            while (names.has(name)) name = base + '-' + (n++) + '.' + mimeExt
+            const overwrite = data?.overwrite === true
+            if (!overwrite) while (names.has(name)) name = base + '-' + (n++) + '.' + mimeExt
             const ref = 'assets/' + name
             await fsPut(resolveRef(projDir(), ref), blob)
             // 预热 dataURL 并同步舞台（立即可用于预览/导出）
@@ -1248,6 +1292,9 @@
             const rawName = cleanName(data?.name, 60)
             const name = (rawName || safeTitle() + '-f' + f) + '.png'
             const outPath = resolveRef(projDir(), 'screenshots/' + name)
+            const shotDir = resolveRef(projDir(), 'screenshots')
+            const dirStat = await $mod.$fs.stat(shotDir, {refresh: true}).catch(() => null)
+            if (!dirStat?.dir) await $mod.$fs.mkdir(shotDir, {parents: true, existOk: true})
             await fsPut(outPath, blob)
             return {ok: true, path: toRef(outPath), frame: f, total, width: W, height: H, size: blob.size}
         }

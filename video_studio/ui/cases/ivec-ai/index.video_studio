@@ -1,0 +1,42 @@
+{
+  "format": "video_studio/1",
+  "version": 1,
+  "title": "ivec.ai · Information Vector",
+  "size": { "width": 1920, "height": 1080 },
+  "fps": 30,
+  "theme": {
+    "background": "#0b0e14",
+    "color": "#f1f5f9",
+    "accent": "#60a5fa",
+    "fontFamily": "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif",
+    "captionStyle": { "fontSize": 56, "color": "#f1f5f9", "background": "rgba(11,14,20,0.78)", "bottom": 54, "radius": 14, "paddingX": 28, "paddingY": 12 }
+  },
+  "music": { "src": "assets/bgm.wav", "volume": 0.16, "loop": true, "offset": 0 },
+  "sfx": [
+    { "id": "sfx-01", "src": "assets/riser.wav", "t": 0.15, "volume": 0.22, "dur": 1.8, "note": "S1 文件与执行向量蓄势" },
+    { "id": "sfx-02", "src": "assets/sparkle.wav", "t": 2.9, "volume": 0.16, "note": "S1 Information Vector 与品牌命题落定" },
+    { "id": "sfx-03", "src": "assets/whoosh.wav", "t": 7.0, "volume": 0.18, "dur": 0.55, "note": "S2 三端对象进入超集空间" },
+    { "id": "sfx-04", "src": "assets/sparkle.wav", "t": 10.2, "volume": 0.15, "note": "S2 统一地址结论出现" },
+    { "id": "sfx-05", "src": "assets/whoosh.wav", "t": 15.7, "volume": 0.16, "dur": 0.45, "note": "S3 云端文件进入页面项目" },
+    { "id": "sfx-06", "src": "assets/pop.wav", "t": 16.8, "volume": 0.16, "note": "S3 文件到达 Page" },
+    { "id": "sfx-07", "src": "assets/pop.wav", "t": 18.55, "volume": 0.14, "note": "S3 执行请求到达 Host" },
+    { "id": "sfx-08", "src": "assets/sparkle.wav", "t": 20.25, "volume": 0.15, "note": "S3 成果返回统一空间" },
+    { "id": "sfx-09", "src": "assets/whoosh.wav", "t": 24.8, "volume": 0.16, "dur": 0.4, "note": "S4 项目重载并显示新标题" },
+    { "id": "sfx-10", "src": "assets/whoosh.wav", "t": 31.3, "volume": 0.14, "dur": 0.45, "note": "S5 vhtml 代码连接真实业务界面" },
+    { "id": "sfx-11", "src": "assets/impact.wav", "t": 42.15, "volume": 0.24, "note": "S6 自定义请求进入 vbox 沙箱" },
+    { "id": "sfx-12", "src": "assets/sparkle.wav", "t": 42.9, "volume": 0.14, "note": "S6 执行结果记录完成" },
+    { "id": "sfx-13", "src": "assets/whoosh.wav", "t": 53.0, "volume": 0.2, "dur": 0.6, "note": "S8 全片代表元素进入品牌合影" },
+    { "id": "sfx-14", "src": "assets/impact.wav", "t": 53.65, "volume": 0.3, "note": "S8 ivec.ai 字标落定" },
+    { "id": "sfx-15", "src": "assets/sparkle.wav", "t": 55.1, "volume": 0.16, "note": "S8 品牌标语与制作署名余韵" }
+  ],
+  "scenes": [
+    "scenes/s1.json",
+    "scenes/s2.json",
+    "scenes/s3.json",
+    "scenes/s4.json",
+    "scenes/s5.json",
+    "scenes/s6.json",
+    "scenes/s7.json",
+    "scenes/s8.json"
+  ]
+}

@@ -1,0 +1,268 @@
+{
+  "id": "s6",
+  "duration": 8,
+  "transition": "fade",
+  "transitionIn": 0.45,
+  "background": "radial-gradient(1100px 760px at 50% 48%, #17223a 0%, #0b0e14 72%)",
+  "elements": [
+    {
+      "id": "chapter",
+      "type": "text",
+      "x": 90,
+      "y": 48,
+      "w": 800,
+      "h": 30,
+      "html": "06 / USER-DEFINED EXECUTION",
+      "fontSize": 20,
+      "fontWeight": 650,
+      "letterSpacing": 4,
+      "color": "#60a5fa"
+    },
+    {
+      "id": "title",
+      "type": "text",
+      "x": 90,
+      "y": 92,
+      "w": 1400,
+      "h": 82,
+      "html": "你的后端，你的执行环境",
+      "fontSize": 66,
+      "fontWeight": 740,
+      "letterSpacing": -2,
+      "color": "#f1f5f9",
+      "reveal": {
+        "dur": 0.65,
+        "delay": 0.1,
+        "dir": "up"
+      }
+    },
+    {
+      "id": "top-note",
+      "type": "text",
+      "x": 1450,
+      "y": 118,
+      "w": 380,
+      "h": 34,
+      "html": "CUSTOM · CONTROLLED",
+      "fontSize": 20,
+      "fontWeight": 600,
+      "letterSpacing": 3,
+      "color": "#6ee7d8",
+      "align": "right",
+      "fx": {
+        "enter": "fade",
+        "enterDur": 0.5,
+        "delay": 0.6
+      }
+    },
+    {
+      "id": "vigo-card",
+      "type": "svg",
+      "x": 90,
+      "y": 258,
+      "w": 520,
+      "h": 626,
+      "keyframes": [
+        {
+          "t": 0.3,
+          "y": 310,
+          "opacity": 0
+        },
+        {
+          "t": 1.1,
+          "y": 258,
+          "opacity": 1,
+          "easing": "bezier(0.16,1,0.3,1)"
+        },
+        {
+          "t": 8,
+          "y": 258,
+          "opacity": 1
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 520 626'><rect x='2' y='2' width='516' height='622' rx='26' fill='#151d2c' stroke='#60a5fa' stroke-opacity='.42' stroke-width='2'/><text x='32' y='64' font-family='monospace' font-size='34' font-weight='650' fill='#93c5fd'>vigo</text><text x='488' y='60' text-anchor='end' font-family='monospace' font-size='16' letter-spacing='2' fill='#6b7280'>BACKEND</text><text x='32' y='110' font-family='system-ui' font-size='25' font-weight='620' fill='#f1f5f9'>自定义业务后端</text><rect x='28' y='142' width='464' height='302' rx='14' fill='#0b0e14'/><g font-family='monospace' font-size='19'><text x='50' y='184' fill='#6b7280'>01</text><text x='92' y='184' fill='#93c5fd'>app.GET(</text><text x='198' y='184' fill='#f3c969'>'/api/overview'</text><text x='392' y='184' fill='#93c5fd'>,</text><text x='50' y='228' fill='#6b7280'>02</text><text x='92' y='228' fill='#6ee7d8'>  handler,</text><text x='50' y='272' fill='#6b7280'>03</text><text x='92' y='272' fill='#93c5fd'>  policy,</text><text x='50' y='316' fill='#6b7280'>04</text><text x='92' y='316' fill='#93c5fd'>)</text><text x='50' y='378' fill='#6b7280'>05</text><text x='92' y='378' fill='#f1f5f9'>// your data, your logic</text></g><path d='M32 484H488' stroke='#334155'/><circle cx='52' cy='530' r='8' fill='#60a5fa'/><text x='76' y='538' font-family='monospace' font-size='19' fill='#f1f5f9'>GET /api/overview</text><text x='32' y='584' font-family='system-ui' font-size='18' fill='#94a3b8'>页面 · 数据 · 服务</text></svg>"
+    },
+    {
+      "id": "vsh-card",
+      "type": "svg",
+      "x": 700,
+      "y": 258,
+      "w": 520,
+      "h": 626,
+      "keyframes": [
+        {
+          "t": 0.5,
+          "y": 310,
+          "opacity": 0
+        },
+        {
+          "t": 1.3,
+          "y": 258,
+          "opacity": 1,
+          "easing": "bezier(0.16,1,0.3,1)"
+        },
+        {
+          "t": 8,
+          "y": 258,
+          "opacity": 1
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 520 626'><rect x='2' y='2' width='516' height='622' rx='26' fill='#151d2c' stroke='#6ee7d8' stroke-opacity='.36' stroke-width='2'/><text x='32' y='64' font-family='monospace' font-size='34' font-weight='650' fill='#6ee7d8'>vsh</text><text x='488' y='60' text-anchor='end' font-family='monospace' font-size='16' letter-spacing='2' fill='#6b7280'>COMMAND</text><text x='32' y='110' font-family='system-ui' font-size='25' font-weight='620' fill='#f1f5f9'>统一命令与准入</text><rect x='28' y='142' width='464' height='90' rx='14' fill='#0b0e14'/><text x='52' y='196' font-family='monospace' font-size='22' fill='#6ee7d8'>$ exec assets.sync</text><g font-family='system-ui' font-size='20'><text x='52' y='296' fill='#f1f5f9'>exec</text><text x='52' y='362' fill='#f1f5f9'>fs</text><text x='52' y='428' fill='#f1f5f9'>net</text></g><g font-family='monospace' font-size='16'><text x='180' y='296' fill='#94a3b8'>command allowed</text><text x='180' y='362' fill='#94a3b8'>workspace only</text><text x='180' y='428' fill='#94a3b8'>rule matched</text></g><g fill='#45b69f'><circle cx='438' cy='288' r='9'/><circle cx='438' cy='354' r='9'/><circle cx='438' cy='420' r='9'/></g><g stroke='#0b0e14' stroke-width='2' stroke-linecap='round'><path d='M434 288L437 291L443 284'/><path d='M434 354L437 357L443 350'/><path d='M434 420L437 423L443 416'/></g><path d='M32 484H488' stroke='#334155'/><text x='32' y='538' font-family='system-ui' font-size='20' font-weight='600' fill='#f1f5f9'>每个动作经过明确准入</text><text x='32' y='584' font-family='system-ui' font-size='18' fill='#94a3b8'>命令 · 资源 · 授权</text></svg>"
+    },
+    {
+      "id": "vbox-card",
+      "type": "svg",
+      "x": 1310,
+      "y": 258,
+      "w": 520,
+      "h": 626,
+      "keyframes": [
+        {
+          "t": 0.7,
+          "y": 310,
+          "opacity": 0
+        },
+        {
+          "t": 1.5,
+          "y": 258,
+          "opacity": 1,
+          "easing": "bezier(0.16,1,0.3,1)"
+        },
+        {
+          "t": 8,
+          "y": 258,
+          "opacity": 1
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 520 626'><rect x='2' y='2' width='516' height='622' rx='26' fill='#151d2c' stroke='#f3c969' stroke-opacity='.38' stroke-width='2'/><text x='32' y='64' font-family='monospace' font-size='34' font-weight='650' fill='#f3c969'>vbox</text><text x='488' y='60' text-anchor='end' font-family='monospace' font-size='16' letter-spacing='2' fill='#6b7280'>SANDBOX</text><text x='32' y='110' font-family='system-ui' font-size='25' font-weight='620' fill='#f1f5f9'>原生执行边界</text><rect x='42' y='154' width='436' height='302' rx='24' fill='#0b0e14' stroke='#f3c969' stroke-opacity='.55' stroke-width='2' stroke-dasharray='9 8'/><rect x='72' y='190' width='376' height='82' rx='14' fill='#172033'/><circle cx='110' cy='231' r='16' fill='#6ee7d8' fill-opacity='.16'/><path d='M103 222L120 231L103 240Z' fill='#6ee7d8'/><text x='146' y='239' font-family='monospace' font-size='20' fill='#f1f5f9'>process running</text><g font-family='monospace' font-size='17' fill='#94a3b8'><text x='78' y='326'>fs   /workspace/**</text><text x='78' y='370'>net  approved only</text><text x='78' y='414'>pid  managed</text></g><path d='M32 484H488' stroke='#334155'/><circle cx='52' cy='530' r='8' fill='#45b69f'/><text x='76' y='538' font-family='system-ui' font-size='20' font-weight='600' fill='#f1f5f9'>完成，结果可追踪</text><text x='32' y='584' font-family='system-ui' font-size='18' fill='#94a3b8'>文件 · 网络 · 进程</text></svg>"
+    },
+    {
+      "id": "connect-a",
+      "type": "svg",
+      "x": 592,
+      "y": 510,
+      "w": 126,
+      "h": 70,
+      "draw": {
+        "delay": 1.4,
+        "dur": 0.7,
+        "easing": "easeOut"
+      },
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 126 70'><path d='M4 35H116M102 22L118 35L102 48' fill='none' stroke='#60a5fa' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    },
+    {
+      "id": "connect-b",
+      "type": "svg",
+      "x": 1202,
+      "y": 510,
+      "w": 126,
+      "h": 70,
+      "draw": {
+        "delay": 2.5,
+        "dur": 0.7,
+        "easing": "easeOut"
+      },
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 126 70'><path d='M4 35H116M102 22L118 35L102 48' fill='none' stroke='#6ee7d8' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    },
+    {
+      "id": "request-dot",
+      "type": "shape",
+      "shape": "ellipse",
+      "x": 552,
+      "y": 534,
+      "w": 22,
+      "h": 22,
+      "fill": "#f1f5f9",
+      "keyframes": [
+        {
+          "t": 1.45,
+          "x": 552,
+          "opacity": 0
+        },
+        {
+          "t": 1.7,
+          "x": 552,
+          "opacity": 1
+        },
+        {
+          "t": 2.55,
+          "x": 1140,
+          "opacity": 1,
+          "easing": "easeInOut"
+        },
+        {
+          "t": 3.05,
+          "x": 1140,
+          "opacity": 1
+        },
+        {
+          "t": 4.15,
+          "x": 1740,
+          "opacity": 1,
+          "easing": "easeInOut"
+        },
+        {
+          "t": 4.65,
+          "x": 1740,
+          "opacity": 0
+        },
+        {
+          "t": 8,
+          "x": 1740,
+          "opacity": 0
+        }
+      ]
+    },
+    {
+      "id": "result-chip",
+      "type": "svg",
+      "x": 740,
+      "y": 914,
+      "w": 440,
+      "h": 64,
+      "keyframes": [
+        {
+          "t": 4.3,
+          "opacity": 0,
+          "scale": 0.88
+        },
+        {
+          "t": 4.9,
+          "opacity": 1,
+          "scale": 1,
+          "easing": "spring(16,150,1)"
+        },
+        {
+          "t": 8,
+          "opacity": 1,
+          "scale": 1
+        }
+      ],
+      "markup": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 440 64'><rect x='1' y='1' width='438' height='62' rx='18' fill='#142724' stroke='#6ee7d8'/><circle cx='36' cy='32' r='12' fill='#45b69f'/><path d='M30 32L34 36L43 27' fill='none' stroke='#fff' stroke-width='2.5' stroke-linecap='round'/><text x='66' y='40' font-family='monospace' font-size='20' fill='#f1f5f9'>200 OK · result recorded</text></svg>"
+    },
+    {
+      "id": "foot",
+      "type": "text",
+      "x": 360,
+      "y": 1004,
+      "w": 1200,
+      "h": 44,
+      "html": "自定义，不等于失去边界",
+      "fontSize": 34,
+      "fontWeight": 580,
+      "letterSpacing": 2,
+      "color": "#f1f5f9",
+      "align": "center",
+      "reveal": {
+        "dur": 0.6,
+        "delay": 5.25,
+        "dir": "up"
+      }
+    }
+  ],
+  "voice": {
+    "src": "assets/voice-s6.mp3",
+    "volume": 1,
+    "offset": 0.2
+  }
+}
